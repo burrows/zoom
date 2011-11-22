@@ -19,9 +19,12 @@ spec/%.js: spec/%.coffee
 spec: zoom specs 
 	./node_modules/.bin/jasmine-node ./spec
 
+repl: zoom
+	./node_modules/.bin/coffee -r ./util/repl.coffee -i
+
 clean:
 	rm -f $(JSSPECS)
 	rm -rf ./build
 
-.PHONY: zoom clean spec specs
+.PHONY: zoom clean spec specs repl
 
