@@ -20,7 +20,7 @@ spec: zoom specs
 	./node_modules/.bin/jasmine-node ./spec
 
 repl: zoom
-	./node_modules/.bin/coffee -r ./util/repl.coffee -i
+	NODE_NO_READLINE=1 rlwrap ./node_modules/.bin/coffee -r ./util/repl.coffee -i
 
 clean:
 	rm -f $(JSSPECS)
