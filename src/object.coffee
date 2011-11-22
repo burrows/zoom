@@ -1,8 +1,48 @@
-top = this
+root = this
 
-Z = if exports? then exports else top.Z = {}
+Z = if exports? then exports else root.Z = {}
 
 class Z.Object
+  constructor: ->
+    @__objectId__ = objectId++
+
+  #-----------------------------------------------------------------------------
+  # Class Methods
+  #-----------------------------------------------------------------------------
+  @addNamespace: (name, object) -> namespaces[name] = object; null
+
+  @removeNamespace: (name) -> delete namespaces[name]; null
+
+  @className: ->
+    for name, namespace of namespaces
+      for k, v of namespace
+        return "#{name}.#{k}" if v == @
+
+    '(Unknown)'
+
+  @toString: @className
+
+  #-----------------------------------------------------------------------------
+  # Prototype Properties
+  #-----------------------------------------------------------------------------
+  isZObject: true
+
+  #-----------------------------------------------------------------------------
+  # Instance Methods
+  #-----------------------------------------------------------------------------
+
+  objectId: -> @__objectId__
+
+  toString: -> "#<#{@constructor.className()}:#{@objectId()}>"
+
+  #-----------------------------------------------------------------------------
+  # Private
+  #-----------------------------------------------------------------------------
+  objectId = 1
+  nextObjectId = -> objectId++
+
+  namespaces = { Z: Z }
+
   #@property: (name) ->
   #  getter = name
   #  setter = 'set' + name[0].toUpperCase() + name.slice(1)
