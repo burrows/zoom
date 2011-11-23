@@ -185,6 +185,19 @@ describe 'Z.Array#push', ->
     a.push 10, 11, 12
     expect(a.toNative()).toEqual [1,2,3,4,10,11,12]
 
+describe 'Z.Array.unshift', ->
+  a = null
+  beforeEach -> a = Z.A([1,2,3])
+
+  it 'should return the receiver', ->
+    expect(a.unshift 4).toBe a
+
+  it 'should prepend the given object(s) to the beginning of the array', ->
+    a.unshift 4
+    expect(a.toNative()).toEqual [4,1,2,3]
+    a.unshift 10, 11, 12
+    expect(a.toNative()).toEqual [10,11,12,4,1,2,3]
+
 describe 'Z.Array#pop', ->
   a = null
   beforeEach -> a = Z.A([1,2,3])
@@ -203,5 +216,25 @@ describe 'Z.Array#pop', ->
     a.pop()
     expect(a.toNative()).toEqual []
     a.pop()
+    expect(a.toNative()).toEqual []
+
+describe 'Z.Array#shift', ->
+  a = null
+  beforeEach -> a = Z.A([1,2,3])
+
+  it 'should return the first item in the array', ->
+    expect(a.shift()).toBe 1
+
+  it 'should return null when the array is empty', ->
+    expect(Z.A([]).shift()).toBe null
+
+  it 'should remove the first item from the array', ->
+    a.shift()
+    expect(a.toNative()).toEqual [2,3]
+    a.shift()
+    expect(a.toNative()).toEqual [3]
+    a.shift()
+    expect(a.toNative()).toEqual []
+    a.shift()
     expect(a.toNative()).toEqual []
 

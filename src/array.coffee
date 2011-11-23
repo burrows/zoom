@@ -49,12 +49,22 @@ class Z.Array extends Z.Object
 
   push: (items...) -> @splice @length(), 0, items...
 
+  unshift: (items...) -> @splice 0, 0, items...
+
   pop: ->
     len = @length()
     return null if len == 0
 
     item = @last()
     @splice len - 1, 1
+    item
+
+  shift: ->
+    len = @length()
+    return null if len == 0
+
+    item = @first()
+    @splice 0, 1
     item
 
 Z.A = Z.Array.fromNative
