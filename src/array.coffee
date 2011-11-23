@@ -82,9 +82,7 @@ class Z.Array extends Z.Object
       n = len if n > len
       @slice$ -n, n
     else
-      item = @last()
-      @splice len - 1, 1
-      item
+      @slice$(-1, 1).at 0
 
   shift: (n) ->
     if typeof n != 'undefined' && n < 0
@@ -97,9 +95,7 @@ class Z.Array extends Z.Object
       n = len if n > len
       @slice$ 0, n
     else
-      item = @first()
-      @splice 0, 1
-      item
+      @slice$(0, 1).at 0
 
 Z.A = (a = []) -> new Z.Array a
 
