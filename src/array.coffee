@@ -97,5 +97,6 @@ class Z.Array extends Z.Object
     else
       @slice$(0, 1).at 0
 
-Z.A = (a = []) -> new Z.Array a
+# shortcut for instantiating a new array
+Z.A = (args...) -> new Z.Array args...
 
