@@ -72,7 +72,7 @@ class Z.Array extends Z.Object
   unshift: (items...) -> @splice 0, 0, items...
 
   pop: (n) ->
-    if n < 0
+    if typeof n != 'undefined' && n < 0
       throw new Error('Z.Array#pop: array size must be positive')
 
     len = @length()
@@ -86,13 +86,20 @@ class Z.Array extends Z.Object
       @splice len - 1, 1
       item
 
-  shift: ->
+  shift: (n) ->
+    if typeof n != 'undefined' && n < 0
+      throw new Error('Z.Array#shift: array size must be positive')
+
     len = @length()
     return null if len == 0
 
-    item = @first()
-    @splice 0, 1
-    item
+    if typeof n != 'undefined'
+      n = len if n > len
+      @slice$ 0, n
+    else
+      item = @first()
+      @splice 0, 1
+      item
 
 Z.A = (a = []) -> new Z.Array a
 

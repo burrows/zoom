@@ -294,19 +294,44 @@ describe 'Z.Array#shift', ->
   a = null
   beforeEach -> a = Z.A([1,2,3])
 
-  it 'should return the first item in the array', ->
-    expect(a.shift()).toBe 1
+  describe 'with no arguments', ->
+    it 'should return the first item in the array', ->
+      expect(a.shift()).toBe 1
 
-  it 'should return null when the array is empty', ->
-    expect(Z.A([]).shift()).toBe null
+    it 'should return null when the array is empty', ->
+      expect(Z.A([]).shift()).toBe null
 
-  it 'should remove the first item from the array', ->
-    a.shift()
-    expect(a.toNative()).toEqual [2,3]
-    a.shift()
-    expect(a.toNative()).toEqual [3]
-    a.shift()
-    expect(a.toNative()).toEqual []
-    a.shift()
-    expect(a.toNative()).toEqual []
+    it 'should remove the first item from the array', ->
+      a.shift()
+      expect(a.toNative()).toEqual [2,3]
+      a.shift()
+      expect(a.toNative()).toEqual [3]
+      a.shift()
+      expect(a.toNative()).toEqual []
+      a.shift()
+      expect(a.toNative()).toEqual []
+
+  describe 'with an integer arugment', ->
+    it 'should return the first n items in a Z.Array', ->
+      expect(Z.A([1,2,3]).shift(0).toNative()).toEqual []
+      expect(Z.A([1,2,3]).shift(1).toNative()).toEqual [1]
+      expect(Z.A([1,2,3]).shift(2).toNative()).toEqual [1,2]
+      expect(Z.A([1,2,3]).shift(3).toNative()).toEqual [1,2,3]
+      expect(Z.A([1,2,3]).shift(4).toNative()).toEqual [1,2,3]
+
+    it 'should remove the first n items from the array', ->
+      a = new Z.Array 1,2,3,4,5,6,7
+
+      a.shift 0
+      expect(a.toNative()).toEqual([1,2,3,4,5,6,7])
+      a.shift 1
+      expect(a.toNative()).toEqual([2,3,4,5,6,7])
+      a.shift 2
+      expect(a.toNative()).toEqual([4,5,6,7])
+      a.shift 5
+      expect(a.toNative()).toEqual([])
+
+    it 'should throw an exception if given a negative number', ->
+      a = new Z.Array
+      expect(-> a.shift(-1)).toThrow("Z.Array#shift: array size must be positive")
 
