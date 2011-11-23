@@ -50,15 +50,11 @@ class Z.Object
       _.reduce(keys, ((acc, k) => acc[k] = @get(k); acc), {})
     else
       k    = keys[0]
-      prop = @[k]
-      type = typeof prop
+      type = typeof @[k]
 
       return @unknownProperty(k) if type == 'undefined'
 
-      if type == 'function'
-        prop()
-      else
-        @[k]
+      if type == 'function' then @[k]() else @[k]
 
   set: (k, v) ->
     if arguments.length == 1
@@ -66,14 +62,11 @@ class Z.Object
 
       @set k, v for own k, v of hash
     else
-      prop = @[k]
+      type = typeof @[k]
 
-      return @unknownProperty(k, v) if typeof prop == 'undefined'
+      return @unknownProperty(k, v) if type == 'undefined'
 
-      if typeof prop == 'function'
-        prop(v)
-      else
-        @[k] = v
+      if type == 'function' then @[k](v) else @[k] = v
 
     null
 
