@@ -1,12 +1,13 @@
 class Z.Array extends Z.Object
   NativeArray = Z.root.Array
 
-  constructor: () ->
+  constructor: (args...) ->
     super
 
-    @__array__ = new NativeArray arguments...
-
-  @fromNative: (a) -> new Z.Array a...
+    if args.length == 1 and _.isArray(args[0])
+      @__array__ = args[0].slice 0
+    else
+      @__array__ = new NativeArray args...
 
   toString: ->
     a = _.invoke(@__array__, 'toString').join(', ')
@@ -39,6 +40,25 @@ class Z.Array extends Z.Object
     @__array__.splice(idx, n, items...)
     @
 
+  slice: (i, n) ->
+    len = @length()
+    i   = len + i if i < 0
+
+    return null if i < 0 or i >= len
+
+    if typeof n == 'undefined'
+      a = @__array__.slice i
+    else
+      a = @__array__.slice(i, i + n)
+
+    Z.A a
+
+  slice$: (i, n) ->
+    a = @slice i, n
+    return a if a == null
+    @splice i, n
+    a
+
   isEqual: (other) ->
     return false unless other instanceof Z.Array
     _.isEqual @__array__, other.__array__
@@ -51,13 +71,20 @@ class Z.Array extends Z.Object
 
   unshift: (items...) -> @splice 0, 0, items...
 
-  pop: ->
+  pop: (n) ->
+    if n < 0
+      throw new Error('Z.Array#pop: array size must be positive')
+
     len = @length()
     return null if len == 0
 
-    item = @last()
-    @splice len - 1, 1
-    item
+    if typeof n != 'undefined'
+      n = len if n > len
+      @slice$ -n, n
+    else
+      item = @last()
+      @splice len - 1, 1
+      item
 
   shift: ->
     len = @length()
@@ -67,5 +94,5 @@ class Z.Array extends Z.Object
     @splice 0, 1
     item
 
-Z.A = Z.Array.fromNative
+Z.A = (a = []) -> new Z.Array a
 
