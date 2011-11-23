@@ -43,6 +43,8 @@ class Z.Object
 
   toString: -> "#<#{@constructor.className()}:#{@objectId()}>"
 
+  isEqual: (o) -> @ == o
+
   get: (keys...) ->
     keys = _.flatten keys
 
