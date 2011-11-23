@@ -158,3 +158,50 @@ describe 'Z.Array#isEqual', ->
     a2 = new Z.Array 1, 2, 4
     expect(a1.isEqual a2).toBe false
 
+describe 'Z.Array#first', ->
+  it 'should return the first object in the array', ->
+    expect(Z.A([5,6,7]).first()).toBe 5
+
+  it 'should return null when the array is empty', ->
+    expect(Z.A([]).first()).toBe null
+
+describe 'Z.Array#last', ->
+  it 'should return the last object in the array', ->
+    expect(Z.A([5,6,7]).last()).toBe 7
+
+  it 'should return null when the array is empty', ->
+    expect(Z.A([]).last()).toBe null
+
+describe 'Z.Array#push', ->
+  a = null
+  beforeEach -> a = Z.A([1,2,3])
+
+  it 'should return the receiver', ->
+    expect(a.push 4).toBe a
+
+  it 'should append the given object(s) to the end of the array', ->
+    a.push 4
+    expect(a.toNative()).toEqual [1,2,3,4]
+    a.push 10, 11, 12
+    expect(a.toNative()).toEqual [1,2,3,4,10,11,12]
+
+describe 'Z.Array#pop', ->
+  a = null
+  beforeEach -> a = Z.A([1,2,3])
+
+  it 'should return the last item in the array', ->
+    expect(a.pop()).toBe 3
+
+  it 'should return null when the array is empty', ->
+    expect(Z.A([]).pop()).toBe null
+
+  it 'should remove the last item from the array', ->
+    a.pop()
+    expect(a.toNative()).toEqual [1,2]
+    a.pop()
+    expect(a.toNative()).toEqual [1]
+    a.pop()
+    expect(a.toNative()).toEqual []
+    a.pop()
+    expect(a.toNative()).toEqual []
+

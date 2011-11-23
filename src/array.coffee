@@ -43,13 +43,19 @@ class Z.Array extends Z.Object
     return false unless other instanceof Z.Array
     _.isEqual @__array__, other.__array__
 
-  first: -> @__array__[0]
+  first: -> @at 0
 
-  last: -> @__array__[@__array__.length - 1]
+  last: -> @at(@length() - 1)
 
-  push: (item) -> @splice(@__array__.length, 1, item); @
+  push: (items...) -> @splice @length(), 0, items...
 
-  pop: -> item = @last(); @splice(@__array__.length - 1, 1); item
+  pop: ->
+    len = @length()
+    return null if len == 0
+
+    item = @last()
+    @splice len - 1, 1
+    item
 
 Z.A = Z.Array.fromNative
 
