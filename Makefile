@@ -4,6 +4,8 @@ SRCS      := object.coffee array.coffee
 SPECS     := $(wildcard spec/*.spec.coffee)
 JSSPECS   := $(SPECS:%.coffee=%.js)
 
+default: spec
+
 all: zoom specs
 
 zoom: build/zoom.js
@@ -26,5 +28,5 @@ clean:
 	rm -f $(JSSPECS)
 	rm -rf ./build
 
-.PHONY: zoom clean spec specs repl
+.PHONY: default zoom clean spec specs repl
 

@@ -1,6 +1,11 @@
-root = this
-
-Z = if exports? then exports else root.Z = {}
+if exports?
+  Z = exports
+  Z.platform = 'node'
+  Z.root = global
+else
+  Z = window.Z = {}
+  Z.platform = 'browser'
+  Z.root = window
 
 class Z.Object
   constructor: ->
@@ -16,7 +21,8 @@ class Z.Object
   @className: ->
     for name, namespace of namespaces
       for k, v of namespace
-        return "#{name}.#{k}" if v == @
+        if v == @
+          return if name.length > 0 then "#{name}.#{k}" else k
 
     '(Unknown)'
 
@@ -35,13 +41,40 @@ class Z.Object
 
   toString: -> "#<#{@constructor.className()}:#{@objectId()}>"
 
+  get: (k) ->
+    prop = @[k]
+    type = typeof prop
+
+    return @unknownProperty(k) if type == 'undefined'
+
+    if type == 'function'
+      prop()
+    else
+      @[k]
+
+  set: (k, v) ->
+    prop = @[k]
+
+    return @unknownProperty(k, v) if typeof prop == 'undefined'
+
+    if typeof prop == 'function'
+      prop(v)
+    else
+      @[k] = v
+
+    null
+
+  unknownProperty: (k, v) ->
+    m = if typeof v == 'undefined' then 'get' else 'set'
+    throw new Error "Z.Object##{m}: undefined key `#{k}` for #{@toString()}"
+
   #-----------------------------------------------------------------------------
   # Private
   #-----------------------------------------------------------------------------
   objectId = 1
   nextObjectId = -> objectId++
 
-  namespaces = { Z: Z }
+  namespaces = { Z: Z, '': Z.root }
 
   #@property: (name) ->
   #  getter = name
@@ -58,14 +91,6 @@ class Z.Object
   #  else
   #    # call valueForUndefinedKey
 
-  #set: (k, v) ->
-  #  setter = 'set' + k[0].toUpperCase() + k.slice(1)
-  #  method = @[setter]
-
-  #  if typeof method == 'function'
-  #    method.call @, v
-  #  else
-  #    # call setValueForUndefinedKey
 
   #getPath: (path) ->
   #  [head, tail...] = path.split '.'
