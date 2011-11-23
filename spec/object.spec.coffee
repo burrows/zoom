@@ -52,8 +52,10 @@ describe 'Z.Object.toString', ->
 
 describe 'Z.Object KVC support:', ->
   class Person extends Z.Object
-    regularProp: 'x'
+    points: 0
     firstName: (v) ->
+      @__firstName__ = v if typeof v != 'undefined'
+      @__firstName__
 
   describe '#set', ->
     it 'should invoke the method with the given name if it exists to set the property value', ->
@@ -64,13 +66,19 @@ describe 'Z.Object KVC support:', ->
 
     it 'should write directly to the property name if the property exists but is not a function', ->
       p = new Person
-      p.set 'regularProp', 'y'
-      expect(p.regularProp).toBe 'y'
+      p.set 'points', 1
+      expect(p.points).toBe 1
 
     it 'should return null', ->
       p = new Person
       expect(p.set('firstName', 'Bob')).toBeNull()
-      expect(p.set('regularProp', 'z')).toBeNull()
+      expect(p.set('points', 9)).toBeNull()
+
+    it 'should set all of the properties when given a hash', ->
+      p = new Person
+      p.set firstName: 'Joe', points: 12
+      expect(p.get 'firstName').toBe 'Joe'
+      expect(p.get 'points').toBe 12
 
     it 'should invoke unknownProperty, passing the name and value if a property with the given name does not exist', ->
       p = new Person
@@ -87,7 +95,17 @@ describe 'Z.Object KVC support:', ->
 
     it 'should return the value of the given property name if it exists and is not a function', ->
       p = new Person
-      expect(p.get 'regularProp').toBe 'x'
+      expect(p.get 'points').toBe 0
+
+    it 'should return all of the property values when given multiple property names', ->
+      p = new Person
+      p.set points: 18, firstName: 'Ed'
+      expect(p.get('points', 'firstName')).toEqual { points: 18, firstName: 'Ed' }
+
+    it 'should return all of the property values when given an array of property names', ->
+      p = new Person
+      p.set points: 19, firstName: 'Sue'
+      expect(p.get(['points', 'firstName'])).toEqual({ points: 19, firstName: 'Sue' })
 
     it 'should invoke unknownProperty, passing the name if a property with the given name does not exist', ->
       p = new Person

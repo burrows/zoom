@@ -2,10 +2,12 @@ if exports?
   Z = exports
   Z.platform = 'node'
   Z.root = global
+  _ = require 'underscore'
 else
   Z = window.Z = {}
   Z.platform = 'browser'
   Z.root = window
+  _ = window._
 
 class Z.Object
   constructor: ->
@@ -41,26 +43,37 @@ class Z.Object
 
   toString: -> "#<#{@constructor.className()}:#{@objectId()}>"
 
-  get: (k) ->
-    prop = @[k]
-    type = typeof prop
+  get: (keys...) ->
+    keys = _.flatten keys
 
-    return @unknownProperty(k) if type == 'undefined'
-
-    if type == 'function'
-      prop()
+    if keys.length > 1
+      _.reduce(keys, ((acc, k) => acc[k] = @get(k); acc), {})
     else
-      @[k]
+      k    = keys[0]
+      prop = @[k]
+      type = typeof prop
+
+      return @unknownProperty(k) if type == 'undefined'
+
+      if type == 'function'
+        prop()
+      else
+        @[k]
 
   set: (k, v) ->
-    prop = @[k]
+    if arguments.length == 1
+      hash = k
 
-    return @unknownProperty(k, v) if typeof prop == 'undefined'
-
-    if typeof prop == 'function'
-      prop(v)
+      @set k, v for own k, v of hash
     else
-      @[k] = v
+      prop = @[k]
+
+      return @unknownProperty(k, v) if typeof prop == 'undefined'
+
+      if typeof prop == 'function'
+        prop(v)
+      else
+        @[k] = v
 
     null
 
