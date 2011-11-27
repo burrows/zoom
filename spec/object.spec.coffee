@@ -62,24 +62,38 @@ describe 'Z.Object.isEqual', ->
     expect(o1.isEqual {}).toBe false
     expect(o1.isEqual []).toBe false
 
+describe 'Z.Object.property', ->
+  class Person extends Z.Object
+    @property 'firstName'
+
+  it 'should define an instance method with the given name', ->
+    p = new Person
+    expect(typeof p.firstName).toEqual 'function'
+
+  describe 'generated instance method', ->
+    it 'should set a private property when passed an argument', ->
+      p = new Person
+      expect(p.__firstName__).toBeUndefined()
+      p.firstName 'Corey'
+      expect(p.__firstName__).toEqual 'Corey'
+
+    it 'should return the private property value when passed no arguments', ->
+      p = new Person
+      expect(p.firstName()).toBeUndefined()
+      p.firstName 'Nicole'
+      expect(p.firstName()).toEqual 'Nicole'
+
 describe 'Z.Object KVC support:', ->
   class Person extends Z.Object
-    points: 0
-    firstName: (v) ->
-      @__firstName__ = v if typeof v != 'undefined'
-      @__firstName__
+    @property 'points'
+    @property 'firstName'
 
   describe '#set', ->
-    it 'should invoke the method with the given name if it exists to set the property value', ->
+    it 'should invoke the property method with the given name if it exists', ->
       p = new Person
       spyOn p, 'firstName'
       p.set 'firstName', 'Corey'
       expect(p.firstName).toHaveBeenCalledWith 'Corey'
-
-    it 'should write directly to the property name if the property exists but is not a function', ->
-      p = new Person
-      p.set 'points', 1
-      expect(p.points).toBe 1
 
     it 'should return null', ->
       p = new Person
@@ -104,10 +118,6 @@ describe 'Z.Object KVC support:', ->
       spyOn p, 'firstName'
       p.get 'firstName'
       expect(p.firstName).toHaveBeenCalledWith()
-
-    it 'should return the value of the given property name if it exists and is not a function', ->
-      p = new Person
-      expect(p.get 'points').toBe 0
 
     it 'should return all of the property values when given multiple property names', ->
       p = new Person

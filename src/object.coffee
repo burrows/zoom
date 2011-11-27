@@ -30,6 +30,13 @@ class Z.Object
 
   @toString: @className
 
+  @property: (name) ->
+    @prototype[name] = (v) ->
+      if typeof v == 'undefined'
+        getProperty @, name
+      else
+        setProperty @, name, v
+
   #-----------------------------------------------------------------------------
   # Prototype Properties
   #-----------------------------------------------------------------------------
@@ -51,12 +58,11 @@ class Z.Object
     if keys.length > 1
       _.reduce(keys, ((acc, k) => acc[k] = @get(k); acc), {})
     else
-      k    = keys[0]
-      type = typeof @[k]
+      k = keys[0]
 
-      return @unknownProperty(k) if type == 'undefined'
+      return @unknownProperty(k) unless typeof @[k] == 'function'
 
-      if type == 'function' then @[k]() else @[k]
+      @[k]()
 
   set: (k, v) ->
     if arguments.length == 1
@@ -64,11 +70,9 @@ class Z.Object
 
       @set k, v for own k, v of hash
     else
-      type = typeof @[k]
+      return @unknownProperty(k, v) unless typeof @[k] == 'function'
 
-      return @unknownProperty(k, v) if type == 'undefined'
-
-      if type == 'function' then @[k](v) else @[k] = v
+      @[k](v)
 
     null
 
@@ -80,9 +84,14 @@ class Z.Object
   # Private
   #-----------------------------------------------------------------------------
   objectId = 1
+
   nextObjectId = -> objectId++
 
   namespaces = { Z: Z, '': Z.root }
+
+  getProperty = (o, k) -> o["__#{k}__"]
+
+  setProperty = (o, k, v) -> o["__#{k}__"] = v
 
   #@property: (name) ->
   #  getter = name
