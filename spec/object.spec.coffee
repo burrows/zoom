@@ -85,15 +85,27 @@ describe 'Z.Object.property', ->
 
 describe 'Z.Object KVC support:', ->
   class Person extends Z.Object
-    @property 'points'
     @property 'firstName'
+    @property 'points',
+      get: -> @_POINTS_
+      set: (v) -> @_POINTS_ = v
 
   describe '#set', ->
-    it 'should invoke the property method with the given name if it exists', ->
-      p = new Person
-      spyOn p, 'firstName'
-      p.set 'firstName', 'Corey'
-      expect(p.firstName).toHaveBeenCalledWith 'Corey'
+    describe 'for a property using the default setter', ->
+      it 'should set a private property name on the receiver', ->
+        p = new Person
+        expect(p.__firstName__).toBeUndefined()
+        p.set 'firstName', 'Nicole'
+        expect(p.__firstName__).toEqual 'Nicole'
+
+    describe 'for a property using a custom setter', ->
+      it 'should invoke the given setter function', ->
+        p = new Person
+        expect(p._POINTS_).toBeUndefined()
+        expect(p.__points__).toBeUndefined()
+        p.set 'points', 18
+        expect(p._POINTS_).toEqual 18
+        expect(p.__points__).toBeUndefined()
 
     it 'should return null', ->
       p = new Person
@@ -106,18 +118,26 @@ describe 'Z.Object KVC support:', ->
       expect(p.get 'firstName').toBe 'Joe'
       expect(p.get 'points').toBe 12
 
-    it 'should invoke unknownProperty, passing the name and value if a property with the given name does not exist', ->
+    it 'should invoke setUnknownProperty, passing the name and value if a property with the given name does not exist', ->
       p = new Person
-      spyOn p, 'unknownProperty'
+      spyOn p, 'setUnknownProperty'
       p.set 'doesntExist', 1
-      expect(p.unknownProperty).toHaveBeenCalledWith 'doesntExist', 1
+      expect(p.setUnknownProperty).toHaveBeenCalledWith 'doesntExist', 1
 
   describe '#get', ->
-    it 'should invoke the method with the given name if it exists to access the property', ->
-      p = new Person
-      spyOn p, 'firstName'
-      p.get 'firstName'
-      expect(p.firstName).toHaveBeenCalledWith()
+    describe 'for a property using the default getter', ->
+      it 'should get a private property name on the receiver', ->
+        p = new Person
+        p.set 'firstName', 'George'
+        expect(p.__firstName__).toEqual 'George'
+        expect(p.get 'firstName').toEqual 'George'
+
+    describe 'for a property using a custom getter', ->
+      it 'should invoke the given getter function', ->
+        p = new Person
+        p.set 'points', 18
+        expect(p._POINTS_).toEqual 18
+        expect(p.get 'points').toEqual 18
 
     it 'should return all of the property values when given multiple property names', ->
       p = new Person
@@ -129,15 +149,19 @@ describe 'Z.Object KVC support:', ->
       p.set points: 19, firstName: 'Sue'
       expect(p.get(['points', 'firstName'])).toEqual({ points: 19, firstName: 'Sue' })
 
-    it 'should invoke unknownProperty, passing the name if a property with the given name does not exist', ->
+    it 'should invoke getUnknownProperty, passing the name if a property with the given name does not exist', ->
       p = new Person
-      spyOn p, 'unknownProperty'
+      spyOn p, 'getUnknownProperty'
       p.get 'doesntExist'
-      expect(p.unknownProperty).toHaveBeenCalledWith 'doesntExist'
+      expect(p.getUnknownProperty).toHaveBeenCalledWith 'doesntExist'
 
-  describe '#unknownProperty', ->
+  describe '#getUnknownProperty', ->
     it 'should throw and undefined key exception', ->
       o = new Z.Object
       expect(-> o.get('blah')).toThrow("Z.Object#get: undefined key `blah` for #{o.toString()}")
+
+  describe '#setUnknownProperty', ->
+    it 'should throw and undefined key exception', ->
+      o = new Z.Object
       expect(-> o.set('blah', 1)).toThrow("Z.Object#set: undefined key `blah` for #{o.toString()}")
 

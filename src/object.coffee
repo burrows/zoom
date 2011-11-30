@@ -10,16 +10,14 @@ else
   _ = window._
 
 class Z.Object
-  constructor: ->
-    @__objectId__ = objectId++
+  #-----------------------------------------------------------------------------
+  # Class
+  #-----------------------------------------------------------------------------
 
-  #-----------------------------------------------------------------------------
-  # Class Methods
-  #-----------------------------------------------------------------------------
   @addNamespace: (object, name) -> namespaces.push [object, name]
 
   @removeNamespace: (object) ->
-    namespaces = _.reject namespaces, (namespace) -> namespace[0] == objec
+    namespaces = _.reject namespaces, (namespace) -> namespace[0] == object
 
   @className: ->
     for namespace in namespaces
@@ -31,7 +29,13 @@ class Z.Object
 
   @toString: @className
 
-  @property: (name) ->
+  @__properties__: {}
+
+  @property: (name, opts = {}) ->
+    opts = _.defaults opts, defaultPropertyOpts
+
+    @__properties__[name] = opts
+
     @prototype[name] = (v) ->
       if typeof v == 'undefined'
         getProperty @, name
@@ -39,13 +43,12 @@ class Z.Object
         setProperty @, name, v
 
   #-----------------------------------------------------------------------------
-  # Prototype Properties
+  # Instance
   #-----------------------------------------------------------------------------
-  isZObject: true
 
-  #-----------------------------------------------------------------------------
-  # Instance Methods
-  #-----------------------------------------------------------------------------
+  constructor: -> @__objectId__ = objectId++
+
+  isZObject: true
 
   objectId: -> @__objectId__
 
@@ -57,29 +60,24 @@ class Z.Object
     keys = _.flatten keys
 
     if keys.length > 1
-      _.reduce(keys, ((acc, k) => acc[k] = @get(k); acc), {})
-    else
-      k = keys[0]
+      return _.reduce(keys, ((acc, k) => acc[k] = @get(k); acc), {})
 
-      return @unknownProperty(k) unless typeof @[k] == 'function'
-
-      @[k]()
+    getProperty @, keys[0]
 
   set: (k, v) ->
     if arguments.length == 1
       hash = k
-
       @set k, v for own k, v of hash
     else
-      return @unknownProperty(k, v) unless typeof @[k] == 'function'
-
-      @[k](v)
+      setProperty @, k, v
 
     null
 
-  unknownProperty: (k, v) ->
-    m = if typeof v == 'undefined' then 'get' else 'set'
-    throw new Error "Z.Object##{m}: undefined key `#{k}` for #{@toString()}"
+  getUnknownProperty: (k) ->
+    throw new Error "Z.Object#get: undefined key `#{k}` for #{@toString()}"
+
+  setUnknownProperty: (k, v) ->
+    throw new Error "Z.Object#set: undefined key `#{k}` for #{@toString()}"
 
   #-----------------------------------------------------------------------------
   # Private
@@ -90,9 +88,28 @@ class Z.Object
 
   namespaces = [ [Z, 'Z'], [Z.root, ''] ]
 
-  getProperty = (o, k) -> o["__#{k}__"]
+  defaultPropertyOpts =
+    dependsOn: []
+    cache: true
+    auto: true
+    get: null
+    set: null
 
-  setProperty = (o, k, v) -> o["__#{k}__"] = v
+  getProperty = (o, k) ->
+    prop = o.constructor.__properties__[k]
+    return o.getUnknownProperty(k) unless prop
+    if prop.get then prop.get.call(o) else o["__#{k}__"]
+
+  setProperty = (o, k, v) ->
+    prop = o.constructor.__properties__[k]
+    return o.setUnknownProperty(k, v) unless prop
+
+    if prop.set
+      prop.set.call o, v
+    else
+      # willChange if prop.auto
+      o["__#{k}__"] = v
+      # didChange if prop.auto
 
   #@property: (name) ->
   #  getter = name
