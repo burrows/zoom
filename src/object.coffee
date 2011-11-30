@@ -16,15 +16,16 @@ class Z.Object
   #-----------------------------------------------------------------------------
   # Class Methods
   #-----------------------------------------------------------------------------
-  @addNamespace: (name, object) -> namespaces[name] = object; null
+  @addNamespace: (object, name) -> namespaces.push [object, name]
 
-  @removeNamespace: (name) -> delete namespaces[name]; null
+  @removeNamespace: (object) ->
+    namespaces = _.reject namespaces, (namespace) -> namespace[0] == objec
 
   @className: ->
-    for name, namespace of namespaces
-      for k, v of namespace
+    for namespace in namespaces
+      for own k, v of namespace[0]
         if v == @
-          return if name.length > 0 then "#{name}.#{k}" else k
+          return if namespace[1].length > 0 then "#{namespace[1]}.#{k}" else k
 
     '(Unknown)'
 
@@ -87,7 +88,7 @@ class Z.Object
 
   nextObjectId = -> objectId++
 
-  namespaces = { Z: Z, '': Z.root }
+  namespaces = [ [Z, 'Z'], [Z.root, ''] ]
 
   getProperty = (o, k) -> o["__#{k}__"]
 

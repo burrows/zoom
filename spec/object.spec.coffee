@@ -41,9 +41,9 @@ describe 'Z.Object.className', ->
     expect(MyNamespace.Thing.className()).toBe '(Unknown)'
 
   it 'should return the name of the class for classes defined in a namespace other than Z that is registered', ->
-    Z.Object.addNamespace 'MyNamespace', MyNamespace
+    Z.Object.addNamespace MyNamespace, 'MyNamespace'
     expect(MyNamespace.Thing.className()).toBe 'MyNamespace.Thing'
-    Z.Object.removeNamespace 'MyNamespace'
+    Z.Object.removeNamespace MyNamespace
 
 describe 'Z.Object.toString', ->
   it 'should return a string containing the class name and object id', ->
