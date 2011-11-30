@@ -29,18 +29,27 @@ class Z.Object
 
   @toString: @className
 
-  @__properties__: {}
-
   @property: (name, opts = {}) ->
     opts = _.defaults opts, defaultPropertyOpts
 
-    @__properties__[name] = opts
+    @["__property__#{name}__"] = opts
 
     @prototype[name] = (v) ->
       if typeof v == 'undefined'
         getProperty @, name
       else
         setProperty @, name, v
+
+  @propertyDescriptors: ->
+    props = {}
+
+    for own k, v of @
+      if match = k.match(/^__property__(\w+)__$/)
+        props[match[1]] = v
+
+    props
+
+  @hasProperty: (k) -> typeof @["__property__#{k}__"] == 'object'
 
   #-----------------------------------------------------------------------------
   # Instance
@@ -96,12 +105,12 @@ class Z.Object
     set: null
 
   getProperty = (o, k) ->
-    prop = o.constructor.__properties__[k]
+    prop = o.constructor["__property__#{k}__"]
     return o.getUnknownProperty(k) unless prop
     if prop.get then prop.get.call(o) else o["__#{k}__"]
 
   setProperty = (o, k, v) ->
-    prop = o.constructor.__properties__[k]
+    prop = o.constructor["__property__#{k}__"]
     return o.setUnknownProperty(k, v) unless prop
 
     if prop.set

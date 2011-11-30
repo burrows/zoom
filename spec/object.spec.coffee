@@ -83,6 +83,11 @@ describe 'Z.Object.property', ->
       p.firstName 'Nicole'
       expect(p.firstName()).toEqual 'Nicole'
 
+  it 'should not affect parent class __properties__ object', ->
+    class A extends Z.Object
+      @property 'aProp'
+    expect(Z.Object.__properties__aProp__).toBeUndefined()
+
 describe 'Z.Object KVC support:', ->
   class Person extends Z.Object
     @property 'firstName'
