@@ -73,23 +73,18 @@ class Z.Object
 
     [head, tail...] = paths[0].split '.'
 
-    if tail.length > 0
-      getProperty(@, head)?.get tail.join '.'
-    else
-      getProperty @, head
+    if tail.length > 0 then getProperty(@, head)?.get(tail.join '.')
+    else getProperty @, head
 
   set: (path, value) ->
     if arguments.length == 1
-      hash = path
-      @set k, v for own k, v of hash
+      @set k, v for own k, v of path
       return null
 
     [init..., last] = path.split '.'
 
-    if init.length > 0
-      @get(init.join('.'))?.set last, value
-    else
-      setProperty @, path, value
+    if init.length > 0 then @get(init.join '.')?.set last, value
+    else setProperty @, path, value
 
     null
 
