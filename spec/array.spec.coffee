@@ -72,25 +72,39 @@ describe 'Z.Array#at', ->
 
   beforeEach -> a = new Z.Array 'the', 'quick', 'brown', 'fox'
 
-  it 'should return the value at the given index when given a positive index in range', ->
-    expect(a.at(0)).toBe 'the'
-    expect(a.at(1)).toBe 'quick'
-    expect(a.at(2)).toBe 'brown'
-    expect(a.at(3)).toBe 'fox'
+  describe 'given just an index', ->
+    it 'should return the value at the given index when given a positive index in range', ->
+      expect(a.at(0)).toBe 'the'
+      expect(a.at(1)).toBe 'quick'
+      expect(a.at(2)).toBe 'brown'
+      expect(a.at(3)).toBe 'fox'
 
-  it 'should return the value at the index starting from the end when given a negative index in range', ->
-    expect(a.at(-1)).toBe 'fox'
-    expect(a.at(-2)).toBe 'brown'
-    expect(a.at(-3)).toBe 'quick'
-    expect(a.at(-4)).toBe 'the'
+    it 'should return the value at the index starting from the end when given a negative index in range', ->
+      expect(a.at(-1)).toBe 'fox'
+      expect(a.at(-2)).toBe 'brown'
+      expect(a.at(-3)).toBe 'quick'
+      expect(a.at(-4)).toBe 'the'
 
-  it 'should return null when given a positive index that is out of range', ->
-    expect(a.at(4)).toBeNull()
-    expect(a.at(112)).toBeNull()
+    it 'should return null when given a positive index that is out of range', ->
+      expect(a.at(4)).toBeNull()
+      expect(a.at(112)).toBeNull()
 
-  it 'should return null when given a negative index that is out of range', ->
-    expect(a.at(-5)).toBeNull()
-    expect(a.at(-1743)).toBeNull()
+    it 'should return null when given a negative index that is out of range', ->
+      expect(a.at(-5)).toBeNull()
+      expect(a.at(-1743)).toBeNull()
+
+  describe 'given an index and a value', ->
+    it 'should set the value at the given index', ->
+      expect(a.at 0).toBe 'the'
+      a.at 0, 'THE'
+      expect(a.at 0).toBe 'THE'
+
+      expect(a.at -1).toBe 'fox'
+      a.at -1, 'dog'
+      expect(a.at -1).toBe 'dog'
+
+    it 'should return the value', ->
+      expect(a.at 1, 'slow').toBe 'slow'
 
 describe 'Z.Array#splice', ->
   it 'should return the receiver', ->

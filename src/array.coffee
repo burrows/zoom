@@ -19,11 +19,15 @@ class Z.Array extends Z.Object
 
   toNative: -> @__array__
 
-  at: (i) ->
+  at: (i, v) ->
     len = @length()
     i   = len + i if i < 0
 
-    if i >= 0 and i < len then @__array__[i] else null
+    if typeof v == 'undefined'
+      if i >= 0 and i < len then @__array__[i] else null
+    else
+      @splice i, 1, v
+      v
 
   splice: (i, n, items...) ->
     len = @length()
@@ -67,7 +71,7 @@ class Z.Array extends Z.Object
 
   first: -> @at 0
 
-  last: -> @at(@length() - 1)
+  last: -> @at -1
 
   push: (items...) -> @splice @length(), 0, items...
 
