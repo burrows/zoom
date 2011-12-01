@@ -1,6 +1,10 @@
 class Z.Array extends Z.Object
   NativeArray = Z.root.Array
 
+  @property 'length',
+    get: -> @__array__.length
+    set: (v) -> @__array__.length = v
+
   constructor: (args...) ->
     super
 
@@ -14,8 +18,6 @@ class Z.Array extends Z.Object
     "#<#{@constructor.className()}:#{@objectId()} [#{a}]>"
 
   toNative: -> @__array__
-
-  length: -> @__array__.length
 
   at: (i) ->
     len = @length()

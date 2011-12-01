@@ -43,10 +43,10 @@ describe 'Z.Array#toNative', ->
     expect(a instanceof Array).toBe true
     expect(a).toEqual ['x', 'y']
 
-describe 'Z.Array#length', ->
+describe 'Z.Array#length (property)', ->
   it 'should return the current length of the array', ->
     expect((new Z.Array 8).length()).toBe 8
-    expect((new Z.Array 1,2,3).length()).toBe 3
+    expect((new Z.Array 1,2,3).get('length')).toBe 3
     expect(Z.A([1,2,3,4]).length()).toBe 4
 
   it 'should update when the array changes', ->
@@ -56,6 +56,16 @@ describe 'Z.Array#length', ->
     expect(a.length()).toBe 2
     a.push(4)
     expect(a.length()).toBe 3
+
+  it 'should update the length of the array when set', ->
+    a = new Z.Array
+    expect(a.get('length')).toBe 0
+    a.length 9
+    expect(a.get('length')).toBe 9
+    expect(a.toNative().length).toBe 9
+    a.set 'length', 5
+    expect(a.get('length')).toBe 5
+    expect(a.toNative().length).toBe 5
 
 describe 'Z.Array#at', ->
   a = null
