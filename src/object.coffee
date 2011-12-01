@@ -55,13 +55,20 @@ class Z.Object
   # Instance
   #-----------------------------------------------------------------------------
 
-  constructor: -> @__objectId__ = objectId++
+  constructor: (properties = {}) ->
+    @__objectId__ = objectId++
+    @set properties
 
   isZObject: true
 
   objectId: -> @__objectId__
 
-  toString: -> "#<#{@constructor.className()}:#{@objectId()}>"
+  toString: ->
+    s = "#<#{@constructor.className()}:#{@objectId()}"
+    props = for own name of @constructor.propertyDescriptors()
+      "@#{name}=#{@get name}"
+    s += " #{props.join ','}" if props.length > 0
+    s += ">"
 
   isEqual: (o) -> @ == o
 

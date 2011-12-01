@@ -359,3 +359,80 @@ describe 'Z.Array#shift', ->
       a = new Z.Array
       expect(-> a.shift(-1)).toThrow("Z.Array#shift: array size must be positive")
 
+describe 'Z.Array KVC collection operators:', ->
+  class Transaction extends Z.Object
+    @property 'payee'
+    @property 'amount'
+    @property 'date'
+
+  transactions = null
+  beforeEach ->
+    transactions = Z.A [
+      new Transaction payee: 'Green Power',     amount: 120,  date: new Date 2009, 11, 1
+      new Transaction payee: 'Green Power',     amount: 150,  date: new Date 2010, 0, 1
+      new Transaction payee: 'Green Power',     amount: 170,  date: new Date 2010, 1, 1
+      new Transaction payee: 'Car Loan',        amount: 250,  date: new Date 2010, 0, 15
+      new Transaction payee: 'Car Loan',        amount: 250,  date: new Date 2010, 1, 15
+      new Transaction payee: 'Car Loan',        amount: 250,  date: new Date 2010, 2, 15
+      new Transaction payee: 'General Cable',   amount: 120,  date: new Date 2009, 11, 1
+      new Transaction payee: 'General Cable',   amount: 155,  date: new Date 2010, 0, 1
+      new Transaction payee: 'General Cable',   amount: 120,  date: new Date 2010, 2, 1
+      new Transaction payee: 'Mortgage',        amount: 1250, date: new Date 2010, 0, 15
+      new Transaction payee: 'Mortgage',        amount: 1250, date: new Date 2010, 1, 15
+      new Transaction payee: 'Mortgage',        amount: 1250, date: new Date 2010, 2, 15
+      new Transaction payee: 'Animal Hospital', amount: 600,  date: new Date 2010, 6, 15
+    ]
+
+  describe '@count', ->
+    it 'should return the number of objects in the left key path', ->
+      expect(transactions.get '@count').toBe 13
+
+    it 'should ignore any keys that appear after the operator', ->
+      expect(transactions.get '@count.stuff.things').toBe 13
+
+  describe '@max', ->
+    it 'should return the maximum value from the values of the property specified by the key path to the right of the operator', ->
+      expect(transactions.get '@max.date').toEqual new Date 2010, 6, 15
+      expect(transactions.get '@max.amount').toBe 1250
+
+    it 'should handle null values', ->
+      transactions.push new Transaction payee: 'foo'
+      expect(->
+        expect(transactions.get '@max.date').toEqual new Date 2010, 6, 15
+        expect(transactions.get '@max.amount').toBe 1250
+      ).not.toThrow()
+
+  describe '@min', ->
+    it 'should return the minimum value from the values of the property specified by the key path to the right of the operator', ->
+      expect(transactions.get '@min.date').toEqual new Date 2009, 11, 1
+      expect(transactions.get '@min.amount').toBe 120
+
+    it 'should handle null values', ->
+      transactions.push new Transaction payee: 'foo'
+      expect(->
+        expect(transactions.get '@min.date').toEqual new Date 2009, 11, 1
+        expect(transactions.get '@min.amount').toBe 120
+      ).not.toThrow()
+
+  describe '@sum', ->
+    it 'should return the sum of the values of the property specified by the key path to the right of the operator', ->
+      expect(transactions.get '@sum.amount').toBe 5935
+
+    it 'should handle null values', ->
+      transactions.push new Transaction payee: 'foo'
+      expect(->
+        expect(transactions.get '@sum.amount').toBe 5935
+      ).not.toThrow()
+
+  describe '@avg', ->
+    it 'should return the average of the values of the property specified by the key path to the right', ->
+      avg = parseFloat transactions.get('@avg.amount').toFixed 2
+      expect(avg).toBe 456.54
+
+    it 'should handle null values', ->
+      transactions.push new Transaction payee: 'foo'
+      expect(->
+        avg = parseFloat transactions.get('@avg.amount').toFixed 2
+        expect(avg).toBe 423.93
+      ).not.toThrow()
+

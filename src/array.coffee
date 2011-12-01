@@ -15,7 +15,7 @@ class Z.Array extends Z.Object
     set: (v) -> @at -1, v
 
   constructor: (args...) ->
-    super
+    super()
 
     if args.length == 1 and _.isArray(args[0])
       @__array__ = args[0].slice 0
@@ -107,6 +107,31 @@ class Z.Array extends Z.Object
       @slice$ 0, n
     else
       @slice$(0, 1).at 0
+
+  getUnknownProperty: (k) ->
+    _.map @__array__, (item) -> item.get k
+
+  get: (paths...) ->
+    paths = _.flatten paths
+
+    return super if paths.length > 1
+
+    [head, tail...] = paths[0].split '.'
+
+    switch head
+      when "@count"
+        @length()
+      when "@max"
+        _.max @get(tail.join '.'), (item) -> item?.valueOf()
+      when "@min"
+        _.min @get(tail.join '.'), (item) -> item?.valueOf()
+      when "@sum"
+        _.reduce @get(tail.join '.'), ((acc, item) -> acc + (item?.valueOf() || 0)), 0
+      when "@avg"
+        sum   = ['@sum'].concat(tail).join('.')
+        count = ['@count'].concat(tail).join('.')
+        @get(sum) / @get(count)
+      else super
 
 # shortcut for instantiating a new array
 Z.A = (args...) -> new Z.Array args...
