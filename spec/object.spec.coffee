@@ -83,10 +83,23 @@ describe 'Z.Object.property', ->
       p.firstName 'Nicole'
       expect(p.firstName()).toEqual 'Nicole'
 
-  it 'should not affect parent class __properties__ object', ->
-    class A extends Z.Object
-      @property 'aProp'
-    expect(Z.Object.__properties__aProp__).toBeUndefined()
+describe 'Z.Object.hasProperty', ->
+  class A extends Z.Object
+    @property 'foo'
+
+  class B extends A
+    @property 'bar'
+
+  it 'should return true if a property with the given name exists on the class', ->
+    expect(A.hasProperty('foo')).toBe true
+    expect(B.hasProperty('bar')).toBe true
+
+  it 'should return true if a property with the given name exists on a superclass', ->
+    expect(B.hasProperty('foo')).toBe true
+
+  it 'should return false if a property with the given does not exist on the class', ->
+    expect(A.hasProperty('idontexist')).toBe false
+    expect(A.hasProperty('bar')).toBe false
 
 describe 'Z.Object KVC support:', ->
   class Person extends Z.Object
