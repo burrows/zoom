@@ -65,13 +65,18 @@ class Z.Object
 
   isEqual: (o) -> @ == o
 
-  get: (keys...) ->
-    keys = _.flatten keys
+  get: (paths...) ->
+    paths = _.flatten paths
 
-    if keys.length > 1
-      return _.reduce(keys, ((acc, k) => acc[k] = @get(k); acc), {})
+    if paths.length > 1
+      return _.reduce(paths, ((acc, k) => acc[k] = @get(k); acc), {})
 
-    getProperty @, keys[0]
+    [head, tail...] = paths[0].split '.'
+
+    if tail.length > 0
+      getProperty(@, head)?.get tail.join '.'
+    else
+      getProperty @, head
 
   set: (k, v) ->
     if arguments.length == 1

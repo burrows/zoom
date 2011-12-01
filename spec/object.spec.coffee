@@ -108,7 +108,7 @@ describe 'Z.Object KVC support:', ->
       get: -> @_POINTS_
       set: (v) -> @_POINTS_ = v
 
-  describe '#set', ->
+  describe '#set when given a key', ->
     describe 'for a property using the default setter', ->
       it 'should set a private property name on the receiver', ->
         p = new Person
@@ -142,7 +142,7 @@ describe 'Z.Object KVC support:', ->
       p.set 'doesntExist', 1
       expect(p.setUnknownProperty).toHaveBeenCalledWith 'doesntExist', 1
 
-  describe '#get', ->
+  describe '#get when given a key', ->
     describe 'for a property using the default getter', ->
       it 'should get a private property name on the receiver', ->
         p = new Person
@@ -182,4 +182,31 @@ describe 'Z.Object KVC support:', ->
     it 'should throw and undefined key exception', ->
       o = new Z.Object
       expect(-> o.set('blah', 1)).toThrow("Z.Object#set: undefined key `blah` for #{o.toString()}")
+
+  describe 'with a key path:', ->
+    class A extends Z.Object
+      @property 'b'
+    class B extends Z.Object
+      @property 'c'
+    class C extends Z.Object
+      @property 'num'
+
+    a = b = c = null
+
+    beforeEach ->
+      a = new A; b = new B; c = new C
+      a.b b
+      b.c c
+
+    describe '#get', ->
+      it 'should return the value for the derived property identified by the given key path', ->
+        c.set 'num', 21
+        expect(a.get 'b.c.num').toBe 21
+
+      it 'should return undefined when some segment in the path yields a null or undefined value', ->
+        b.c null
+        expect(a.get 'b.c.num').toBeUndefined()
+        b.c undefined
+        expect(a.get 'b.c.num').toBeUndefined()
+
 
