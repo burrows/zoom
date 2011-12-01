@@ -198,6 +198,26 @@ describe 'Z.Object KVC support:', ->
       a.b b
       b.c c
 
+    describe '#set', ->
+      it 'should set the value for the property identified by the given key path', ->
+        expect(c.num()).toBeUndefined()
+        expect(c.get 'num').toBeUndefined()
+
+        a.set 'b.c.num', 9
+
+        expect(c.num()).toBe 9
+        expect(c.get 'num').toBe 9
+
+      it 'should do nothing when some segment in the path yields a null or undefined value', ->
+        a.b null
+        expect(-> a.set 'b.c.num', 9).not.toThrow()
+
+        a.b undefined
+        expect(-> a.set 'b.c.num', 9).not.toThrow()
+
+        expect(c.num()).toBeUndefined()
+        expect(c.get 'num').toBeUndefined()
+
     describe '#get', ->
       it 'should return the value for the derived property identified by the given key path', ->
         c.set 'num', 21

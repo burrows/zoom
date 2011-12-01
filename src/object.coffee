@@ -78,12 +78,18 @@ class Z.Object
     else
       getProperty @, head
 
-  set: (k, v) ->
+  set: (path, value) ->
     if arguments.length == 1
-      hash = k
+      hash = path
       @set k, v for own k, v of hash
+      return null
+
+    [init..., last] = path.split '.'
+
+    if init.length > 0
+      @get(init.join('.'))?.set last, value
     else
-      setProperty @, k, v
+      setProperty @, path, value
 
     null
 
@@ -125,39 +131,3 @@ class Z.Object
       o["__#{k}__"] = v
       # didChange if prop.auto
 
-  #@property: (name) ->
-  #  getter = name
-  #  setter = 'set' + name[0].toUpperCase() + name.slice(1)
-  #  prop   = '__' + name + '__'
-  #  @prototype[getter] = -> @[prop]
-  #  @prototype[setter] = (v) -> @[prop] = v
-
-  #get: (k) ->
-  #  method = @[k]
-
-  #  if typeof method == 'function'
-  #    method.call @
-  #  else
-  #    # call valueForUndefinedKey
-
-
-  #getPath: (path) ->
-  #  [head, tail...] = path.split '.'
-  #  object          = @get head
-
-  #  return null unless object?
-
-  #  for part in tail
-  #    object = object.get part
-  #    return null unless object?
-
-  #  object
-
-  #setPath: (path, v) ->
-  #  [init..., last] = path.split '.'
-  #  object          = @getPath init.join('.')
-
-  #  if object
-  #    object.set last, v
-  #  else
-  #    # throw something
