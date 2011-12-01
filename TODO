@@ -1,4 +1,3 @@
-* test passing properties to Z.Object#constructor
 * implement Z.Array#getUnknownProperty
 * factor out code that handles path parsing (splitting)
 * allow for read-only properties (set `set` property to false? use `readonly` option?)

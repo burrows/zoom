@@ -14,6 +14,23 @@ describe 'Z.Object constructor', ->
     expect(o1.objectId() < o2.objectId()).toBe true
     expect(o2.objectId() < o3.objectId()).toBe true
 
+  it 'should set all given properties when passed a native object', ->
+    class Foo extends Z.Object
+      @property 'a'
+      @property 'b'
+
+    f = new Foo
+    expect(f.a()).toBeUndefined()
+    expect(f.b()).toBeUndefined()
+
+    f = new Foo a: 1
+    expect(f.a()).toBe 1
+    expect(f.b()).toBeUndefined()
+
+    f = new Foo a: 1, b: 2
+    expect(f.a()).toBe 1
+    expect(f.b()).toBe 2
+
 describe 'Z.Object.className', ->
   beforeEach ->
     class Z.Stuff extends Z.Object
