@@ -1,9 +1,18 @@
 class Z.Array extends Z.Object
   NativeArray = Z.root.Array
 
+  # FIXME: make sure these properties are notified of changes where appropriate
   @property 'length',
     get: -> @__array__.length
     set: (v) -> @__array__.length = v
+
+  @property 'first',
+    get: -> @at 0
+    set: (v) -> @at 0, v
+
+  @property 'last',
+    get: -> @at -1
+    set: (v) -> @at -1, v
 
   constructor: (args...) ->
     super
@@ -68,10 +77,6 @@ class Z.Array extends Z.Object
   isEqual: (other) ->
     return false unless other instanceof Z.Array
     _.isEqual @__array__, other.__array__
-
-  first: -> @at 0
-
-  last: -> @at -1
 
   push: (items...) -> @splice @length(), 0, items...
 
