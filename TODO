@@ -1,4 +1,7 @@
+* implement mixin
+* implement Enumerable
 * implement Z.Array#getUnknownProperty
+  - should return a Z.Array containing the property value of all itesm
 * factor out code that handles path parsing (splitting)
 * allow for read-only properties (set `set` property to false? use `readonly` option?)
-* add properties to toString
+* docs
