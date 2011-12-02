@@ -190,6 +190,11 @@ describe 'Z.Object KVC support:', ->
       p.set points: 19, firstName: 'Sue'
       expect(p.get(['points', 'firstName'])).toEqual({ points: 19, firstName: 'Sue' })
 
+    it 'should return all of the property values when given a Z.Array of property names', ->
+      p = new Person
+      p.set points: 19, firstName: 'Sue'
+      expect(p.get(Z.A ['points', 'firstName'])).toEqual({ points: 19, firstName: 'Sue' })
+
     it 'should invoke getUnknownProperty, passing the name if a property with the given name does not exist', ->
       p = new Person
       spyOn p, 'getUnknownProperty'

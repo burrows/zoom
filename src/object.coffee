@@ -1,23 +1,24 @@
-if exports?
-  Z = exports
-  Z.platform = 'node'
-  Z.root = global
-  _ = require 'underscore'
-else
-  Z = window.Z = {}
-  Z.platform = 'browser'
-  Z.root = window
-  _ = window._
-
 class Z.Object
+  objectId = 1
+
+  namespaces = [ [Z, 'Z'], [Z.root, ''] ]
+
+  defaultPropertyOpts =
+    dependsOn: []
+    cache: true
+    auto: true
+    get: null
+    set: null
+
   #-----------------------------------------------------------------------------
   # Class
   #-----------------------------------------------------------------------------
 
-  @addNamespace: (object, name) -> namespaces.push [object, name]
+  @addNamespace: (object, name) -> namespaces.push [object, name]; null
 
   @removeNamespace: (object) ->
-    namespaces = _.reject namespaces, (namespace) -> namespace[0] == object
+    namespaces = namespaces.filter (namespace) -> namespace[0] != object
+    null
 
   @className: ->
     for namespace in namespaces
@@ -30,7 +31,7 @@ class Z.Object
   @toString: @className
 
   @property: (name, opts = {}) ->
-    opts = _.defaults opts, defaultPropertyOpts
+    opts = Z.defaults opts, defaultPropertyOpts
 
     @["__property__#{name}__"] = opts
 
@@ -85,11 +86,21 @@ class Z.Object
 
   isEqual: (o) -> @ == o
 
-  get: (paths...) ->
-    paths = _.flatten paths
+  get: () ->
+    if arguments.length == 1
+      if Z.isArray arguments[0]
+        paths = arguments[0]
+      else if arguments[0]?.isZArray
+        paths = arguments[0].toNative()
+      else
+        paths = [arguments[0]]
+    else
+      paths = Array.prototype.slice.call arguments
 
     if paths.length > 1
-      return _.reduce(paths, ((acc, k) => acc[k] = @get(k); acc), {})
+      result = {}
+      result[path] = @get(path) for path in paths
+      return result
 
     [head, tail...] = paths[0].split '.'
 
@@ -115,20 +126,10 @@ class Z.Object
     throw new Error "#{@constructor.className()}#set: undefined key `#{k}` for #{@toString()}"
 
   #-----------------------------------------------------------------------------
-  # Private
+  # Private Methods
   #-----------------------------------------------------------------------------
-  objectId = 1
 
   nextObjectId = -> objectId++
-
-  namespaces = [ [Z, 'Z'], [Z.root, ''] ]
-
-  defaultPropertyOpts =
-    dependsOn: []
-    cache: true
-    auto: true
-    get: null
-    set: null
 
   getProperty = (o, k) ->
     prop = o.constructor["__property__#{k}__"]

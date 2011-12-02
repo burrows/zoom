@@ -19,10 +19,12 @@ class Z.Array extends Z.Object
   constructor: (args...) ->
     super()
 
-    if args.length == 1 and _.isArray(args[0])
+    if args.length == 1 and Z.isArray(args[0])
       @__array__ = args[0].slice 0
     else
       @__array__ = new NativeArray args...
+
+  isZArray: true,
 
   toString: ->
     a = _.invoke(@__array__, 'toString').join(', ')
@@ -84,6 +86,14 @@ class Z.Array extends Z.Object
 
   push: (items...) -> @splice @length(), 0, items...
 
+  concat: (o) ->
+    if o and o.isZArray
+      Z.A @toNative().concat(o.toNative())
+    else if Z.isArray o
+      Z.A @toNative().concat(o)
+    else
+      @push o
+
   unshift: (items...) -> @splice 0, 0, items...
 
   pop: (n) ->
@@ -111,6 +121,19 @@ class Z.Array extends Z.Object
       @slice$ 0, n
     else
       @slice$(0, 1).at 0
+
+  flatten: ->
+    result = Z.A()
+
+    for item in @__array__
+      if item and item.isZArray
+        result.concat item.flatten()
+      else if Z.isArray item
+        result.concat Z.A(item).flatten()
+      else
+        result.push item
+
+    result
 
   getUnknownProperty: (k) ->
     _.map @__array__, (item) -> item.get k
