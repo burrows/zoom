@@ -14,6 +14,6 @@ Z.defaults = (o, defaults...) ->
     o[k] ?= v for k, v of source
   o
 
-Z.isArray = Array.isArray or (o) ->
+Z.isNativeArray = Array.isArray or (o) ->
   !!(o and o.concat and o.unshift and not o.callee and not o.isZArray)
 

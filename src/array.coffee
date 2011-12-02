@@ -19,7 +19,7 @@ class Z.Array extends Z.Object
   constructor: (args...) ->
     super()
 
-    if args.length == 1 and Z.isArray(args[0])
+    if args.length == 1 and Z.isNativeArray(args[0])
       @__array__ = args[0].slice 0
     else
       @__array__ = new NativeArray args...
@@ -89,7 +89,7 @@ class Z.Array extends Z.Object
   concat: (o) ->
     if o and o.isZArray
       Z.A @toNative().concat(o.toNative())
-    else if Z.isArray o
+    else if Z.isNativeArray o
       Z.A @toNative().concat(o)
     else
       @push o
@@ -128,7 +128,7 @@ class Z.Array extends Z.Object
     for item in @__array__
       if item and item.isZArray
         result.concat item.flatten()
-      else if Z.isArray item
+      else if Z.isNativeArray item
         result.concat Z.A(item).flatten()
       else
         result.push item

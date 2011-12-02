@@ -88,7 +88,7 @@ class Z.Object
 
   get: () ->
     if arguments.length == 1
-      if Z.isArray arguments[0]
+      if Z.isNativeArray arguments[0]
         paths = arguments[0]
       else if arguments[0]?.isZArray
         paths = arguments[0].toNative()
