@@ -252,4 +252,34 @@ describe 'Z.Object KVC support:', ->
         b.c undefined
         expect(a.get 'b.c.num').toBeUndefined()
 
+describe 'Z.Object.mixin', ->
+  MyMixin = new Z.Mixin ->
+    @property 'a'
+    @property 'b', get: -> 'prop b'
+
+    @class
+      foo: 1
+      bar: () -> 'class bar'
+
+    @instance
+      foo: 2
+      bar: () -> 'instance bar'
+
+  class MyClass extends Z.Object
+    @mixin MyMixin
+    @property 'c'
+
+  it 'should define all of the properties from the mixin on the receiver class', ->
+    expect(MyClass.hasProperty 'a').toBe true
+    expect(MyClass.hasProperty 'b').toBe true
+    expect(MyClass.hasProperty 'c').toBe true
+    expect((new MyClass).get('b')).toEqual 'prop b'
+
+  it 'should define all of the class properties from the mixin on the receiver class', ->
+    expect(MyClass.foo).toBe 1
+    expect(MyClass.bar()).toEqual 'class bar'
+
+  it 'should define all of the instance properties from the mixin on the receiver class', ->
+    expect((new MyClass).foo).toBe 2
+    expect((new MyClass).bar()).toEqual 'instance bar'
 

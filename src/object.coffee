@@ -51,6 +51,16 @@ class Z.Object
 
   @hasProperty: (k) -> typeof @["__property__#{k}__"] == 'object'
 
+  @mixin: (mixin) ->
+    for own k, v of mixin.class()
+      @[k] = v
+
+    for own k, v of mixin.instance()
+      @prototype[k] = v
+
+    for own k, v of mixin.property()
+      @property k, v
+
   #-----------------------------------------------------------------------------
   # Instance
   #-----------------------------------------------------------------------------
@@ -99,10 +109,10 @@ class Z.Object
     null
 
   getUnknownProperty: (k) ->
-    throw new Error "Z.Object#get: undefined key `#{k}` for #{@toString()}"
+    throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"
 
   setUnknownProperty: (k, v) ->
-    throw new Error "Z.Object#set: undefined key `#{k}` for #{@toString()}"
+    throw new Error "#{@constructor.className()}#set: undefined key `#{k}` for #{@toString()}"
 
   #-----------------------------------------------------------------------------
   # Private

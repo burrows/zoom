@@ -1,6 +1,6 @@
 NODE_PATH := build
 
-SRCS      := object.coffee array.coffee
+SRCS      := object.coffee mixin.coffee array.coffee
 SPECS     := $(wildcard spec/*_spec.coffee)
 JSSPECS   := $(SPECS:%.coffee=%.js)
 

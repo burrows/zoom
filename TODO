@@ -1,4 +1,3 @@
-* implement mixin
 * implement Enumerable
 * implement Z.Array#getUnknownProperty
   - should return a Z.Array containing the property value of all itesm
