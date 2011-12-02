@@ -359,6 +359,31 @@ describe 'Z.Array#shift', ->
       a = new Z.Array
       expect(-> a.shift(-1)).toThrow("Z.Array#shift: array size must be positive")
 
+describe 'Z.Array#concat', ->
+  a = null
+
+  beforeEach -> a = Z.A [1,2,3]
+
+  it 'should return a new array containing the contents of the receiver concatenated with the contents of the given array', ->
+    b = a.concat Z.A [4,5,6]
+    expect(a.toNative()).toEqual [1,2,3]
+    expect(b.toNative()).toEqual [1,2,3,4,5,6]
+
+  it 'should append the argument when given a single non-array argument', ->
+    expect(a.concat(4).toNative()).toEqual [1,2,3,4]
+
+  it 'should append the contents of the given native array', ->
+    expect(a.concat([10,11,12]).toNative()).toEqual [1,2,3,10,11,12]
+
+  it 'should handle multiple arguments', ->
+    r = a.concat 4, [5,6], Z.A(7,8,9), 10, 11
+    expect(r.toNative()).toEqual [1..11]
+
+describe 'Z.Array#flatten', ->
+  it 'should return a new array that removes all levels of nested arrays', ->
+    a = Z.A [1, 2, [3, 4], Z.A([5, 6, 7]), 8, [9], [[10, 11], 12], [[[[13]]]]]
+    expect(a.flatten().toNative()).toEqual [1..13]
+
 describe 'Z.Array KVC collection operators:', ->
   class Transaction extends Z.Object
     @property 'payee'

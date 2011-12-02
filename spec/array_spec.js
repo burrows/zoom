@@ -435,6 +435,39 @@
     });
   });
 
+  describe('Z.Array#concat', function() {
+    var a;
+    a = null;
+    beforeEach(function() {
+      return a = Z.A([1, 2, 3]);
+    });
+    it('should return a new array containing the contents of the receiver concatenated with the contents of the given array', function() {
+      var b;
+      b = a.concat(Z.A([4, 5, 6]));
+      expect(a.toNative()).toEqual([1, 2, 3]);
+      return expect(b.toNative()).toEqual([1, 2, 3, 4, 5, 6]);
+    });
+    it('should append the argument when given a single non-array argument', function() {
+      return expect(a.concat(4).toNative()).toEqual([1, 2, 3, 4]);
+    });
+    it('should append the contents of the given native array', function() {
+      return expect(a.concat([10, 11, 12]).toNative()).toEqual([1, 2, 3, 10, 11, 12]);
+    });
+    return it('should handle multiple arguments', function() {
+      var r;
+      r = a.concat(4, [5, 6], Z.A(7, 8, 9), 10, 11);
+      return expect(r.toNative()).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    });
+  });
+
+  describe('Z.Array#flatten', function() {
+    return it('should return a new array that removes all levels of nested arrays', function() {
+      var a;
+      a = Z.A([1, 2, [3, 4], Z.A([5, 6, 7]), 8, [9], [[10, 11], 12], [[[[13]]]]]);
+      return expect(a.flatten().toNative()).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+    });
+  });
+
   describe('Z.Array KVC collection operators:', function() {
     var Transaction, transactions;
     Transaction = (function() {

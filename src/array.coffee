@@ -86,13 +86,11 @@ class Z.Array extends Z.Object
 
   push: (items...) -> @splice @length(), 0, items...
 
-  concat: (o) ->
-    if o and o.isZArray
-      Z.A @toNative().concat(o.toNative())
-    else if Z.isNativeArray o
-      Z.A @toNative().concat(o)
-    else
-      @push o
+  concat: (items...) ->
+    a = for item in items
+      if item?.isZArray then item.toNative() else item
+
+    Z.A @toNative().concat a...
 
   unshift: (items...) -> @splice 0, 0, items...
 
@@ -127,9 +125,9 @@ class Z.Array extends Z.Object
 
     for item in @__array__
       if item and item.isZArray
-        result.concat item.flatten()
+        result.push item.flatten().toNative()...
       else if Z.isNativeArray item
-        result.concat Z.A(item).flatten()
+        result.push Z.A(item).flatten().toNative()...
       else
         result.push item
 
