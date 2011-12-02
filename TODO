@@ -1,5 +1,4 @@
 * implement Z.Array#getUnknownProperty
 * factor out code that handles path parsing (splitting)
 * allow for read-only properties (set `set` property to false? use `readonly` option?)
-* make Z.Object#objectId a property?
 * add properties to toString

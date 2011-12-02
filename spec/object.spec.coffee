@@ -6,13 +6,13 @@ describe 'Z.Object', ->
   it 'should be defined', -> expect(Z.Object).toBeDefined()
 
 describe 'Z.Object constructor', ->
-  it 'should assign an auto-incrementing id to each new instance', ->
+  it 'should assign an auto-incrementing id to each new instance, accessible via the objectId property', ->
     o1 = new Z.Object; o2 = new Z.Object; o3 = new Z.Object
     expect(typeof o1.objectId()).toBe 'number'
-    expect(typeof o2.objectId()).toBe 'number'
+    expect(typeof o2.get 'objectId').toBe 'number'
     expect(typeof o3.objectId()).toBe 'number'
     expect(o1.objectId() < o2.objectId()).toBe true
-    expect(o2.objectId() < o3.objectId()).toBe true
+    expect(o2.get('objectId') < o3.get('objectId')).toBe true
 
   it 'should set all given properties when passed a native object', ->
     class Foo extends Z.Object
@@ -63,9 +63,15 @@ describe 'Z.Object.className', ->
     Z.Object.removeNamespace MyNamespace
 
 describe 'Z.Object.toString', ->
-  it 'should return a string containing the class name and object id', ->
-    o = new Z.Object
+  it 'should return a string containing the class name, object id and current property values', ->
+    class root.Foo extends Z.Object
+      @property 'a'
+      @property 'b'
+
+    o = new Z.Object; f = new Foo a: 9, b: 'xyz'
+
     expect(o.toString()).toEqual "#<Z.Object:#{o.objectId()}>"
+    expect(f.toString()).toEqual "#<Foo:#{f.objectId()} @a=9, @b=xyz>"
 
 describe 'Z.Object.isEqual', ->
   it 'should return true if the objects are identical', ->

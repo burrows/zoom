@@ -59,15 +59,18 @@ class Z.Object
     @__objectId__ = objectId++
     @set properties
 
+  @property 'objectId', { readonly: true, get: -> @__objectId__ }
+
   isZObject: true
 
-  objectId: -> @__objectId__
-
   toString: ->
-    s = "#<#{@constructor.className()}:#{@objectId()}"
-    props = for own name of @constructor.propertyDescriptors()
-      "@#{name}=#{@get name}"
-    s += " #{props.join ','}" if props.length > 0
+    s     = "#<#{@constructor.className()}:#{@objectId()}"
+    props = []
+
+    for own name of @constructor.propertyDescriptors()
+      props.push "@#{name}=#{@get name}" unless name == 'objectId'
+
+    s += " #{props.join ', '}" if props.length > 0
     s += ">"
 
   isEqual: (o) -> @ == o
