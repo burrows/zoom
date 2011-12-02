@@ -24,9 +24,13 @@ spec: zoom specs
 repl: zoom
 	NODE_NO_READLINE=1 rlwrap ./node_modules/.bin/coffee -r ./util/repl.coffee -i
 
+docs:
+	./node_modules/.bin/docco ./src/*.coffee
+
 clean:
 	rm -f $(JSSPECS)
 	rm -rf ./build
+	rm -rf ./docs
 
-.PHONY: default zoom clean spec specs repl
+.PHONY: default zoom clean spec specs repl docs
 
