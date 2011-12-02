@@ -1,6 +1,8 @@
 class Z.Array extends Z.Object
   NativeArray = Z.root.Array
 
+  @mixin Z.Enumerable
+
   # FIXME: make sure these properties are notified of changes where appropriate
   @property 'length',
     get: -> @__array__.length
@@ -27,6 +29,8 @@ class Z.Array extends Z.Object
     "#<#{@constructor.className()}:#{@objectId()} [#{a}]>"
 
   toNative: -> @__array__
+
+  each: (f) -> f i for i in @__array__; @
 
   at: (i, v) ->
     len = @length()
