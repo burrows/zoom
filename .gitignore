@@ -1,3 +1,4 @@
+node_modules/
 spec/*_spec.js
 build/*
 docs/*
