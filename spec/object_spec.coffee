@@ -73,17 +73,17 @@ describe 'Z.Object.toString', ->
     expect(o.toString()).toEqual "#<Z.Object:#{o.objectId()}>"
     expect(f.toString()).toEqual "#<Foo:#{f.objectId()} @a=9, @b=xyz>"
 
-describe 'Z.Object.isEqual', ->
+describe 'Z.Object.eq', ->
   it 'should return true if the objects are identical', ->
     o = new Z.Object
-    expect(o.isEqual o).toBe true
+    expect(o.eq o).toBe true
 
   it 'should return false if the objects are not identical', ->
     o1 = new Z.Object; o2 = new Z.Object
-    expect(o1.isEqual o2).toBe false
-    expect(o1.isEqual 8).toBe false
-    expect(o1.isEqual {}).toBe false
-    expect(o1.isEqual []).toBe false
+    expect(o1.eq o2).toBe false
+    expect(o1.eq 8).toBe false
+    expect(o1.eq {}).toBe false
+    expect(o1.eq []).toBe false
 
 describe 'Z.Object.property', ->
   class Person extends Z.Object

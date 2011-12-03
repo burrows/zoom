@@ -1,6 +1,7 @@
 class Z.Array extends Z.Object
   NativeArray = Z.root.Array
 
+  @mixin Z.Equatable
   @mixin Z.Enumerable
 
   # FIXME: make sure these properties are notified of changes where appropriate
@@ -32,7 +33,7 @@ class Z.Array extends Z.Object
 
   toNative: -> @__array__
 
-  each: (f) -> f i for i in @__array__; @
+  each: (f) -> f item, idx for item, idx in @__array__; @
 
   join: (s) -> @__array__.join s
 
@@ -82,9 +83,12 @@ class Z.Array extends Z.Object
     @splice i, n
     a
 
-  isEqual: (other) ->
+  eq: (other) ->
     return false unless other instanceof Z.Array
-    _.isEqual @__array__, other.__array__
+    return false unless @length() == other.length()
+    for item, idx in @__array__
+      return false unless Z.eq item, other.__array__[idx]
+    true
 
   push: (items...) -> @splice @length(), 0, items...
 

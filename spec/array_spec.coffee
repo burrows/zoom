@@ -208,26 +208,26 @@ describe 'Z.Array#slice$', ->
     expect(a.slice$(2,2).toNative()).toEqual [2,3]
     expect(a.toNative()).toEqual [0,1,4,5]
 
-describe 'Z.Array#isEqual', ->
+describe 'Z.Array#eq', ->
   it 'should return true when the arrays are identical', ->
     a = new Z.Array
-    expect(a.isEqual a).toBe true
+    expect(a.eq a).toBe true
 
   it 'should return true when the arrays have the same contents', ->
     a1 = new Z.Array 1, 2, 3
     a2 = new Z.Array 1, 2, 3
-    expect(a1.isEqual a2).toBe true
+    expect(a1.eq a2).toBe true
 
   it 'should return false when given something other than an array', ->
-    expect((new Z.Array).isEqual "foo").toBe false
-    expect((new Z.Array).isEqual []).toBe false
-    expect((new Z.Array).isEqual {}).toBe false
-    expect((new Z.Array).isEqual new Z.Object).toBe false
+    expect((new Z.Array).eq "foo").toBe false
+    expect((new Z.Array).eq []).toBe false
+    expect((new Z.Array).eq {}).toBe false
+    expect((new Z.Array).eq new Z.Object).toBe false
 
   it 'should return false when the array contents differ', ->
     a1 = new Z.Array 1, 2, 3
     a2 = new Z.Array 1, 2, 4
-    expect(a1.isEqual a2).toBe false
+    expect(a1.eq a2).toBe false
 
 describe 'Z.Array#first', ->
   it 'should return the first object in the array', ->

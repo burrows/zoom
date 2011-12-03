@@ -62,6 +62,8 @@ class Z.Object
     for own k, v of mixin.property()
       @property k, v
 
+  @mixin Z.Equatable
+
   #-----------------------------------------------------------------------------
   # Instance
   #-----------------------------------------------------------------------------
@@ -84,7 +86,7 @@ class Z.Object
     s += " #{props.join ', '}" if props.length > 0
     s += ">"
 
-  isEqual: (o) -> @ == o
+  eq: (o) -> @ == o
 
   get: () ->
     if arguments.length == 1

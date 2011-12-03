@@ -2,12 +2,10 @@ if exports?
   Z = exports
   Z.platform = 'node'
   Z.root = global
-  _ = require 'underscore'
 else
   Z = window.Z = {}
   Z.platform = 'browser'
   Z.root = window
-  _ = window._
 
 Z.defaults = (o, defaults...) ->
   for source in defaults
