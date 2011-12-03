@@ -142,36 +142,24 @@ class Z.Array extends Z.Object
   getUnknownProperty: (k) ->
     @map (item) -> item.get k
 
-  get: () ->
-    if arguments.length == 1
-      if Z.isNativeArray arguments[0]
-        paths = arguments[0]
-      else if arguments[0]?.isZArray
-        paths = arguments[0].toNative()
-      else
-        paths = [arguments[0]]
-    else
-      paths = Array.prototype.slice.call arguments
-
-    return super if paths.length > 1
-
-    [head, tail...] = paths[0].split '.'
+  _get: (path) ->
+    [head, tail...] = path
 
     switch head
       when "@count"
         @length()
       when "@max"
-        @get(tail.join '.').inject (acc, item) ->
+        @_get(tail).inject (acc, item) ->
           if acc > item then acc else item
       when "@min"
-        @get(tail.join '.').inject (acc, item) ->
+        @_get(tail).inject (acc, item) ->
           if acc < item then acc else item
       when "@sum"
-        @get(tail.join '.').inject (acc, item) -> acc + item
+        @_get(tail).inject (acc, item) -> acc + item
       when "@avg"
-        sum   = ['@sum'].concat(tail).join('.')
-        count = ['@count'].concat(tail).join('.')
-        @get(sum) / @get(count)
+        sum   = ['@sum'].concat(tail)
+        count = ['@count'].concat(tail)
+        @_get(sum) / @_get(count)
       else super
 
 # shortcut for instantiating a new array

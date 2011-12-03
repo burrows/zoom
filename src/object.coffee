@@ -101,12 +101,15 @@ class Z.Object
 
     if paths.length > 1
       result = {}
-      result[path] = @get(path) for path in paths
-      return result
+      result[path] = @_get(path.split '.') for path in paths
+      result
+    else
+      @_get paths[0].split('.')
 
-    [head, tail...] = paths[0].split '.'
+  _get: (path) ->
+    [head, tail...] = path
 
-    if tail.length > 0 then getProperty(@, head)?.get(tail.join '.')
+    if tail.length > 0 then getProperty(@, head)?._get(tail)
     else getProperty @, head
 
   set: (path, value) ->
@@ -116,7 +119,7 @@ class Z.Object
 
     [init..., last] = path.split '.'
 
-    if init.length > 0 then @get(init.join '.')?.set last, value
+    if init.length > 0 then @_get(init)?.set last, value
     else setProperty @, path, value
 
     null
