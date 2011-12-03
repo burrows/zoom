@@ -27,12 +27,14 @@ class Z.Array extends Z.Object
   isZArray: true,
 
   toString: ->
-    a = _.invoke(@__array__, 'toString').join(', ')
+    a = @invoke('toString').join ', '
     "#<#{@constructor.className()}:#{@objectId()} [#{a}]>"
 
   toNative: -> @__array__
 
   each: (f) -> f i for i in @__array__; @
+
+  join: (s) -> @__array__.join s
 
   at: (i, v) ->
     len = @length()
@@ -134,10 +136,18 @@ class Z.Array extends Z.Object
     result
 
   getUnknownProperty: (k) ->
-    _.map @__array__, (item) -> item.get k
+    @map (item) -> item.get k
 
-  get: (paths...) ->
-    paths = _.flatten paths
+  get: () ->
+    if arguments.length == 1
+      if Z.isNativeArray arguments[0]
+        paths = arguments[0]
+      else if arguments[0]?.isZArray
+        paths = arguments[0].toNative()
+      else
+        paths = [arguments[0]]
+    else
+      paths = Array.prototype.slice.call arguments
 
     return super if paths.length > 1
 
@@ -147,11 +157,13 @@ class Z.Array extends Z.Object
       when "@count"
         @length()
       when "@max"
-        _.max @get(tail.join '.'), (item) -> item?.valueOf()
+        @get(tail.join '.').inject (acc, item) ->
+          if acc > item then acc else item
       when "@min"
-        _.min @get(tail.join '.'), (item) -> item?.valueOf()
+        @get(tail.join '.').inject (acc, item) ->
+          if acc < item then acc else item
       when "@sum"
-        _.reduce @get(tail.join '.'), ((acc, item) -> acc + (item?.valueOf() || 0)), 0
+        @get(tail.join '.').inject (acc, item) -> acc + item
       when "@avg"
         sum   = ['@sum'].concat(tail).join('.')
         count = ['@count'].concat(tail).join('.')

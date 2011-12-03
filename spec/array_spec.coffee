@@ -420,44 +420,17 @@ describe 'Z.Array KVC collection operators:', ->
       expect(transactions.get '@max.date').toEqual new Date 2010, 6, 15
       expect(transactions.get '@max.amount').toBe 1250
 
-    it 'should handle null values', ->
-      transactions.push new Transaction payee: 'foo'
-      expect(->
-        expect(transactions.get '@max.date').toEqual new Date 2010, 6, 15
-        expect(transactions.get '@max.amount').toBe 1250
-      ).not.toThrow()
-
   describe '@min', ->
     it 'should return the minimum value from the values of the property specified by the key path to the right of the operator', ->
       expect(transactions.get '@min.date').toEqual new Date 2009, 11, 1
       expect(transactions.get '@min.amount').toBe 120
 
-    it 'should handle null values', ->
-      transactions.push new Transaction payee: 'foo'
-      expect(->
-        expect(transactions.get '@min.date').toEqual new Date 2009, 11, 1
-        expect(transactions.get '@min.amount').toBe 120
-      ).not.toThrow()
-
   describe '@sum', ->
     it 'should return the sum of the values of the property specified by the key path to the right of the operator', ->
       expect(transactions.get '@sum.amount').toBe 5935
-
-    it 'should handle null values', ->
-      transactions.push new Transaction payee: 'foo'
-      expect(->
-        expect(transactions.get '@sum.amount').toBe 5935
-      ).not.toThrow()
 
   describe '@avg', ->
     it 'should return the average of the values of the property specified by the key path to the right', ->
       avg = parseFloat transactions.get('@avg.amount').toFixed 2
       expect(avg).toBe 456.54
-
-    it 'should handle null values', ->
-      transactions.push new Transaction payee: 'foo'
-      expect(->
-        avg = parseFloat transactions.get('@avg.amount').toFixed 2
-        expect(avg).toBe 423.93
-      ).not.toThrow()
 

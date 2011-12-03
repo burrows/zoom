@@ -31,3 +31,4 @@ Z.Enumerable = new Z.Mixin ->
     reject: (f) ->
       @inject new Z.Array, (acc, item) -> acc.push item unless f item; acc
 
+    invoke: (name) -> @map (item) -> item[name]()
