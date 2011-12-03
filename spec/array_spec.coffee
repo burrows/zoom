@@ -384,6 +384,31 @@ describe 'Z.Array#flatten', ->
     a = Z.A [1, 2, [3, 4], Z.A([5, 6, 7]), 8, [9], [[10, 11], 12], [[[[13]]]]]
     expect(a.flatten().toNative()).toEqual [1..13]
 
+describe 'Z.Array#join', ->
+  class Foo extends Z.Object
+    @property 'x'
+    toString: -> "foo-#{@x()}"
+
+  it 'should return a string created by converting each item of the array to a string separated by the given separator', ->
+    a1 = Z.A 1,2,3,4,5
+    a2 = Z.A new Foo(x: 1), new Foo(x: 2), new Foo(x: 3)
+
+    expect(a1.join '-').toEqual '1-2-3-4-5'
+    expect(a2.join ' , ').toEqual 'foo-1 , foo-2 , foo-3'
+
+describe 'Z.Array#each', ->
+  a = Z.A 'a', 'b', 'c', 'd'
+
+  it 'should yield each item in the array to the given function', ->
+    test = []
+    a.each (item) -> test.push item
+    expect(test).toEqual ['a', 'b', 'c', 'd']
+
+  it 'should yield the index of each item in the array to the given function', ->
+    test = []
+    a.each (item, idx) -> test.push idx
+    expect(test).toEqual [0, 1, 2, 3]
+
 describe 'Z.Array KVC collection operators:', ->
   class Transaction extends Z.Object
     @property 'payee'

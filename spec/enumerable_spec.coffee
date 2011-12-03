@@ -30,3 +30,9 @@ describe 'Z.Enumerable#reject', ->
     expect(f.reject((x) -> x[0] == 'b').toNative()).toEqual ['foo', 'quux']
     expect(a.reject((x) -> x % 2 != 0).toNative()).toEqual [2,4,6,8,10]
 
+describe 'Z.Enumerable#invoke', ->
+  it 'should call the given method on each item in the array and return a new array contain the results', ->
+    o1 = new Z.Object; o2 = new Z.Object; o3 = new Z.Object
+    a = Z.A o1, o2, o3
+    expect(a.invoke('objectId').toNative()).toEqual [o1.objectId(), o2.objectId(), o3.objectId()]
+

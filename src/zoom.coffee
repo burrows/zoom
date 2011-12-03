@@ -15,3 +15,4 @@ Z.defaults = (o, defaults...) ->
 Z.isNativeArray = Array.isArray or (o) ->
   !!(o and o.concat and o.unshift and not o.callee and not o.isZArray)
 
+Z.toString = (o) -> o?.toString() || String o

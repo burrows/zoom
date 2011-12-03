@@ -35,7 +35,7 @@ class Z.Array extends Z.Object
 
   each: (f) -> f item, idx for item, idx in @__array__; @
 
-  join: (s) -> @__array__.join s
+  join: (s) -> @__array__.join Z.toString(s)
 
   at: (i, v) ->
     len = @length()
