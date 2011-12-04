@@ -409,6 +409,27 @@ describe 'Z.Array#each', ->
     a.each (item, idx) -> test.push idx
     expect(test).toEqual [0, 1, 2, 3]
 
+describe 'Z.Array#getUnknownProperty', ->
+  class Foo extends Z.Object
+    @property 'bar'
+  class Bar extends Z.Object
+    @property 'x'
+
+  it 'should get the given property path from each item in the array and return a new array with the values', ->
+    b1 = new Bar x: 1
+    b2 = new Bar x: 2
+    b3 = new Bar x: 3
+    f1 = new Foo bar: b1
+    f2 = new Foo bar: b2
+    f3 = new Foo bar: b3
+    a  = Z.A f1, f2, f3
+
+    expect(a.getUnknownProperty('bar').toNative()).toEqual [b1, b2, b3]
+    expect(a.get('bar').toNative()).toEqual [b1, b2, b3]
+
+    expect(a.getUnknownProperty('bar.x').toNative()).toEqual [1, 2, 3]
+    expect(a.get('bar.x').toNative()).toEqual [1, 2, 3]
+
 describe 'Z.Array KVC collection operators:', ->
   class Transaction extends Z.Object
     @property 'payee'

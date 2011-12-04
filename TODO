@@ -1,12 +1,9 @@
+* docs
 * implement Orderable
   - cmp, lt, lte, gt, gte, max, min
   - Z.cmp for native objects
   - use Z.cmp for array key path operators
-* implement Z.Array#getUnknownProperty
-  - should return a Z.Array containing the property value of all items
-* factor out code that handles path parsing (splitting)
 * allow for read-only properties (set `set` property to false? use `readonly` option?)
-* docs
 * implement a more robust Z.eq method that does deep comparisons of native
   objects
 * implement custom jasmine matcher to use Z.eq and modify array tests to use

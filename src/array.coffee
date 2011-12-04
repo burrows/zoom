@@ -139,8 +139,7 @@ class Z.Array extends Z.Object
 
     result
 
-  getUnknownProperty: (k) ->
-    @map (item) -> item.get k
+  getUnknownProperty: (k) -> @map (item) -> item.get k
 
   _get: (path) ->
     [head, tail...] = path
