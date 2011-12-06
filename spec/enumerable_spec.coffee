@@ -2,6 +2,7 @@ Z = this.Z || require 'zoom'
 
 class Foo extends Z.Object
   @mixin Z.Enumerable
+  @property 'x'
   each: (f) -> f 'foo'; f 'bar'; f 'baz'; f 'quux'
 
 f = new Foo
@@ -35,4 +36,10 @@ describe 'Z.Enumerable#invoke', ->
     o1 = new Z.Object; o2 = new Z.Object; o3 = new Z.Object
     a = Z.A o1, o2, o3
     expect(a.invoke('objectId').toNative()).toEqual [o1.objectId(), o2.objectId(), o3.objectId()]
+
+describe 'Z.Enumerable#pluck', ->
+  it 'should get the given property from each item in the array and return a new array contain the values', ->
+    a = Z.A(new Foo(x: 1), new Foo(x: 2), new Foo(x: 3))
+
+    expect((a.pluck 'x').toNative()).toEqual [1,2,3]
 

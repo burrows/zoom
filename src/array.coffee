@@ -139,7 +139,7 @@ class Z.Array extends Z.Object
 
     result
 
-  getUnknownProperty: (k) -> @map (item) -> item.get k
+  getUnknownProperty: (k) -> @pluck k
 
   _get: (path) ->
     [head, tail...] = path
@@ -148,11 +148,9 @@ class Z.Array extends Z.Object
       when "@count"
         @length()
       when "@max"
-        @_get(tail).inject (acc, item) ->
-          if acc > item then acc else item
+        @_get(tail).inject (acc, item) -> Z.max acc, item
       when "@min"
-        @_get(tail).inject (acc, item) ->
-          if acc < item then acc else item
+        @_get(tail).inject (acc, item) -> Z.min acc, item
       when "@sum"
         @_get(tail).inject (acc, item) -> acc + item
       when "@avg"
