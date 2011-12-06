@@ -257,6 +257,31 @@ describe 'Z.Object KVC support:', ->
         b.c undefined
         expect(a.get 'b.c.num').toBeUndefined()
 
+describe 'Z.Object KVO support:', ->
+  class User extends Z.Object
+    @property 'name'
+
+  user = null
+
+  beforeEach -> user = new User name: 'Joe'
+
+  describe '#observe with a simple key, callback method name and no options', ->
+    it 'should invoke the given method bound to the receiver when the given key is changed', ->
+      user.called = false
+      user.nameDidChange = () -> @called = true
+      user.observe 'name', 'nameDidChange'
+      user.set 'name', 'Bob'
+      expect(user.called).toBe true
+
+    it 'should should pass the a native object containing the key that changed, and the old and new values to the callback', ->
+      change = null
+      user.nameDidChange = (o) -> change = o
+      user.observe 'name', 'nameDidChange'
+      user.set 'name', 'Bob'
+      expect(change.key).toEqual 'name'
+      expect(change.old).toEqual 'Joe'
+      expect(change.new).toEqual 'Bob'
+
 describe 'Z.Object.mixin', ->
   MyMixin = new Z.Mixin ->
     @property 'a'

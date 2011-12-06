@@ -256,6 +256,26 @@ class Z.Object
 
     null
 
+  observe: (path, callback) ->
+    (@__observers__ ?= {})[path] =
+      path: path,
+      target: @,
+      callback: @[callback]
+
+  willChangeProperty: (k) ->
+    if @__observers__ and observer = @__observers__[k]
+      # TODO: make this configurable
+      @__observers__[k].change = { old: @get k }
+
+  didChangeProperty: (k) ->
+    return unless @__observers__
+    if observer = @__observers__[k]
+      change = observer.change or {}
+      delete observer.change
+      change.key = k
+      change.new = @get k
+      observer.callback.call(observer.target, change)
+
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"
 
@@ -277,10 +297,12 @@ class Z.Object
     prop = o.constructor["__property__#{k}__"]
     return o.setUnknownProperty(k, v) unless prop
 
+    o.willChangeProperty(k) if prop.auto
+
     if prop.set
       prop.set.call o, v
     else
-      # willChange if prop.auto
       o["__#{k}__"] = v
-      # didChange if prop.auto
+
+    o.didChangeProperty(k) if prop.auto
 
