@@ -256,25 +256,37 @@ class Z.Object
 
     null
 
-  observe: (path, callback) ->
-    (@__observers__ ?= {})[path] =
-      path: path,
-      target: @,
-      callback: @[callback]
+  defaultObserveOpts =
+    old: false
+    new: false
+    fire: false
+    prior: false
+
+  # options:
+  #   old - set to true to receive the old value in the notification (default: false)
+  #   new - set to true to receive the new value in the notification (default: false)
+  #   fire - set to true to trigger the notification immediately (default: false), may
+  #     contain the new value if new option is set, but will never contain the old value
+  #   prior - send a notification prior to the change being made, a notification
+  #     will still be sent after the change has been made, will never contain the new value
+  #   context - object to pass along in notification
+  observe: (path, observer, action, opts = {}) ->
+    key = path
+    opts = Z.merge Z.defaults(opts, defaultObserveOpts),
+      observer: observer
+      action: if typeof action == 'function' then action else observer[action]
+
+    ((@__observers__ ?= {})[key] ?= []).push opts
+
+    @
 
   willChangeProperty: (k) ->
-    if @__observers__ and observer = @__observers__[k]
-      # TODO: make this configurable
-      @__observers__[k].change = { old: @get k }
 
   didChangeProperty: (k) ->
-    return unless @__observers__
-    if observer = @__observers__[k]
-      change = observer.change or {}
-      delete observer.change
-      change.key = k
-      change.new = @get k
-      observer.callback.call(observer.target, change)
+    return unless observers = @__observers__?[k]
+
+    for observer in observers
+      observer.action.call observer.observer, key: k, observee: @
 
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"

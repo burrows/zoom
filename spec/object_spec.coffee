@@ -265,22 +265,37 @@ describe 'Z.Object KVO support:', ->
 
   beforeEach -> user = new User name: 'Joe'
 
-  describe '#observe with a simple key, callback method name and no options', ->
-    it 'should invoke the given method bound to the receiver when the given key is changed', ->
-      user.called = false
-      user.nameDidChange = () -> @called = true
-      user.observe 'name', 'nameDidChange'
+  describe '#observe with a simple key', ->
+    it 'should cause the given action to be invoked, bound to the observer, after the given key has changed', ->
+      observer = { called: false, nameDidChange: () -> @called = true }
+      user.observe 'name', observer, 'nameDidChange'
       user.set 'name', 'Bob'
-      expect(user.called).toBe true
+      expect(observer.called).toBe true
 
-    it 'should should pass the a native object containing the key that changed, and the old and new values to the callback', ->
-      change = null
-      user.nameDidChange = (o) -> change = o
-      user.observe 'name', 'nameDidChange'
+    it 'should cause the given function to be invoked, bound to the observer, when the given key has changed', ->
+      observer = { called: false, nameDidChange: () -> @called = true }
+      user.observe 'name', observer, observer.nameDidChange
       user.set 'name', 'Bob'
-      expect(change.key).toEqual 'name'
-      expect(change.old).toEqual 'Joe'
-      expect(change.new).toEqual 'Bob'
+      expect(observer.called).toBe true
+
+    it 'should cause the given action to be invoked with a change notification object containing the key that changed and the observee when the given key has changed', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange'
+      user.set 'name', 'Bob'
+      expect(observer.notification.key).toEqual 'name'
+      expect(observer.notification.observee).toBe user
+
+    it 'should allow attaching multiple observers to the same key', ->
+      observer1 = { called: false, action: () -> @called = true }
+      observer2 = { called: false, action: () -> @called = true }
+      user.observe 'name', observer1, 'action'
+      user.observe 'name', observer2, 'action'
+      user.name 'Sam'
+      expect(observer1.called).toBe true
+      expect(observer2.called).toBe true
+
+  # TODO: stopObserving
+  # TODO: pass context object to observer
 
 describe 'Z.Object.mixin', ->
   MyMixin = new Z.Mixin ->
