@@ -294,7 +294,22 @@ describe 'Z.Object KVO support:', ->
       expect(observer1.called).toBe true
       expect(observer2.called).toBe true
 
-  # TODO: stopObserving
+  describe '#stopObserving with a simple key', ->
+    it 'should prevent the registered observer from being notified of further changes', ->
+      observer1 = { called: false, action: () -> @called = true }
+      observer2 = { called: false, action: () -> @called = true }
+      user.observe 'name', observer1, 'action'
+      user.observe 'name', observer2, 'action'
+      user.name 'Mary'
+      expect(observer1.called).toBe true
+      expect(observer2.called).toBe true
+      observer1.called = false
+      observer2.called = false
+      user.stopObserving 'name', observer1, 'action'
+      user.name 'Susan'
+      expect(observer1.called).toBe false
+      expect(observer2.called).toBe true
+
   # TODO: pass context object to observer
 
 describe 'Z.Object.mixin', ->

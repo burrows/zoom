@@ -272,21 +272,38 @@ class Z.Object
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
     key = path
-    opts = Z.merge Z.defaults(opts, defaultObserveOpts),
-      observer: observer
-      action: if typeof action == 'function' then action else observer[action]
+    registration = Z.merge Z.defaults(opts, defaultObserveOpts),
+      observer: observer, action: action
 
-    ((@__observers__ ?= {})[key] ?= []).push opts
+    ((@__registrations__ ?= {})[key] ?= []).push registration
+
+    @
+
+  stopObserving: (path, observer, action) ->
+    key = path
+    return unless registrations = @__registrations__?[key]
+    indexes = []
+    for registration, idx in registrations
+      if registration.observer == observer && registration.action == action
+        indexes.unshift idx
+
+    # FIXME: raise an exception here if no indexes were found?
+    registrations.splice(idx, 1) for idx in indexes
 
     @
 
   willChangeProperty: (k) ->
 
   didChangeProperty: (k) ->
-    return unless observers = @__observers__?[k]
+    return unless registrations = @__registrations__?[k]
 
-    for observer in observers
-      observer.action.call observer.observer, key: k, observee: @
+    for registration in registrations
+      action = if typeof registration.action == 'function'
+        registration.action
+      else
+        registration.observer[registration.action]
+
+      action.call registration.observer, key: k, observee: @
 
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"
