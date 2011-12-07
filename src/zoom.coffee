@@ -10,6 +10,19 @@ else
   Z.platform = 'browser'
   Z.root = window
 
+# Copies all of the properties in the source objects over to the destination
+# object. The sources are processed in order, so subsequent sources will
+# override properties of the same name in previous sources.
+#
+# * `o`       - The destination object.
+# * `sources` - One ore more source objects.
+#
+# Returns `o`.
+Z.merge = (o, sources...) ->
+  for source in sources
+    o[k] = v for k, v of source
+  o
+
 # Takes a native javascript object and merges in properties from a list of
 # default objects if they are not already present in the first object.
 #
