@@ -294,6 +294,82 @@ describe 'Z.Object KVO support:', ->
       expect(observer1.called).toBe true
       expect(observer2.called).toBe true
 
+    it 'should pass the object indicated by the context option in the notification if it exists', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', context: 'the-context'
+      user.set 'name', 'Bob'
+      expect(observer.notification.context).toEqual 'the-context'
+
+    it 'should set an `old` key in the notification that points to the previous value of the property if the old option is set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', old: true
+      user.set 'name', 'Sam'
+      expect(observer.notification.old).toEqual 'Joe'
+
+    it 'should set a `new` key in the notification that points to the new value of the property if the new option is set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', new: true
+      user.set 'name', 'George'
+      expect(observer.notification.new).toEqual 'George'
+
+    it 'should set both `old` and `new` keys when both options are set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', old: true, new: true
+      user.set 'name', 'Ed'
+      expect(observer.notification.old).toEqual 'Joe'
+      expect(observer.notification.new).toEqual 'Ed'
+
+    it 'should fire the observer immediately when  the `fire` option is set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', fire: true
+      expect(observer.notification).not.toBeNull()
+      expect(observer.notification.key).toEqual 'name'
+      expect(observer.notification.observee).toBe user
+
+    it 'should fire the observer immediately when the `fire` option is set and include the `old` key when the `old` option is set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', fire: true, old: true
+      expect(observer.notification.key).toEqual 'name'
+      expect(observer.notification.old).toEqual 'Joe'
+
+    it 'should fire the observer immediately when the `fire` option is set and not include the `new` key even when the `new` option is set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', fire: true, new: true
+      expect(observer.notification.hasOwnProperty 'new').toBe false
+
+    it 'should invoke the callback before the property change actually occurs when the `prior` option is set', ->
+      observer =
+        notifications: []
+        nameDidChange: (n) -> n.currentVal = user.name(); @notifications.push n
+
+      user.observe 'name', observer, 'nameDidChange', prior: true
+      user.set 'name', 'Corey'
+      expect(observer.notifications.length).toBe 2
+      expect(observer.notifications[0].currentVal).toEqual 'Joe'
+      expect(observer.notifications[1].currentVal).toEqual 'Corey'
+
+    it 'should include the `old` key in the notification when notifying prior to a property change when the `old` option is set', ->
+      observer =
+        notifications: []
+        nameDidChange: (n) -> @notifications.push n
+
+      user.observe 'name', observer, 'nameDidChange', prior: true, old: true
+      user.set 'name', 'Corey'
+      expect(observer.notifications.length).toBe 2
+      expect(observer.notifications[0].old).toEqual 'Joe'
+      expect(observer.notifications[1].old).toEqual 'Joe'
+
+    it 'should not include the `new` key in the notification when notifying prior to a property change when the `new` option is set', ->
+      observer =
+        notifications: []
+        nameDidChange: (n) -> @notifications.push n
+
+      user.observe 'name', observer, 'nameDidChange', prior: true, new: true
+      user.set 'name', 'Corey'
+      expect(observer.notifications.length).toBe 2
+      expect(observer.notifications[0].hasOwnProperty 'new').toBe false
+      expect(observer.notifications[1].new).toEqual 'Corey'
+
   describe '#stopObserving with a simple key', ->
     it 'should prevent the registered observer from being notified of further changes', ->
       observer1 = { called: false, action: () -> @called = true }
@@ -309,8 +385,6 @@ describe 'Z.Object KVO support:', ->
       user.name 'Susan'
       expect(observer1.called).toBe false
       expect(observer2.called).toBe true
-
-  # TODO: pass context object to observer
 
 describe 'Z.Object.mixin', ->
   MyMixin = new Z.Mixin ->

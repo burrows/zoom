@@ -271,11 +271,21 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    key = path
+    key      = path
+    callback = if typeof action == 'function' then action else observer[action]
+
     registration = Z.merge Z.defaults(opts, defaultObserveOpts),
-      observer: observer, action: action
+      observer : observer
+      action   : action
+      callback : callback
 
     ((@__registrations__ ?= {})[key] ?= []).push registration
+
+    if opts.fire
+      notification = key: key, observee: @
+      notification.old     = @get(key) if registration.old
+      notification.context = registration.context if registration.context
+      registration.callback.call registration.observer, notification
 
     @
 
@@ -293,17 +303,27 @@ class Z.Object
     @
 
   willChangeProperty: (k) ->
+    return unless registrations = @__registrations__?[k]
+
+    for registration in registrations
+      registration.notification = notification = key: k, observee: @
+
+      notification.old     = @get(k) if registration.old
+      notification.context = registration.context if registration.context
+
+      if registration.prior
+        registration.callback.call registration.observer, notification
 
   didChangeProperty: (k) ->
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      action = if typeof registration.action == 'function'
-        registration.action
-      else
-        registration.observer[registration.action]
+      notification = Z.merge {}, registration.notification
+      delete registration.notification
 
-      action.call registration.observer, key: k, observee: @
+      notification.new = @get(k) if registration.new
+
+      registration.callback.call registration.observer, notification
 
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"

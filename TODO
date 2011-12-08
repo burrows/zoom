@@ -1,8 +1,5 @@
+* handle null and undefined values when getting key paths 
 * docs
-* implement Orderable
-  - cmp, lt, lte, gt, gte, max, min
-  - Z.cmp for native objects
-  - use Z.cmp for array key path operators
 * allow for read-only properties (set `set` property to false? use `readonly` option?)
 * implement a more robust Z.eq method that does deep comparisons of native
   objects
