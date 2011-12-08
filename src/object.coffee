@@ -306,19 +306,22 @@ class Z.Object
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      registration.notification = notification = key: k, observee: @
+      notification = key: k, observee: @
 
       notification.old     = @get(k) if registration.old
       notification.context = registration.context if registration.context
 
       if registration.prior
         registration.callback.call registration.observer, notification
+        notification = Z.merge {}, notification
+
+      registration.notification = notification
 
   didChangeProperty: (k) ->
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      notification = Z.merge {}, registration.notification
+      notification = registration.notification
       delete registration.notification
 
       notification.new = @get(k) if registration.new
