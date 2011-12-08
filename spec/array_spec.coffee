@@ -1,4 +1,4 @@
-Z = this.Z || require 'zoom'
+require './helper' unless Z?
 
 describe 'Z.Array', ->
   it 'should be defined', ->
@@ -113,38 +113,38 @@ describe 'Z.Array#splice', ->
 
   describe 'with 1 argument', ->
     it 'should remove all remaining items starting at the given index', ->
-      expect(Z.A([0,1,2]).splice(0).toNative()).toEqual []
-      expect(Z.A([0,1,2]).splice(1).toNative()).toEqual [0]
-      expect(Z.A([0,1,2]).splice(2).toNative()).toEqual [0,1]
-      expect(Z.A([0,1,2]).splice(3).toNative()).toEqual [0,1,2]
+      expect(Z.A([0,1,2]).splice(0)).toEq Z.A()
+      expect(Z.A([0,1,2]).splice(1)).toEq Z.A([0])
+      expect(Z.A([0,1,2]).splice(2)).toEq Z.A([0,1])
+      expect(Z.A([0,1,2]).splice(3)).toEq Z.A([0,1,2])
 
   describe 'with a positive index in range', ->
     it 'should replace the given number of items starting at the given index with the given objects', ->
-      expect(Z.A([0,1,2]).splice(0, 0).toNative()).toEqual [0,1,2]
-      expect(Z.A([0,1,2]).splice(0, 1).toNative()).toEqual [1,2]
-      expect(Z.A([0,1,2]).splice(1, 1).toNative()).toEqual [0,2]
-      expect(Z.A([0,1,2]).splice(1, 2).toNative()).toEqual [0]
-      expect(Z.A([0,1,2]).splice(1, 20).toNative()).toEqual [0]
-      expect(Z.A([0,1,2]).splice(0, 1, 100).toNative()).toEqual [100,1,2]
-      expect(Z.A([0,1,2]).splice(1, 2, 'a', 'b').toNative()).toEqual [0,'a','b']
-      expect(Z.A([0,1,2]).splice(1, 2, 'a', 'b', 'c', 'd').toNative()).toEqual [0,'a','b','c','d']
+      expect(Z.A([0,1,2]).splice(0, 0)).toEq Z.A([0,1,2])
+      expect(Z.A([0,1,2]).splice(0, 1)).toEq Z.A([1,2])
+      expect(Z.A([0,1,2]).splice(1, 1)).toEq Z.A([0,2])
+      expect(Z.A([0,1,2]).splice(1, 2)).toEq Z.A([0])
+      expect(Z.A([0,1,2]).splice(1, 20)).toEq Z.A([0])
+      expect(Z.A([0,1,2]).splice(0, 1, 100)).toEq Z.A([100,1,2])
+      expect(Z.A([0,1,2]).splice(1, 2, 'a', 'b')).toEq Z.A([0,'a','b'])
+      expect(Z.A([0,1,2]).splice(1, 2, 'a', 'b', 'c', 'd')).toEq Z.A([0,'a','b','c','d'])
 
   describe 'with a positive index out of range', ->
     it 'should grow the length of the array', ->
-      expect(Z.A([0,1,2]).splice(4, 0, 'x').toNative()).toEqual [0,1,2,undefined,'x']
-      expect(Z.A([0,1,2]).splice(4, 0, 'x','y','z').toNative()).toEqual [0,1,2,undefined,'x','y','z']
-      expect(Z.A([0,1,2]).splice(4, 2, 'x','y','z').toNative()).toEqual [0,1,2,undefined,'x','y','z']
+      expect(Z.A([0,1,2]).splice(4, 0, 'x')).toEq Z.A([0,1,2,undefined,'x'])
+      expect(Z.A([0,1,2]).splice(4, 0, 'x','y','z')).toEq Z.A([0,1,2,undefined,'x','y','z'])
+      expect(Z.A([0,1,2]).splice(4, 2, 'x','y','z')).toEq Z.A([0,1,2,undefined,'x','y','z'])
 
   describe 'with a negative index in range', ->
     it 'should replace the given number of items starting at the index from the right with the given objects', ->
-      expect(Z.A([0,1,2]).splice(-3, 0).toNative()).toEqual [0,1,2]
-      expect(Z.A([0,1,2]).splice(-3, 1).toNative()).toEqual [1,2]
-      expect(Z.A([0,1,2]).splice(-2, 1).toNative()).toEqual [0,2]
-      expect(Z.A([0,1,2]).splice(-2, 2).toNative()).toEqual [0]
-      expect(Z.A([0,1,2]).splice(-2, 20).toNative()).toEqual [0]
-      expect(Z.A([0,1,2]).splice(-3, 1, 100).toNative()).toEqual [100,1,2]
-      expect(Z.A([0,1,2]).splice(-2, 2, 'a', 'b').toNative()).toEqual [0,'a','b']
-      expect(Z.A([0,1,2]).splice(-2, 2, 'a', 'b', 'c', 'd').toNative()).toEqual [0,'a','b','c','d']
+      expect(Z.A([0,1,2]).splice(-3, 0)).toEq Z.A [0,1,2]
+      expect(Z.A([0,1,2]).splice(-3, 1)).toEq Z.A [1,2]
+      expect(Z.A([0,1,2]).splice(-2, 1)).toEq Z.A [0,2]
+      expect(Z.A([0,1,2]).splice(-2, 2)).toEq Z.A [0]
+      expect(Z.A([0,1,2]).splice(-2, 20)).toEq Z.A [0]
+      expect(Z.A([0,1,2]).splice(-3, 1, 100)).toEq Z.A [100,1,2]
+      expect(Z.A([0,1,2]).splice(-2, 2, 'a', 'b')).toEq Z.A [0,'a','b']
+      expect(Z.A([0,1,2]).splice(-2, 2, 'a', 'b', 'c', 'd')).toEq Z.A [0,'a','b','c','d']
 
   describe 'with a negative index out of range', ->
     it 'should throw an exception', ->
@@ -157,31 +157,31 @@ describe 'Z.Array#slice', ->
 
   describe 'given just an index', ->
     it 'should return a new Z.Array with only the items at the given index and after', ->
-      expect(a.slice(0).toNative()).toEqual [0,1,2,3,4,5]
-      expect(a.slice(1).toNative()).toEqual [1,2,3,4,5]
-      expect(a.slice(2).toNative()).toEqual [2,3,4,5]
-      expect(a.slice(-1).toNative()).toEqual [5]
-      expect(a.slice(-2).toNative()).toEqual [4,5]
-      expect(a.slice(-3).toNative()).toEqual [3,4,5]
+      expect(a.slice(0)).toEq Z.A [0,1,2,3,4,5]
+      expect(a.slice(1)).toEq Z.A [1,2,3,4,5]
+      expect(a.slice(2)).toEq Z.A [2,3,4,5]
+      expect(a.slice(-1)).toEq Z.A [5]
+      expect(a.slice(-2)).toEq Z.A [4,5]
+      expect(a.slice(-3)).toEq Z.A [3,4,5]
 
     it 'should return null when given an out of bounds index', ->
-      expect(a.slice(20)).toEqual null
-      expect(a.slice(-20)).toEqual null
+      expect(a.slice(20)).toBe null
+      expect(a.slice(-20)).toBe null
 
   describe 'given an index and a length', ->
     it 'should return a new Z.Array containing the item at the given index and continuing for n items', ->
-      expect(a.slice(0, 0).toNative()).toEqual []
-      expect(a.slice(0, 1).toNative()).toEqual [0]
-      expect(a.slice(0, 3).toNative()).toEqual [0,1,2]
-      expect(a.slice(2, 2).toNative()).toEqual [2,3]
-      expect(a.slice(2, 4).toNative()).toEqual [2,3,4,5]
-      expect(a.slice(2, 8).toNative()).toEqual [2,3,4,5]
-      expect(a.slice(-6, 0).toNative()).toEqual []
-      expect(a.slice(-6, 1).toNative()).toEqual [0]
-      expect(a.slice(-6, 3).toNative()).toEqual [0,1,2]
-      expect(a.slice(-4, 2).toNative()).toEqual [2,3]
-      expect(a.slice(-4, 4).toNative()).toEqual [2,3,4,5]
-      expect(a.slice(-4, 8).toNative()).toEqual [2,3,4,5]
+      expect(a.slice(0, 0)).toEq Z.A []
+      expect(a.slice(0, 1)).toEq Z.A [0]
+      expect(a.slice(0, 3)).toEq Z.A [0,1,2]
+      expect(a.slice(2, 2)).toEq Z.A [2,3]
+      expect(a.slice(2, 4)).toEq Z.A [2,3,4,5]
+      expect(a.slice(2, 8)).toEq Z.A [2,3,4,5]
+      expect(a.slice(-6, 0)).toEq Z.A []
+      expect(a.slice(-6, 1)).toEq Z.A [0]
+      expect(a.slice(-6, 3)).toEq Z.A [0,1,2]
+      expect(a.slice(-4, 2)).toEq Z.A [2,3]
+      expect(a.slice(-4, 4)).toEq Z.A [2,3,4,5]
+      expect(a.slice(-4, 8)).toEq Z.A [2,3,4,5]
 
     it 'should return null when given an out of bounds index', ->
       expect(a.slice(20, 2)).toBeNull()
@@ -191,22 +191,22 @@ describe 'Z.Array#slice$', ->
   it 'should return null and not mutate the receiver if the given index is out of bounds', ->
     a = new Z.Array 0,1,2,3,4,5
     expect(a.slice$(20)).toBeNull()
-    expect(a.toNative()).toEqual [0,1,2,3,4,5]
+    expect(a).toEq Z.A [0,1,2,3,4,5]
     expect(a.slice$(-20)).toBeNull()
-    expect(a.toNative()).toEqual [0,1,2,3,4,5]
+    expect(a).toEq Z.A [0,1,2,3,4,5]
 
   it 'should return the same thing as slice, but mutate the receiver in the process', ->
     a = new Z.Array 0,1,2,3,4,5
-    expect(a.slice$(0).toNative()).toEqual [0,1,2,3,4,5]
-    expect(a.toNative()).toEqual []
+    expect(a.slice$(0)).toEq Z.A [0,1,2,3,4,5]
+    expect(a).toEq Z.A []
 
     a = new Z.Array 0,1,2,3,4,5
-    expect(a.slice$(4).toNative()).toEqual [4,5]
-    expect(a.toNative()).toEqual [0,1,2,3]
+    expect(a.slice$(4)).toEq Z.A [4,5]
+    expect(a).toEq Z.A [0,1,2,3]
 
     a = new Z.Array 0,1,2,3,4,5
-    expect(a.slice$(2,2).toNative()).toEqual [2,3]
-    expect(a.toNative()).toEqual [0,1,4,5]
+    expect(a.slice$(2,2)).toEq Z.A [2,3]
+    expect(a).toEq Z.A [0,1,4,5]
 
 describe 'Z.Array#eq', ->
   it 'should return true when the arrays are identical', ->
@@ -252,9 +252,9 @@ describe 'Z.Array#push', ->
 
   it 'should append the given object(s) to the end of the array', ->
     a.push 4
-    expect(a.toNative()).toEqual [1,2,3,4]
+    expect(a).toEq Z.A [1,2,3,4]
     a.push 10, 11, 12
-    expect(a.toNative()).toEqual [1,2,3,4,10,11,12]
+    expect(a).toEq Z.A [1,2,3,4,10,11,12]
 
 describe 'Z.Array.unshift', ->
   a = null
@@ -265,9 +265,9 @@ describe 'Z.Array.unshift', ->
 
   it 'should prepend the given object(s) to the beginning of the array', ->
     a.unshift 4
-    expect(a.toNative()).toEqual [4,1,2,3]
+    expect(a).toEq Z.A [4,1,2,3]
     a.unshift 10, 11, 12
-    expect(a.toNative()).toEqual [10,11,12,4,1,2,3]
+    expect(a).toEq Z.A [10,11,12,4,1,2,3]
 
 describe 'Z.Array#pop', ->
   a = null
@@ -282,33 +282,33 @@ describe 'Z.Array#pop', ->
 
     it 'should remove the last item from the array', ->
       a.pop()
-      expect(a.toNative()).toEqual [1,2]
+      expect(a).toEq Z.A [1,2]
       a.pop()
-      expect(a.toNative()).toEqual [1]
+      expect(a).toEq Z.A [1]
       a.pop()
-      expect(a.toNative()).toEqual []
+      expect(a).toEq Z.A []
       a.pop()
-      expect(a.toNative()).toEqual []
+      expect(a).toEq Z.A []
 
   describe 'with an integer argument', ->
     it 'should return the last n items in a Z.Array', ->
-      expect(Z.A([1,2,3]).pop(0).toNative()).toEqual []
-      expect(Z.A([1,2,3]).pop(1).toNative()).toEqual [3]
-      expect(Z.A([1,2,3]).pop(2).toNative()).toEqual [2,3]
-      expect(Z.A([1,2,3]).pop(3).toNative()).toEqual [1,2,3]
-      expect(Z.A([1,2,3]).pop(4).toNative()).toEqual [1,2,3]
+      expect(Z.A([1,2,3]).pop(0)).toEq Z.A []
+      expect(Z.A([1,2,3]).pop(1)).toEq Z.A [3]
+      expect(Z.A([1,2,3]).pop(2)).toEq Z.A [2,3]
+      expect(Z.A([1,2,3]).pop(3)).toEq Z.A [1,2,3]
+      expect(Z.A([1,2,3]).pop(4)).toEq Z.A [1,2,3]
 
     it 'should remove the last n items from the array', ->
       a = new Z.Array 1,2,3,4,5,6,7
 
       a.pop 0
-      expect(a.toNative()).toEqual([1,2,3,4,5,6,7])
+      expect(a).toEq Z.A([1,2,3,4,5,6,7])
       a.pop 1
-      expect(a.toNative()).toEqual([1,2,3,4,5,6])
+      expect(a).toEq Z.A([1,2,3,4,5,6])
       a.pop 2
-      expect(a.toNative()).toEqual([1,2,3,4])
+      expect(a).toEq Z.A([1,2,3,4])
       a.pop 5
-      expect(a.toNative()).toEqual([])
+      expect(a).toEq Z.A([])
 
     it 'should throw an exception if given a negative number', ->
       a = new Z.Array
@@ -327,33 +327,33 @@ describe 'Z.Array#shift', ->
 
     it 'should remove the first item from the array', ->
       a.shift()
-      expect(a.toNative()).toEqual [2,3]
+      expect(a).toEq Z.A [2,3]
       a.shift()
-      expect(a.toNative()).toEqual [3]
+      expect(a).toEq Z.A [3]
       a.shift()
-      expect(a.toNative()).toEqual []
+      expect(a).toEq Z.A []
       a.shift()
-      expect(a.toNative()).toEqual []
+      expect(a).toEq Z.A []
 
   describe 'with an integer arugment', ->
     it 'should return the first n items in a Z.Array', ->
-      expect(Z.A([1,2,3]).shift(0).toNative()).toEqual []
-      expect(Z.A([1,2,3]).shift(1).toNative()).toEqual [1]
-      expect(Z.A([1,2,3]).shift(2).toNative()).toEqual [1,2]
-      expect(Z.A([1,2,3]).shift(3).toNative()).toEqual [1,2,3]
-      expect(Z.A([1,2,3]).shift(4).toNative()).toEqual [1,2,3]
+      expect(Z.A([1,2,3]).shift(0)).toEq Z.A []
+      expect(Z.A([1,2,3]).shift(1)).toEq Z.A [1]
+      expect(Z.A([1,2,3]).shift(2)).toEq Z.A [1,2]
+      expect(Z.A([1,2,3]).shift(3)).toEq Z.A [1,2,3]
+      expect(Z.A([1,2,3]).shift(4)).toEq Z.A [1,2,3]
 
     it 'should remove the first n items from the array', ->
       a = new Z.Array 1,2,3,4,5,6,7
 
       a.shift 0
-      expect(a.toNative()).toEqual([1,2,3,4,5,6,7])
+      expect(a).toEq Z.A([1,2,3,4,5,6,7])
       a.shift 1
-      expect(a.toNative()).toEqual([2,3,4,5,6,7])
+      expect(a).toEq Z.A([2,3,4,5,6,7])
       a.shift 2
-      expect(a.toNative()).toEqual([4,5,6,7])
+      expect(a).toEq Z.A([4,5,6,7])
       a.shift 5
-      expect(a.toNative()).toEqual([])
+      expect(a).toEq Z.A([])
 
     it 'should throw an exception if given a negative number', ->
       a = new Z.Array
@@ -366,23 +366,23 @@ describe 'Z.Array#concat', ->
 
   it 'should return a new array containing the contents of the receiver concatenated with the contents of the given array', ->
     b = a.concat Z.A [4,5,6]
-    expect(a.toNative()).toEqual [1,2,3]
-    expect(b.toNative()).toEqual [1,2,3,4,5,6]
+    expect(a).toEq Z.A [1,2,3]
+    expect(b).toEq Z.A [1,2,3,4,5,6]
 
   it 'should append the argument when given a single non-array argument', ->
-    expect(a.concat(4).toNative()).toEqual [1,2,3,4]
+    expect(a.concat(4)).toEq Z.A [1,2,3,4]
 
   it 'should append the contents of the given native array', ->
-    expect(a.concat([10,11,12]).toNative()).toEqual [1,2,3,10,11,12]
+    expect(a.concat([10,11,12])).toEq Z.A [1,2,3,10,11,12]
 
   it 'should handle multiple arguments', ->
     r = a.concat 4, [5,6], Z.A(7,8,9), 10, 11
-    expect(r.toNative()).toEqual [1..11]
+    expect(r).toEq Z.A [1..11]
 
 describe 'Z.Array#flatten', ->
   it 'should return a new array that removes all levels of nested arrays', ->
     a = Z.A [1, 2, [3, 4], Z.A([5, 6, 7]), 8, [9], [[10, 11], 12], [[[[13]]]]]
-    expect(a.flatten().toNative()).toEqual [1..13]
+    expect(a.flatten()).toEq Z.A [1..13]
 
 describe 'Z.Array#join', ->
   class Foo extends Z.Object
@@ -424,11 +424,11 @@ describe 'Z.Array#getUnknownProperty', ->
     f3 = new Foo bar: b3
     a  = Z.A f1, f2, f3
 
-    expect(a.getUnknownProperty('bar').toNative()).toEqual [b1, b2, b3]
-    expect(a.get('bar').toNative()).toEqual [b1, b2, b3]
+    expect(a.getUnknownProperty('bar')).toEq Z.A [b1, b2, b3]
+    expect(a.get('bar')).toEq Z.A [b1, b2, b3]
 
-    expect(a.getUnknownProperty('bar.x').toNative()).toEqual [1, 2, 3]
-    expect(a.get('bar.x').toNative()).toEqual [1, 2, 3]
+    expect(a.getUnknownProperty('bar.x')).toEq Z.A [1, 2, 3]
+    expect(a.get('bar.x')).toEq Z.A [1, 2, 3]
 
 describe 'Z.Array KVC collection operators:', ->
   class Transaction extends Z.Object

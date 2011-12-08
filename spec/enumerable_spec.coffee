@@ -19,8 +19,8 @@ describe 'Z.Enumerable#inject', ->
 
 describe 'Z.Enumerable#map', ->
   it 'should return a Z.Array containing the result of applying the given function to each item in the enumerable', ->
-    expect(f.map((x) -> x.toUpperCase()).toNative()).toEqual ['FOO', 'BAR', 'BAZ', 'QUUX']
-    expect(a.map((x) -> x * 10).toNative()).toEqual [10,20,30,40,50,60,70,80,90,100]
+    expect(f.map((x) -> x.toUpperCase())).toEq Z.A ['FOO', 'BAR', 'BAZ', 'QUUX']
+    expect(a.map((x) -> x * 10)).toEq Z.A [10,20,30,40,50,60,70,80,90,100]
 
 describe 'Z.Enumerable#first', ->
   it 'should return the first item in the enumerable', ->
@@ -28,18 +28,18 @@ describe 'Z.Enumerable#first', ->
 
 describe 'Z.Enumerable#reject', ->
   it 'should return a Z.Array containing all of the values in the enumerable except those that the given predicate function passes for', ->
-    expect(f.reject((x) -> x[0] == 'b').toNative()).toEqual ['foo', 'quux']
-    expect(a.reject((x) -> x % 2 != 0).toNative()).toEqual [2,4,6,8,10]
+    expect(f.reject((x) -> x[0] == 'b')).toEq Z.A ['foo', 'quux']
+    expect(a.reject((x) -> x % 2 != 0)).toEq Z.A [2,4,6,8,10]
 
 describe 'Z.Enumerable#invoke', ->
   it 'should call the given method on each item in the array and return a new array contain the results', ->
     o1 = new Z.Object; o2 = new Z.Object; o3 = new Z.Object
     a = Z.A o1, o2, o3
-    expect(a.invoke('objectId').toNative()).toEqual [o1.objectId(), o2.objectId(), o3.objectId()]
+    expect(a.invoke('objectId')).toEq Z.A [o1.objectId(), o2.objectId(), o3.objectId()]
 
 describe 'Z.Enumerable#pluck', ->
   it 'should get the given property from each item in the array and return a new array contain the values', ->
     a = Z.A(new Foo(x: 1), new Foo(x: 2), new Foo(x: 3))
 
-    expect((a.pluck 'x').toNative()).toEqual [1,2,3]
+    expect((a.pluck 'x')).toEq Z.A [1,2,3]
 

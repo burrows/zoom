@@ -2,5 +2,3 @@
 * allow for read-only properties (set `set` property to false? use `readonly` option?)
 * implement a more robust Z.eq method that does deep comparisons of native
   objects
-* implement custom jasmine matcher to use Z.eq and modify array tests to use
-  it

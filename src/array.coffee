@@ -28,7 +28,7 @@ class Z.Array extends Z.Object
   isZArray: true,
 
   toString: ->
-    a = @invoke('toString').join ', '
+    a = @map((item) -> Z.toString item).join ', '
     "#<#{@constructor.className()}:#{@objectId()} [#{a}]>"
 
   toNative: -> @__array__
