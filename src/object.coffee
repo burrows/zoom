@@ -312,8 +312,10 @@ class Z.Object
       notification.context = registration.context if registration.context
 
       if registration.prior
+        notification.isPrior = true
         registration.callback.call registration.observer, notification
         notification = Z.merge {}, notification
+        delete notification.isPrior
 
       registration.notification = notification
 

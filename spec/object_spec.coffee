@@ -346,7 +346,9 @@ describe 'Z.Object KVO support:', ->
       user.set 'name', 'Corey'
       expect(observer.notifications.length).toBe 2
       expect(observer.notifications[0].currentVal).toEqual 'Joe'
+      expect(observer.notifications[0].isPrior).toBe true
       expect(observer.notifications[1].currentVal).toEqual 'Corey'
+      expect(observer.notifications[1].isPrior).toBeUndefined()
 
     it 'should include the `old` key in the notification when notifying prior to a property change when the `old` option is set', ->
       observer =
