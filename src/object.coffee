@@ -271,7 +271,10 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    key      = path
+    [first, rest...] = if typeof path == 'string' then path.split '.' else path
+    @observeProperty first, observer, action, opts
+
+  observeProperty: (key, observer, action, opts = {}) ->
     callback = if typeof action == 'function' then action else observer[action]
 
     registration = Z.merge Z.defaults(opts, defaultObserveOpts),
