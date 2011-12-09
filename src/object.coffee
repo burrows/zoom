@@ -50,7 +50,7 @@ class Z.Object
   @className: ->
     for namespace in namespaces
       for own k, v of namespace[0]
-        if v == @
+        if v == this
           return if namespace[1].length > 0 then "#{namespace[1]}.#{k}" else k
 
     '(Unknown)'
@@ -144,9 +144,9 @@ class Z.Object
 
     @prototype[name] = (v) ->
       if typeof v == 'undefined'
-        getProperty @, name
+        getProperty this, name
       else
-        setProperty @, name, v
+        setProperty this, name, v
 
     null
 
@@ -156,7 +156,7 @@ class Z.Object
   @propertyDescriptors: ->
     props = {}
 
-    for own k, v of @
+    for own k, v of this
       if match = k.match(/^__property__(\w+)__$/)
         props[match[1]] = v
 
@@ -202,7 +202,7 @@ class Z.Object
   constructor: (properties = {}) ->
     @__objectId__ = objectId++
     @set properties
-    @
+    return this
 
   @property 'objectId', { readonly: true, get: -> @__objectId__ }
 
@@ -218,7 +218,7 @@ class Z.Object
     s += " #{props.join ', '}" if props.length > 0
     s += ">"
 
-  eq: (o) -> @ == o
+  eq: (o) -> this == o
 
   get: () ->
     if arguments.length == 1
@@ -241,8 +241,8 @@ class Z.Object
   _get: (path) ->
     [head, tail...] = path
 
-    if tail.length > 0 then getProperty(@, head)?._get(tail)
-    else getProperty @, head
+    if tail.length > 0 then getProperty(this, head)?._get(tail)
+    else getProperty this, head
 
   set: (path, value) ->
     if arguments.length == 1
@@ -252,7 +252,7 @@ class Z.Object
     [init..., last] = path.split '.'
 
     if init.length > 0 then @_get(init)?.set last, value
-    else setProperty @, path, value
+    else setProperty this, path, value
 
     null
 
@@ -282,12 +282,12 @@ class Z.Object
     ((@__registrations__ ?= {})[key] ?= []).push registration
 
     if opts.fire
-      notification = key: key, observee: @
+      notification = key: key, observee: this
       notification.old     = @get(key) if registration.old
       notification.context = registration.context if registration.context
       registration.callback.call registration.observer, notification
 
-    @
+    return this
 
   stopObserving: (path, observer, action) ->
     key = path
@@ -300,13 +300,13 @@ class Z.Object
     # FIXME: raise an exception here if no indexes were found?
     registrations.splice(idx, 1) for idx in indexes
 
-    @
+    return this
 
   willChangeProperty: (k) ->
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      notification = key: k, observee: @
+      notification = key: k, observee: this
 
       notification.old     = @get(k) if registration.old
       notification.context = registration.context if registration.context

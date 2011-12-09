@@ -13,9 +13,9 @@ Z.Orderable = new Z.Mixin ->
 
     gte: (other) -> @cmp(other) >= 0
 
-    max: (other) -> if @cmp(other) >= 0 then @ else other
+    max: (other) -> if @cmp(other) >= 0 then this else other
 
-    min: (other) -> if @cmp(other) <= 0 then @ else other
+    min: (other) -> if @cmp(other) <= 0 then this else other
 
 # FIXME: do a better comparison on native objects
 Z.cmp = (a, b) ->

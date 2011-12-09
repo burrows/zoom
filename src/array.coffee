@@ -33,7 +33,7 @@ class Z.Array extends Z.Object
 
   toNative: -> @__array__
 
-  each: (f) -> f item, idx for item, idx in @__array__; @
+  each: (f) -> f item, idx for item, idx in @__array__; return this
 
   join: (s) -> @__array__.join Z.toString(s)
 
@@ -55,14 +55,15 @@ class Z.Array extends Z.Object
       throw new Error("Z.Array#splice: index `#{i}` is too small for #{@toString()}")
 
     if typeof n == 'undefined'
-      @.__array__.splice(idx)
-      return @
+      @__array__.splice(idx)
+      return this
 
     if idx >= len
       @__array__.length = idx
 
     @__array__.splice(idx, n, items...)
-    @
+
+    return this
 
   slice: (i, n) ->
     len = @length()

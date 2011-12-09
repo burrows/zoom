@@ -4,7 +4,7 @@ class Z.Mixin
     @_instance = {}
     @_property = {}
 
-    f.call @ if f
+    f.call this if f
 
   class: (o) ->
     if arguments.length == 0
