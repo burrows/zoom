@@ -271,30 +271,54 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    [first, rest...] = if typeof path == 'string' then path.split '.' else path
-    @observeProperty first, observer, action, opts
-
-  observeProperty: (key, observer, action, opts = {}) ->
     callback = if typeof action == 'function' then action else observer[action]
-
     registration = Z.merge Z.defaults(opts, defaultObserveOpts),
+      path     : path
       observer : observer
       action   : action
       callback : callback
 
-    ((@__registrations__ ?= {})[key] ?= []).push registration
+    ((@__registrations__ ?= {})[path] ?= []).push registration
+
+    setupPathObservers(this, path) if path.indexOf('.') != -1
 
     if opts.fire
-      notification = key: key, observee: this
-      notification.old     = @get(key) if registration.old
+      notification = path: path, observee: this
+      notification.new     = @get(path) if registration.new
       notification.context = registration.context if registration.context
       registration.callback.call registration.observer, notification
 
     return this
 
+  setupPathObservers = (object, path, observee, observedPath) ->
+    observee     ?= object
+    observedPath ?= path
+
+    [first, rest...] = if typeof path == 'string' then path.split '.' else path
+
+    if rest.length > 0 and (val = object.get(first))?
+      setupPathObservers val, rest, observee, observedPath
+
+    f = (notification) ->
+      if notification.isPrior
+        observee.willChangeProperty observedPath
+        return
+
+      if rest.length > 0
+        if notification.old?
+          teardownPathObservers notification.old, rest, observee, observedPath
+
+        if notification.new?
+          setupPathObservers notification.new, rest, observee, observedPath
+
+      observee.didChangeProperty observedPath
+
+    object.observe(first, null, f, prior: true, new: true, old: true)
+
+  teardownPathObservers: (object, path) ->
+
   stopObserving: (path, observer, action) ->
-    key = path
-    return unless registrations = @__registrations__?[key]
+    return unless registrations = @__registrations__?[path]
     indexes = []
     for registration, idx in registrations
       if registration.observer == observer && registration.action == action
@@ -309,7 +333,7 @@ class Z.Object
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      notification = key: k, observee: this
+      notification = path: registration.path, observee: this
 
       notification.old     = @get(k) if registration.old
       notification.context = registration.context if registration.context

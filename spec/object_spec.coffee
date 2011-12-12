@@ -260,12 +260,16 @@ describe 'Z.Object KVC support:', ->
 describe 'Z.Object KVO support:', ->
   class User extends Z.Object
     @property 'name'
+    @property 'address'
+
+  class Address extends Z.Object
+    @property 'street'
 
   user = null
 
-  beforeEach -> user = new User name: 'Joe'
-
   describe '#observe with a simple key', ->
+    beforeEach -> user = new User name: 'Joe'
+
     it 'should cause the given action to be invoked, bound to the observer, after the given key has changed', ->
       observer = { called: false, nameDidChange: () -> @called = true }
       user.observe 'name', observer, 'nameDidChange'
@@ -278,11 +282,11 @@ describe 'Z.Object KVO support:', ->
       user.set 'name', 'Bob'
       expect(observer.called).toBe true
 
-    it 'should cause the given action to be invoked with a change notification object containing the key that changed and the observee when the given key has changed', ->
+    it 'should cause the given action to be invoked with a change notification object containing the path that changed and the observee when the given key has changed', ->
       observer = { notification: null, nameDidChange: (n) -> @notification = n }
       user.observe 'name', observer, 'nameDidChange'
       user.set 'name', 'Bob'
-      expect(observer.notification.key).toEqual 'name'
+      expect(observer.notification.path).toEqual 'name'
       expect(observer.notification.observee).toBe user
 
     it 'should allow attaching multiple observers to the same key', ->
@@ -323,19 +327,19 @@ describe 'Z.Object KVO support:', ->
       observer = { notification: null, nameDidChange: (n) -> @notification = n }
       user.observe 'name', observer, 'nameDidChange', fire: true
       expect(observer.notification).not.toBeNull()
-      expect(observer.notification.key).toEqual 'name'
+      expect(observer.notification.path).toEqual 'name'
       expect(observer.notification.observee).toBe user
 
-    it 'should fire the observer immediately when the `fire` option is set and include the `old` key when the `old` option is set', ->
-      observer = { notification: null, nameDidChange: (n) -> @notification = n }
-      user.observe 'name', observer, 'nameDidChange', fire: true, old: true
-      expect(observer.notification.key).toEqual 'name'
-      expect(observer.notification.old).toEqual 'Joe'
-
-    it 'should fire the observer immediately when the `fire` option is set and not include the `new` key even when the `new` option is set', ->
+    it 'should fire the observer immediately when the `fire` option is set and include the `new` key when the `new` option is set', ->
       observer = { notification: null, nameDidChange: (n) -> @notification = n }
       user.observe 'name', observer, 'nameDidChange', fire: true, new: true
-      expect(observer.notification.hasOwnProperty 'new').toBe false
+      expect(observer.notification.path).toEqual 'name'
+      expect(observer.notification.new).toEqual 'Joe'
+
+    it 'should fire the observer immediately when the `fire` option is set and not include the `old` key even when the `old` option is set', ->
+      observer = { notification: null, nameDidChange: (n) -> @notification = n }
+      user.observe 'name', observer, 'nameDidChange', fire: true, old: true
+      expect(observer.notification.hasOwnProperty 'old').toBe false
 
     it 'should invoke the callback before the property change actually occurs when the `prior` option is set', ->
       observer =
@@ -374,6 +378,7 @@ describe 'Z.Object KVO support:', ->
 
   describe '#stopObserving with a simple key', ->
     it 'should prevent the registered observer from being notified of further changes', ->
+      user = new User name: 'Joe'
       observer1 = { called: false, action: () -> @called = true }
       observer2 = { called: false, action: () -> @called = true }
       user.observe 'name', observer1, 'action'
@@ -387,6 +392,38 @@ describe 'Z.Object KVO support:', ->
       user.name 'Susan'
       expect(observer1.called).toBe false
       expect(observer2.called).toBe true
+
+  describe '#observe with a key path', ->
+    it 'should cause a notification to be delivered to the observer when the key at the end of the path changes', ->
+      observer = { called: false, action: () -> @called = true }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe('address.street', observer, 'action')
+      expect(observer.called).toBe false
+      user.get('address').set('street', 'north')
+      expect(observer.called).toBe true
+
+    it 'should still cause a notification to be delivered even when some segments in the path do not yet exist when the observer is created', ->
+      observer = { called: 0, action: () -> @called++ }
+      user     = new User
+
+      user.observe('address.street', observer, 'action')
+      expect(observer.called).toBe 0
+      user.set 'address', new Address
+      expect(observer.called).toBe 1
+      user.get('address').set('street', 'pine')
+      expect(observer.called).toBe 2
+
+    it 'should cause a notification to be sent when the property is initially set via a constructor', ->
+      observer = { called: false, action: () -> @called = true }
+      user     = new User
+
+      user.observe('address.street', observer, 'action')
+      expect(observer.called).toBe false
+      user.set 'address', new Address(street: 'chestnut')
+      expect(observer.called).toBe true
+
+  describe '#stopObserving with a key path', ->
 
 describe 'Z.Object.mixin', ->
   MyMixin = new Z.Mixin ->
