@@ -423,6 +423,27 @@ describe 'Z.Object KVO support:', ->
       user.set 'address', new Address(street: 'chestnut')
       expect(observer.called).toBe true
 
+    it 'should not trigger notifications when a property on an object that was removed from the path changes', ->
+      observer = { called: 0, action: () -> @called++ }
+      user     = new User
+      address1 = new Address street: 'clark'
+      address2 = new Address street: 'addison'
+
+      user.observe('address.street', observer, 'action')
+      expect(observer.called).toBe 0
+      user.set 'address', address1
+      expect(observer.called).toBe 1
+      address1.set 'street', 'waveland'
+      expect(observer.called).toBe 2
+      user.set 'address', address2
+      expect(observer.called).toBe 3
+      # address1 is no longer part of the path, so modifying it should not
+      # trigger the observer
+      address1.set 'street', 'sheffield'
+      expect(observer.called).toBe 3
+      address2.set 'street', 'grace'
+      expect(observer.called).toBe 4
+
   describe '#stopObserving with a key path', ->
 
 describe 'Z.Object.mixin', ->

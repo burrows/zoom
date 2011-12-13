@@ -304,6 +304,18 @@ class Z.Object
       registerSegmentObservers val, tail, registration
 
   deregisterSegmentObservers = (object, path, registration) ->
+    [head, tail...] = path
+    registrations   = object.__registrations__?[head]
+    indexes         = []
+
+    for reg, idx in registrations
+      if reg.action == registration.action and reg.observer == registration.observer
+        indexes.unshift idx
+
+    registrations.splice(idx, 1) for idx in indexes
+
+    if tail.length > 0 and val = object.get(head)
+      deregisterSegmentObservers val, tail, registration
 
   stopObserving: (path, observer, action) ->
     return unless registrations = @__registrations__?[path]
