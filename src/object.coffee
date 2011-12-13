@@ -271,18 +271,20 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    callback = if typeof action == 'function' then action else observer[action]
-    registration = Z.merge Z.defaults(opts, defaultObserveOpts),
+    [head, tail...] = path.split '.'
+    registration    = Z.merge Z.defaults(opts, defaultObserveOpts),
       path     : path
+      head     : head
+      tail     : tail
       observee : this
       observer : observer
       action   : action
-      callback : callback
+      callback : if typeof action == 'function' then action else observer[action]
 
-    ((@__pathRegistrations__ ?= {})[path] ?= []).push registration
+    ((@__registrations__ ?= {})[head] ?= []).push registration
 
-    if path.indexOf('.') != -1
-      setupSegmentRegistrations(this, path, registration)
+    if tail.length > 0 and val = @get(head)
+      registerSegmentObservers val, tail, registration
 
     if opts.fire
       notification = path: path, observee: this
@@ -292,48 +294,19 @@ class Z.Object
 
     return this
 
-  setupSegmentRegistrations = (object, path, pathRegistration) ->
-    [head, tail...] = if typeof path == 'string' then path.split '.' else path
-    registration    =
-      pathRegistration : pathRegistration
-      head             : head
-      tail             : tail
+  registerSegmentObservers = (object, path, registration) ->
+    [head, tail...] = path
+    registration    = Z.merge {}, registration, head: head, tail: tail
 
-    ((object.__segmentRegistrations__ ?= {})[head] ?= []).push registration
+    ((object.__registrations__ ?= {})[path] ?= []).push registration
 
     if tail.length > 0 and val = object.get(head)
-      setupSegmentRegistrations(val, tail, pathRegistration)
+      registerSegmentObservers val, tail, registration
 
-  teardownSegmentRegistrations = (object, path, pathRegistration) ->
-
-  #setupPathObservers = (object, path, observee, observedPath) ->
-  #  observee     ?= object
-  #  observedPath ?= path
-
-  #  [first, rest...] = if typeof path == 'string' then path.split '.' else path
-
-  #  if rest.length > 0 and (val = object.get(first))?
-  #    setupPathObservers val, rest, observee, observedPath
-
-  #  f = (notification) ->
-  #    if notification.isPrior
-  #      observee.willChangeProperty observedPath
-  #      return
-
-  #    if rest.length > 0
-  #      if notification.old?
-  #        teardownPathObservers notification.old, rest, observee, observedPath
-
-  #      if notification.new?
-  #        setupPathObservers notification.new, rest, observee, observedPath
-
-  #    observee.didChangeProperty observedPath
-
-  #  object.observe(first, null, f, prior: true, new: true, old: true)
-
+  deregisterSegmentObservers = (object, path, registration) ->
 
   stopObserving: (path, observer, action) ->
-    return unless registrations = @__pathRegistrations__?[path]
+    return unless registrations = @__registrations__?[path]
     indexes = []
     for registration, idx in registrations
       if registration.observer == observer && registration.action == action
@@ -345,55 +318,40 @@ class Z.Object
     return this
 
   willChangeProperty: (k) ->
-    pathRegistrations    = @__pathRegistrations__?[k]
-    segmentRegistrations = @__segmentRegistrations__?[k]
+    return unless registrations = @__registrations__?[k]
 
-    if pathRegistrations
-      for registration in pathRegistrations
-        notification = path: registration.path, observee: this
+    for registration in registrations
+      {path, observee} = registration
 
-        notification.old     = @get(k) if registration.old
-        notification.context = registration.context if registration.context
+      notification = path: path, observee: observee
 
-        if registration.prior
-          notification.isPrior = true
-          registration.callback.call registration.observer, notification
-          notification = Z.merge {}, notification
-          delete notification.isPrior
+      notification.old     = observee.get(path) if registration.old
+      notification.context = registration.context if registration.context
 
-        registration.notification = notification
+      if registration.tail.length > 0 and val = @get(k)
+        deregisterSegmentObservers val, registration.tail, registration
 
-    if segmentRegistrations
-      for registration in segmentRegistrations
-        pathRegistration = registration.pathRegistration
-        notification =
-          path     : pathRegistration.path,
-          observee : pathRegistration.observee
+      if registration.prior
+        notification.isPrior = true
+        registration.callback.call registration.observer, notification
+        notification = Z.merge {}, notification
+        delete notification.isPrior
 
-        registration.notification = notification
+      registration.notification = notification
 
   didChangeProperty: (k) ->
-    pathRegistrations    = @__pathRegistrations__?[k]
-    segmentRegistrations = @__segmentRegistrations__?[k]
-    val                  = @get k
+    return unless registrations = @__registrations__?[k]
 
-    if pathRegistrations
-      for registration in pathRegistrations
-        notification = registration.notification
-        delete registration.notification
+    for registration in registrations
+      {notification, path, observee, observer, callback} = registration
+      delete registration.notification
 
-        notification.new = val if registration.new
+      notification.new = observee.get(path) if registration.new
 
-        registration.callback.call registration.observer, notification
+      if registration.tail.length > 0 and val = @get(k)
+        registerSegmentObservers val, registration.tail, registration
 
-    if segmentRegistrations
-      for registration in segmentRegistrations
-        {head, tail, pathRegistration, notification} = registration
-        delete registration.notification
-        pathRegistration.callback.call pathRegistration.observer, notification
-
-        if tail.length > 0 and val?
-          setupSegmentRegistrations(val, tail, pathRegistration)
+      callback.call observer, notification
 
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"
