@@ -274,13 +274,15 @@ class Z.Object
     callback = if typeof action == 'function' then action else observer[action]
     registration = Z.merge Z.defaults(opts, defaultObserveOpts),
       path     : path
+      observee : this
       observer : observer
       action   : action
       callback : callback
 
-    ((@__registrations__ ?= {})[path] ?= []).push registration
+    ((@__pathRegistrations__ ?= {})[path] ?= []).push registration
 
-    setupPathObservers(this, path) if path.indexOf('.') != -1
+    if path.indexOf('.') != -1
+      setupSegmentRegistrations(this, path, registration)
 
     if opts.fire
       notification = path: path, observee: this
@@ -290,35 +292,48 @@ class Z.Object
 
     return this
 
-  setupPathObservers = (object, path, observee, observedPath) ->
-    observee     ?= object
-    observedPath ?= path
+  setupSegmentRegistrations = (object, path, pathRegistration) ->
+    [head, tail...] = if typeof path == 'string' then path.split '.' else path
+    registration    =
+      pathRegistration : pathRegistration
+      head             : head
+      tail             : tail
 
-    [first, rest...] = if typeof path == 'string' then path.split '.' else path
+    ((object.__segmentRegistrations__ ?= {})[head] ?= []).push registration
 
-    if rest.length > 0 and (val = object.get(first))?
-      setupPathObservers val, rest, observee, observedPath
+    if tail.length > 0 and val = object.get(head)
+      setupSegmentRegistrations(val, tail, pathRegistration)
 
-    f = (notification) ->
-      if notification.isPrior
-        observee.willChangeProperty observedPath
-        return
+  teardownSegmentRegistrations = (object, path, pathRegistration) ->
 
-      if rest.length > 0
-        if notification.old?
-          teardownPathObservers notification.old, rest, observee, observedPath
+  #setupPathObservers = (object, path, observee, observedPath) ->
+  #  observee     ?= object
+  #  observedPath ?= path
 
-        if notification.new?
-          setupPathObservers notification.new, rest, observee, observedPath
+  #  [first, rest...] = if typeof path == 'string' then path.split '.' else path
 
-      observee.didChangeProperty observedPath
+  #  if rest.length > 0 and (val = object.get(first))?
+  #    setupPathObservers val, rest, observee, observedPath
 
-    object.observe(first, null, f, prior: true, new: true, old: true)
+  #  f = (notification) ->
+  #    if notification.isPrior
+  #      observee.willChangeProperty observedPath
+  #      return
 
-  teardownPathObservers: (object, path) ->
+  #    if rest.length > 0
+  #      if notification.old?
+  #        teardownPathObservers notification.old, rest, observee, observedPath
+
+  #      if notification.new?
+  #        setupPathObservers notification.new, rest, observee, observedPath
+
+  #    observee.didChangeProperty observedPath
+
+  #  object.observe(first, null, f, prior: true, new: true, old: true)
+
 
   stopObserving: (path, observer, action) ->
-    return unless registrations = @__registrations__?[path]
+    return unless registrations = @__pathRegistrations__?[path]
     indexes = []
     for registration, idx in registrations
       if registration.observer == observer && registration.action == action
@@ -330,32 +345,55 @@ class Z.Object
     return this
 
   willChangeProperty: (k) ->
-    return unless registrations = @__registrations__?[k]
+    pathRegistrations    = @__pathRegistrations__?[k]
+    segmentRegistrations = @__segmentRegistrations__?[k]
 
-    for registration in registrations
-      notification = path: registration.path, observee: this
+    if pathRegistrations
+      for registration in pathRegistrations
+        notification = path: registration.path, observee: this
 
-      notification.old     = @get(k) if registration.old
-      notification.context = registration.context if registration.context
+        notification.old     = @get(k) if registration.old
+        notification.context = registration.context if registration.context
 
-      if registration.prior
-        notification.isPrior = true
-        registration.callback.call registration.observer, notification
-        notification = Z.merge {}, notification
-        delete notification.isPrior
+        if registration.prior
+          notification.isPrior = true
+          registration.callback.call registration.observer, notification
+          notification = Z.merge {}, notification
+          delete notification.isPrior
 
-      registration.notification = notification
+        registration.notification = notification
+
+    if segmentRegistrations
+      for registration in segmentRegistrations
+        pathRegistration = registration.pathRegistration
+        notification =
+          path     : pathRegistration.path,
+          observee : pathRegistration.observee
+
+        registration.notification = notification
 
   didChangeProperty: (k) ->
-    return unless registrations = @__registrations__?[k]
+    pathRegistrations    = @__pathRegistrations__?[k]
+    segmentRegistrations = @__segmentRegistrations__?[k]
+    val                  = @get k
 
-    for registration in registrations
-      notification = registration.notification
-      delete registration.notification
+    if pathRegistrations
+      for registration in pathRegistrations
+        notification = registration.notification
+        delete registration.notification
 
-      notification.new = @get(k) if registration.new
+        notification.new = val if registration.new
 
-      registration.callback.call registration.observer, notification
+        registration.callback.call registration.observer, notification
+
+    if segmentRegistrations
+      for registration in segmentRegistrations
+        {head, tail, pathRegistration, notification} = registration
+        delete registration.notification
+        pathRegistration.callback.call pathRegistration.observer, notification
+
+        if tail.length > 0 and val?
+          setupSegmentRegistrations(val, tail, pathRegistration)
 
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"
