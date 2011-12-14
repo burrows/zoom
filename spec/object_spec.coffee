@@ -394,16 +394,20 @@ describe 'Z.Object KVO support:', ->
       expect(observer2.called).toBe true
 
   describe '#observe with a key path', ->
-    it 'should cause a notification to be delivered to the observer when the key at the end of the path changes', ->
-      observer = { called: false, action: () -> @called = true }
+    it 'should cause a notification to be delivered to the observer when any segment in the path changes', ->
+      observer = { called: 0, action: () -> @called++ }
       user     = new User(address: new Address(street: 'main'))
 
       user.observe('address.street', observer, 'action')
-      expect(observer.called).toBe false
+      expect(observer.called).toBe 0
       user.get('address').set('street', 'north')
-      expect(observer.called).toBe true
+      expect(observer.called).toBe 1
+      user.set('address', new Address)
+      expect(observer.called).toBe 2
+      user.set('address.street', 'madison')
+      expect(observer.called).toBe 3
 
-    it 'should still cause a notification to be delivered even when some segments in the path do not yet exist when the observer is created', ->
+    it 'should still cause a notifications to be delivered when some segments in the path do not yet exist when the observer is created', ->
       observer = { called: 0, action: () -> @called++ }
       user     = new User
 
@@ -414,16 +418,16 @@ describe 'Z.Object KVO support:', ->
       user.get('address').set('street', 'pine')
       expect(observer.called).toBe 2
 
-    it 'should cause a notification to be sent when the property is initially set via a constructor', ->
-      observer = { called: false, action: () -> @called = true }
+    it 'should cause a single notification to be sent multiple segments are set', ->
+      observer = { called: 0, action: () -> @called++ }
       user     = new User
 
       user.observe('address.street', observer, 'action')
-      expect(observer.called).toBe false
+      expect(observer.called).toBe 0
       user.set 'address', new Address(street: 'chestnut')
-      expect(observer.called).toBe true
+      expect(observer.called).toBe 1
 
-    it 'should not trigger notifications when a property on an object that was removed from the path changes', ->
+    it 'should no longer trigger notifications when a property on an object that was once but is not longer part of the path changes', ->
       observer = { called: 0, action: () -> @called++ }
       user     = new User
       address1 = new Address street: 'clark'
@@ -445,6 +449,21 @@ describe 'Z.Object KVO support:', ->
       expect(observer.called).toBe 4
 
   describe '#stopObserving with a key path', ->
+    it 'should prevent the registered observer from being notified of further changes to any segment in the path', ->
+      observer = { called: 0, action: () -> @called++ }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe('address.street', observer, 'action')
+      expect(observer.called).toBe 0
+      user.set('address.street', 'first')
+      expect(observer.called).toBe 1
+      user.stopObserving('address.street', observer, 'action')
+      user.set('address.street', 'second')
+      expect(observer.called).toBe 1
+      user.set('address', new Address)
+      expect(observer.called).toBe 1
+      user.set('address.street', 'third')
+      expect(observer.called).toBe 1
 
 describe 'Z.Object.mixin', ->
   MyMixin = new Z.Mixin ->

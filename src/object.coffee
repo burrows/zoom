@@ -318,11 +318,19 @@ class Z.Object
       deregisterSegmentObservers val, tail, registration
 
   stopObserving: (path, observer, action) ->
-    return unless registrations = @__registrations__?[path]
+    [head, tail...] = path.split '.'
+
+    return unless registrations = @__registrations__?[head]
+
     indexes = []
+    val     = @get head
+
     for registration, idx in registrations
       if registration.observer == observer && registration.action == action
         indexes.unshift idx
+
+        if tail.length > 0 and val
+          deregisterSegmentObservers val, tail, registration
 
     # FIXME: raise an exception here if no indexes were found?
     registrations.splice(idx, 1) for idx in indexes
