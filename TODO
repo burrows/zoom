@@ -1,3 +1,5 @@
+* @property dependsOn option
+* array observing
 * docs
 * allow for read-only properties (set `set` property to false? use `readonly` option?)
 * implement a more robust Z.eq method that does deep comparisons of native
