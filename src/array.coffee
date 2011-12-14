@@ -1,7 +1,6 @@
 class Z.Array extends Z.Object
   NativeArray = Z.root.Array
 
-  @mixin Z.Equatable
   @mixin Z.Enumerable
 
   # FIXME: make sure these properties are notified of changes where appropriate

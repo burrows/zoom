@@ -53,3 +53,17 @@ Z.isNativeArray = Array.isArray or (o) ->
 # Returns a string representation of the given object.
 Z.toString = (o) -> o?.toString() || String o
 
+# Performs an object equality test. If the first argument is an instance of
+# `Z.Object` then it is sent the `eq` method, otherwise a deep object comparison
+# is performed.
+#
+# FIXME: do a deep object comparison when given native objects
+#
+# a - Any object.
+# b - Any object.
+#
+# Returns `true` if the objects are equal and `false` otherwise.
+Z.eq = (a, b) ->
+  return a.eq b if a and a.isZObject
+  a == b
+

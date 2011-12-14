@@ -24,3 +24,24 @@ describe 'Z.isNativeArray', ->
   it 'should return false for Z.Arrays', ->
     expect(Z.isNativeArray Z.A()).toBe false
 
+describe 'Z.eq', ->
+  class A extends Z.Object
+    @property 'foo'
+    eq: (other) -> @foo() == other.foo()
+
+  it 'should invoke #eq if the first object is a Z.Object', ->
+    a1 = new A foo: 1; a2 = new A foo: 1
+
+    expect(a1 == a2).toBe false
+    expect(Z.eq a1, a2).toBe true
+    a2.foo 2
+    expect(a1 == a2).toBe false
+    expect(Z.eq a1, a2).toBe false
+
+  it 'should fall back to using the == operator if the first object is not a Z.Object', ->
+    expect(Z.eq 'foo', 'foo').toBe true
+    expect(Z.eq 'foo', 'bar').toBe false
+    expect(Z.eq 9, 9).toBe true
+    expect(Z.eq 9, 10).toBe false
+    expect(Z.eq null, 0).toBe false
+

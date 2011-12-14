@@ -187,11 +187,6 @@ class Z.Object
 
     null
 
-  # Makes `Z.Object` equatable. You'll likely want to override the `#eq` or
-  # `#neq` method in subclasses in order to implement more meaningful object
-  # comparison.
-  @mixin Z.Equatable
-
   # Initialize a new instance of `Z.Object`. Assigns a unique object id and sets
   # any given property values.
   #
@@ -219,6 +214,8 @@ class Z.Object
     s += ">"
 
   eq: (o) -> this == o
+
+  neq: (o) -> !@eq(o)
 
   get: () ->
     if arguments.length == 1

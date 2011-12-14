@@ -1,6 +1,6 @@
 NODE_PATH := build
 
-SRCS      := zoom mixin equatable orderable enumerable object array
+SRCS      := zoom mixin orderable enumerable object array
 SRCS      := $(addsuffix .coffee,$(SRCS))
 SPECS     := spec/helper.coffee $(wildcard spec/*_spec.coffee)
 JSSPECS   := $(SPECS:%.coffee=%.js)
