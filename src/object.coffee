@@ -253,12 +253,6 @@ class Z.Object
 
     null
 
-  defaultObserveOpts =
-    old: false
-    new: false
-    fire: false
-    prior: false
-
   # options:
   #   old - set to true to receive the old value in the notification (default: false)
   #   new - set to true to receive the new value in the notification (default: false)
@@ -268,20 +262,7 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    [head, tail...] = path.split '.'
-    registration    = Z.merge Z.defaults(opts, defaultObserveOpts),
-      path     : path
-      head     : head
-      tail     : tail
-      observee : this
-      observer : observer
-      action   : action
-      callback : if typeof action == 'function' then action else observer[action]
-
-    ((@__registrations__ ?= {})[head] ?= []).push registration
-
-    if tail.length > 0 and val = @get(head)
-      registerSegmentObservers val, tail, registration
+    registration = registerObserver this, path, observer, action, opts
 
     if opts.fire
       notification = path: path, observee: this
@@ -291,62 +272,68 @@ class Z.Object
 
     return this
 
-  registerSegmentObservers = (object, path, registration) ->
-    [head, tail...] = path
-    registration    = Z.merge {}, registration, head: head, tail: tail
+  registerObserver = (object, path, args...) ->
+    [head, tail...] = if typeof path == 'string' then path.split '.' else path
 
-    ((object.__registrations__ ?= {})[path] ?= []).push registration
+    if args.length > 1
+      [observer, action, opts] = args
+      registration = Z.merge {}, opts,
+        path     : path
+        head     : head
+        tail     : tail
+        observee : object
+        observer : observer
+        action   : action
+        callback : if typeof action == 'function' then action else observer[action]
+    else
+      registration = Z.merge {}, args[0], head: head, tail: tail
 
-    if tail.length > 0 and val = object.get(head)
-      registerSegmentObservers val, tail, registration
-
-  deregisterSegmentObservers = (object, path, registration) ->
-    [head, tail...] = path
-    registrations   = object.__registrations__?[head]
-    indexes         = []
-
-    for reg, idx in registrations
-      if reg.action == registration.action and reg.observer == registration.observer
-        indexes.unshift idx
-
-    registrations.splice(idx, 1) for idx in indexes
+    ((object.__registrations__ ?= {})[head] ?= []).push registration
 
     if tail.length > 0 and val = object.get(head)
-      deregisterSegmentObservers val, tail, registration
+      registerObserver val, tail, registration
 
-  stopObserving: (path, observer, action) ->
-    [head, tail...] = path.split '.'
+    registration
 
-    return unless registrations = @__registrations__?[head]
+  deregisterObserver = (object, path, args...) ->
+    [head, tail...] = if typeof path == 'string' then path.split '.' else path
 
-    indexes = []
-    val     = @get head
+    if args.length > 1
+      [observer, action] = args
+    else
+      {observer, action, path} = args[0]
+
+    return unless registrations = object.__registrations__?[head]
 
     for registration, idx in registrations
-      if registration.observer == observer && registration.action == action
-        indexes.unshift idx
+      if (registration.path     == path     and
+          registration.observer == observer and
+          registration.action   == action)
 
-        if tail.length > 0 and val
-          deregisterSegmentObservers val, tail, registration
+        registrations.splice idx, 1
 
-    # FIXME: raise an exception here if no indexes were found?
-    registrations.splice(idx, 1) for idx in indexes
+        if tail.length > 0 and val = object.get(head)
+          deregisterObserver val, tail, registration
 
+        return
+
+  stopObserving: (path, observer, action) ->
+    deregisterObserver this, path, observer, action
     return this
 
   willChangeProperty: (k) ->
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      {path, observee} = registration
+      {path, observee, tail} = registration
 
       notification = path: path, observee: observee
 
       notification.old     = observee.get(path) if registration.old
       notification.context = registration.context if registration.context
 
-      if registration.tail.length > 0 and val = @get(k)
-        deregisterSegmentObservers val, registration.tail, registration
+      if tail.length > 0 and val = @get(k)
+        deregisterObserver val, tail, registration
 
       if registration.prior
         notification.isPrior = true
@@ -360,13 +347,13 @@ class Z.Object
     return unless registrations = @__registrations__?[k]
 
     for registration in registrations
-      {notification, path, observee, observer, callback} = registration
+      {notification, tail, path, observer, observee, callback} = registration
       delete registration.notification
 
       notification.new = observee.get(path) if registration.new
 
-      if registration.tail.length > 0 and val = @get(k)
-        registerSegmentObservers val, registration.tail, registration
+      if tail.length > 0 and val = @get(k)
+        registerObserver val, tail, registration
 
       callback.call observer, notification
 
