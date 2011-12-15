@@ -585,6 +585,71 @@ describe 'Z.Object KVO support:', ->
       user.set('address.street', 'third')
       expect(observer.called).toBe 1
 
+describe 'Z.Object dependent properties:', ->
+  class Person extends Z.Object
+    @property 'first'
+    @property 'last'
+    @property 'occupation'
+    @property 'full',
+      dependsOn: ['first', 'last'],
+      get: -> @first() + ' ' + @last()
+    @property 'displayName',
+      dependsOn: ['full', 'occupation.name']
+      get: -> "#{@full()} (#{@get 'occupation.name'})"
+
+  class Occupation extends Z.Object
+    @property 'name'
+
+  it 'should notify observers when any of the dependent keys change', ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    p        = new Person first: 'Homer', last: 'Simpson'
+
+    p.observe 'full', observer, 'action', old: true, new: true
+    expect(observer.notifications.length).toBe 0
+    p.set 'first', 'Bart'
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].path).toBe 'full'
+    expect(observer.notifications[0].old).toBe 'Homer Simpson'
+    expect(observer.notifications[0].new).toBe 'Bart Simpson'
+    p.set 'last', 'Smith'
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].path).toBe 'full'
+    expect(observer.notifications[1].old).toBe 'Bart Simpson'
+    expect(observer.notifications[1].new).toBe 'Bart Smith'
+
+  it 'should notify observers when any of the dependent paths change', ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    p        = new Person
+      first: 'Homer', last: 'Simpson',
+      occupation: new Occupation(name: 'Safety Inspector')
+
+    p.observe 'displayName', observer, 'action', old: true, new: true
+    expect(observer.notifications.length).toBe 0
+    p.set 'occupation.name', 'Bus Driver'
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].path).toBe 'displayName'
+    expect(observer.notifications[0].old).toBe 'Homer Simpson (Safety Inspector)'
+    expect(observer.notifications[0].new).toBe 'Homer Simpson (Bus Driver)'
+    p.set 'occupation', new Occupation(name: 'Astronaut')
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].path).toBe 'displayName'
+    expect(observer.notifications[1].old).toBe 'Homer Simpson (Bus Driver)'
+    expect(observer.notifications[1].new).toBe 'Homer Simpson (Astronaut)'
+
+  it 'should notify observers when dependent properties which in turn have dependent properties change', ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    p        = new Person
+      first: 'Homer', last: 'Simpson',
+      occupation: new Occupation(name: 'Safety Inspector')
+
+    p.observe 'displayName', observer, 'action', old: true, new: true
+    expect(observer.notifications.length).toBe 0
+    p.set 'first', 'Bart'
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].path).toBe 'displayName'
+    expect(observer.notifications[0].old).toBe 'Homer Simpson (Safety Inspector)'
+    expect(observer.notifications[0].new).toBe 'Bart Simpson (Safety Inspector)'
+
 describe 'Z.Object.mixin', ->
   MyMixin = new Z.Mixin ->
     @property 'a'

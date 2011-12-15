@@ -17,11 +17,11 @@ class Z.Object
   # Private: A hash containing the default values for properties defined using
   # `Z.Object.property`.
   defaultPropertyOpts =
-    dependsOn: []
-    cache: true
-    auto: true
-    get: null
-    set: null
+    dependsOn : []
+    cache     : true
+    auto      : true
+    get       : null
+    set       : null
 
   # Add a namespace to search for class objects. You should register your app's
   # namespace using this method so that any classes you define on your app
@@ -121,7 +121,7 @@ class Z.Object
   #   * `auto`      - The key-value observing system will automatically notifiy
   #                   observers of the property when it changes when this option
   #                   is set. If set to `false`, you should use the
-  #                   `propertyWillChange` and `propertyDidChange` methods when
+  #                   `willChangeProperty` and `didChangeProperty` methods when
   #                   your setter actually changes the property. Setting this to
   #                   `false` only make sense when you have defined a custom
   #                   setter using the `set` option.
@@ -197,6 +197,12 @@ class Z.Object
   constructor: (properties = {}) ->
     @__objectId__ = objectId++
     @set properties
+
+    for k, v of @constructor.propertyDescriptors()
+      for path in v.dependsOn
+        @observe path, this, dependentPropertyObserver,
+          prior: true, context: k
+
     return this
 
   @property 'objectId', { readonly: true, get: -> @__objectId__ }
@@ -387,3 +393,8 @@ class Z.Object
 
     o.didChangeProperty(k) if prop.auto
 
+  dependentPropertyObserver = (notification) ->
+    if notification.isPrior
+      @willChangeProperty notification.context
+    else
+      @didChangeProperty notification.context
