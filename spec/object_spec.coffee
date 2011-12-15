@@ -341,7 +341,7 @@ describe 'Z.Object KVO support:', ->
       user.observe 'name', observer, 'nameDidChange', fire: true, old: true
       expect(observer.notification.hasOwnProperty 'old').toBe false
 
-    it 'should invoke the callback before the property change actually occurs when the `prior` option is set', ->
+    it 'should invoke the action before the property change actually occurs when the `prior` option is set', ->
       observer =
         notifications: []
         nameDidChange: (n) -> n.currentVal = user.name(); @notifications.push n
@@ -447,6 +447,126 @@ describe 'Z.Object KVO support:', ->
       expect(observer.called).toBe 3
       address2.set 'street', 'grace'
       expect(observer.called).toBe 4
+
+    it 'should cause the given action to be invoked with a change notification object containing the path that changed and the observee when any segment in the path has changed', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action'
+      user.set 'address.street', 'walnut'
+
+      expect(observer.notification.path).toEqual 'address.street'
+      expect(observer.notification.observee).toBe user
+
+    it 'should allow attaching multiple observers to the same path', ->
+      observer1 = { called: false, action: () -> @called = true }
+      observer2 = { called: false, action: () -> @called = true }
+      user      = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer1, 'action'
+      user.observe 'address.street', observer2, 'action'
+
+      user.set 'address', new Address
+
+      expect(observer1.called).toBe true
+      expect(observer2.called).toBe true
+
+    it 'should pass the object indicated by the context option in the notification if it exists', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', context: 'the-context'
+      user.address().street('chestnut')
+      expect(observer.notification.context).toEqual 'the-context'
+
+    it 'should set an `old` key in the notification that points to the previous value of the path if the old option is set', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', old: true
+      user.set 'address.street', 'lincoln'
+      expect(observer.notification.old).toEqual 'main'
+
+    it 'should set a `new` key in the notification that points to the new value of the property if the new option is set', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', new: true
+      user.set 'address.street', 'lincoln'
+      expect(observer.notification.new).toEqual 'lincoln'
+
+    it 'should set both `old` and `new` keys when both options are set', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', new: true, old: true
+      user.set 'address.street', 'lincoln'
+      expect(observer.notification.old).toEqual 'main'
+      expect(observer.notification.new).toEqual 'lincoln'
+
+    it 'should fire the observer immediately when  the `fire` option is set', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', fire: true
+      expect(observer.notification).not.toBeNull()
+      expect(observer.notification.path).toEqual 'address.street'
+      expect(observer.notification.observee).toBe user
+
+    it 'should fire the observer immediately when the `fire` option is set and include the `new` key when the `new` option is set', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', fire: true, new: true
+
+      expect(observer.notification.path).toEqual 'address.street'
+      expect(observer.notification.new).toEqual 'main'
+
+    it 'should fire the observer immediately when the `fire` option is set and not include the `old` key even when the `old` option is set', ->
+      observer = { notification: null, action: (n) -> @notification = n }
+      user     = new User(address: new Address(street: 'main'))
+
+      user.observe 'address.street', observer, 'action', fire: true, old: true
+
+      expect(observer.notification.path).toEqual 'address.street'
+      expect(observer.notification.hasOwnProperty 'old').toBe false
+
+    it 'should invoke the action before the property change actually occurs when the `prior` option is set', ->
+      user     = new User(address: new Address(street: 'main'))
+      observer =
+        notifications: []
+        action: (n) -> n.currentVal = user.get('address.street'); @notifications.push n
+
+      user.observe 'address.street', observer, 'action', prior: true
+      user.set('address.street', 'marshfield')
+
+      expect(observer.notifications.length).toBe 2
+      expect(observer.notifications[0].currentVal).toEqual 'main'
+      expect(observer.notifications[0].isPrior).toBe true
+      expect(observer.notifications[1].currentVal).toEqual 'marshfield'
+      expect(observer.notifications[1].isPrior).toBeUndefined()
+
+    it 'should include the `old` key in the notification when notifying prior to a property change when the `old` option is set', ->
+      user     = new User(address: new Address(street: 'main'))
+      observer = notifications: [], action: (n) ->@notifications.push n
+
+      user.observe 'address.street', observer, 'action', prior: true, old: true
+      user.set('address.street', 'marshfield')
+
+      expect(observer.notifications.length).toBe 2
+      expect(observer.notifications[0].old).toEqual 'main'
+      expect(observer.notifications[1].old).toEqual 'main'
+
+    it 'should not include the `new` key in the notification when notifying prior to a property change when the `new` option is set', ->
+      user     = new User(address: new Address(street: 'main'))
+      observer = notifications: [], action: (n) ->@notifications.push n
+
+      user.observe 'address.street', observer, 'action', prior: true, new: true
+      user.set('address.street', 'marshfield')
+
+      expect(observer.notifications.length).toBe 2
+      expect(observer.notifications[0].hasOwnProperty 'new').toBe false
+      expect(observer.notifications[1].new).toEqual 'marshfield'
 
   describe '#stopObserving with a key path', ->
     it 'should prevent the registered observer from being notified of further changes to any segment in the path', ->
