@@ -15,6 +15,9 @@ class Z.Array extends Z.Object
     get: -> @at -1
     set: (v) -> @at -1, v
 
+  @property '@',
+    get: -> this
+
   constructor: (args...) ->
     super()
 
@@ -53,35 +56,65 @@ class Z.Array extends Z.Object
       throw new Error("Z.Array#splice: index `#{i}` is too small for #{@toString()}")
 
     if typeof n == 'undefined'
-      notifyLength = notifyLast = idx < len
-      notifyFirst = idx == 0
-      @willChangeProperty 'length' if notifyLength
-      @willChangeProperty 'first'  if notifyFirst
-      @willChangeProperty 'last'   if notifyLast
+      willMutate(this, 'remove', idx, len - idx) if idx < len
       @__array__.splice(idx)
-      @didChangeProperty 'length' if notifyLength
-      @didChangeProperty 'first'  if notifyFirst
-      @didChangeProperty 'last'   if notifyLast
+      didMutate(this, 'remove', idx, len - idx) if idx < len
       return this
 
-    notifyLength = n != items.length or idx > len
-    notifyFirst  = idx == 0
-    notifyLast   = idx + n >= len
+    expand     = idx >= len
+    replaceNum = if expand then 0 else Z.min(n, items.length)
+    replaceIdx = idx
+    insertNum  = items.length - replaceNum
+    insertIdx  = idx + replaceNum
+    removeNum  = if expand then 0 else n - replaceNum
+    removeIdx  = idx + replaceNum
 
-    @willChangeProperty 'length' if notifyLength
-    @willChangeProperty 'first'  if notifyFirst
-    @willChangeProperty 'last'   if notifyLast
+    willMutate(this, 'insert',  insertIdx,  insertNum)  if insertNum  > 0
+    willMutate(this, 'remove',  removeIdx,  removeNum)  if removeNum  > 0
+    willMutate(this, 'replace', replaceIdx, replaceNum) if replaceNum > 0
 
-    if idx >= len
+    if expand
       @__array__.length = idx
 
     @__array__.splice(idx, n, items...)
 
-    @didChangeProperty 'length' if notifyLength
-    @didChangeProperty 'first'  if notifyFirst
-    @didChangeProperty 'last'   if notifyLast
+    didMutate(this, 'insert',  insertIdx,  insertNum)  if insertNum  > 0
+    didMutate(this, 'remove',  removeIdx,  removeNum)  if removeNum  > 0
+    didMutate(this, 'replace', replaceIdx, replaceNum) if replaceNum > 0
 
     return this
+
+  willMutate = (array, type, idx, n) ->
+    len = array.length()
+
+    switch type
+      when 'insert'
+        array.willChangeProperty 'length'
+        array.willChangeProperty 'first' if idx == 0
+        array.willChangeProperty 'last' if idx >= len
+      when 'remove'
+        array.willChangeProperty 'length'
+        array.willChangeProperty 'first' if idx == 0
+        array.willChangeProperty 'last' if idx + n == len
+      when 'replace'
+        array.willChangeProperty 'first' if idx == 0
+        array.willChangeProperty 'last' if idx == len - 1
+
+  didMutate = (array, type, idx, n) ->
+    len = array.length()
+
+    switch type
+      when 'insert'
+        array.didChangeProperty 'length'
+        array.didChangeProperty 'first' if idx == 0
+        array.didChangeProperty 'last' if idx + n == len
+      when 'remove'
+        array.didChangeProperty 'length'
+        array.didChangeProperty 'first' if idx == 0
+        array.didChangeProperty 'last' if idx + n > len
+      when 'replace'
+        array.didChangeProperty 'first' if idx == 0
+        array.didChangeProperty 'last' if idx == len - 1
 
   slice: (i, n) ->
     len = @length()

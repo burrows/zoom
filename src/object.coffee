@@ -142,11 +142,12 @@ class Z.Object
 
     @["__property__#{name}__"] = opts
 
-    @prototype[name] = (v) ->
-      if typeof v == 'undefined'
-        getProperty this, name
-      else
-        setProperty this, name, v
+    if name.match /^[\w$]+/
+      @prototype[name] = (v) ->
+        if typeof v == 'undefined'
+          getProperty this, name
+        else
+          setProperty this, name, v
 
     null
 

@@ -307,7 +307,7 @@ describe 'Z.Array#last (property)', ->
     expect(observer.notifications.length).toBe 3
     expect(observer.notifications[2].old).toBe 2
     expect(observer.notifications[2].new).toBe 9
-    a.splice 1, 4, 100, 200, 300, 400
+    a.splice 1, 2, 100, 200, 300, 400
     expect(observer.notifications.length).toBe 4
     expect(observer.notifications[3].old).toBe 9
     expect(observer.notifications[3].new).toBe 400
