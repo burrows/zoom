@@ -3,7 +3,6 @@ class Z.Array extends Z.Object
 
   @mixin Z.Enumerable
 
-  # FIXME: make sure these properties are notified of changes where appropriate
   @property 'length',
     get: -> @__array__.length
     set: (v) -> @__array__.length = v
@@ -54,13 +53,33 @@ class Z.Array extends Z.Object
       throw new Error("Z.Array#splice: index `#{i}` is too small for #{@toString()}")
 
     if typeof n == 'undefined'
+      notifyLength = notifyLast = idx < len
+      notifyFirst = idx == 0
+      @willChangeProperty 'length' if notifyLength
+      @willChangeProperty 'first'  if notifyFirst
+      @willChangeProperty 'last'   if notifyLast
       @__array__.splice(idx)
+      @didChangeProperty 'length' if notifyLength
+      @didChangeProperty 'first'  if notifyFirst
+      @didChangeProperty 'last'   if notifyLast
       return this
+
+    notifyLength = n != items.length or idx > len
+    notifyFirst  = idx == 0
+    notifyLast   = idx + n >= len
+
+    @willChangeProperty 'length' if notifyLength
+    @willChangeProperty 'first'  if notifyFirst
+    @willChangeProperty 'last'   if notifyLast
 
     if idx >= len
       @__array__.length = idx
 
     @__array__.splice(idx, n, items...)
+
+    @didChangeProperty 'length' if notifyLength
+    @didChangeProperty 'first'  if notifyFirst
+    @didChangeProperty 'last'   if notifyLast
 
     return this
 

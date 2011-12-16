@@ -67,6 +67,31 @@ describe 'Z.Array#length (property)', ->
     expect(a.get('length')).toBe 5
     expect(a.toNative().length).toBe 5
 
+  it 'should notify observers when the length changes', ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    a        = Z.A [1,2,3,4,5]
+
+    a.observe 'length', observer, 'action', old: true, new: true
+
+    a.push 6
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].old).toBe 5
+    expect(observer.notifications[0].new).toBe 6
+    a.unshift 0
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].old).toBe 6
+    expect(observer.notifications[1].new).toBe 7
+    a.pop()
+    expect(observer.notifications.length).toBe 3
+    expect(observer.notifications[2].old).toBe 7
+    expect(observer.notifications[2].new).toBe 6
+    a.at 0, 10
+    expect(observer.notifications.length).toBe 3
+    a.at 20, 20
+    expect(observer.notifications.length).toBe 4
+    expect(observer.notifications[3].old).toBe 6
+    expect(observer.notifications[3].new).toBe 21
+
 describe 'Z.Array#at', ->
   a = null
 
@@ -229,19 +254,67 @@ describe 'Z.Array#eq', ->
     a2 = new Z.Array 1, 2, 4
     expect(a1.eq a2).toBe false
 
-describe 'Z.Array#first', ->
+describe 'Z.Array#first (property)', ->
   it 'should return the first object in the array', ->
     expect(Z.A([5,6,7]).first()).toBe 5
 
   it 'should return null when the array is empty', ->
     expect(Z.A([]).first()).toBe null
 
-describe 'Z.Array#last', ->
+  it 'should notify observers when changed', ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    a        = Z.A 1,2,3
+
+    a.observe('first', observer, 'action', old: true, new: true)
+    a.at 0, 10
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].old).toBe 1
+    expect(observer.notifications[0].new).toBe 10
+    a.shift()
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].old).toBe 10
+    expect(observer.notifications[1].new).toBe 2
+    a.unshift(9)
+    expect(observer.notifications.length).toBe 3
+    expect(observer.notifications[2].old).toBe 2
+    expect(observer.notifications[2].new).toBe 9
+    a.splice 0
+    expect(observer.notifications.length).toBe 4
+    expect(observer.notifications[3].old).toBe 9
+    expect(observer.notifications[3].new).toBeNull()
+
+describe 'Z.Array#last (property)', ->
   it 'should return the last object in the array', ->
     expect(Z.A([5,6,7]).last()).toBe 7
 
   it 'should return null when the array is empty', ->
     expect(Z.A([]).last()).toBe null
+
+  it 'should notify observers when changed', ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    a        = Z.A 1,2,3
+
+    a.observe('last', observer, 'action', old: true, new: true)
+    a.at 2, 30
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].old).toBe 3
+    expect(observer.notifications[0].new).toBe 30
+    a.pop()
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].old).toBe 30
+    expect(observer.notifications[1].new).toBe 2
+    a.push(9)
+    expect(observer.notifications.length).toBe 3
+    expect(observer.notifications[2].old).toBe 2
+    expect(observer.notifications[2].new).toBe 9
+    a.splice 1, 4, 100, 200, 300, 400
+    expect(observer.notifications.length).toBe 4
+    expect(observer.notifications[3].old).toBe 9
+    expect(observer.notifications[3].new).toBe 400
+    a.splice 0
+    expect(observer.notifications.length).toBe 5
+    expect(observer.notifications[4].old).toBe 400
+    expect(observer.notifications[4].new).toBeNull()
 
 describe 'Z.Array#push', ->
   a = null
