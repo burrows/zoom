@@ -22,6 +22,7 @@ class Z.Object
     auto      : true
     get       : null
     set       : null
+    readonly  : false
 
   # Add a namespace to search for class objects. You should register your app's
   # namespace using this method so that any classes you define on your app
@@ -135,6 +136,8 @@ class Z.Object
   #                   property with the name `__<property>__`. You can use this
   #                   option to override that behavior by setting it to a
   #                   function that stores the given value.
+  #   * `readonly`  - Properties marked as readonly will throw an exception when
+  #                   an attempt to set them is made. Defaults to `false`.
   #
   # Returns nothing.
   @property: (name, opts = {}) ->
@@ -158,7 +161,7 @@ class Z.Object
     props = {}
 
     for own k, v of this
-      if match = k.match(/^__property__(\w+)__$/)
+      if match = k.match(/^__property__(.*)__$/)
         props[match[1]] = v
 
     props
@@ -384,6 +387,9 @@ class Z.Object
   setProperty = (o, k, v) ->
     prop = o.constructor["__property__#{k}__"]
     return o.setUnknownProperty(k, v) unless prop
+
+    if prop.readonly
+      throw new Error "Z.Object#set: attempted to set readonly property `#{k}` for #{o.toString()}"
 
     o.willChangeProperty(k) if prop.auto
 

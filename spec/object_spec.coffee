@@ -202,14 +202,19 @@ describe 'Z.Object KVC support:', ->
       expect(p.getUnknownProperty).toHaveBeenCalledWith 'doesntExist'
 
   describe '#getUnknownProperty', ->
-    it 'should throw and undefined key exception', ->
+    it 'should throw an undefined key exception', ->
       o = new Z.Object
       expect(-> o.get('blah')).toThrow("Z.Object#get: undefined key `blah` for #{o.toString()}")
 
   describe '#setUnknownProperty', ->
-    it 'should throw and undefined key exception', ->
+    it 'should throw an undefined key exception', ->
       o = new Z.Object
       expect(-> o.set('blah', 1)).toThrow("Z.Object#set: undefined key `blah` for #{o.toString()}")
+
+  describe '#set on a readonly property', ->
+    it 'should throw an exception', ->
+      o = new Z.Object
+      expect(-> o.set 'objectId', 19).toThrow("Z.Object#set: attempted to set readonly property `objectId` for #{o.toString()}")
 
   describe 'with a key path:', ->
     class A extends Z.Object
