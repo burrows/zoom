@@ -272,7 +272,7 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    registration = registerObserver this, path, observer, action, opts
+    registration = @registerObserver path, observer, action, opts
 
     if opts.fire
       notification = path: path, observee: this
@@ -282,7 +282,7 @@ class Z.Object
 
     return this
 
-  registerObserver = (object, path, args...) ->
+  registerObserver: (path, args...) ->
     [head, tail...] = if typeof path == 'string' then path.split '.' else path
 
     if args.length > 1
@@ -291,7 +291,7 @@ class Z.Object
         path     : path
         head     : head
         tail     : tail
-        observee : object
+        observee : this
         observer : observer
         action   : action
         callback : if typeof action == 'function' then action else observer[action]
@@ -299,14 +299,14 @@ class Z.Object
     else
       registration = Z.merge {}, args[0], head: head, tail: tail
 
-    ((object.__registrations__ ?= {})[head] ?= []).push registration
+    ((@__registrations__ ?= {})[head] ?= []).push registration
 
-    if tail.length > 0 and val = object.get(head)
-      registerObserver val, tail, registration
+    if tail.length > 0 and val = @get(head)
+      val.registerObserver tail, registration
 
     registration
 
-  deregisterObserver = (object, path, args...) ->
+  deregisterObserver: (path, args...) ->
     [head, tail...] = if typeof path == 'string' then path.split '.' else path
 
     if args.length > 1
@@ -314,7 +314,7 @@ class Z.Object
     else
       {observer, action, path} = args[0]
 
-    return unless registrations = object.__registrations__?[head]
+    return unless registrations = @__registrations__?[head]
 
     for registration, idx in registrations
       if (registration.path     == path     and
@@ -323,13 +323,13 @@ class Z.Object
 
         registrations.splice idx, 1
 
-        if tail.length > 0 and val = object.get(head)
-          deregisterObserver val, tail, registration
+        if tail.length > 0 and val = @get(head)
+          val.deregisterObserver tail, registration
 
         return
 
   stopObserving: (path, observer, action) ->
-    deregisterObserver this, path, observer, action
+    @deregisterObserver path, observer, action
     return this
 
   willChangeProperty: (k, opts = {}) ->
@@ -348,7 +348,7 @@ class Z.Object
           registration.oldvals[type] = observee.get path
 
       if tail.length > 0 and val = @get(k)
-        deregisterObserver val, tail, registration
+        val.deregisterObserver tail, registration
 
       if registration.prior
         notification = type: type, isPrior: true, path: path, observee: observee
@@ -382,7 +382,7 @@ class Z.Object
       Z.merge notification, opts
 
       if tail.length > 0 and val = @get(k)
-        registerObserver val, tail, registration
+        val.registerObserver tail, registration
 
       callback.call observer, notification
 
