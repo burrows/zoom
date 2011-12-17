@@ -59,11 +59,29 @@ Z.toString = (o) -> o?.toString() || String o
 #
 # FIXME: do a deep object comparison when given native objects
 #
-# a - Any object.
-# b - Any object.
+# `a` - Any object.
+# `b` - Any object.
 #
 # Returns `true` if the objects are equal and `false` otherwise.
 Z.eq = (a, b) ->
   return a.eq b if a and a.isZObject
   a == b
+
+# Creates a shallow copy of the given object.
+#
+# `o` - Any object.
+#
+# Returns a new object with all of the keys copied from `o`.
+Z.dup = (o) -> Z.merge {}, o
+
+# Deletes a property from an object and returns its value.
+#
+# `o`    - Any object.
+# `prop` - The property to delete.
+#
+# Returns the value of the given property name.
+Z.delete = (o, prop) ->
+  val = o[prop]
+  delete o[prop]
+  val
 

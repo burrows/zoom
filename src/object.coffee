@@ -295,6 +295,7 @@ class Z.Object
         observer : observer
         action   : action
         callback : if typeof action == 'function' then action else observer[action]
+        oldvals  : {}
     else
       registration = Z.merge {}, args[0], head: head, tail: tail
 
@@ -334,54 +335,49 @@ class Z.Object
   willChangeProperty: (k, opts = {}) ->
     return unless registrations = @__registrations__?[k]
 
-    opts = Z.merge {}, opts
-    type = opts.type || 'change'
-
-    delete opts.type
+    opts = Z.dup opts
+    type = Z.delete(opts, 'type') || 'change'
 
     for registration in registrations
       {path, observee, tail} = registration
 
-      notification = type: type, path: path, observee: observee
-
-      notification.context = registration.context if registration.context
-
       if registration.old
-        notification.old = if opts.hasOwnProperty 'old' then opts.old else observee.get(path)
-
-      delete opts.old
-
-      Z.merge notification, opts
+        if opts.hasOwnProperty 'old'
+          registration.oldvals[type] = Z.delete opts, 'old'
+        else
+          registration.oldvals[type] = observee.get path
 
       if tail.length > 0 and val = @get(k)
         deregisterObserver val, tail, registration
 
       if registration.prior
-        notification.isPrior = true
+        notification = type: type, isPrior: true, path: path, observee: observee
+        notification.context = registration.context if registration.context
+        notification.old = registration.oldvals[type] if registration.old
+        Z.merge notification, opts
         registration.callback.call registration.observer, notification
-        notification = Z.merge {}, notification
-        delete notification.isPrior
 
-      registration[type] = notification
+    return this
 
   didChangeProperty: (k, opts = {}) ->
     return unless registrations = @__registrations__?[k]
 
-    opts = Z.merge {}, opts
-    type = opts.type || 'change'
-
-    delete opts.type
+    opts = Z.dup opts
+    type = Z.delete(opts, 'type') || 'change'
 
     for registration in registrations
-      continue unless notification = registration[type]
-      delete registration[type]
-
       {tail, path, observer, observee, callback} = registration
 
-      if registration.new
-        notification.new = if opts.hasOwnProperty 'new' then opts.new else observee.get(path)
+      notification = type: type, path: path, observee: observee
 
-      delete opts.new
+      notification.old = Z.delete registration.oldvals, type if registration.old
+      notification.context = registration.context if registration.context
+
+      if registration.new
+        if opts.hasOwnProperty 'new'
+          notification.new = Z.delete opts, 'new'
+        else
+          notification.new = observee.get path
 
       Z.merge notification, opts
 
@@ -389,6 +385,8 @@ class Z.Object
         registerObserver val, tail, registration
 
       callback.call observer, notification
+
+    return this
 
   getUnknownProperty: (k) ->
     throw new Error "#{@constructor.className()}#get: undefined key `#{k}` for #{@toString()}"
