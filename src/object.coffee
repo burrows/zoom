@@ -331,16 +331,27 @@ class Z.Object
     deregisterObserver this, path, observer, action
     return this
 
-  willChangeProperty: (k) ->
+  willChangeProperty: (k, opts = {}) ->
     return unless registrations = @__registrations__?[k]
+
+    opts = Z.merge {}, opts
+    type = opts.type || 'change'
+
+    delete opts.type
 
     for registration in registrations
       {path, observee, tail} = registration
 
-      notification = path: path, observee: observee
+      notification = type: type, path: path, observee: observee
 
-      notification.old     = observee.get(path) if registration.old
       notification.context = registration.context if registration.context
+
+      if registration.old
+        notification.old = if opts.hasOwnProperty 'old' then opts.old else observee.get(path)
+
+      delete opts.old
+
+      Z.merge notification, opts
 
       if tail.length > 0 and val = @get(k)
         deregisterObserver val, tail, registration
@@ -351,16 +362,28 @@ class Z.Object
         notification = Z.merge {}, notification
         delete notification.isPrior
 
-      registration.notification = notification
+      registration[type] = notification
 
-  didChangeProperty: (k) ->
+  didChangeProperty: (k, opts = {}) ->
     return unless registrations = @__registrations__?[k]
 
-    for registration in registrations
-      {notification, tail, path, observer, observee, callback} = registration
-      delete registration.notification
+    opts = Z.merge {}, opts
+    type = opts.type || 'change'
 
-      notification.new = observee.get(path) if registration.new
+    delete opts.type
+
+    for registration in registrations
+      continue unless notification = registration[type]
+      delete registration[type]
+
+      {tail, path, observer, observee, callback} = registration
+
+      if registration.new
+        notification.new = if opts.hasOwnProperty 'new' then opts.new else observee.get(path)
+
+      delete opts.new
+
+      Z.merge notification, opts
 
       if tail.length > 0 and val = @get(k)
         registerObserver val, tail, registration

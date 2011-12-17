@@ -16,6 +16,7 @@ class Z.Array extends Z.Object
     set: (v) -> @at -1, v
 
   @property '@',
+    readonly: true
     get: -> this
 
   constructor: (args...) ->
@@ -69,18 +70,18 @@ class Z.Array extends Z.Object
     removeNum  = if expand then 0 else n - replaceNum
     removeIdx  = idx + replaceNum
 
+    willMutate(this, 'replace', replaceIdx, replaceNum) if replaceNum > 0
     willMutate(this, 'insert',  insertIdx,  insertNum)  if insertNum  > 0
     willMutate(this, 'remove',  removeIdx,  removeNum)  if removeNum  > 0
-    willMutate(this, 'replace', replaceIdx, replaceNum) if replaceNum > 0
 
     if expand
       @__array__.length = idx
 
     @__array__.splice(idx, n, items...)
 
+    didMutate(this, 'replace', replaceIdx, replaceNum) if replaceNum > 0
     didMutate(this, 'insert',  insertIdx,  insertNum)  if insertNum  > 0
     didMutate(this, 'remove',  removeIdx,  removeNum)  if removeNum  > 0
-    didMutate(this, 'replace', replaceIdx, replaceNum) if replaceNum > 0
 
     return this
 
@@ -92,13 +93,25 @@ class Z.Array extends Z.Object
         array.willChangeProperty 'length'
         array.willChangeProperty 'first' if idx == 0
         array.willChangeProperty 'last' if idx >= len
+        array.willChangeProperty '@',
+          type  : 'insert'
+          range : [idx, n]
+          old   : undefined
       when 'remove'
         array.willChangeProperty 'length'
         array.willChangeProperty 'first' if idx == 0
         array.willChangeProperty 'last' if idx + n == len
+        array.willChangeProperty '@',
+          type  : 'remove'
+          range : [idx, n]
+          old   : array.slice idx, n
       when 'replace'
         array.willChangeProperty 'first' if idx == 0
         array.willChangeProperty 'last' if idx == len - 1
+        array.willChangeProperty '@',
+          type  : 'replace'
+          range : [idx, n]
+          old   : array.slice idx, n
 
   didMutate = (array, type, idx, n) ->
     len = array.length()
@@ -108,13 +121,25 @@ class Z.Array extends Z.Object
         array.didChangeProperty 'length'
         array.didChangeProperty 'first' if idx == 0
         array.didChangeProperty 'last' if idx + n == len
+        array.didChangeProperty '@',
+          type  : 'insert'
+          range : [idx, n]
+          new   : array.slice idx, n
       when 'remove'
         array.didChangeProperty 'length'
         array.didChangeProperty 'first' if idx == 0
         array.didChangeProperty 'last' if idx + n > len
+        array.didChangeProperty '@',
+          type  : 'remove'
+          range : [idx, n]
+          new   : undefined
       when 'replace'
         array.didChangeProperty 'first' if idx == 0
         array.didChangeProperty 'last' if idx == len - 1
+        array.didChangeProperty '@',
+          type  : 'replace'
+          range : [idx, n]
+          new   : array.slice idx, n
 
   slice: (i, n) ->
     len = @length()

@@ -43,7 +43,7 @@ describe 'Z.Array#toNative', ->
     expect(a instanceof Array).toBe true
     expect(a).toEqual ['x', 'y']
 
-describe 'Z.Array#length (property)', ->
+describe 'Z.Array `length` property', ->
   it 'should return the current length of the array', ->
     expect((new Z.Array 8).length()).toBe 8
     expect((new Z.Array 1,2,3).get('length')).toBe 3
@@ -254,7 +254,7 @@ describe 'Z.Array#eq', ->
     a2 = new Z.Array 1, 2, 4
     expect(a1.eq a2).toBe false
 
-describe 'Z.Array#first (property)', ->
+describe 'Z.Array `first` property', ->
   it 'should return the first object in the array', ->
     expect(Z.A([5,6,7]).first()).toBe 5
 
@@ -283,7 +283,7 @@ describe 'Z.Array#first (property)', ->
     expect(observer.notifications[3].old).toBe 9
     expect(observer.notifications[3].new).toBeNull()
 
-describe 'Z.Array#last (property)', ->
+describe 'Z.Array `last` property', ->
   it 'should return the last object in the array', ->
     expect(Z.A([5,6,7]).last()).toBe 7
 
@@ -552,4 +552,112 @@ describe 'Z.Array KVC collection operators:', ->
     it 'should return the average of the values of the property specified by the key path to the right', ->
       avg = parseFloat transactions.get('@avg.amount').toFixed 2
       expect(avg).toBe 456.54
+
+describe 'Z.Array `@` property', ->
+  a = observer = null
+
+  beforeEach ->
+    observer = { notifications: [], action: (n) -> @notifications.push n }
+    a = Z.A [0..9]
+    a.observe '@', observer, 'action', old: true, new: true
+
+  it 'should notify observers when items are appended to the end of the array', ->
+    a.push 10
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'insert'
+    expect(observer.notifications[0].range).toEqual [10, 1]
+    expect(observer.notifications[0].old).toBeUndefined()
+    expect(observer.notifications[0].new).toEq Z.A([10])
+
+    a.push 11, 12, 13
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].type).toEqual 'insert'
+    expect(observer.notifications[1].range).toEqual [11, 3]
+    expect(observer.notifications[1].old).toBeUndefined()
+    expect(observer.notifications[1].new).toEq Z.A([11, 12, 13])
+
+  it 'should notify observers when items are prepended to the beginning of the array', ->
+    a.unshift 21
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'insert'
+    expect(observer.notifications[0].range).toEqual [0, 1]
+    expect(observer.notifications[0].old).toBeUndefined()
+    expect(observer.notifications[0].new).toEq Z.A([21])
+
+    a.unshift 22, 23
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].type).toEqual 'insert'
+    expect(observer.notifications[1].range).toEqual [0, 2]
+    expect(observer.notifications[1].old).toBeUndefined()
+    expect(observer.notifications[1].new).toEq Z.A([22, 23])
+
+  it 'should notify observers when items are inserted into the middle of the array', ->
+    a.splice 3, 0, 10, 11, 12
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'insert'
+    expect(observer.notifications[0].range).toEqual [3, 3]
+    expect(observer.notifications[0].old).toBeUndefined()
+    expect(observer.notifications[0].new).toEq Z.A([10, 11, 12])
+
+  it 'should notify observers when items are removed from the end of the array', ->
+    a.pop(2)
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'remove'
+    expect(observer.notifications[0].range).toEqual [8, 2]
+    expect(observer.notifications[0].old).toEq Z.A([8, 9])
+    expect(observer.notifications[0].new).toBeUndefined()
+
+  it 'should notify observers when items are removed from the beginning of the array', ->
+    a.shift(2)
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'remove'
+    expect(observer.notifications[0].range).toEqual [0, 2]
+    expect(observer.notifications[0].old).toEq Z.A([0, 1])
+    expect(observer.notifications[0].new).toBeUndefined()
+
+  it 'should notify observers when items are removed from the middle of the array', ->
+    a.splice 4, 2
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'remove'
+    expect(observer.notifications[0].range).toEqual [4, 2]
+    expect(observer.notifications[0].old).toEq Z.A([4, 5])
+    expect(observer.notifications[0].new).toBeUndefined()
+
+  it 'should notify observers when items are replaced in the array', ->
+    a.at 0, 19
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEqual 'replace'
+    expect(observer.notifications[0].range).toEqual [0, 1]
+    expect(observer.notifications[0].old).toEq Z.A([0])
+    expect(observer.notifications[0].new).toEq Z.A([19])
+    a.splice 2, 4, 20, 30, 40, 50
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].type).toEqual 'replace'
+    expect(observer.notifications[1].range).toEqual [2, 4]
+    expect(observer.notifications[1].old).toEq Z.A([2, 3, 4, 5])
+    expect(observer.notifications[1].new).toEq Z.A([20, 30, 40, 50])
+
+  it 'should notify observers when items are both replaced and inserted', ->
+    a.splice 2, 2, 20, 30, 40, 50
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[0].type).toEqual 'replace'
+    expect(observer.notifications[0].range).toEqual [2, 2]
+    expect(observer.notifications[0].old).toEq Z.A([2, 3])
+    expect(observer.notifications[0].new).toEq Z.A([20, 30])
+    expect(observer.notifications[1].type).toEqual 'insert'
+    expect(observer.notifications[1].range).toEqual [4, 2]
+    expect(observer.notifications[1].old).toBeUndefined()
+    expect(observer.notifications[1].new).toEq Z.A([40, 50])
+
+  it 'should notify observers when items are both replaced and removed', ->
+    a.splice 2, 4, 20, 30
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[0].type).toEqual 'replace'
+    expect(observer.notifications[0].range).toEqual [2, 2]
+    expect(observer.notifications[0].old).toEq Z.A([2, 3])
+    expect(observer.notifications[0].new).toEq Z.A([20, 30])
+    expect(observer.notifications[1].type).toEqual 'remove'
+    expect(observer.notifications[1].range).toEqual [4, 2]
+    expect(observer.notifications[1].old).toEq Z.A([4, 5])
+    expect(observer.notifications[1].new).toBeUndefined()
 
