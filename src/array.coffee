@@ -86,7 +86,9 @@ class Z.Array extends Z.Object
     return this
 
   willMutate = (array, type, idx, n) ->
-    len = array.length()
+    len      = array.length()
+    itemKeys = itemObserverKeys array
+    oldItems = array.slice idx, n
 
     switch type
       when 'insert'
@@ -104,17 +106,23 @@ class Z.Array extends Z.Object
         array.willChangeProperty '@',
           type  : 'remove'
           range : [idx, n]
-          old   : array.slice idx, n
+          old   : oldItems
+        deregisterItemObservers array, oldItems.toNative()
       when 'replace'
         array.willChangeProperty 'first' if idx == 0
         array.willChangeProperty 'last' if idx == len - 1
         array.willChangeProperty '@',
           type  : 'replace'
           range : [idx, n]
-          old   : array.slice idx, n
+          old   : oldItems
+        deregisterItemObservers array, oldItems.toNative()
+
+    array.willChangeProperty(key) for key in itemKeys
 
   didMutate = (array, type, idx, n) ->
-    len = array.length()
+    len      = array.length()
+    itemKeys = itemObserverKeys array
+    newItems = array.slice idx, n
 
     switch type
       when 'insert'
@@ -124,7 +132,8 @@ class Z.Array extends Z.Object
         array.didChangeProperty '@',
           type  : 'insert'
           range : [idx, n]
-          new   : array.slice idx, n
+          new   : newItems
+        registerItemObservers array, newItems.toNative()
       when 'remove'
         array.didChangeProperty 'length'
         array.didChangeProperty 'first' if idx == 0
@@ -139,7 +148,10 @@ class Z.Array extends Z.Object
         array.didChangeProperty '@',
           type  : 'replace'
           range : [idx, n]
-          new   : array.slice idx, n
+          new   : newItems
+        registerItemObservers array, newItems.toNative()
+
+    array.didChangeProperty(key) for key in itemKeys
 
   slice: (i, n) ->
     len = @length()
@@ -217,6 +229,38 @@ class Z.Array extends Z.Object
     result
 
   getUnknownProperty: (k) -> @pluck(k).flatten()
+
+  registerUnknownObserver: (registration) ->
+    ((@__registrations__ ?= {})[registration.head] ?= []).push registration
+    registerItemObservers(this, @toNative())
+
+  deregisterUnknownObserver: (rpath, opath, observee, observer, action) ->
+
+  registerItemObservers = (array, items) ->
+    for key in itemObserverKeys(array)
+      for registration in array.__registrations__[key]
+        {path, head, tail, observee, observer, action, opts} = registration
+
+        for item in items
+          item.registerObserver([head].concat(tail), path, observee, observer,
+            action, opts)
+
+  deregisterItemObservers = (array, items) ->
+    for key in itemObserverKeys(array)
+      for registration in array.__registrations__[key]
+        {path, head, tail, observee, observer, action, opts} = registration
+
+        for item in items
+          item.deregisterObserver([head].concat(tail), path, observee, observer,
+            action)
+
+  itemObserverKeys = (array) ->
+    keys = []
+
+    for key, registration of (array.__registrations__ || {})
+      keys.push(key) unless array.constructor.hasProperty(key)
+
+    keys
 
   _get: (path) ->
     [head, tail...] = path

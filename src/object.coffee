@@ -277,7 +277,7 @@ class Z.Object
     registration = @registerObserver path.split('.'), path, this, observer, action, opts
 
     if fire
-      notification = path: path, observee: this
+      notification = type: 'change', path: path, observee: this
       notification.new     = @get(path) if registration.opts.new
       notification.context = registration.context if registration.opts.context
       registration.callback.call registration.observer, notification
@@ -301,11 +301,11 @@ class Z.Object
 
     if @constructor.hasProperty(head)
       ((@__registrations__ ?= {})[head] ?= []).push registration
-    else
-      @registerUnknownObserver(registration)
 
-    if tail.length > 0 and val = @get(head)
-      val.registerObserver tail, opath, observee, observer, action, opts
+      if tail.length > 0 and val = @get(head)
+        val.registerObserver tail, opath, observee, observer, action, opts
+    else
+      @registerUnknownObserver registration
 
     registration
 

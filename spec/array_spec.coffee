@@ -673,3 +673,85 @@ describe 'Z.Array `@` property', ->
     expect(observer.notifications[1].old).toEq Z.A([4, 5])
     expect(observer.notifications[1].new).toBeUndefined()
 
+describe 'Z.Array#observe with an unknown property', ->
+  class Foo extends Z.Object
+    @property 'x'
+
+  a        = null
+  observer = { notifications: [], action: (n) -> @notifications.push n }
+
+  beforeEach ->
+    observer.notifications = []
+    a = Z.A(new Foo(x: 1), new Foo(x: 2), new Foo(x: 3))
+    a.observe('x', observer, 'action', old: true, new: true)
+
+  it 'should trigger notifications when items are added to the array', ->
+    a.push new Foo(x: 4)
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toBe 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,3,4)
+
+  it 'should trigger notifications when items are removed from the array', ->
+    a.pop()
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toBe 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3)
+    expect(observer.notifications[0].new).toEq Z.A(1,2)
+
+  it 'should trigger notifications when items are replaced in the array', ->
+    a.at(0, new Foo(x: 9))
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toBe 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3)
+    expect(observer.notifications[0].new).toEq Z.A(9,2,3)
+
+  it 'should trigger notifications when the property with the given name changes on any item', ->
+    a.at(1).set 'x', 23
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toBe 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3)
+    expect(observer.notifications[0].new).toEq Z.A(1,23,3)
+    a.at(2).set 'x', 11
+    expect(observer.notifications[1].type).toBe 'change'
+    expect(observer.notifications[1].old).toEq Z.A(1,23,3)
+    expect(observer.notifications[1].new).toEq Z.A(1,23,11)
+
+  it 'should trigger a notification immediately when the fire option is given', ->
+    observer2 = { notifications: [], action: (n) -> @notifications.push n }
+    a.observe('x', observer2, 'action', old: true, new: true, fire: true)
+    expect(observer2.notifications.length).toBe 1
+    expect(observer2.notifications[0].type).toBe 'change'
+    expect(observer2.notifications[0].hasOwnProperty 'old').toBe false
+    expect(observer2.notifications[0].new).toEq Z.A(1,2,3)
+
+  it 'should not trigger notifications when an item that was once but is no longer in the array changes', ->
+    item = a.last()
+    item.set 'x', 7
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toBe 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,7)
+    a.pop()
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].type).toBe 'change'
+    expect(observer.notifications[1].old).toEq Z.A(1,2,7)
+    expect(observer.notifications[1].new).toEq Z.A(1,2)
+    item.set 'x', 8
+    expect(observer.notifications.length).toBe 2
+
+  it 'should trigger notifications when an item that was not originally in the array changes', ->
+    item = new Foo x: 12
+
+    a.unshift item
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toBe 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3)
+    expect(observer.notifications[0].new).toEq Z.A(12,1,2,3)
+    item.x 13
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].type).toBe 'change'
+    expect(observer.notifications[1].old).toEq Z.A(12,1,2,3)
+    expect(observer.notifications[1].new).toEq Z.A(13,1,2,3)
+
+describe 'Z.Array#stopObservering with an unknown property', ->
