@@ -290,6 +290,7 @@ class Z.Object
     [head, tail...] = rpath
     registration    =
       path     : opath
+      head     : head
       tail     : tail
       observee : observee
       observer : observer
@@ -298,7 +299,10 @@ class Z.Object
       opts     : opts
       oldval   : {}
 
-    ((@__registrations__ ?= {})[head] ?= []).push registration
+    if @constructor.hasProperty(head)
+      ((@__registrations__ ?= {})[head] ?= []).push registration
+    else
+      @registerUnknownObserver(registration)
 
     if tail.length > 0 and val = @get(head)
       val.registerObserver tail, opath, observee, observer, action, opts
@@ -307,7 +311,11 @@ class Z.Object
 
   deregisterObserver: (rpath, opath, observee, observer, action) ->
     [head, tail...] = rpath
-    registrations   = @__registrations__?[head]
+
+    unless @constructor.hasProperty(head)
+      return @deregisterUnknownObserver(rpath, opath, observer, action)
+
+    return unless registrations = @__registrations__?[head]
 
     for r, i in registrations
       if (r.path     == opath    and
@@ -320,6 +328,12 @@ class Z.Object
           val.deregisterObserver tail, opath, observee, observer, action
 
         return
+
+  registerUnknownObserver: (registration) ->
+    throw "Z.Object#observe: undefined key `#{registration.head}` for #{@toString()}"
+
+  deregisterUnknownObserver: (rpath, opath, observee, observer, action) ->
+    throw "Z.Object#stopObserving: undefined key `#{rpath[0]}` for #{@toString()}"
 
   willChangeProperty: (k, opts = {}) ->
     return unless registrations = @__registrations__?[k]

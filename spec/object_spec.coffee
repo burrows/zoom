@@ -590,6 +590,38 @@ describe 'Z.Object KVO support:', ->
       user.set('address.street', 'third')
       expect(observer.called).toBe 1
 
+  describe '#observe with an unknown key', ->
+    it 'should invoke #registerUnknownObserver with the registration object', ->
+      observer = { action: -> }
+      o        = new Z.Object
+
+      spyOn o, 'registerUnknownObserver'
+
+      o.observe('foobar', observer, 'action')
+      expect(o.registerUnknownObserver).toHaveBeenCalled()
+
+    it "should thrown an exception when registerUnknownObserver hasn't been overridden", ->
+      observer = { action: -> }
+      o        = new Z.Object
+
+      expect(-> o.observe('foobar', observer, 'action')).toThrow("Z.Object#observe: undefined key `foobar` for #{o.toString()}")
+
+  describe '#stopObserving with an unknown key', ->
+    it 'should invoke #deregisterUnknownObserver', ->
+      observer = { action: -> }
+      o        = new Z.Object
+
+      spyOn o, 'deregisterUnknownObserver'
+
+      o.stopObserving('foobar', observer, 'action')
+      expect(o.deregisterUnknownObserver).toHaveBeenCalled()
+
+    it "should thrown an exception when deregisterUnknownObserver hasn't been overridden", ->
+      observer = { action: -> }
+      o        = new Z.Object
+
+      expect(-> o.stopObserving('foobar', observer, 'action')).toThrow("Z.Object#stopObserving: undefined key `foobar` for #{o.toString()}")
+
 describe 'Z.Object dependent properties:', ->
   class Person extends Z.Object
     @property 'first'
