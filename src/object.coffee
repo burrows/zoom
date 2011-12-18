@@ -263,7 +263,7 @@ class Z.Object
 
     null
 
-  # options:
+  # observe options:
   #   old - set to true to receive the old value in the notification (default: false)
   #   new - set to true to receive the new value in the notification (default: false)
   #   fire - set to true to trigger the notification immediately (default: false), may
@@ -272,65 +272,54 @@ class Z.Object
   #     will still be sent after the change has been made, will never contain the new value
   #   context - object to pass along in notification
   observe: (path, observer, action, opts = {}) ->
-    registration = @registerObserver path, observer, action, opts
+    opts         = Z.dup opts
+    fire         = Z.delete opts, 'fire'
+    registration = @registerObserver path.split('.'), path, this, observer, action, opts
 
-    if opts.fire
+    if fire
       notification = path: path, observee: this
-      notification.new     = @get(path) if registration.new
-      notification.context = registration.context if registration.context
+      notification.new     = @get(path) if registration.opts.new
+      notification.context = registration.context if registration.opts.context
       registration.callback.call registration.observer, notification
 
+  stopObserving: (path, observer, action) ->
+    @deregisterObserver path.split('.'), path, this, observer, action
     return this
 
-  registerObserver: (path, args...) ->
-    [head, tail...] = if typeof path == 'string' then path.split '.' else path
-
-    if args.length > 1
-      [observer, action, opts] = args
-      registration = Z.merge {}, opts,
-        path     : path
-        head     : head
-        tail     : tail
-        observee : this
-        observer : observer
-        action   : action
-        callback : if typeof action == 'function' then action else observer[action]
-        oldvals  : {}
-    else
-      registration = Z.merge {}, args[0], head: head, tail: tail
+  registerObserver: (rpath, opath, observee, observer, action, opts) ->
+    [head, tail...] = rpath
+    registration    =
+      path     : opath
+      tail     : tail
+      observee : observee
+      observer : observer
+      action   : action
+      callback : if typeof action == 'function' then action else observer[action]
+      opts     : opts
+      oldval   : {}
 
     ((@__registrations__ ?= {})[head] ?= []).push registration
 
     if tail.length > 0 and val = @get(head)
-      val.registerObserver tail, registration
+      val.registerObserver tail, opath, observee, observer, action, opts
 
     registration
 
-  deregisterObserver: (path, args...) ->
-    [head, tail...] = if typeof path == 'string' then path.split '.' else path
+  deregisterObserver: (rpath, opath, observee, observer, action) ->
+    [head, tail...] = rpath
+    registrations   = @__registrations__?[head]
 
-    if args.length > 1
-      [observer, action] = args
-    else
-      {observer, action, path} = args[0]
-
-    return unless registrations = @__registrations__?[head]
-
-    for registration, idx in registrations
-      if (registration.path     == path     and
-          registration.observer == observer and
-          registration.action   == action)
-
-        registrations.splice idx, 1
+    for r, i in registrations
+      if (r.path     == opath    and
+          r.observee == observee and
+          r.observer == observer and
+          r.action   == action)
+        registrations.splice(i, 1)
 
         if tail.length > 0 and val = @get(head)
-          val.deregisterObserver tail, registration
+          val.deregisterObserver tail, opath, observee, observer, action
 
         return
-
-  stopObserving: (path, observer, action) ->
-    @deregisterObserver path, observer, action
-    return this
 
   willChangeProperty: (k, opts = {}) ->
     return unless registrations = @__registrations__?[k]
@@ -341,19 +330,22 @@ class Z.Object
     for registration in registrations
       {path, observee, tail} = registration
 
-      if registration.old
+      if registration.opts.old
         if opts.hasOwnProperty 'old'
-          registration.oldvals[type] = Z.delete opts, 'old'
+          registration.oldval[type] = Z.delete opts, 'old'
         else
-          registration.oldvals[type] = observee.get path
+          registration.oldval[type] = observee.get path
 
       if tail.length > 0 and val = @get(k)
-        val.deregisterObserver tail, registration
+        val.deregisterObserver tail, registration.path,
+          registration.observee, registration.observer, registration.action
 
-      if registration.prior
+      if registration.opts.prior
         notification = type: type, isPrior: true, path: path, observee: observee
-        notification.context = registration.context if registration.context
-        notification.old = registration.oldvals[type] if registration.old
+        if registration.opts.context
+          notification.context = registration.opts.context
+        if registration.opts.old
+          notification.old = registration.oldval[type]
         Z.merge notification, opts
         registration.callback.call registration.observer, notification
 
@@ -370,10 +362,13 @@ class Z.Object
 
       notification = type: type, path: path, observee: observee
 
-      notification.old = Z.delete registration.oldvals, type if registration.old
-      notification.context = registration.context if registration.context
+      if registration.opts.old
+        notification.old = Z.delete(registration.oldval, type)
 
-      if registration.new
+      if registration.opts.context
+        notification.context = registration.opts.context
+
+      if registration.opts.new
         if opts.hasOwnProperty 'new'
           notification.new = Z.delete opts, 'new'
         else
@@ -382,7 +377,9 @@ class Z.Object
       Z.merge notification, opts
 
       if tail.length > 0 and val = @get(k)
-        val.registerObserver tail, registration
+        val.registerObserver tail, registration.path,
+          registration.observee, registration.observer, registration.action
+          registration.opts
 
       callback.call observer, notification
 
