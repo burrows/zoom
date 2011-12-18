@@ -503,6 +503,18 @@ describe 'Z.Array#getUnknownProperty', ->
     expect(a.getUnknownProperty('bar.x')).toEq Z.A [1, 2, 3]
     expect(a.get('bar.x')).toEq Z.A [1, 2, 3]
 
+  it 'should flatten the results', ->
+    b1 = new Bar x: Z.A(1,2,3)
+    b2 = new Bar x: Z.A(4,5)
+    b3 = new Bar x: Z.A(6,7,8)
+    f1 = new Foo bar: b1
+    f2 = new Foo bar: b2
+    f3 = new Foo bar: b3
+    a  = Z.A f1, f2, f3
+
+    expect(a.getUnknownProperty('bar.x')).toEq Z.A [1, 2, 3, 4, 5, 6, 7, 8]
+    expect(a.get('bar.x')).toEq Z.A [1, 2, 3, 4, 5, 6, 7, 8]
+
 describe 'Z.Array KVC collection operators:', ->
   class Transaction extends Z.Object
     @property 'payee'

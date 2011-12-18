@@ -216,7 +216,7 @@ class Z.Array extends Z.Object
 
     result
 
-  getUnknownProperty: (k) -> @pluck k
+  getUnknownProperty: (k) -> @pluck(k).flatten()
 
   _get: (path) ->
     [head, tail...] = path
