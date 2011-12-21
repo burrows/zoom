@@ -591,36 +591,16 @@ describe 'Z.Object KVO support:', ->
       expect(observer.called).toBe 1
 
   describe '#observe with an unknown key', ->
-    it 'should invoke #registerUnknownObserver with the registration object', ->
+    it "should thrown an exception", ->
       observer = { action: -> }
       o        = new Z.Object
-
-      spyOn o, 'registerUnknownObserver'
-
-      o.observe('foobar', observer, 'action')
-      expect(o.registerUnknownObserver).toHaveBeenCalled()
-
-    it "should thrown an exception when registerUnknownObserver hasn't been overridden", ->
-      observer = { action: -> }
-      o        = new Z.Object
-
-      expect(-> o.observe('foobar', observer, 'action')).toThrow("Z.Object#observe: undefined key `foobar` for #{o.toString()}")
+      expect(-> o.observe('foobar', observer, 'action')).toThrow("Z.Object#registerObserver: undefined key `foobar` for #{o.toString()}")
 
   describe '#stopObserving with an unknown key', ->
-    it 'should invoke #deregisterUnknownObserver', ->
+    it "should thrown an exception", ->
       observer = { action: -> }
       o        = new Z.Object
-
-      spyOn o, 'deregisterUnknownObserver'
-
-      o.stopObserving('foobar', observer, 'action')
-      expect(o.deregisterUnknownObserver).toHaveBeenCalled()
-
-    it "should thrown an exception when deregisterUnknownObserver hasn't been overridden", ->
-      observer = { action: -> }
-      o        = new Z.Object
-
-      expect(-> o.stopObserving('foobar', observer, 'action')).toThrow("Z.Object#stopObserving: undefined key `foobar` for #{o.toString()}")
+      expect(-> o.stopObserving('foobar', observer, 'action')).toThrow("Z.Object#deregisterObserver: undefined key `foobar` for #{o.toString()}")
 
 describe 'Z.Object dependent properties:', ->
   class Person extends Z.Object

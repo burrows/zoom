@@ -87,8 +87,7 @@ class Z.Array extends Z.Object
 
   willMutate = (array, type, idx, n) ->
     len      = array.length()
-    itemKeys = itemObserverKeys array
-    oldItems = array.slice idx, n
+    oldItems = array.slice(idx, n)
 
     switch type
       when 'insert'
@@ -117,12 +116,21 @@ class Z.Array extends Z.Object
           old   : oldItems
         deregisterItemObservers array, oldItems.toNative()
 
-    array.willChangeProperty(key) for key in itemKeys
+    return unless registrations = array.__itemRegistrations__
+    for registration in registrations
+      {path, observer, observee, callback, opts} = registration
+
+      registration.oldval = observee.get path if opts.old
+
+      if opts.prior
+        notification = type: 'change', isPrior: true, path: path, observee: observee
+        notification.context = opts.context if opts.context
+        notification.old = registration.oldval if opts.old
+        callback.call observer, notification
 
   didMutate = (array, type, idx, n) ->
     len      = array.length()
-    itemKeys = itemObserverKeys array
-    newItems = array.slice idx, n
+    newItems = array.slice(idx, n)
 
     switch type
       when 'insert'
@@ -151,7 +159,15 @@ class Z.Array extends Z.Object
           new   : newItems
         registerItemObservers array, newItems.toNative()
 
-    array.didChangeProperty(key) for key in itemKeys
+    return unless registrations = array.__itemRegistrations__
+    for registration in registrations
+      {path, observer, observee, callback, opts} = registration
+
+      notification = type: 'change', path: path, observee: observee
+      notification.context = opts.context if opts.context
+      notification.old = registration.oldval if opts.old
+      notification.new = observee.get path if opts.new
+      callback.call observer, notification
 
   slice: (i, n) ->
     len = @length()
@@ -230,37 +246,61 @@ class Z.Array extends Z.Object
 
   getUnknownProperty: (k) -> @pluck(k).flatten()
 
-  registerUnknownObserver: (registration) ->
-    ((@__registrations__ ?= {})[registration.head] ?= []).push registration
-    registerItemObservers(this, @toNative())
+  registerObserver: (rpath, opath, observee, observer, action, opts) ->
+    return super if @constructor.hasProperty(rpath[0])
 
-  deregisterUnknownObserver: (rpath, opath, observee, observer, action) ->
+    registration =
+      path     : opath
+      head     : null
+      tail     : rpath
+      observee : observee
+      observer : observer
+      action   : action
+      callback : if typeof action == 'function' then action else observer[action]
+      opts     : opts
+      oldval   : null
+
+    ((@__itemRegistrations__ ?= [])).push registration
+
+    for item in @toNative()
+      item.registerObserver(rpath, opath, observee, observer, action, opts)
+
+    registration
+
+  deregisterObserver: (rpath, opath, observee, observer, action) ->
+    return super if @constructor.hasProperty(rpath[0])
+
+    return unless registrations = @__itemRegistrations__
+
+    for r, i in registrations
+      if (r.path     == opath    and
+          r.observee == observee and
+          r.observer == observer and
+          r.action   == action)
+        registrations.splice(i, 1)
+
+        for item in @toNative()
+          item.deregisterObserver(rpath, opath, observee, observer, action)
+
+        return
 
   registerItemObservers = (array, items) ->
-    for key in itemObserverKeys(array)
-      for registration in array.__registrations__[key]
-        {path, head, tail, observee, observer, action, opts} = registration
+    return unless registrations = array.__itemRegistrations__
 
-        for item in items
-          item.registerObserver([head].concat(tail), path, observee, observer,
-            action, opts)
+    for registration in registrations
+      {path, tail, observee, observer, action, opts} = registration
+
+      for item in items
+        item.registerObserver(tail, path, observee, observer, action, opts)
 
   deregisterItemObservers = (array, items) ->
-    for key in itemObserverKeys(array)
-      for registration in array.__registrations__[key]
-        {path, head, tail, observee, observer, action, opts} = registration
+    return unless registrations = array.__itemRegistrations__
 
-        for item in items
-          item.deregisterObserver([head].concat(tail), path, observee, observer,
-            action)
+    for registration in registrations
+      {path, tail, observee, observer, action, opts} = registration
 
-  itemObserverKeys = (array) ->
-    keys = []
-
-    for key, registration of (array.__registrations__ || {})
-      keys.push(key) unless array.constructor.hasProperty(key)
-
-    keys
+      for item in items
+        item.deregisterObserver(tail, path, observee, observer, action)
 
   _get: (path) ->
     [head, tail...] = path
