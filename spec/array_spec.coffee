@@ -755,3 +755,155 @@ describe 'Z.Array#observe with an unknown property', ->
     expect(observer.notifications[1].new).toEq Z.A(13,1,2,3)
 
 describe 'Z.Array#stopObservering with an unknown property', ->
+  class Foo extends Z.Object
+    @property 'x'
+
+  a        = null
+  observer = { notifications: [], action: (n) -> @notifications.push n }
+
+  beforeEach ->
+    observer.notifications = []
+    a = Z.A(new Foo(x: 1), new Foo(x: 2), new Foo(x: 3))
+    a.observe('x', observer, 'action')
+
+  it 'should prevent array mutations from triggering notifications', ->
+    a.push(new Foo(x: 4))
+    expect(observer.notifications.length).toBe 1
+    a.stopObserving('x', observer, 'action')
+    a.push(new Foo(x: 5))
+    expect(observer.notifications.length).toBe 1
+
+  it 'should prevent property changes from triggering notifications', ->
+    a.at(0).set('x', 11)
+    expect(observer.notifications.length).toBe 1
+    a.stopObserving('x', observer, 'action')
+    a.at(0).set('x', 111)
+    expect(observer.notifications.length).toBe 1
+
+describe 'Observing paths that contain multiple arrays with item observers', ->
+  class Foo extends Z.Object
+    @property 'bars'
+
+  class Bar extends Z.Object
+    @property 'bazs'
+
+  class Baz extends Z.Object
+    @property 'x'
+
+  f        = null
+  observer = { notifications: [], action: (n) -> @notifications.push n }
+
+  beforeEach ->
+    observer.notifications = []
+
+    f = new Foo bars: Z.A([
+                  new Bar(bazs: Z.A([ new Baz(x: 1), new Baz(x: 2), new Baz(x: 3) ]))
+                  new Bar(bazs: Z.A([ new Baz(x: 4), new Baz(x: 5) ]))
+                ])
+    f.observe('bars.bazs.x', observer, 'action', old: true, new: true)
+
+  it 'should trigger notifications when the first level array is replaced', ->
+    f.set 'bars', Z.A()
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A()
+
+  it 'should trigger notifications when items are added to the first level array', ->
+    f.bars().push(new Bar(bazs: Z.A([new Baz(x: 6)])))
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,3,4,5,6)
+
+  it 'should trigger notifications when items are removed from the first level array', ->
+    f.bars().pop()
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,3)
+
+  it 'should trigger notifications when items are replaced from the first level array', ->
+    f.bars().at(0, new Bar(bazs: Z.A([new Baz(x: 6)])))
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(6,4,5)
+
+  it 'should trigger notifications when a second level array is replaced', ->
+    f.set 'bars.first.bazs', Z.A([new Baz(x: 9)])
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(9,4,5)
+
+  it 'should trigger notifications when items are added to the second level array', ->
+    f.get('bars.first.bazs').push(new Baz(x: 10))
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,3,10,4,5)
+
+  it 'should trigger notifications when items are removed from the second level array', ->
+    f.get('bars.first.bazs').pop()
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,4,5)
+
+  it 'should trigger notifications when items are replaced from the second level array', ->
+    f.get('bars.first.bazs').at(1, new Baz(x: 22))
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(1,22,3,4,5)
+
+  it 'should trigger notifications when any of the leaf properties change', ->
+    f.set 'bars.first.bazs.first.x', 11
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(11,2,3,4,5)
+
+    f.set 'bars.last.bazs.last.x', 55
+    expect(observer.notifications.length).toBe 2
+    expect(observer.notifications[1].type).toEq 'change'
+    expect(observer.notifications[1].old).toEq Z.A(11,2,3,4,5)
+    expect(observer.notifications[1].new).toEq Z.A(11,2,3,4,55)
+
+  it 'should not trigger notifications when a first level replaced array mutates', ->
+    bars = f.bars()
+
+    f.bars(Z.A())
+
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A()
+
+    bars.pop()
+    expect(observer.notifications.length).toBe 1
+
+  it 'should not trigger notifications when a second level replaced array mutates', ->
+    bazs = f.get('bars.first.bazs')
+
+    f.set 'bars.first.bazs', Z.A()
+
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(4,5)
+
+    bazs.pop()
+    expect(observer.notifications.length).toBe 1
+
+  it 'should not trigger notifications when a leaf property on a removed object changes', ->
+    baz = f.get('bars.first.bazs').pop()
+
+    expect(observer.notifications.length).toBe 1
+    expect(observer.notifications[0].type).toEq 'change'
+    expect(observer.notifications[0].old).toEq Z.A(1,2,3,4,5)
+    expect(observer.notifications[0].new).toEq Z.A(1,2,4,5)
+
+    baz.set 'x', 33
+    expect(observer.notifications.length).toBe 1
