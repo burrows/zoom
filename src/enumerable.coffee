@@ -33,5 +33,5 @@ Z.Enumerable = new Z.Mixin ->
 
     invoke: (name) -> @map (item) -> item[name]()
 
-    pluck: (path) -> @map (item) -> item.get path
+    pluck: (path) -> @map (item) -> if item? then item.get path else item
 

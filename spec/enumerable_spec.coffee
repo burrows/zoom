@@ -40,6 +40,9 @@ describe 'Z.Enumerable#invoke', ->
 describe 'Z.Enumerable#pluck', ->
   it 'should get the given property from each item in the array and return a new array contain the values', ->
     a = Z.A(new Foo(x: 1), new Foo(x: 2), new Foo(x: 3))
-
     expect((a.pluck 'x')).toEq Z.A [1,2,3]
+
+  it 'should should pass through null and undefined values', ->
+    a = Z.A(new Foo(x: 1), null, new Foo(x: 2), undefined, new Foo(x: 3))
+    expect((a.pluck 'x')).toEq Z.A [1,null,2,undefined,3]
 
