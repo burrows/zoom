@@ -1,37 +1,27 @@
 NODE_PATH := build
 
-SRCS      := zoom mixin orderable enumerable object array
-SRCS      := $(addsuffix .coffee,$(SRCS))
-SPECS     := spec/helper.coffee $(wildcard spec/*_spec.coffee)
-JSSPECS   := $(SPECS:%.coffee=%.js)
+SRCS := zoom.js
 
 default: spec
 
-all: zoom specs
+all: zoom
 
 zoom: build/zoom.js
 
-specs: $(JSSPECS)
-
 build/zoom.js: $(addprefix src/,$(SRCS))
-	./node_modules/.bin/coffee --join zoom --compile --output build $^
+	cat $^ > $@
 
-spec/%.js: spec/%.coffee
-	./node_modules/.bin/coffee --compile $<
-
-spec: zoom specs 
+spec: zoom
 	./node_modules/.bin/jasmine-node ./spec
 
 repl: zoom
-	NODE_NO_READLINE=1 rlwrap ./node_modules/.bin/coffee -r ./util/repl.coffee -i
-
-docs:
-	./node_modules/.bin/docco ./src/*.coffee
+	NODE_NO_READLINE=1 rlwrap node -r ./util/repl.js -i
 
 clean:
-	rm -f $(JSSPECS)
 	rm -rf ./build
-	rm -rf ./docs
 
-.PHONY: default zoom clean spec specs repl docs
+fixme:
+	ack FIXME ./src
+
+.PHONY: default zoom clean spec repl fixme
 
