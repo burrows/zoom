@@ -1,4 +1,4 @@
-(function() {
+(function(undefined) {
 
 if (typeof exports !== 'undefined') {
   Z = exports;
@@ -11,18 +11,18 @@ else {
   Z.root = window;
 }
 
-var _slice = Array.prototype.slice;
+var slice = Array.prototype.slice;
 
 // Copies all of the properties in the source objects over to the destination
 // object. The sources are processed in order, so subsequent sources will
 // override properties of the same name in previous sources.
-// 
+//
 // * `o`       - The destination object.
 // * `sources` - One ore more source objects.
-// 
+//
 // Returns `o`.
 Z.merge = function(o) {
-  var sources = _slice.call(arguments, 1), source, i, len, k, v;
+  var sources = slice.call(arguments, 1), source, i, len, k, v;
 
   for (i = 0, len = sources.length; i < len; i++) {
     source = sources[i];
@@ -40,7 +40,7 @@ Z.merge = function(o) {
 //
 // Returns `o`.
 Z.defaults = function(o) {
-  var defs = _slice.call(arguments, 1), def, i, len, k, v;
+  var defs = slice.call(arguments, 1), def, i, len, k, v;
 
   for (i = 0, len = defs.length; i < len; i++) {
     def = defs[i];
@@ -103,6 +103,16 @@ Z.del = function(o, prop) {
   var val = o[prop];
   delete o[prop];
   return val;
+};
+
+Z.create = Object.create || function(o) {
+  var f = function() {};
+  f.prototype = o;
+  return new f();
+};
+
+Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
+  throw new Error('polyfill this');
 };
 
 }());

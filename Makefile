@@ -1,10 +1,8 @@
 NODE_PATH := build
 
-SRCS := zoom.js
+SRCS := zoom.js object.js
 
 default: spec
-
-all: zoom
 
 zoom: build/zoom.js
 
