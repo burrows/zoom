@@ -11,7 +11,10 @@ zoom: build/zoom.js
 build/zoom.js: $(addprefix src/,$(SRCS))
 	cat $^ > $@
 
-spec: zoom
+lint: zoom
+	./node_modules/.bin/jshint src/*.js
+
+spec: zoom lint
 	./node_modules/.bin/jasmine-node ./spec
 
 repl: zoom
@@ -23,5 +26,5 @@ clean:
 fixme:
 	ack FIXME ./src
 
-.PHONY: default zoom clean spec repl fixme
+.PHONY: default zoom clean lint spec repl fixme
 
