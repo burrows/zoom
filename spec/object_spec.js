@@ -208,5 +208,31 @@ describe('Z.Object.ancestors', function() {
   });
 });
 
+describe('Z.Object.isA', function() {
+  var M1 = Z.Module.create(),
+      P1 = Z.Object.extend(),
+      P2 = P1.extend(M1);
+
+  it("should return true if the given object exists in the receiver's prototype chain", function() {
+    var o = Z.Object.create(), p1 = P1.create(), p2 = P2.create();
+
+    expect(Z.Object.isA(Z.Object)).toBe(false);
+    expect(o.isA(Z.Object)).toBe(true);
+    expect(o.isA(P1)).toBe(false);
+    expect(o.isA(P2)).toBe(false);
+    expect(o.isA(M1)).toBe(false);
+
+    expect(p1.isA(Z.Object)).toBe(true);
+    expect(p1.isA(P1)).toBe(true);
+    expect(p1.isA(P2)).toBe(false);
+    expect(p1.isA(M1)).toBe(false);
+
+    expect(p2.isA(Z.Object)).toBe(true);
+    expect(p2.isA(P1)).toBe(true);
+    expect(p2.isA(P2)).toBe(true);
+    expect(p2.isA(M1)).toBe(true);
+  });
+});
+
 }());
 

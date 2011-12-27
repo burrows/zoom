@@ -82,6 +82,8 @@ Z.Object.open(function() {
 
     return a;
   });
+
+  this.def('isA', function(o) { return this.ancestors().indexOf(o) !== -1; });
 });
 
 }());
