@@ -34,6 +34,25 @@ describe('Z.Object.extend', function() {
     var context = null, X = Z.Object.extend(function() { context = this; });
     expect(context).toBe(X);
   });
+
+  describe('when passed 1 or more Z.Module arguments', function() {
+    var Mod1 = Z.Module.create(function() {
+      this.def('foo', function() {});
+    });
+
+    var Mod2 = Z.Module.create(function() {
+      this.def('bar', function() {});
+    });
+
+    it('should mixin the module into the prototype chain', function() {
+      var p = Z.Object.extend(Mod1, Mod2);
+
+      expect(p.respondTo('foo')).toBe(true);
+      expect(p.respondTo('bar')).toBe(true);
+
+      expect(p.ancestors()).toEqual([Mod2, Mod1, Z.Object]);
+    });
+  });
 });
 
 describe('Z.Object.create', function() {
@@ -158,6 +177,34 @@ describe('Z.Object.supr', function() {
 
   it('should throw an exception when called from outside a method', function() {
     expect(function() { p.supr(); }).toThrow("Z.Object.supr: must be called from within a method: " + g.toString());
+  });
+});
+
+describe('Z.Object.respondTo', function() {
+  it('should return true if a method by the given name exists on the object and false otherwise', function() {
+    expect(Z.Object.respondTo('objectId')).toBe(true);
+    expect(Z.Object.respondTo('respondTo')).toBe(true);
+    expect(Z.Object.respondTo('someNonExistingMethod')).toBe(false);
+  });
+});
+
+describe('Z.Object.ancestors', function() {
+  var M1 = Z.Module.create(),
+      M2 = Z.Module.create(),
+      P1 = Z.Object.extend(),
+      P2 = P1.extend(),
+      P3 = P2.extend(M1, M2);
+
+  it("should return an array containing the objects in the receiver's prototype chain up to Z.Object", function() {
+    expect(Z.Object.ancestors()).toEqual([]);
+    expect(Z.Object.create().ancestors()).toEqual([Z.Object]);
+
+    expect(M1.ancestors()).toEqual([Z.Module, Z.Object]);
+    expect(M2.ancestors()).toEqual([Z.Module, Z.Object]);
+    expect(P1.ancestors()).toEqual([Z.Object]);
+    expect(P2.ancestors()).toEqual([P1, Z.Object]);
+    expect(P3.ancestors()).toEqual([M2, M1, P2, P1, Z.Object]);
+    expect(P3.create().ancestors()).toEqual([P3, M2, M1, P2, P1, Z.Object]);
   });
 });
 

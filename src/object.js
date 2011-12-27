@@ -12,8 +12,18 @@ Z.Object.def = function(name, f) {
 Z.Object.def.__z_name__ = 'def';
 
 Z.Object.open(function() {
-  this.def('extend', function(f) {
-    var o = Z.create(this);
+  this.def('extend', function() {
+    var args  = slice.call(arguments),
+        f     = typeof args[args.length - 1] === 'function' ? args.pop() : null,
+        proto = this,
+        i, len, o;
+
+    for (i = 0, len = args.length; i < len; i++) {
+      proto = args[i].createMixin(proto);
+    }
+
+    o = Z.create(proto);
+
     o.__z_objectId__ = objectId++;
 
     if (f) { f.call(o); }
@@ -57,6 +67,20 @@ Z.Object.open(function() {
     }
 
     return method.apply(this, args);
+  });
+
+  this.def('respondTo', function(name) {
+    return typeof this[name] === 'function';
+  });
+
+  this.def('ancestors', function() {
+    var a = [], p = this;
+
+    while ((p = Z.getPrototypeOf(p)) !== Object.prototype) {
+      a.push(Z.isMixin(p) ? p.__z_module__ : p);
+    }
+
+    return a;
   });
 });
 

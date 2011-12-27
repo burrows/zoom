@@ -124,5 +124,8 @@ Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
   throw new Error('polyfill this');
 };
 
+Z.isZObject = function(o) { return o.hasOwnProperty('__z_objectId__'); };
+Z.isMixin = function(o) { return o.hasOwnProperty('__z_isMixin__'); };
+
 }());
 

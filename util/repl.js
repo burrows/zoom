@@ -1,4 +1,4 @@
-var util = require('util'), inspect = util.inspect;
+var repl = require('repl'), util = require('util'), inspect = util.inspect;
 
 global.Z = require('../build/zoom');
 
@@ -10,3 +10,5 @@ util.inspect = function(o) {
     return inspect(o);
   }
 }
+
+repl.start('zoom> ');

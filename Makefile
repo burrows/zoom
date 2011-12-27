@@ -1,12 +1,13 @@
 NODE_PATH := build
 
-SRCS := zoom.js object.js
+SRCS := zoom.js object.js module.js
 
 default: spec
 
 zoom: build/zoom.js
 
 build/zoom.js: $(addprefix src/,$(SRCS))
+	@mkdir -p build
 	cat $^ > $@
 
 lint: zoom
@@ -16,7 +17,7 @@ spec: zoom lint
 	./node_modules/.bin/jasmine-node ./spec
 
 repl: zoom
-	NODE_NO_READLINE=1 rlwrap node -r ./util/repl.js -i
+	NODE_NO_READLINE=1 rlwrap node ./util/repl.js
 
 clean:
 	rm -rf ./build
