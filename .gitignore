@@ -1,5 +1,4 @@
 node_modules/
-spec/*_spec.js
 spec/helper.js
 build/*
 docs/*
