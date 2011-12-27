@@ -12,9 +12,12 @@ Z.Object.def = function(name, f) {
 Z.Object.def.__z_name__ = 'def';
 
 Z.Object.open(function() {
-  this.def('extend', function() {
+  this.def('extend', function(f) {
     var o = Z.create(this);
     o.__z_objectId__ = objectId++;
+
+    if (f) { f.call(o); }
+
     return o;
   });
 
@@ -31,6 +34,29 @@ Z.Object.open(function() {
   // FIXME: make this a property
   this.def('objectId', function() {
     return this.__z_objectId__;
+  });
+
+  this.def('supr', function supr() {
+    var caller = supr.caller,
+        name   = caller.__z_name__,
+        o      = this,
+        args   = slice.call(arguments),
+        method;
+
+    if (!name || !o[name]) {
+      throw new Error('Z.Object.supr: must be called from within a method: ' + this.toString());
+    }
+
+    while (o) {
+      if (o.hasOwnProperty(name) && o[name] === caller) { break; }
+      o = Z.getPrototypeOf(o);
+    }
+
+    if (!(method = Z.getPrototypeOf(o)[name])) {
+      throw new Error('Z.Object.supr: no super method `' + name + '` found for ' + this.toString());
+    }
+
+    return method.apply(this, args);
   });
 });
 
