@@ -105,6 +105,15 @@ Z.del = function(o, prop) {
   return val;
 };
 
+Z.fmt = function(s) {
+  var vals = slice.call(arguments, 1), i = 0;
+
+  return s.replace(/%@/g, function(m) {
+    var val = vals[i++];
+    return typeof val !== 'undefined' ? val.toString() : '';
+  });
+};
+
 Z.create = Object.create || function(o) {
   var f = function() {};
   f.prototype = o;

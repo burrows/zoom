@@ -44,7 +44,7 @@ Z.Object.open(function() {
         method;
 
     if (!name || !o[name]) {
-      throw new Error('Z.Object.supr: must be called from within a method: ' + this.toString());
+      throw new Error(Z.fmt('Z.Object.supr: must be called from within a method: %@', this));
     }
 
     while (o) {
@@ -53,7 +53,7 @@ Z.Object.open(function() {
     }
 
     if (!(method = Z.getPrototypeOf(o)[name])) {
-      throw new Error('Z.Object.supr: no super method `' + name + '` found for ' + this.toString());
+      throw new Error(Z.fmt('Z.Object.supr: no super method `%@` found for %@', name, this.toString()));
     }
 
     return method.apply(this, args);
