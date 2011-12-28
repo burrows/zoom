@@ -10,8 +10,7 @@
     this.def('createMixin', function(prototype) {
       var o = Z.create(prototype), k;
 
-      o.__z_isMixin__ = true;
-      o.__z_module__  = this;
+      o.__z_module__ = this;
 
       for (k in this) {
         if (this.hasOwnProperty(k) && !k.match(/^__z_/)) { o[k] = this[k]; }

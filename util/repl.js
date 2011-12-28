@@ -4,7 +4,7 @@ var util    = require('util'),
 global.Z = require('../build/zoom');
 
 util.inspect = function(o) {
-  if (o && Z.isZObject(o)) {
+  if (o && o.isZObject) {
     return o.toString();
   }
   else {

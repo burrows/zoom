@@ -318,7 +318,7 @@ describe('Z.Object.hasProperty', function() {
     this.property('foo');
   });
 
-  B = A.Object.extend(function() {
+  B = A.extend(function() {
     this.property('bar');
   });
 
@@ -438,7 +438,7 @@ describe('Z.Object KVC support:', function() {
       var o = Z.Object.create();
       expect(function() {
         o.get('blah');
-      }).toThrow("Z.Object#get: undefined key `blah` for " + o.toString());
+      }).toThrow("Z.Object.get: undefined key `blah` for " + o.toString());
     });
   });
 
@@ -447,7 +447,7 @@ describe('Z.Object KVC support:', function() {
       var o = Z.Object.create();
       expect(function() {
         o.set('blah', 1);
-      }).toThrow("Z.Object#set: undefined key `blah` for " + (o.toString()));
+      }).toThrow("Z.Object.set: undefined key `blah` for " + (o.toString()));
     });
   });
 
@@ -456,7 +456,7 @@ describe('Z.Object KVC support:', function() {
       var o = Z.Object.create();
       expect(function() {
         o.set('objectId', 19);
-      }).toThrow("Z.Object#set: attempted to set readonly property `objectId` for " + (o.toString()));
+      }).toThrow("Z.Object.set: attempted to set readonly property `objectId` for " + (o.toString()));
     });
   });
 
@@ -510,11 +510,11 @@ describe('Z.Object KVC support:', function() {
         expect(a.get('b.c.num')).toBe(21);
       });
 
-      it('should return undefined when some segment in the path yields a null or undefined value', function() {
+      it('should return null when some segment in the path yields a null or undefined value', function() {
         b.c(null);
-        expect(a.get('b.c.num')).toBeUndefined();
-        b.c(void 0);
-        expect(a.get('b.c.num')).toBeUndefined();
+        expect(a.get('b.c.num')).toBe(null);
+        b.c(undefined);
+        expect(a.get('b.c.num')).toBe(null);
       });
     });
   });
@@ -533,7 +533,9 @@ describe('Z.Object KVO support:', function() {
   });
 
   describe('#observe with a simple key', function() {
-    beforeEach(function() { var user = User.create({ name: 'Joe' }); });
+    var user;
+
+    beforeEach(function() { user = User.create({ name: 'Joe' }); });
 
     it('should cause the given action to be invoked, bound to the observer, after the given key has changed', function() {
       var observer = {
@@ -737,9 +739,9 @@ describe('Z.Object KVO support:', function() {
       expect(observer.called).toBe(2);
     });
 
-    it('should cause a single notification to be sent multiple segments are set', function() {
+    it('should cause a single notification to be sent when multiple segments are set', function() {
       var observer = { called: 0, action: function() { this.called++; } },
-          user     = User.create;
+          user     = User.create();
 
       user.observe('address.street', observer, 'action');
       expect(observer.called).toBe(0);
@@ -924,11 +926,11 @@ describe('Z.Object KVO support:', function() {
   describe('#observe with an unknown key', function() {
     it("should thrown an exception", function() {
       var observer = { action: function() {} },
-          o        = Z.Object.create;
+          o        = Z.Object.create();
 
       expect(function() {
         o.observe('foobar', observer, 'action');
-      }).toThrow("Z.Object#registerObserver: undefined key `foobar` for " + (o.toString()));
+      }).toThrow("Z.Object.registerObserver: undefined key `foobar` for " + (o.toString()));
     });
   });
 
@@ -939,7 +941,7 @@ describe('Z.Object KVO support:', function() {
 
       expect(function() {
         o.stopObserving('foobar', observer, 'action');
-      }).toThrow("Z.Object#deregisterObserver: undefined key `foobar` for " + (o.toString()));
+      }).toThrow("Z.Object.deregisterObserver: undefined key `foobar` for " + (o.toString()));
     });
   });
 });

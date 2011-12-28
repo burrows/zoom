@@ -125,9 +125,6 @@ Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
   throw new Error('polyfill this');
 };
 
-Z.isZObject = function(o) { return o.hasOwnProperty('__z_objectId__'); };
-Z.isMixin = function(o) { return o.hasOwnProperty('__z_isMixin__'); };
-
 Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
 
 Z.removeNamespace = function(o) {
