@@ -1,9 +1,10 @@
-var repl = require('repl'), util = require('util'), inspect = util.inspect;
+var util    = require('util'),
+    inspect = util.inspect;
 
 global.Z = require('../build/zoom');
 
 util.inspect = function(o) {
-  if (o && o.isZObject) {
+  if (o && Z.isZObject(o)) {
     return o.toString();
   }
   else {
@@ -11,4 +12,4 @@ util.inspect = function(o) {
   }
 }
 
-repl.start('zoom> ');
+require('repl').start('zoom> ');

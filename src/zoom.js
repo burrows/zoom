@@ -11,7 +11,8 @@ else {
   Z.root = window;
 }
 
-var slice = Array.prototype.slice;
+var slice      = Array.prototype.slice,
+    namespaces = [ [Z, 'Z'], [Z.root, ''] ];
 
 // Copies all of the properties in the source objects over to the destination
 // object. The sources are processed in order, so subsequent sources will
@@ -126,6 +127,16 @@ Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
 
 Z.isZObject = function(o) { return o.hasOwnProperty('__z_objectId__'); };
 Z.isMixin = function(o) { return o.hasOwnProperty('__z_isMixin__'); };
+
+Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
+
+Z.removeNamespace = function(o) {
+  namespaces = namespaces.filter(function(namespace) {
+    return namespace[0] != o;
+  });
+};
+
+Z.namespaces = function() { return slice.call(namespaces); };
 
 }());
 

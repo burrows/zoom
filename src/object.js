@@ -84,6 +84,32 @@ Z.Object.open(function() {
   });
 
   this.def('isA', function(o) { return this.ancestors().indexOf(o) !== -1; });
+
+  this.def('name', function() {
+    var namespaces = Z.namespaces(), namespace, i, len, k;
+
+    for (i = 0, len = namespaces.length; i < len; i++) {
+      namespace = namespaces[i];
+
+      for (k in namespace[0]) {
+        if (namespace[0][k] === this) {
+          return namespace[1].length > 0 ? Z.fmt("%@.%@", namespace[1], k) : k;
+        }
+      }
+    }
+
+    return '(Unknown)';
+  });
+
+  this.def('toString', function() {
+    var p = this;
+
+    while (p && Z.isZObject(p) && (name = p.name()) === '(Unknown)') {
+      p = Z.getPrototypeOf(p);
+    }
+
+    return Z.fmt("#<%@:%@>", name, this.objectId());
+  });
 });
 
 }());

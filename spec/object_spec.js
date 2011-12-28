@@ -176,7 +176,7 @@ describe('Z.Object.supr', function() {
   });
 
   it('should throw an exception when called from outside a method', function() {
-    expect(function() { p.supr(); }).toThrow("Z.Object.supr: must be called from within a method: " + g.toString());
+    expect(function() { p.supr(); }).toThrow("Z.Object.supr: must be called from within a method: " + p.toString());
   });
 });
 
@@ -231,6 +231,56 @@ describe('Z.Object.isA', function() {
     expect(p2.isA(P1)).toBe(true);
     expect(p2.isA(P2)).toBe(true);
     expect(p2.isA(M1)).toBe(true);
+  });
+});
+
+describe('Z.Object.name', function() {
+  beforeEach(function() {
+    Z.Stuff = Z.Object.extend();
+    Z.root.MyNamespace = {};
+    MyNamespace.Thing = Z.Object.extend();
+  });
+
+  afterEach(function() {
+    delete Z.Stuff;
+    delete Z.root.MyNamespace;
+  });
+
+  it('should return the name of the object for objects in the Z namespace', function() {
+    expect(Z.Object.name()).toBe('Z.Object');
+    expect(Z.Stuff.name()).toBe('Z.Stuff');
+  });
+
+  it('should return the name of the object for objects in the global namespace', function() {
+    Z.root.Global = Z.Object.extend();
+    expect(Global.name()).toBe('Global');
+    delete Z.root.Global;
+  });
+
+  it('should return "(Unknown)" for objects not defined in a namespace', function() {
+    var Something = Z.Object.extend();
+    expect(Something.name()).toBe('(Unknown)');
+  });
+
+  it('should return "(Unknown)" for objects defined in a namespace other than Z but not registered', function() {
+    expect(MyNamespace.Thing.name()).toBe('(Unknown)');
+  });
+
+  it('should return the name of the object for objects defined in a namespace other than Z that is registered', function() {
+    Z.addNamespace(MyNamespace, 'MyNamespace');
+    expect(MyNamespace.Thing.name()).toBe('MyNamespace.Thing');
+    Z.removeNamespace(MyNamespace);
+  });
+});
+
+describe('Z.Object.toString', function() {
+  // FIXME: add test for property names
+  it('should return a string containing the object name, object id and current property values', function() {
+    var o;
+
+    Z.root.Foo = Z.Object.extend();
+    o = Z.Object.create();
+    expect(o.toString()).toEqual("#<Z.Object:" + (o.objectId()) + ">");
   });
 });
 
