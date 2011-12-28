@@ -1,6 +1,6 @@
 NODE_PATH := build
 
-SRCS := zoom.js object.js module.js
+SRCS := zoom.js object.js module.js orderable.js
 
 default: spec
 
