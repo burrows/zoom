@@ -6,8 +6,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.isZArray = true;
 
   this.property('length', {
-    get: function() { return this.__array__.length; },
-    set: function(v) { return this.__array__.length = v; }
+    get: function() { return this.__z_items__.length; },
+    set: function(v) { return this.__z_items__.length = v; }
   });
 
   this.property('first', {
@@ -35,16 +35,16 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     this.supr();
 
     if (arguments.length === 0) {
-      this.__array__ = [];
+      this.__z_items__ = [];
     }
     else if (typeof arg === 'number') {
-      this.__array__ = new Array(arg);
+      this.__z_items__ = new Array(arg);
     }
     else if (Z.isNativeArray(arg)) {
-      this.__array__ = arg.slice();
+      this.__z_items__ = arg.slice();
     }
     else if (arg && arg.isZArray) {
-      this.__array__ = arg.toNative();
+      this.__z_items__ = arg.toNative();
     }
     else {
       throw new Error(Z.fmt("Z.Array.initialize: invalid argument (%@), expected a number or array", arg));
@@ -56,15 +56,15 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     return Z.fmt("#<%@:%@ [%@]>", this.prototypeName(), this.objectId(), a);
   });
 
-  this.def('toNative', function() { return this.__array__; });
+  this.def('toNative', function() { return this.__z_items__; });
 
   this.def('each', function(f) {
-    var items = this.__array__, i, len;
+    var items = this.__z_items__, i, len;
     for (i = 0, len = items.length; i < len; i++) { f(items[i], i); }
     return this;
   });
 
-  this.def('join', function(s) { return this.__array__.join(Z.toString(s)); });
+  this.def('join', function(s) { return this.__z_items__.join(Z.toString(s)); });
 
   this.def('at', function(i, v) {
     var len = this.length();
@@ -72,7 +72,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     if (i < 0) { i = len + i; }
 
     if (typeof v === 'undefined') {
-      return (i >= 0 && i < len) ? this.__array__[i] : null;
+      return (i >= 0 && i < len) ? this.__z_items__[i] : null;
     }
     else {
       this.splice(i, 1, v);
@@ -93,7 +93,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
     if (typeof n === 'undefined') {
       if (idx < len) { willMutate(this, 'remove', idx, len - idx); }
-      this.__array__.splice(idx);
+      this.__z_items__.splice(idx);
       if (idx < len) { didMutate(this, 'remove', idx, len - idx); }
       return this;
     }
@@ -110,9 +110,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     if (insertNum > 0)  { willMutate(this, 'insert', insertIdx, insertNum); }
     if (removeNum > 0)  { willMutate(this, 'remove', removeIdx, removeNum); }
 
-    if (expand) { this.__array__.length = idx; }
+    if (expand) { this.__z_items__.length = idx; }
 
-    this.__array__.splice.apply(this.__array__, [idx, n].concat(items));
+    this.__z_items__.splice.apply(this.__z_items__, [idx, n].concat(items));
 
     if (replaceNum > 0) { didMutate(this, 'replace', replaceIdx, replaceNum); }
     if (insertNum > 0)  { didMutate(this, 'insert', insertIdx, insertNum); }
@@ -129,10 +129,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     if (i < 0 || i >= len) { return null; }
 
     if (typeof n === 'undefined') {
-      a = this.__array__.slice(i);
+      a = this.__z_items__.slice(i);
     }
     else {
-      a = this.__array__.slice(i, i + n);
+      a = this.__z_items__.slice(i, i + n);
     }
 
     return Z.Array.create(a);
@@ -168,10 +168,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
     for (i = 0, len = items.length; i < len; i++) {
       item = items[i];
-      a.push((item && item.isZArray) ? item.__array__ : item);
+      a.push((item && item.isZArray) ? item.__z_items__ : item);
     }
 
-    return Z.A(this.__array__.concat.apply(this.__array__, a));
+    return Z.A(this.__z_items__.concat.apply(this.__z_items__, a));
   });
 
   this.def('unshift', function() {
