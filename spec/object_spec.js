@@ -565,6 +565,7 @@ describe('Z.Object KVO support:', function() {
 
       user.observe('name', observer, 'nameDidChange');
       user.set('name', 'Bob');
+      expect(observer.notification.type).toEqual('change');
       expect(observer.notification.path).toEqual('name');
       expect(observer.notification.observee).toBe(user);
     });
