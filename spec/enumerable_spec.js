@@ -37,6 +37,14 @@ describe('Z.Enumerable.first', function() {
   it('should return the first item in the enumerable', function() {
     expect(Foo.create().first()).toEqual('foo');
   });
+
+  it('should return null when the enumerable is empty', function() {
+    var Empty = Z.Object.extend(Z.Enumerable, function() {
+      this.def('each', function(f) {});
+    });
+
+    expect(Empty.create().first()).toBe(null);
+  });
 });
 
 describe('Z.Enumerable.reject', function() {
