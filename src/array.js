@@ -473,17 +473,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
 // shortcut for instantiating a new array
 Z.A = function() {
-  var args = slice.call(arguments), len = args.length;
+  var args = slice.call(arguments), len = args.length, first = args[0];
 
-  if (len > 1) {
-    return Z.Array.create(args);
+  if (len === 1 && (Z.isNativeArray(first) || (first && first.isZArray))) {
+    return Z.Array.create(first);
   }
-  else if (len === 1) {
-    return Z.Array.create(args[0]);
-  }
-  else {
-    return Z.Array.create();
-  }
+
+  return Z.Array.create(args);
 };
 
 }());

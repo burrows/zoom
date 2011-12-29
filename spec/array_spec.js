@@ -2,7 +2,7 @@
 
 if (typeof Z === 'undefined') { require('./helper'); }
 
-describe('Z.Array.initialize', function() {
+describe('Z.Array constructor', function() {
   it('should create an array of the given size when passed a single number', function() {
     var a = Z.Array.create(3);
     expect(a.length()).toBe(3);
@@ -40,6 +40,34 @@ describe('Z.Array.initialize', function() {
   it('should create an empty array when no arguments are given', function() {
     var a = Z.Array.create();
     expect(a.length()).toBe(0);
+  });
+});
+
+describe('Z.A', function() {
+  it('should return a Z.Array containing all of the given arguments when there are multiple arguments', function() { 
+    expect(Z.A(1,2,3)).toEq(Z.Array.create([1,2,3]));
+  });
+
+  it('should return a Z.Array of length 1 containing the argument when one non-array argument is given', function() {
+    var a1 = Z.A(9), a2 = Z.A('a');
+
+    expect(a1.length()).toBe(1);
+    expect(a1).toEq(Z.Array.create([9]));
+    expect(a2.length()).toBe(1);
+    expect(a2).toEq(Z.Array.create(['a']));
+  });
+
+  it('should return a Z.Array with the given contents when given a single native array', function() {
+    expect(Z.A([1,2,3])).toEq(Z.Array.create([1,2,3]));
+  });
+
+  it('should return a Z.Array with the given contents when given a single Z.Array', function() {
+    var za = Z.Array.create(['a', 'b']);
+    expect(Z.A(za)).toEq(za);
+  });
+
+  it('should return an empty Z.Array when given no arguments', function() {
+    expect(Z.A()).toEq(Z.Array.create());
   });
 });
 
