@@ -1,6 +1,6 @@
 NODE_PATH := build
 
-SRCS := zoom.js object.js module.js orderable.js
+SRCS := zoom.js object.js module.js orderable.js enumerable.js array.js
 
 default: spec
 
@@ -11,7 +11,7 @@ build/zoom.js: $(addprefix src/,$(SRCS))
 	cat $^ > $@
 
 lint: zoom
-	./node_modules/.bin/jshint src/*.js
+	./node_modules/.bin/jshint src/*.js spec/*.js
 
 spec: zoom lint
 	./node_modules/.bin/jasmine-node ./spec

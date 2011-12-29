@@ -142,14 +142,18 @@ Z.Object.open(function() {
     return '(Unknown)';
   });
 
-  this.def('toString', function() {
+  this.def('prototypeName', function() {
     var p = this, name;
 
     while (p && p.isZObject && (name = p.name()) === '(Unknown)') {
       p = Z.getPrototypeOf(p);
     }
 
-    return Z.fmt("#<%@:%@>", name, this.objectId());
+    return name;
+  });
+
+  this.def('toString', function() {
+    return Z.fmt("#<%@:%@>", this.prototypeName(), this.objectId());
   });
 
   this.def('property', function(name, opts) {

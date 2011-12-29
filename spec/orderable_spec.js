@@ -15,7 +15,7 @@ fa = Foo.create({x: 1});
 fb = Foo.create({x: 2});
 fc = Foo.create({x: 1});
 
-describe('Z.Orderable#lt', function() {
+describe('Z.Orderable.lt', function() {
   it('should return true when the receiver is less than the given object and false otherwise', function() {
     expect(fa.lt(fb)).toBe(true);
     expect(fb.lt(fa)).toBe(false);
@@ -23,7 +23,7 @@ describe('Z.Orderable#lt', function() {
   });
 });
 
-describe('Z.Orderable#lte', function() {
+describe('Z.Orderable.lte', function() {
   it('should return true when the receiver is less than or equal to the given object and false otherwise', function() {
     expect(fa.lte(fb)).toBe(true);
     expect(fa.lte(fc)).toBe(true);
@@ -31,7 +31,7 @@ describe('Z.Orderable#lte', function() {
   });
 });
 
-describe('Z.Orderable#gt', function() {
+describe('Z.Orderable.gt', function() {
   it('should return true when the receiver is greater than the given object and false otherwise', function() {
     expect(fb.gt(fa)).toBe(true);
     expect(fa.gt(fb)).toBe(false);
@@ -39,7 +39,7 @@ describe('Z.Orderable#gt', function() {
   });
 });
 
-describe('Z.Orderable#gt', function() {
+describe('Z.Orderable.gt', function() {
   it('should return true when the receiver is greater than or equal to the given object and false otherwise', function() {
     expect(fb.gte(fa)).toBe(true);
     expect(fa.gte(fc)).toBe(true);
@@ -47,7 +47,7 @@ describe('Z.Orderable#gt', function() {
   });
 });
 
-describe('Z.Orderable#max', function() {
+describe('Z.Orderable.max', function() {
   it('should return the receiver if it is greater than or equal to the given object and the object otherwise', function() {
     expect(fa.max(fc)).toBe(fa);
     expect(fb.max(fa)).toBe(fb);
@@ -55,7 +55,7 @@ describe('Z.Orderable#max', function() {
   });
 });
 
-describe('Z.Orderable#min', function() {
+describe('Z.Orderable.min', function() {
   it('should return the receiver if it is less than or equal to the given object and the object otherwise', function() {
     expect(fa.min(fc)).toBe(fa);
     expect(fb.min(fc)).toBe(fc);
