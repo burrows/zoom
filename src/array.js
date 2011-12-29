@@ -251,7 +251,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
       action   : action,
       callback : typeof action === 'function' ? action : observer[action],
       opts     : opts,
-      oldval   : null
+      previous : null
     };
 
     this.__z_itemRegistrations__ = this.__z_itemRegistrations__ || [];
@@ -321,8 +321,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   function willMutate(array, type, idx, n) {
-    var len      = array.length(),
-        oldItems = array.slice(idx, n),
+    var len       = array.length(),
+        prevItems = array.slice(idx, n),
         registrations, r, i, notification;
 
     switch (type) {
@@ -331,9 +331,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         if (idx === 0)  { array.willChangeProperty('first'); }
         if (idx >= len) { array.willChangeProperty('last'); }
         array.willChangeProperty('@', {
-          type  : 'insert',
-          range : [idx, n],
-          old   : undefined
+          type     : 'insert',
+          range    : [idx, n],
+          previous : undefined
         });
         break;
       case 'remove':
@@ -341,21 +341,21 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         if (idx === 0)       { array.willChangeProperty('first'); }
         if (idx + n === len) { array.willChangeProperty('last'); }
         array.willChangeProperty('@', {
-          type  : 'remove',
-          range : [idx, n],
-          old   : oldItems
+          type     : 'remove',
+          range    : [idx, n],
+          previous : prevItems
         });
-        deregisterItemObservers(array, oldItems.toNative());
+        deregisterItemObservers(array, prevItems.toNative());
         break;
       case 'replace':
         if (idx === 0)       { array.willChangeProperty('first'); }
         if (idx === len - 1) { array.willChangeProperty('last'); }
         array.willChangeProperty('@', {
-          type  : 'replace',
-          range : [idx, n],
-          old   : oldItems
+          type     : 'replace',
+          range    : [idx, n],
+          previous : prevItems
         });
-        deregisterItemObservers(array, oldItems.toNative());
+        deregisterItemObservers(array, prevItems.toNative());
         break;
     }
 
@@ -364,7 +364,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     for (i = 0, len = registrations.length; i < len; i++) {
       r = registrations[i];
 
-      if (r.opts.old) { r.oldval = r.observee.get(r.path); }
+      if (r.opts.previous) { r.previous = r.observee.get(r.path); }
 
       if (r.opts.prior) {
         notification = {
@@ -375,7 +375,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         };
 
         if (r.opts.context) { notification.context = r.opts.context; }
-        if (r.opts.old)     { notification.old = r.oldval; }
+        if (r.opts.previous) { notification.previous = r.previous; }
 
         r.callback.call(r.observer, notification);
       }
@@ -384,7 +384,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
   function didMutate(array, type, idx, n) {
     var len      = array.length(),
-        newItems = array.slice(idx, n),
+        curItems = array.slice(idx, n),
         registrations, r, i, notification;
 
     switch (type) {
@@ -393,31 +393,31 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         if (idx === 0)       { array.didChangeProperty('first'); }
         if (idx + n === len) { array.didChangeProperty('last'); }
         array.didChangeProperty('@', {
-          type  : 'insert',
-          range : [idx, n],
-          "new" : newItems
+          type    : 'insert',
+          range   : [idx, n],
+          current : curItems
         });
-        registerItemObservers(array, newItems.toNative());
+        registerItemObservers(array, curItems.toNative());
         break;
       case 'remove':
         array.didChangeProperty('length');
         if (idx === 0)     { array.didChangeProperty('first'); }
         if (idx + n > len) { array.didChangeProperty('last'); }
         array.didChangeProperty('@', {
-          type  : 'remove',
-          range : [idx, n],
-          "new" : undefined
+          type    : 'remove',
+          range   : [idx, n],
+          current : undefined
         });
         break;
       case 'replace':
         if (idx === 0) { array.didChangeProperty('first'); }
         if (idx === len - 1) { array.didChangeProperty('last'); }
         array.didChangeProperty('@', {
-          type  : 'replace',
-          range : [idx, n],
-          "new" : newItems
+          type    : 'replace',
+          range   : [idx, n],
+          current : curItems
         });
-        registerItemObservers(array, newItems.toNative());
+        registerItemObservers(array, curItems.toNative());
         break;
     }
 
@@ -432,9 +432,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         observee : r.observee
       };
 
-      if (r.opts.context) { notification.context = r.opts.context; }
-      if (r.opts.old)     { notification.old     = r.oldval; }
-      if (r.opts["new"])  { notification["new"]  = r.observee.get(r.path); }
+      if (r.opts.context)  { notification.context  = r.opts.context; }
+      if (r.opts.previous) { notification.previous = r.previous; }
+      if (r.opts.current)  { notification.current  = r.observee.get(r.path); }
 
       r.callback.call(r.observer, notification);
     }

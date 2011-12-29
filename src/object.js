@@ -293,8 +293,8 @@ Z.Object.open(function() {
 
     if (fire) {
       notification = { type: 'change', path: path, observee: this };
-      if (registration.opts['new']) {
-        notification['new'] = this.get(path);
+      if (registration.opts.current) {
+        notification.current = this.get(path);
       }
       if (registration.opts.context) {
         notification.context = registration.context;
@@ -327,7 +327,7 @@ Z.Object.open(function() {
       action   : action,
       callback : typeof action === 'function' ? action : observer[action],
       opts     : opts,
-      oldval   : {}
+      previous : {}
     };
 
     regs = (this.__z_registrations__ = this.__z_registrations__ || {});
@@ -380,12 +380,12 @@ Z.Object.open(function() {
     for (i = 0, len = registrations.length; i < len; i++) {
       r = registrations[i];
 
-      if (r.opts.old) {
-        if (opts.hasOwnProperty('old')) {
-          r.oldval[type] = Z.del(opts, 'old');
+      if (r.opts.previous) {
+        if (opts.hasOwnProperty('previous')) {
+          r.previous[type] = Z.del(opts, 'previous');
         }
         else {
-          r.oldval[type] = r.observee.get(r.path);
+          r.previous[type] = r.observee.get(r.path);
         }
       }
 
@@ -402,7 +402,7 @@ Z.Object.open(function() {
         };
 
         if (r.opts.context) { notification.context = r.opts.context; }
-        if (r.opts.old) { notification.old = r.oldval[type]; }
+        if (r.opts.previous) { notification.previous = r.previous[type]; }
 
         Z.merge(notification, opts);
 
@@ -427,15 +427,15 @@ Z.Object.open(function() {
 
       notification = { type: type, path: r.path, observee: r.observee };
 
-      if (r.opts.old) { notification.old = Z.del(r.oldval, type); }
+      if (r.opts.previous) { notification.previous = Z.del(r.previous, type); }
       if (r.opts.context) { notification.context = r.opts.context; }
 
-      if (r.opts['new']) {
-        if (opts.hasOwnProperty('new')) {
-          notification['new'] = Z.del(opts, 'new');
+      if (r.opts.current) {
+        if (opts.hasOwnProperty('current')) {
+          notification.current = Z.del(opts, 'current');
         }
         else {
-          notification['new'] = r.observee.get(r.path);
+          notification.current = r.observee.get(r.path);
         }
       }
 

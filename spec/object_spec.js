@@ -590,35 +590,35 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notification.context).toEqual('the-context');
     });
 
-    it('should set an `old` key in the notification that points to the previous value of the property if the old option is set', function() {
+    it('should set an `previous` key in the notification that points to the previous value of the property if the previous option is set', function() {
       var observer = {
         notification: null,
         nameDidChange: function(n) { this.notification = n; }
       };
-      user.observe('name', observer, 'nameDidChange', { old: true });
+      user.observe('name', observer, 'nameDidChange', { previous: true });
       user.set('name', 'Sam');
-      expect(observer.notification.old).toEqual('Joe');
+      expect(observer.notification.previous).toEqual('Joe');
     });
 
-    it('should set a `new` key in the notification that points to the new value of the property if the new option is set', function() {
+    it('should set a `current` key in the notification that points to the current value of the property if the current option is set', function() {
       var observer = {
         notification: null,
         nameDidChange: function(n) { this.notification = n; }
       };
-      user.observe('name', observer, 'nameDidChange', { "new": true });
+      user.observe('name', observer, 'nameDidChange', { current: true });
       user.set('name', 'George');
-      expect(observer.notification["new"]).toEqual('George');
+      expect(observer.notification.current).toEqual('George');
     });
 
-    it('should set both `old` and `new` keys when both options are set', function() {
+    it('should set both `previous` and `current` keys when both options are set', function() {
       var observer = {
         notification: null,
         nameDidChange: function(n) { this.notification = n; }
       };
-      user.observe('name', observer, 'nameDidChange', { old: true, "new": true });
+      user.observe('name', observer, 'nameDidChange', { previous: true, current: true });
       user.set('name', 'Ed');
-      expect(observer.notification.old).toEqual('Joe');
-      expect(observer.notification["new"]).toEqual('Ed');
+      expect(observer.notification.previous).toEqual('Joe');
+      expect(observer.notification.current).toEqual('Ed');
     });
 
     it('should fire the observer immediately when  the `fire` option is set', function() {
@@ -632,23 +632,23 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notification.observee).toBe(user);
     });
 
-    it('should fire the observer immediately when the `fire` option is set and include the `new` key when the `new` option is set', function() {
+    it('should fire the observer immediately when the `fire` option is set and include the `current` key when the `current` option is set', function() {
       var observer = {
         notification: null,
         nameDidChange: function(n) { this.notification = n; }
       };
-      user.observe('name', observer, 'nameDidChange', { fire: true, "new": true });
+      user.observe('name', observer, 'nameDidChange', { fire: true, current: true });
       expect(observer.notification.path).toEqual('name');
-      expect(observer.notification["new"]).toEqual('Joe');
+      expect(observer.notification.current).toEqual('Joe');
     });
 
-    it('should fire the observer immediately when the `fire` option is set and not include the `old` key even when the `old` option is set', function() {
+    it('should fire the observer immediately when the `fire` option is set and not include the `previous` key even when the `previous` option is set', function() {
       var observer = {
         notification: null,
         nameDidChange: function(n) { this.notification = n; }
       };
-      user.observe('name', observer, 'nameDidChange', { fire: true, old: true });
-      expect(observer.notification.hasOwnProperty('old')).toBe(false);
+      user.observe('name', observer, 'nameDidChange', { fire: true, previous: true });
+      expect(observer.notification.hasOwnProperty('previous')).toBe(false);
     });
 
     it('should invoke the action before the property change actually occurs when the `prior` option is set', function() {
@@ -668,28 +668,28 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notifications[1].isPrior).toBeUndefined();
     });
 
-    it('should include the `old` key in the notification when notifying prior to a property change when the `old` option is set', function() {
+    it('should include the `previous` key in the notification when notifying prior to a property change when the `previous` option is set', function() {
       var observer = {
         notifications: [],
         nameDidChange: function(n) { this.notifications.push(n); }
       };
-      user.observe('name', observer, 'nameDidChange', { prior: true, old: true });
+      user.observe('name', observer, 'nameDidChange', { prior: true, previous: true });
       user.set('name', 'Corey');
       expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].old).toEqual('Joe');
-      expect(observer.notifications[1].old).toEqual('Joe');
+      expect(observer.notifications[0].previous).toEqual('Joe');
+      expect(observer.notifications[1].previous).toEqual('Joe');
     });
 
-    it('should not include the `new` key in the notification when notifying prior to a property change when the `new` option is set', function() {
+    it('should not include the `current` key in the notification when notifying prior to a property change when the `current` option is set', function() {
       var observer = {
         notifications: [],
         nameDidChange: function(n) { this.notifications.push(n); }
       };
-      user.observe('name', observer, 'nameDidChange', { prior: true, "new": true });
+      user.observe('name', observer, 'nameDidChange', { prior: true, current: true });
       user.set('name', 'Corey');
       expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].hasOwnProperty('new')).toBe(false);
-      expect(observer.notifications[1]["new"]).toEqual('Corey');
+      expect(observer.notifications[0].hasOwnProperty('current')).toBe(false);
+      expect(observer.notifications[1].current).toEqual('Corey');
     });
   });
 
@@ -800,32 +800,32 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notification.context).toEqual('the-context');
     });
 
-    it('should set an `old` key in the notification that points to the previous value of the path if the old option is set', function() {
+    it('should set an `previous` key in the notification that points to the previous value of the path if the previous option is set', function() {
       var observer = { notification: null, action: function(n) { this.notification = n; } };
           user     = User.create({ address: Address.create({ street: 'main' }) });
 
-      user.observe('address.street', observer, 'action', { old: true });
+      user.observe('address.street', observer, 'action', { previous: true });
       user.set('address.street', 'lincoln');
-      expect(observer.notification.old).toEqual('main');
+      expect(observer.notification.previous).toEqual('main');
     });
 
-    it('should set a `new` key in the notification that points to the new value of the property if the new option is set', function() {
+    it('should set a `current` key in the notification that points to the current value of the property if the current option is set', function() {
       var observer = { notification: null, action: function(n) { this.notification = n; } },
           user     = User.create({ address: Address.create({ street: 'main' }) });
 
-      user.observe('address.street', observer, 'action', { "new": true });
+      user.observe('address.street', observer, 'action', { "current": true });
       user.set('address.street', 'lincoln');
-      expect(observer.notification["new"]).toEqual('lincoln');
+      expect(observer.notification.current).toEqual('lincoln');
     });
 
-    it('should set both `old` and `new` keys when both options are set', function() {
+    it('should set both `previous` and `current` keys when both options are set', function() {
       var observer = { notification: null, action: function(n) { this.notification = n; } },
           user     = User.create({ address: Address.create({ street: 'main' }) });
 
-      user.observe('address.street', observer, 'action', { "new": true, old: true });
+      user.observe('address.street', observer, 'action', { current: true, previous: true });
       user.set('address.street', 'lincoln');
-      expect(observer.notification.old).toEqual('main');
-      expect(observer.notification["new"]).toEqual('lincoln');
+      expect(observer.notification.previous).toEqual('main');
+      expect(observer.notification.current).toEqual('lincoln');
     });
 
     it('should fire the observer immediately when  the `fire` option is set', function() {
@@ -838,22 +838,22 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notification.observee).toBe(user);
     });
 
-    it('should fire the observer immediately when the `fire` option is set and include the `new` key when the `new` option is set', function() {
+    it('should fire the observer immediately when the `fire` option is set and include the `current` key when the `current` option is set', function() {
       var observer = { notification: null, action: function(n) { this.notification = n; } },
           user     = User.create({address: Address.create({ street: 'main' }) });
 
-      user.observe('address.street', observer, 'action', { fire: true, "new": true });
+      user.observe('address.street', observer, 'action', { fire: true, current: true });
       expect(observer.notification.path).toEqual('address.street');
-      expect(observer.notification["new"]).toEqual('main');
+      expect(observer.notification.current).toEqual('main');
     });
 
-    it('should fire the observer immediately when the `fire` option is set and not include the `old` key even when the `old` option is set', function() {
+    it('should fire the observer immediately when the `fire` option is set and not include the `previous` key even when the `previous` option is set', function() {
       var observer = { notification: null, action: function(n) { this.notification = n; } },
           user = User.create({ address: Address.create({ street: 'main' }) });
 
-      user.observe('address.street', observer, 'action', { fire: true, old: true });
+      user.observe('address.street', observer, 'action', { fire: true, previous: true });
       expect(observer.notification.path).toEqual('address.street');
-      expect(observer.notification.hasOwnProperty('old')).toBe(false);
+      expect(observer.notification.hasOwnProperty('previous')).toBe(false);
     });
 
     it('should invoke the action before the property change actually occurs when the `prior` option is set', function() {
@@ -875,32 +875,32 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notifications[1].isPrior).toBeUndefined();
     });
 
-    it('should include the `old` key in the notification when notifying prior to a property change when the `old` option is set', function() {
+    it('should include the `previous` key in the notification when notifying prior to a property change when the `previous` option is set', function() {
       var user = User.create({ address: Address.create({ street: 'main' }) });
           observer = {
         notifications: [],
         action: function(n) { this.notifications.push(n); }
       };
 
-      user.observe('address.street', observer, 'action', { prior: true, old: true });
+      user.observe('address.street', observer, 'action', { prior: true, previous: true });
       user.set('address.street', 'marshfield');
       expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].old).toEqual('main');
-      expect(observer.notifications[1].old).toEqual('main');
+      expect(observer.notifications[0].previous).toEqual('main');
+      expect(observer.notifications[1].previous).toEqual('main');
     });
 
-    it('should not include the `new` key in the notification when notifying prior to a property change when the `new` option is set', function() {
+    it('should not include the `current` key in the notification when notifying prior to a property change when the `current` option is set', function() {
       var user     = User.create({ address: Address.create({ street: 'main' }) }),
           observer = {
         notifications: [],
         action: function(n) { this.notifications.push(n); }
       };
 
-      user.observe('address.street', observer, 'action', { prior: true, "new": true });
+      user.observe('address.street', observer, 'action', { prior: true, current: true });
       user.set('address.street', 'marshfield');
       expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].hasOwnProperty('new')).toBe(false);
-      expect(observer.notifications[1]["new"]).toEqual('marshfield');
+      expect(observer.notifications[0].hasOwnProperty('current')).toBe(false);
+      expect(observer.notifications[1].current).toEqual('marshfield');
     });
   });
 
@@ -976,19 +976,19 @@ describe('Z.Object dependent properties:', function() {
       action: function(n) { this.notifications.push(n); }
     };
 
-    p.observe('full', observer, 'action', { old: true, "new": true });
+    p.observe('full', observer, 'action', { previous: true, current: true });
 
     expect(observer.notifications.length).toBe(0);
     p.set('first', 'Bart');
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].path).toBe('full');
-    expect(observer.notifications[0].old).toBe('Homer Simpson');
-    expect(observer.notifications[0]["new"]).toBe('Bart Simpson');
+    expect(observer.notifications[0].previous).toBe('Homer Simpson');
+    expect(observer.notifications[0].current).toBe('Bart Simpson');
     p.set('last', 'Smith');
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[1].path).toBe('full');
-    expect(observer.notifications[1].old).toBe('Bart Simpson');
-    expect(observer.notifications[1]["new"]).toBe('Bart Smith');
+    expect(observer.notifications[1].previous).toBe('Bart Simpson');
+    expect(observer.notifications[1].current).toBe('Bart Smith');
   });
 
   it('should notify observers when any of the dependent paths change', function() {
@@ -1005,18 +1005,18 @@ describe('Z.Object dependent properties:', function() {
       occupation: Occupation.create({ name: 'Safety Inspector' })
     });
 
-    p.observe('displayName', observer, 'action', { old: true, "new": true });
+    p.observe('displayName', observer, 'action', { previous: true, current: true });
     expect(observer.notifications.length).toBe(0);
     p.set('occupation.name', 'Bus Driver');
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].path).toBe('displayName');
-    expect(observer.notifications[0].old).toBe('Homer Simpson (Safety Inspector)');
-    expect(observer.notifications[0]["new"]).toBe('Homer Simpson (Bus Driver)');
+    expect(observer.notifications[0].previous).toBe('Homer Simpson (Safety Inspector)');
+    expect(observer.notifications[0].current).toBe('Homer Simpson (Bus Driver)');
     p.set('occupation', Occupation.create({ name: 'Astronaut' }));
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[1].path).toBe('displayName');
-    expect(observer.notifications[1].old).toBe('Homer Simpson (Bus Driver)');
-    expect(observer.notifications[1]["new"]).toBe('Homer Simpson (Astronaut)');
+    expect(observer.notifications[1].previous).toBe('Homer Simpson (Bus Driver)');
+    expect(observer.notifications[1].current).toBe('Homer Simpson (Astronaut)');
   });
 
   it('should notify observers when dependent properties which in turn have dependent properties change', function() {
@@ -1031,14 +1031,14 @@ describe('Z.Object dependent properties:', function() {
       occupation: Occupation.create({ name: 'Safety Inspector' })
     });
 
-    p.observe('displayName', observer, 'action', { old: true, "new": true });
+    p.observe('displayName', observer, 'action', { previous: true, current: true });
 
     expect(observer.notifications.length).toBe(0);
     p.set('first', 'Bart');
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].path).toBe('displayName');
-    expect(observer.notifications[0].old).toBe('Homer Simpson (Safety Inspector)');
-    expect(observer.notifications[0]["new"]).toBe('Bart Simpson (Safety Inspector)');
+    expect(observer.notifications[0].previous).toBe('Homer Simpson (Safety Inspector)');
+    expect(observer.notifications[0].current).toBe('Bart Simpson (Safety Inspector)');
   });
 });
 
