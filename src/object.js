@@ -382,7 +382,7 @@ Z.Object.open(function() {
 
       if (r.opts.previous) {
         if (opts.hasOwnProperty('previous')) {
-          r.previous[type] = Z.del(opts, 'previous');
+          r.previous[type] = opts.previous;
         }
         else {
           r.previous[type] = r.observee.get(r.path);
@@ -404,6 +404,7 @@ Z.Object.open(function() {
         if (r.opts.context) { notification.context = r.opts.context; }
         if (r.opts.previous) { notification.previous = r.previous[type]; }
 
+        Z.del(opts, 'previous');
         Z.merge(notification, opts);
 
         r.callback.call(r.observer, notification);
@@ -432,13 +433,14 @@ Z.Object.open(function() {
 
       if (r.opts.current) {
         if (opts.hasOwnProperty('current')) {
-          notification.current = Z.del(opts, 'current');
+          notification.current = opts.current;
         }
         else {
           notification.current = r.observee.get(r.path);
         }
       }
 
+      Z.del(opts, 'current');
       Z.merge(notification, opts);
 
       if (r.tail.length > 0 && (val = this.get(k))) {

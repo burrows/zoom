@@ -646,7 +646,6 @@ describe('Z.Array.getUnknownProperty', function() {
     this.property('x');
   });
 
-
   it('should get the given property path from each item in the array and return a new array with the values', function() {
     var b1 = Bar.create({x: 1}),
         b2 = Bar.create({x: 2}),
@@ -855,6 +854,24 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications[1].range).toEqual([4, 2]);
     expect(observer.notifications[1].previous).toEq(Z.A([4, 5]));
     expect(observer.notifications[1].current).toBeUndefined();
+  });
+
+  it('should not include the `previous` key in the notification when the `previous` option is not set', function() {
+    var observer2 = { notifications: [], action: function(n) { this.notifications.push(n); } };
+    a.observe('@', observer2, 'action', { prior: true, previous: false });
+    a.pop();
+    expect(observer2.notifications.length).toBe(2);
+    expect(observer2.notifications[0].hasOwnProperty('previous')).toBe(false);
+    expect(observer2.notifications[1].hasOwnProperty('previous')).toBe(false);
+  });
+
+  it('should not include the `current` key in the notification when the `current` option is not set', function() {
+    var observer2 = { notifications: [], action: function(n) { this.notifications.push(n); } };
+    a.observe('@', observer2, 'action', { prior: true, current: false });
+    a.pop();
+    expect(observer2.notifications.length).toBe(2);
+    expect(observer2.notifications[0].hasOwnProperty('current')).toBe(false);
+    expect(observer2.notifications[1].hasOwnProperty('current')).toBe(false);
   });
 });
 
