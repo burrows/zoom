@@ -1,5 +1,4 @@
 node_modules/
-spec/helper.js
 build/*
 docs/*
 scratch/
