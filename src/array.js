@@ -80,6 +80,26 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     }
   });
 
+  this.def('index', function(o) {
+    var items = this.__z_items__, i, len;
+
+    for (i = 0, len = items.length; i < len; i++) {
+      if (Z.eq(items[i], o)) { return i; }
+    }
+
+    return null;
+  });
+
+  this.def('remove', function(o) {
+    var items = this.__z_items__, i, len;
+
+    for (len = items.length, i = len - 1; i >= 0; i--) {
+      if (Z.eq(items[i], o)) { this.splice(i, 1); }
+    }
+
+    return this;
+  });
+
   this.def('splice', function(i, n) {
     var items = slice.call(arguments, 2),
         len   = this.length(),

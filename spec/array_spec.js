@@ -44,7 +44,7 @@ describe('Z.Array constructor', function() {
 });
 
 describe('Z.A', function() {
-  it('should return a Z.Array containing all of the given arguments when there are multiple arguments', function() { 
+  it('should return a Z.Array containing all of the given arguments when there are multiple arguments', function() {
     expect(Z.A(1,2,3)).toEq(Z.Array.create([1,2,3]));
   });
 
@@ -190,6 +190,20 @@ describe('Z.Array.at', function() {
   });
 });
 
+describe('Z.Array.index', function() {
+  it('should return the index of the first object in the array that is equal to the given object', function() {
+    expect(Z.A(0,1,2,3).index(0)).toBe(0);
+    expect(Z.A(0,1,2,3).index(2)).toBe(2);
+    expect(Z.A(0,1,2,1).index(1)).toBe(1);
+    expect(Z.A(Z.A(1, 2), Z.A(3, 4), Z.A(5, 6)).index(Z.A(3, 4))).toBe(1);
+  });
+
+  it('should return null if the item does not exist in the array', function() {
+    expect(Z.A(0,1,2,3).index(4)).toBe(null);
+    expect(Z.A(Z.A(1, 2), Z.A(3, 4), Z.A(5, 6)).index(Z.A(3, 4, 5))).toBe(null);
+  });
+});
+
 describe('Z.Array.splice', function() {
   it('should return the receiver', function() {
     var a = Z.A(1, 2, 3);
@@ -247,6 +261,18 @@ describe('Z.Array.splice', function() {
         a.splice(-12);
       }).toThrow("Z.Array.splice: index `-12` is too small for " + (a.toString()));
     });
+  });
+});
+
+describe('Z.Array.remove', function() {
+  it('should return the receiver', function() {
+    var a = Z.A(1,2,3);
+    expect(a.remove(1)).toBe(a);
+  });
+
+  it('should remove all objects in the array that are equal to the given object', function() {
+    expect(Z.A(1,2,3,2).remove(2)).toEq(Z.A(1,3));
+    expect(Z.A(Z.A(1,2), Z.A(3, 4), Z.A(4, 5), Z.A(3, 4)).remove(Z.A(3, 4))).toEq(Z.A(Z.A(1,2), Z.A(4, 5)));
   });
 });
 
