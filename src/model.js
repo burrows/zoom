@@ -62,7 +62,42 @@ Z.Model = Z.Object.extend(function() {
           previous: true, current: true, context: { name: k }
         });
       }
+      else if (association.type === 'hasOne') {
+        this.observe(k, this, hasOneAssociationDidChange, {
+          previous: true, current: true, context: { name: k }
+        });
+      }
     }
+  });
+
+  this.def('inverseDidAdd', function(associationName, object) {
+    var association = this.associationDescriptorFor(associationName);
+
+    association.addingInverse = true;
+
+    if (association.type === 'hasOne') {
+      this.set(associationName, object);
+    }
+    else if (association.type === 'hasMany') {
+      this.get(associationName).push(object);
+    }
+
+    association.addingInverse = false;
+  });
+
+  this.def('inverseDidRemove', function(associationName, object) {
+    var association = this.associationDescriptorFor(associationName);
+
+    association.removingInverse = true;
+
+    if (association.type === 'hasOne') {
+      this.set(associationName, null);
+    }
+    else if (association.type === 'hasMany') {
+      this.get(associationName).remove(object);
+    }
+
+    association.removingInverse = false;
   });
 
   function hasManyAssociationDidChange(notification) {
@@ -75,10 +110,34 @@ Z.Model = Z.Object.extend(function() {
 
     if (!inverse) { return; }
 
-    if (current) {
+    if (current && !association.addingInverse) {
       for (i = 0, len = current.length(); i < len; i++) {
-        current.at(i).set(inverse, this);
+        current.at(i).inverseDidAdd(inverse, this);
       }
+    }
+
+    if (previous && !association.removingInverse) {
+      for (i = 0, len = previous.length(); i < len; i++) {
+        previous.at(i).inverseDidRemove(inverse, this);
+      }
+    }
+  }
+
+  function hasOneAssociationDidChange(notification) {
+    var name        = notification.context.name,
+        previous    = notification.previous,
+        current     = notification.current,
+        association = this.associationDescriptorFor(name),
+        inverse     = association.inverse;
+
+    if (!inverse) { return; }
+
+    if (current && !association.addingInverse) {
+      current.inverseDidAdd(inverse, this);
+    }
+
+    if (previous && !association.removingInverse) {
+      previous.inverseDidRemove(inverse, this);
     }
   }
 });
