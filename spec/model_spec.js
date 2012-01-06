@@ -119,4 +119,88 @@ describe('Z.Model many-to-one association', function() {
   });
 });
 
+describe('Z.Model many-to-one association', function() {
+  var Foo, Bar;
+
+  Foo = Z.Model.extend(function() {
+    this.hasMany('bars', 'Bar', { inverse: 'foos' });
+  });
+
+  Bar = Z.Model.extend(function() {
+    this.hasMany('foos', 'Foo', { inverse: 'bars' });
+  });
+
+  beforeEach(function() {
+    Z.root.Foo = Foo;
+    Z.root.Bar = Bar;
+  });
+
+  afterEach(function() {
+    delete Z.root.Foo;
+    delete Z.root.Bar;
+  });
+
+  it('should create properties on each side of the association', function() {
+    expect(Foo.hasProperty('bars')).toBe(true);
+    expect(Bar.hasProperty('foos')).toBe(true);
+  });
+
+  it('should initialize both hasMany properties to empty Z.Arrays', function() {
+    expect(Foo.create().bars()).toEq(Z.A());
+    expect(Bar.create().foos()).toEq(Z.A());
+  });
+
+  describe('adding objects to the association', function() {
+    it("should add the given object to the receiver's array and the receiver to the given object's array", function() {
+      var f1 = Foo.create(),
+          b1 = Bar.create(),
+          b2 = Bar.create();
+
+      expect(f1.bars()).toEq(Z.A());
+      expect(b1.foos()).toEq(Z.A());
+      expect(b2.foos()).toEq(Z.A());
+
+      f1.bars().push(b1);
+
+      expect(f1.bars()).toEq(Z.A(b1));
+      expect(b1.foos()).toEq(Z.A(f1));
+      expect(b2.foos()).toEq(Z.A());
+
+      f1.bars().push(b2);
+
+      expect(f1.bars()).toEq(Z.A(b1, b2));
+      expect(b1.foos()).toEq(Z.A(f1));
+      expect(b2.foos()).toEq(Z.A(f1));
+    });
+  });
+
+  describe('removing objects from the association', function() {
+    it("should remove the given object from the receiver's array and the receiver from the given object's array", function() {
+      var f1 = Foo.create(),
+          b1 = Bar.create(),
+          b2 = Bar.create();
+
+      f1.bars().push(b1);
+      f1.bars().push(b2);
+
+      expect(f1.bars()).toEq(Z.A(b1, b2));
+      expect(b1.foos()).toEq(Z.A(f1));
+      expect(b2.foos()).toEq(Z.A(f1));
+
+      f1.bars().pop();
+
+      expect(f1.bars()).toEq(Z.A(b1));
+      expect(b1.foos()).toEq(Z.A(f1));
+      expect(b2.foos()).toEq(Z.A());
+
+      b1.foos().pop();
+
+      expect(f1.bars()).toEq(Z.A());
+      expect(b1.foos()).toEq(Z.A());
+      expect(b2.foos()).toEq(Z.A());
+    });
+  });
+});
+
+
 }());
