@@ -202,5 +202,62 @@ describe('Z.Model many-to-one association', function() {
   });
 });
 
+describe('Z.Model one-to-one association', function() {
+  var Foo, Bar;
+
+  Foo = Z.Model.extend(function() {
+    this.hasOne('bar', 'Bar', { inverse: 'foo' });
+  });
+
+  Bar = Z.Model.extend(function() {
+    this.hasOne('foo', 'Foo', { inverse: 'bar' });
+  });
+
+  beforeEach(function() {
+    Z.root.Foo = Foo;
+    Z.root.Bar = Bar;
+  });
+
+  afterEach(function() {
+    delete Z.root.Foo;
+    delete Z.root.Bar;
+  });
+
+  it('should create properties on each side of the association', function() {
+    expect(Foo.hasProperty('bar')).toBe(true);
+    expect(Bar.hasProperty('foo')).toBe(true);
+  });
+
+  it('should initialize both hasOne properties to null', function() {
+    expect(Foo.create().bar()).toBe(null);
+    expect(Bar.create().foo()).toBe(null);
+  });
+
+  describe('setting one side of the association', function() {
+    it("should set receiver as the inverse", function() {
+      var f1 = Foo.create(),
+          f2 = Foo.create(),
+          b1 = Bar.create(),
+          b2 = Bar.create();
+
+      f1.bar(b1);
+      expect(b1.foo()).toBe(f1);
+
+      b2.foo(f2);
+      expect(b2.foo()).toBe(f2);
+    });
+
+    it('should clear both sides of the association when one side is set to null', function() {
+      var f = Foo.create(), b = Bar.create();
+
+      f.bar(b);
+      expect(f.bar()).toBe(b);
+      expect(b.foo()).toBe(f);
+      f.bar(null);
+      expect(f.bar()).toBe(null);
+      expect(b.foo()).toBe(null);
+    });
+  });
+});
 
 }());
