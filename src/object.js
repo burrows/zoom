@@ -2,7 +2,7 @@
 
 var objectId = 1, slice = Array.prototype.slice;
 
-Z.Object = { __z_objectId__: objectId++, isZObject: true };
+Z.Object = { __z_objectId__: objectId++, isZObject: true, isPrototype: true };
 Z.Object.open = function(f) { f.call(this); return this; };
 Z.Object.open.__z_name__ = 'open';
 Z.Object.def = function(name, f) {
@@ -70,6 +70,7 @@ Z.Object.open(function() {
 
     o = Z.create(proto);
 
+    o.isPrototype    = true;
     o.__z_objectId__ = objectId++;
 
     if (f) { f.call(o); }
@@ -80,11 +81,21 @@ Z.Object.open(function() {
   this.def('create', function() {
     var o = this.extend();
 
+    o.isPrototype = false;
+
     if (typeof o.initialize === 'function') {
       o.initialize.apply(o, slice.call(arguments));
     }
 
     return o;
+  });
+
+  this.def('type', function() {
+    var p = Z.getPrototypeOf(this);
+
+    while (p && !p.isPrototype) { p = Z.getPrototypeOf(p); }
+
+    return p;
   });
 
   this.def('supr', function supr() {

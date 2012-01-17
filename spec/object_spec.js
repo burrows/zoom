@@ -20,6 +20,10 @@ describe('Z.Object.extend', function() {
     expect(X2.objectId() < X3.objectId()).toBe(true);
   });
 
+  it('should set the isPrototype raw property to `true`', function() {
+    expect(Z.Object.extend().isPrototype).toBe(true);
+  });
+
   it('should not invoke the `initialize` method', function() {
     var called = false, X = Z.Object.extend(function() {
       this.def('initialize', function() { called = true; });
@@ -72,6 +76,10 @@ describe('Z.Object.create', function() {
     expect(o2.objectId() < o3.objectId()).toBe(true);
   });
 
+  it('should set the isPrototype raw property to `false`', function() {
+    expect(Z.Object.create().isPrototype).toBe(false);
+  });
+
   it('should invoke the `initialize` method', function() {
     var called = false, X = Z.Object.extend(), x;
 
@@ -92,6 +100,31 @@ describe('Z.Object.create', function() {
     x = X.create(1,2,3);
 
     expect(args).toEqual([1,2,3]);
+  });
+});
+
+describe('Z.Object.type', function() {
+  it('should return null when called on `Z.Object`', function() {
+    expect(Z.Object.type()).toBe(null);
+  });
+
+  it('should return `Z.Object` when called on objects extended from `Z.Object`', function() {
+    expect(Z.Object.extend().type()).toBe(Z.Object);
+  });
+
+  it('should return the prototype object when called on objects created with `Z.Object.create`', function() {
+    var Parent = Z.Object.extend(), Child = Parent.extend();
+
+    expect(Parent.create().type()).toBe(Parent);
+    expect(Child.create().type()).toBe(Child);
+  });
+
+  it('should return the first object in the prototype chain that has `isPrototype` set to `true`', function() {
+    var X = Z.Object.extend();
+
+    expect(X.create().type()).toBe(X);
+    expect(X.create().create().type()).toBe(X);
+    expect(X.create().create().create().type()).toBe(X);
   });
 });
 
