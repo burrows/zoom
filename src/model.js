@@ -3,7 +3,46 @@
 var slice = Array.prototype.slice;
 
 Z.Model = Z.Object.extend(function() {
+  var attributeTypes = {};
+
   this.isZModel = true;
+
+  // Model states
+  this.NEW       = 1;
+  this.CLEAN     = 2;
+  this.DIRTY     = 3;
+  this.DESTROYED = 4;
+
+  this.property('state');
+
+  this.def('attribute', function(name, type) {
+    var privateProp   = Z.fmt("__z_attribute_%@__", name),
+        attributeType = attributeTypes[type];
+
+    if (!attributeType) {
+      throw new Error(Z.fmt("Z.Model.attribute: unknown type: %@", type));
+    }
+
+    this.property(name, {
+      get: function() {
+        return attributeType.fromRawFn(this[privateProp]);
+      },
+
+      set: function(v) {
+        if (this.state() === Z.Model.CLEAN) { this.state(Z.Model.DIRTY); }
+        return this[privateProp] = attributeType.toRawFn(v);
+      }
+    });
+  });
+
+  this.def('registerAttributeType', function(name, toRawFn, fromRawFn) {
+    attributeTypes[name] = {
+      toRawFn: toRawFn || Z.identity,
+      fromRawFn: fromRawFn || Z.identity
+    };
+
+    return this;
+  });
 
   this.def('hasMany', function(name, model, opts) {
     var assocKey   = Z.fmt("__z_association_%@__", name),
@@ -53,6 +92,8 @@ Z.Model = Z.Object.extend(function() {
     var associations = this.associationDescriptors(), association, k;
 
     this.supr.apply(this, slice.call(arguments));
+
+    this.state(Z.Model.NEW);
 
     for (k in associations) {
       association = associations[k];
@@ -140,6 +181,16 @@ Z.Model = Z.Object.extend(function() {
       previous.inverseDidRemove(inverse, this);
     }
   }
+
+  function stringToRaw(v) { return v ? v.toString() : v; }
+  function integerToRaw(v) {
+    if (typeof v === 'number') { return Math.round(v); }
+    else if (typeof v === 'string') { return Math.round(parseFloat(v)); }
+    return v;
+  }
+
+  this.registerAttributeType('string', stringToRaw);
+  this.registerAttributeType('integer', integerToRaw);
 });
 
 }());

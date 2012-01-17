@@ -14,6 +14,9 @@ else {
 var slice      = Array.prototype.slice,
     namespaces = [ [Z, 'Z'], [Z.root, ''] ];
 
+// The identity function - simply returns is argument.
+Z.identity = function(x) { return x; };
+
 // Copies all of the properties in the source objects over to the destination
 // object. The sources are processed in order, so subsequent sources will
 // override properties of the same name in previous sources.

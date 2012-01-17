@@ -2,6 +2,80 @@
 
 var Z = this.Z || require('zoom');
 
+describe('Z.Model.attribute', function() {
+  var X = Z.Model.extend(function() {
+    this.attribute('foo', 'string');
+    this.attribute('bar', 'integer');
+  });
+
+  it('should define a property with the given name', function() {
+    expect(X.hasProperty('foo')).toBe(true);
+    expect(X.create({foo: 'hello'}).foo()).toBe('hello');
+    expect(X.create({foo: 'goodbye'}).get('foo')).toBe('goodbye');
+  });
+
+  describe('`string` type', function() {
+    var x;
+
+    beforeEach(function() { x = X.create(); });
+
+    it('should not transform string values', function() {
+      x.set('foo', 'regular string');
+      expect(x.get('foo')).toBe('regular string');
+    });
+
+    it('should allow setting `null`', function() {
+      x.set('foo', 'a');
+      expect(x.get('foo')).toBe('a');
+      x.set('foo', null);
+      expect(x.get('foo')).toBe(null);
+    });
+
+    it('should convert non-string, non-null values to a string using `toString`', function() {
+      var Bar = Z.Object.extend(function() {
+        this.def('toString', function() { return 'frobnob'; });
+      });
+
+      x.set('foo', 9);
+      expect(x.get('foo')).toBe('9');
+      x.set('foo', Bar.create());
+      expect(x.get('foo')).toBe('frobnob');
+    });
+  });
+
+  describe('`integer` type', function() {
+    var x;
+
+    beforeEach(function() { x = X.create(); });
+
+    it('should not transform integer values', function() {
+      x.set('bar', 9);
+      expect(x.get('bar')).toBe(9);
+    });
+
+    it('should round float values', function() {
+      x.set('bar', 9.12);
+      expect(x.get('bar')).toBe(9);
+      x.set('bar', 9.88);
+      expect(x.get('bar')).toBe(10);
+    });
+
+    it('should allow setting `null`', function() {
+      x.set('bar', 8);
+      expect(x.get('bar')).toBe(8);
+      x.set('bar', null);
+      expect(x.get('bar')).toBe(null);
+    });
+
+    it('should convert string values using `parseInt`', function() {
+      x.set('bar', '1234');
+      expect(x.get('bar')).toBe(1234);
+      x.set('bar', '88.88');
+      expect(x.get('bar')).toBe(89);
+    });
+  });
+});
+
 describe('Z.Model many-to-one association', function() {
   var Foo, Bar;
 
