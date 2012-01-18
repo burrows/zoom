@@ -76,6 +76,20 @@ describe('Z.Model.attribute', function() {
   });
 });
 
+describe('Z.Model.toJSON', function() {
+  var X = Z.Model.extend(function() {
+    this.attribute('foo', 'string');
+    this.attribute('bar', 'integer');
+  });
+
+  describe('with no associations', function() {
+    it('should return an object with all raw attribute values', function() {
+      var x = X.create({foo: 'abc', bar: 22});
+      expect(x.toJSON()).toEqual({foo: 'abc', bar: 22});
+    });
+  });
+});
+
 describe('Z.Model many-to-one association', function() {
   var Foo, Bar;
 

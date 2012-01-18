@@ -15,13 +15,17 @@ Z.Model = Z.Object.extend(function() {
 
   this.property('state');
 
-  this.def('attribute', function(name, type) {
-    var privateProp   = Z.fmt("__z_attribute_%@__", name),
+  this.def('attribute', function(name, type, opts) {
+    var privateProp   = Z.fmt("__z_%@__", name),
         attributeType = attributeTypes[type];
 
     if (!attributeType) {
       throw new Error(Z.fmt("Z.Model.attribute: unknown type: %@", type));
     }
+
+    opts = opts || {};
+
+    this[Z.fmt("__z_attribute_%@__", name)] = opts;
 
     this.property(name, {
       get: function() {
@@ -35,6 +39,18 @@ Z.Model = Z.Object.extend(function() {
     });
   });
 
+  this.def('attributeNames', function() {
+    var names = [], k, match;
+
+    for (k in this) {
+      if ((match = k.match(/^__z_attribute_(.*)__$/))) {
+        names.push(match[1]);
+      }
+    }
+
+    return names;
+  });
+
   this.def('registerAttributeType', function(name, toRawFn, fromRawFn) {
     attributeTypes[name] = {
       toRawFn: toRawFn || Z.identity,
@@ -42,6 +58,16 @@ Z.Model = Z.Object.extend(function() {
     };
 
     return this;
+  });
+
+  this.def('toJSON', function() {
+    var attrs = this.attributeNames(), o = {}, i, len;
+
+    for (i = 0, len = attrs.length; i < len; i++) {
+      o[attrs[i]] = this.get(attrs[i]);
+    }
+
+    return o;
   });
 
   this.def('hasMany', function(name, model, opts) {
