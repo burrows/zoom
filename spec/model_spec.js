@@ -76,6 +76,65 @@ describe('Z.Model.attribute', function() {
   });
 });
 
+describe('Z.Model.load', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+  describe('given attributes containing an id not in the identity map', function() {
+    it('should return a new model instance with the given attributes', function() {
+      var m = TestModel.load({ id: 126, foo: 's', bar: 1 });
+
+      expect(m.type()).toBe(TestModel);
+      expect(m.id()).toBe(126);
+      expect(m.foo()).toBe('s');
+      expect(m.bar()).toBe(1);
+    });
+
+    it('should add the new model instance to the identity map', function() {
+      var m = TestModel.load({ id: 127, foo: 's', bar: 1 });
+
+      expect(TestModel.fetch(127)).toBe(m);
+    });
+
+    it('should set the state of the instance to LOADED', function() {
+      var m = TestModel.load({ id: 128, foo: 's', bar: 1 });
+
+      expect(m.state()).toBe(Z.Model.LOADED);
+    });
+  });
+
+  describe('given attributes containing an id that is in the identity map', function() {
+    it('should update and return the object that is already in the identity map', function() {
+      var m = TestModel.load({ id: 200, foo: 's', bar: 1 });
+
+      TestModel.load({ id: 200, foo: 's2', bar: 2 });
+
+      expect(m.foo()).toBe('s2');
+      expect(m.bar()).toBe(2);
+    });
+
+    it('should set the state of the instance to LOADED', function() {
+      var m = TestModel.load({ id: 201, foo: 's', bar: 1 });
+
+      m.state(Z.Model.DIRTY);
+      expect(m.state()).toBe(Z.Model.DIRTY);
+
+      TestModel.load({ id: 201, foo: 's3', bar: 3 });
+
+      expect(m.state()).toBe(Z.Model.LOADED);
+      expect(m.foo()).toBe('s3');
+      expect(m.bar()).toBe(3);
+    });
+  });
+
+  describe('given attributes that do not include an id', function() {
+    it('should throw an exception', function() {
+      expect(function() {
+        TestModel.load({ foo: 's', bar: 1 });
+      }).toThrow('Z.Model.load: an `id` attribute is required');
+    });
+  });
+});
+
 describe('Z.Model.initialize', function() {
   it('should set the given attributes', function() {
     var m = TestModel.create({ foo: 'abc', bar: 1 });

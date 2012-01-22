@@ -78,6 +78,27 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('clearIdentityMap', function() { identityMap = {}; });
 
+  this.def('load', function(attributes) {
+    var id = attributes.id, model;
+
+    if (typeof id === 'undefined') {
+      throw new Error('Z.Model.load: an `id` attribute is required');
+    }
+
+    if ((model = retrieveFromIdentityMap(this, id))) {
+      attributes = Z.dup(attributes);
+      delete attributes.id;
+      model.set(attributes);
+    }
+    else {
+      model = this.create(attributes);
+    }
+
+    model.state(Z.Model.LOADED);
+
+    return model;
+  });
+
   this.def('fetch', function(id) {
     var model = retrieveFromIdentityMap(this, id);
 
