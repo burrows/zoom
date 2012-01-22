@@ -7,6 +7,8 @@ Z.Model = Z.Object.extend(function() {
 
   this.isZModel = true;
 
+  this.mapper = Z.Mapper.create();
+
   // Model states
   this.NEW       = 1;
   this.EMPTY     = 2;
@@ -77,7 +79,14 @@ Z.Model = Z.Object.extend(function() {
   this.def('clearIdentityMap', function() { identityMap = {}; });
 
   this.def('fetch', function(id) {
-    return retrieveFromIdentityMap(this, id);
+    var model = retrieveFromIdentityMap(this, id);
+
+    if (!model) {
+      model = this.create({id: id}, Z.Model.EMPTY);
+      this.mapper.fetch(this, id);
+    }
+
+    return model;
   });
 
   this.def('toJSON', function() {

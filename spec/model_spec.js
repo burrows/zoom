@@ -117,11 +117,35 @@ describe('Z.Model id property', function() {
 });
 
 describe('Z.Model.fetch', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
   describe('for an id of a model that is already loaded into the identity map', function() {
     it('should return a reference to the already existing object', function() {
       var m = TestModel.create({id: 1234, foo: 'a', bar: 2}, Z.Model.LOADED);
 
       expect(TestModel.fetch(1234)).toBe(m);
+    });
+  });
+
+  describe('for an id of a model that is not in the identity map', function() {
+    it("should invoke the `fetch` method on the type's mapper", function() {
+      spyOn(TestModel.mapper, 'fetch');
+      TestModel.fetch(18);
+      expect(TestModel.mapper.fetch).toHaveBeenCalledWith(TestModel, 18);
+    });
+
+    it('should return an instance of the model in the EMPTY state', function() {
+      var m = TestModel.fetch(19);
+
+      expect(m.type()).toBe(TestModel);
+      expect(m.id()).toBe(19);
+      expect(m.state()).toBe(Z.Model.EMPTY);
+    });
+
+    it('should add the EMPTY instance to the identity map', function() {
+      var m = TestModel.fetch(20);
+
+      expect(TestModel.fetch(20)).toBe(m);
     });
   });
 });
@@ -132,7 +156,7 @@ describe('Z.Model.clearIdentityMap', function() {
 
     expect(TestModel.fetch(1111)).toBe(m);
     Z.Model.clearIdentityMap();
-    expect(TestModel.fetch(1111)).toBe(null);
+    expect(TestModel.fetch(1111)).not.toBe(m);
   });
 });
 

@@ -1,12 +1,13 @@
 NODE_PATH := build
 
 SRCS := zoom.js       \
-	      object.js     \
-				module.js     \
-				orderable.js  \
-				enumerable.js \
-				array.js      \
-	      model.js
+        object.js     \
+        module.js     \
+        orderable.js  \
+        enumerable.js \
+        array.js      \
+        mapper.js     \
+        model.js
 
 default: spec
 
