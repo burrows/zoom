@@ -3,7 +3,7 @@
 var slice = Array.prototype.slice;
 
 Z.Model = Z.Object.extend(function() {
-  var attributeTypes = {};
+  var attributeTypes = {}, identityMap = {};
 
   this.isZModel = true;
 
@@ -74,6 +74,12 @@ Z.Model = Z.Object.extend(function() {
     return this;
   });
 
+  this.def('fetch', function(id) {
+    var model = retrieveFromIdentityMap(this, id);
+
+    return model;
+  });
+
   this.def('toJSON', function() {
     var attrs = this.attributeNames(), o = {}, i, len;
 
@@ -129,11 +135,16 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('initialize', function(attributes, state) {
-    var associations = this.associationDescriptors(), association, k;
+    var associations = this.associationDescriptors(), association, k, id;
 
     this.supr.apply(this, slice.call(arguments));
 
     this.state(state || Z.Model.NEW);
+
+    if (attributes && attributes.hasOwnProperty('id')) {
+      addToIdentityMap(this);
+    }
+    else { this.observe('id', this, didSetIdentity); }
 
     for (k in associations) {
       association = associations[k];
@@ -180,6 +191,22 @@ Z.Model = Z.Object.extend(function() {
 
     association.removingInverse = false;
   });
+
+  function addToIdentityMap(model) {
+    var typeId = model.type().objectId();
+
+    identityMap[typeId] = identityMap[typeId] || {};
+    identityMap[typeId][model.id()] = model;
+  }
+
+  function retrieveFromIdentityMap(type, id) {
+    var typeId = type.objectId(), map = identityMap[typeId];
+    return map && map[id];
+  }
+
+  function didSetIdentity(notification) {
+    addToIdentityMap(notification.observee);
+  }
 
   function hasManyAssociationDidChange(notification) {
     var name        = notification.context.name,

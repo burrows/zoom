@@ -97,7 +97,7 @@ describe('Z.Model.initialize', function() {
   });
 });
 
-describe('Z.Model id attribute', function() {
+describe('Z.Model id property', function() {
   it('should throw an exception when setting it when it already has a non-null value', function() {
     var m = TestModel.create({ id: 1 });
 
@@ -106,6 +106,23 @@ describe('Z.Model id attribute', function() {
       m.id(9);
     }).toThrow("Z.Model.id (setter): overwriting a model's identity is not allowed: " + m.toString());
     expect(m.id()).toBe(1);
+  });
+
+  it('should add the model to the identity map once its been set for the firs time', function() {
+    var m = TestModel.create();
+
+    m.set('id', 8734);
+    expect(TestModel.fetch(8734)).toBe(m);
+  });
+});
+
+describe('Z.Model.fetch', function() {
+  describe('for an id of a model that is already loaded into the identity map', function() {
+    it('should return a reference to the already existing object', function() {
+      var m = TestModel.create({id: 1234, foo: 'a', bar: 2}, Z.Model.LOADED);
+
+      expect(TestModel.fetch(1234)).toBe(m);
+    });
   });
 });
 
