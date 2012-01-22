@@ -9,9 +9,13 @@ Z.Model = Z.Object.extend(function() {
 
   // Model states
   this.NEW       = 1;
-  this.CLEAN     = 2;
-  this.DIRTY     = 3;
-  this.DESTROYED = 4;
+  this.EMPTY     = 2;
+  this.LOADED    = 3;
+  this.DIRTY     = 4;
+  this.DESTROYED = 5;
+  this.BUSY      = 6;
+  this.NOT_FOUND = 7;
+  this.ERROR     = 8;
 
   this.property('state');
 
@@ -114,12 +118,12 @@ Z.Model = Z.Object.extend(function() {
     return this[Z.fmt('__z_association_%@__', name)];
   });
 
-  this.def('initialize', function() {
+  this.def('initialize', function(attributes, state) {
     var associations = this.associationDescriptors(), association, k;
 
     this.supr.apply(this, slice.call(arguments));
 
-    this.state(Z.Model.NEW);
+    this.state(state || Z.Model.NEW);
 
     for (k in associations) {
       association = associations[k];

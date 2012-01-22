@@ -76,6 +76,32 @@ describe('Z.Model.attribute', function() {
   });
 });
 
+describe('Z.Model.initialize', function() {
+  var TestModel = Z.Model.extend(function() {
+    this.attribute('foo', 'integer');
+    this.attribute('bar', 'integer');
+  });
+
+  it('should set the given attributes', function() {
+    var m = TestModel.create({ foo: 1, bar: 2 });
+
+    expect(m.foo()).toBe(1);
+    expect(m.get('bar')).toBe(2);
+  });
+
+  it('should set the the state to NEW', function() {
+    var m = TestModel.create({ foo: 1, bar: 2 });
+
+    expect(m.state()).toBe(Z.Model.NEW);
+  });
+
+  it('should set the state the the given state when passed a state as the second argument', function() {
+    var m = TestModel.create({ foo: 1, bar: 2 }, Z.Model.LOADED);
+
+    expect(m.state()).toBe(Z.Model.LOADED);
+  });
+});
+
 describe('Z.Model.toJSON', function() {
   var X = Z.Model.extend(function() {
     this.attribute('foo', 'string');
