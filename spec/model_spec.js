@@ -1,23 +1,23 @@
 (function() {
 
-var Z = this.Z || require('zoom');
+var Z = this.Z || require('zoom'), TestModel;
+
+TestModel = Z.Model.extend(function() {
+  this.attribute('foo', 'string');
+  this.attribute('bar', 'integer');
+});
 
 describe('Z.Model.attribute', function() {
-  var X = Z.Model.extend(function() {
-    this.attribute('foo', 'string');
-    this.attribute('bar', 'integer');
-  });
-
   it('should define a property with the given name', function() {
-    expect(X.hasProperty('foo')).toBe(true);
-    expect(X.create({foo: 'hello'}).foo()).toBe('hello');
-    expect(X.create({foo: 'goodbye'}).get('foo')).toBe('goodbye');
+    expect(TestModel.hasProperty('foo')).toBe(true);
+    expect(TestModel.create({foo: 'hello'}).foo()).toBe('hello');
+    expect(TestModel.create({foo: 'goodbye'}).get('foo')).toBe('goodbye');
   });
 
   describe('`string` type', function() {
     var x;
 
-    beforeEach(function() { x = X.create(); });
+    beforeEach(function() { x = TestModel.create(); });
 
     it('should not transform string values', function() {
       x.set('foo', 'regular string');
@@ -46,7 +46,7 @@ describe('Z.Model.attribute', function() {
   describe('`integer` type', function() {
     var x;
 
-    beforeEach(function() { x = X.create(); });
+    beforeEach(function() { x = TestModel.create(); });
 
     it('should not transform integer values', function() {
       x.set('bar', 9);
@@ -77,28 +77,35 @@ describe('Z.Model.attribute', function() {
 });
 
 describe('Z.Model.initialize', function() {
-  var TestModel = Z.Model.extend(function() {
-    this.attribute('foo', 'integer');
-    this.attribute('bar', 'integer');
-  });
-
   it('should set the given attributes', function() {
-    var m = TestModel.create({ foo: 1, bar: 2 });
+    var m = TestModel.create({ foo: 'abc', bar: 1 });
 
-    expect(m.foo()).toBe(1);
-    expect(m.get('bar')).toBe(2);
+    expect(m.foo()).toBe('abc');
+    expect(m.get('bar')).toBe(1);
   });
 
   it('should set the the state to NEW', function() {
-    var m = TestModel.create({ foo: 1, bar: 2 });
+    var m = TestModel.create({ foo: 'abc', bar: 1 });
 
     expect(m.state()).toBe(Z.Model.NEW);
   });
 
   it('should set the state the the given state when passed a state as the second argument', function() {
-    var m = TestModel.create({ foo: 1, bar: 2 }, Z.Model.LOADED);
+    var m = TestModel.create({ foo: 'abc', bar: 1 }, Z.Model.LOADED);
 
     expect(m.state()).toBe(Z.Model.LOADED);
+  });
+});
+
+describe('Z.Model id attribute', function() {
+  it('should throw an exception when setting it when it already has a non-null value', function() {
+    var m = TestModel.create({ id: 1 });
+
+    expect(m.id()).toBe(1);
+    expect(function() {
+      m.id(9);
+    }).toThrow("Z.Model.id (setter): overwriting a model's identity is not allowed: " + m.toString());
+    expect(m.id()).toBe(1);
   });
 });
 

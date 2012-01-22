@@ -17,6 +17,16 @@ Z.Model = Z.Object.extend(function() {
   this.NOT_FOUND = 7;
   this.ERROR     = 8;
 
+  this.property('id', {
+    set: function(v) {
+      if (this.__id__) {
+        throw new Error(Z.fmt("Z.Model.id (setter): overwriting a model's identity is not allowed: %@", this));
+      }
+
+      return this.__id__ = v;
+    }
+  });
+
   this.property('state');
 
   this.def('attribute', function(name, type, opts) {
