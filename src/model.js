@@ -206,6 +206,7 @@ Z.Model = Z.Object.extend(function() {
 
   function didSetIdentity(notification) {
     addToIdentityMap(notification.observee);
+    this.stopObserving('id', this, didSetIdentity);
   }
 
   function hasManyAssociationDidChange(notification) {
