@@ -74,10 +74,10 @@ Z.Model = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('fetch', function(id) {
-    var model = retrieveFromIdentityMap(this, id);
+  this.def('clearIdentityMap', function() { identityMap = {}; });
 
-    return model;
+  this.def('fetch', function(id) {
+    return retrieveFromIdentityMap(this, id);
   });
 
   this.def('toJSON', function() {
@@ -201,7 +201,7 @@ Z.Model = Z.Object.extend(function() {
 
   function retrieveFromIdentityMap(type, id) {
     var typeId = type.objectId(), map = identityMap[typeId];
-    return map && map[id];
+    return map && map[id] ? map[id] : null;
   }
 
   function didSetIdentity(notification) {

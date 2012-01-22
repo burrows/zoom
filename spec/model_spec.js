@@ -126,6 +126,16 @@ describe('Z.Model.fetch', function() {
   });
 });
 
+describe('Z.Model.clearIdentityMap', function() {
+  it('should remove all objects from the identity map', function() {
+    var m = TestModel.create({id: 1111});
+
+    expect(TestModel.fetch(1111)).toBe(m);
+    Z.Model.clearIdentityMap();
+    expect(TestModel.fetch(1111)).toBe(null);
+  });
+});
+
 describe('Z.Model.toJSON', function() {
   var X = Z.Model.extend(function() {
     this.attribute('foo', 'string');
