@@ -104,20 +104,36 @@ Z.Model = Z.Object.extend(function() {
 
     if (!model) {
       model = this.create({id: id}, Z.Model.EMPTY);
-      this.mapper.fetch(this, id);
+      this.mapper.fetchModel(this, id);
     }
 
     return model;
   });
 
-  this.def('fetchDidFail', function(id) {
+  this.def('fetchModelDidFail', function(id) {
     var model = retrieveFromIdentityMap(this, id);
 
     if (!model) {
-      throw new Error('Z.Model.fetchDidFail: no object exists with id ' + id);
+      throw new Error('Z.Model.fetchModelDidFail: no object exists with id ' + id);
     }
 
     model.state(Z.Model.NOT_FOUND);
+  });
+
+  this.def('save', function() {
+    var state = this.state();
+
+    if (state === Z.Model.LOADED) { return; }
+
+    if (state === Z.Model.NEW) {
+      this.mapper.createModel(this);
+    }
+    else if (state === Z.Model.DIRTY) {
+      this.mapper.updateModel(this);
+    }
+    else {
+      throw new Error(Z.fmt("Z.Model.save: attempted to save a model in the `%@` state", state));
+    }
   });
 
   this.def('toJSON', function() {

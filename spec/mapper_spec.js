@@ -10,18 +10,18 @@ TestModel = Z.Model.extend(function() {
 mapper = TestModel.mapper;
 
 describe('Z.Model default mapper', function() {
-  describe('fetch', function() {
-    it("should should invoke the `fetchDidFail` method on the model type after a brief timeout", function() {
-      spyOn(TestModel, 'fetchDidFail');
+  describe('fetchModel', function() {
+    it("should should invoke the `fetchModelDidFail` method on the model type after a brief timeout", function() {
+      spyOn(TestModel, 'fetchModelDidFail');
 
       runs(function() {
-        mapper.fetch(TestModel, 2);
+        mapper.fetchModel(TestModel, 2);
       });
 
       waits(1);
 
       runs(function() {
-        expect(TestModel.fetchDidFail).toHaveBeenCalledWith(2);
+        expect(TestModel.fetchModelDidFail).toHaveBeenCalledWith(2);
       });
     });
   });

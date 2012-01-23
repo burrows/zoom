@@ -177,7 +177,7 @@ describe('Z.Model id property', function() {
 
 describe('Z.Model.fetch', function() {
   beforeEach(function() {
-    spyOn(TestModel.mapper, 'fetch');
+    spyOn(TestModel.mapper, 'fetchModel');
     Z.Model.clearIdentityMap();
   });
 
@@ -190,9 +190,9 @@ describe('Z.Model.fetch', function() {
   });
 
   describe('for an id of a model that is not in the identity map', function() {
-    it("should invoke the `fetch` method on the type's mapper", function() {
+    it("should invoke the `fetchModel` method on the type's mapper", function() {
       TestModel.fetch(18);
-      expect(TestModel.mapper.fetch).toHaveBeenCalledWith(TestModel, 18);
+      expect(TestModel.mapper.fetchModel).toHaveBeenCalledWith(TestModel, 18);
     });
 
     it('should return an instance of the model in the EMPTY state', function() {
@@ -211,21 +211,87 @@ describe('Z.Model.fetch', function() {
   });
 });
 
-describe('Z.Model.fetchDidFail', function() {
+describe('Z.Model.fetchModelDidFail', function() {
   beforeEach(function() { Z.Model.clearIdentityMap(); });
 
   it('should retrieve the record with the given id from the identity map and set its state to `NOT_FOUND`', function() {
     var m = TestModel.create({id: 1}, Z.Model.EMPTY);
 
     expect(m.state()).toBe(Z.Model.EMPTY);
-    TestModel.fetchDidFail(1);
+    TestModel.fetchModelDidFail(1);
     expect(m.state()).toBe(Z.Model.NOT_FOUND);
   });
 
   it('should throw an exception if a record with the given id is not in the identity map', function() {
     expect(function() {
-      TestModel.fetchDidFail(3);
-    }).toThrow('Z.Model.fetchDidFail: no object exists with id 3');
+      TestModel.fetchModelDidFail(3);
+    }).toThrow('Z.Model.fetchModelDidFail: no object exists with id 3');
+  });
+});
+
+describe('Z.Model.save', function() {
+  beforeEach(function() {
+    Z.Model.clearIdentityMap();
+    spyOn(Z.Model.mapper, 'createModel');
+    spyOn(Z.Model.mapper, 'updateModel');
+  });
+
+  describe('for a NEW model', function() {
+    it("should invoke the `createModel` method on type's mapper", function() {
+      var m = TestModel.create({id: 1, foo: 'x', bar: 9 });
+
+      m.save();
+      expect(TestModel.mapper.createModel).toHaveBeenCalledWith(m);
+    });
+  });
+
+  describe('for a DIRTY model', function() {
+    it("should invoke the `updateModel` method on type's mapper", function() {
+      var m = TestModel.create({id: 1, foo: 'x', bar: 9 }, Z.Model.DIRTY);
+
+      m.save();
+      expect(TestModel.mapper.updateModel).toHaveBeenCalledWith(m);
+    });
+  });
+
+  describe('for a LOADED model', function() {
+    it("should do nothing", function() {
+      var m = TestModel.load({id: 1, foo: 'x', bar: 9 });
+
+      m.save();
+      expect(TestModel.mapper.createModel).not.toHaveBeenCalled();
+      expect(TestModel.mapper.updateModel).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('for a model that is not NEW, DIRTY, or LOADED', function() {
+    it('should throw an exception', function() {
+      var m = TestModel.create({id: 1}, Z.Model.EMPTY);
+
+      expect(function() {
+        m.save();
+      }).toThrow('Z.Model.save: attempted to save a model in the `empty` state');
+
+      expect(function() {
+        m = TestModel.create({id: 1}, Z.Model.DESTROYED);
+        m.save();
+      }).toThrow('Z.Model.save: attempted to save a model in the `destroyed` state');
+
+      expect(function() {
+        m = TestModel.create({id: 1}, Z.Model.BUSY);
+        m.save();
+      }).toThrow('Z.Model.save: attempted to save a model in the `busy` state');
+
+      expect(function() {
+        m = TestModel.create({id: 1}, Z.Model.NOT_FOUND);
+        m.save();
+      }).toThrow('Z.Model.save: attempted to save a model in the `not found` state');
+
+      expect(function() {
+        m = TestModel.create({id: 1}, Z.Model.ERROR);
+        m.save();
+      }).toThrow('Z.Model.save: attempted to save a model in the `error` state');
+    });
   });
 });
 
