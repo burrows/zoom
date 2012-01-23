@@ -176,7 +176,10 @@ describe('Z.Model id property', function() {
 });
 
 describe('Z.Model.fetch', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
+  beforeEach(function() {
+    spyOn(TestModel.mapper, 'fetch');
+    Z.Model.clearIdentityMap();
+  });
 
   describe('for an id of a model that is already loaded into the identity map', function() {
     it('should return a reference to the already existing object', function() {
@@ -188,7 +191,6 @@ describe('Z.Model.fetch', function() {
 
   describe('for an id of a model that is not in the identity map', function() {
     it("should invoke the `fetch` method on the type's mapper", function() {
-      spyOn(TestModel.mapper, 'fetch');
       TestModel.fetch(18);
       expect(TestModel.mapper.fetch).toHaveBeenCalledWith(TestModel, 18);
     });
@@ -206,6 +208,24 @@ describe('Z.Model.fetch', function() {
 
       expect(TestModel.fetch(20)).toBe(m);
     });
+  });
+});
+
+describe('Z.Model.fetchDidFail', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+  it('should retrieve the record with the given id from the identity map and set its state to `NOT_FOUND`', function() {
+    var m = TestModel.create({id: 1}, Z.Model.EMPTY);
+
+    expect(m.state()).toBe(Z.Model.EMPTY);
+    TestModel.fetchDidFail(1);
+    expect(m.state()).toBe(Z.Model.NOT_FOUND);
+  });
+
+  it('should throw an exception if a record with the given id is not in the identity map', function() {
+    expect(function() {
+      TestModel.fetchDidFail(3);
+    }).toThrow('Z.Model.fetchDidFail: no object exists with id 3');
   });
 });
 

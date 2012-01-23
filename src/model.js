@@ -10,14 +10,14 @@ Z.Model = Z.Object.extend(function() {
   this.mapper = Z.Mapper.create();
 
   // Model states
-  this.NEW       = 1;
-  this.EMPTY     = 2;
-  this.LOADED    = 3;
-  this.DIRTY     = 4;
-  this.DESTROYED = 5;
-  this.BUSY      = 6;
-  this.NOT_FOUND = 7;
-  this.ERROR     = 8;
+  this.NEW       = 'new';
+  this.EMPTY     = 'empty';
+  this.LOADED    = 'loaded';
+  this.DIRTY     = 'dirty';
+  this.DESTROYED = 'destroyed';
+  this.BUSY      = 'busy';
+  this.NOT_FOUND = 'not found';
+  this.ERROR     = 'error';
 
   this.property('id', {
     set: function(v) {
@@ -108,6 +108,16 @@ Z.Model = Z.Object.extend(function() {
     }
 
     return model;
+  });
+
+  this.def('fetchDidFail', function(id) {
+    var model = retrieveFromIdentityMap(this, id);
+
+    if (!model) {
+      throw new Error('Z.Model.fetchDidFail: no object exists with id ' + id);
+    }
+
+    model.state(Z.Model.NOT_FOUND);
   });
 
   this.def('toJSON', function() {
