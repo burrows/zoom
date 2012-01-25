@@ -182,6 +182,10 @@ describe('Z.Array.at', function() {
       expect(a.at(-1)).toBe('fox');
       a.at(-1, 'dog');
       expect(a.at(-1)).toBe('dog');
+      a.at(2, 'two');
+      expect(a.at(2)).toBe('two');
+      a.at(2, undefined);
+      expect(a.at(2)).toBeUndefined();
     });
 
     it('should return the value', function() {

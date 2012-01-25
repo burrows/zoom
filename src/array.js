@@ -71,7 +71,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     
     if (i < 0) { i = len + i; }
 
-    if (typeof v === 'undefined') {
+    if (arguments.length === 1) {
       return (i >= 0 && i < len) ? this.__z_items__[i] : null;
     }
     else {
