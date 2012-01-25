@@ -24,6 +24,11 @@ describe('Z.Enumerable.inject', function() {
     expect(f.inject(function(acc, x) { return acc + x; })).toEqual('foobarbazquux');
     expect(a.inject(function(acc, x) { return acc + x; })).toBe(55);
   });
+
+  it('should yield all values that each yields', function() {
+    expect(Z.A(1,2,3).inject(function(acc, item, i) { return i; })).toBe(2);
+    expect(Z.A(1,2,3,4).inject(function(acc, item, i) { return i; })).toBe(3);
+  });
 });
 
 describe('Z.Enumerable.map', function() {

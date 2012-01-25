@@ -1,12 +1,15 @@
 (function(undefined) {
 
+var slice = Array.prototype.slice;
+
 Z.Enumerable = Z.Module.create(function() {
   this.isEnumerable = true;
 
   this.def('map', function(f) {
-    var results = [];
-    this.each(function(item) { results.push(f(item)); });
-    return Z.Array.create(results);
+    return this.inject(Z.A(), function(acc) {
+      acc.push(f.apply(null, slice.call(arguments, 1)));
+      return acc;
+    });
   });
 
   this.def('first', function() {
@@ -26,9 +29,9 @@ Z.Enumerable = Z.Module.create(function() {
 
     acc = initial;
 
-    this.each(function(item) {
+    this.each(function() {
       if (skip) { skip = false; return; }
-      acc = f(acc, item);
+      acc = f.apply(null, [acc].concat(slice.call(arguments)));
     });
 
     return acc;
