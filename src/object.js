@@ -224,6 +224,10 @@ Z.Object.open(function() {
     get: function() { return this.__z_objectId__; }
   });
 
+  this.def('hash', function() {
+    return Z.murmur(this.objectId().toString(), 0);
+  });
+
   this.def('eq', function(o) { return this === o; });
   this.def('neq', function(o) { return !this.eq(o); });
 

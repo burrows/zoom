@@ -34,53 +34,130 @@ describe('Z.isNativeArray', function() {
     expect(Z.isNativeArray(arguments)).toBe(false);
   });
 
-  // FIXME - uncomment once Z.Array is converted
-  //it('should return false for Z.Arrays', function() {
-  //  return expect(Z.isNativeArray(Z.A())).toBe(false);
-  //});
+  it('should return false for Z.Arrays', function() {
+    return expect(Z.isNativeArray(Z.A())).toBe(false);
+  });
 });
 
-// FIXME - uncomment once Z.Object is converted
-//describe('Z.eq', function() {
-//  var A;
-//  A = (function() {
+describe('Z.eq', function() {
+  var A = Z.Object.extend(function() {
+    this.property('foo');
+    this.def('eq', function(other) {
+      return this.foo() === other.foo();
+    });
+  });
 
-//    __extends(A, Z.Object);
+  it('should invoke #eq if the first object is a Z.Object', function() {
+    var a1 = A.create({foo: 1}), a2 = A.create({foo: 1});
 
-//    function A() {
-//      A.__super__.constructor.apply(this, arguments);
-//    }
+    expect(a1 === a2).toBe(false);
+    expect(Z.eq(a1, a2)).toBe(true);
+    a2.foo(2);
+    expect(a1 === a2).toBe(false);
+    expect(Z.eq(a1, a2)).toBe(false);
+  });
 
-//    A.property('foo');
+  it('should fall back to using the == operator if the first object is not a Z.Object', function() {
+    expect(Z.eq('foo', 'foo')).toBe(true);
+    expect(Z.eq('foo', 'bar')).toBe(false);
+    expect(Z.eq(9, 9)).toBe(true);
+    expect(Z.eq(9, 10)).toBe(false);
+    expect(Z.eq(null, 0)).toBe(false);
+  });
+});
 
-//    A.prototype.eq = function(other) {
-//      return this.foo() === other.foo();
-//    };
+describe('Z.hash', function() {
+  describe('with `null` or `undefined`', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash(undefined)).toBe('number');
+      expect(typeof Z.hash(null)).toBe('number');
+    });
 
-//    return A;
+    it('should always return the same value', function() {
+      expect(Z.hash(undefined)).toBe(Z.hash(undefined));
+      expect(Z.hash(null)).toBe(Z.hash(null));
+    });
+  });
 
-//  })();
-//  it('should invoke #eq if the first object is a Z.Object', function() {
-//    var a1, a2;
-//    a1 = new A({
-//      foo: 1
-//    });
-//    a2 = new A({
-//      foo: 1
-//    });
-//    expect(a1 === a2).toBe(false);
-//    expect(Z.eq(a1, a2)).toBe(true);
-//    a2.foo(2);
-//    expect(a1 === a2).toBe(false);
-//    return expect(Z.eq(a1, a2)).toBe(false);
-//  });
-//  return it('should fall back to using the == operator if the first object is not a Z.Object', function() {
-//    expect(Z.eq('foo', 'foo')).toBe(true);
-//    expect(Z.eq('foo', 'bar')).toBe(false);
-//    expect(Z.eq(9, 9)).toBe(true);
-//    expect(Z.eq(9, 10)).toBe(false);
-//    return expect(Z.eq(null, 0)).toBe(false);
-//  });
-//});
+  describe('with a string', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash('')).toBe('number');
+      expect(typeof Z.hash('bar')).toBe('number');
+    });
+
+    it('should always return the same value when given the same string', function() {
+      expect(Z.hash('')).toBe(Z.hash(''));
+      expect(Z.hash('foobar')).toBe(Z.hash('foobar'));
+    });
+
+    it('should return different values for different strings', function() {
+      expect(Z.hash('')).not.toBe(Z.hash('x'));
+      expect(Z.hash('foo')).not.toBe(Z.hash('bar'));
+      expect(Z.hash('foo')).not.toBe(Z.hash('Foo'));
+      expect(Z.hash(' foo')).not.toBe(Z.hash('oo'));
+      expect(Z.hash('  ')).not.toBe(Z.hash(' '));
+    });
+  });
+
+  describe('with a function', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash(function() {})).toBe('number');
+    });
+
+    it('should return the same value when the functions are the same and different otherwise', function() {
+      var f1 = function(a) { return a + 1; },
+          f2 = function(a) { return a + 1; },
+          f3 = function(a) { return a + 2; };
+
+      expect(Z.hash(f1)).toBe(Z.hash(f1));
+      expect(Z.hash(f1)).toBe(Z.hash(f2));
+      expect(Z.hash(f1)).not.toBe(Z.hash(f3));
+      expect(Z.hash(f2)).not.toBe(Z.hash(f3));
+    });
+  });
+
+  describe('with a plain object', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash({})).toBe('number');
+      expect(typeof Z.hash({foo: 1, bar: 2})).toBe('number');
+    });
+
+    it('should return the same value when the objects are equivalent', function() {
+      expect(Z.hash({})).toBe(Z.hash({}));
+      expect(Z.hash({foo: 1})).toBe(Z.hash({foo: 1}));
+      expect(Z.hash({foo: 1, bar: 2})).toBe(Z.hash({foo: 1, bar: 2}));
+    });
+
+    it("should return a value that doesn't depend on the order of the keys", function() {
+      expect(Z.hash({foo: 1, bar: 2})).toBe(Z.hash({bar: 2, foo: 1}));
+      expect(Z.hash({foo: ['a', 'b'], bar: 3})).toBe(Z.hash({bar: 3, foo: ['a', 'b']}));
+    });
+
+    it('should generate a value for recursive objects', function() {
+      var o = {};
+      o.x = o;
+
+      expect(Z.hash(o)).toBe(Z.hash(o.x));
+    });
+
+    it('should return the same value for recursive objects', function() {
+      var o = {};
+      o.x = o;
+
+      expect(Z.hash(o)).toBe(Z.hash({x: o}));
+      // FIXME: http://bugs.ruby-lang.org/issues/1448
+      //expect(Z.hash(o)).toBe(Z.hash({x: {x: o}}));
+    });
+
+    it('should return the same value for recursive hashes through arrays', function() {
+      var o = {}, rec = [o];
+      o.x = rec;
+
+      expect(Z.hash(o)).toBe(Z.hash({x: rec}));
+      // FIXME: http://bugs.ruby-lang.org/issues/1448
+      //expect(Z.hash(o)).toBe(Z.hash({x: [o]}));
+    });
+  });
+});
 
 }());

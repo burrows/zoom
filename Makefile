@@ -6,6 +6,7 @@ SRCS := zoom.js       \
         orderable.js  \
         enumerable.js \
         array.js      \
+        hash.js       \
         mapper.js     \
         model.js
 
