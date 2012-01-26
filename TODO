@@ -1,5 +1,18 @@
-* array observing
-* docs
-* allow for read-only properties (set `set` property to false? use `readonly` option?)
+* separate out polyfills
+* separate out utils
+  * isArray
+  * isFunction
+  * isString
+  * isNumber
+  * isNaN
+  * isBoolean
+  * isRegExp
+  * isNull
+  * isUndefined
+* hash functions for all types
 * implement a more robust Z.eq method that does deep comparisons of native
   objects
+* implement better toString method
+* Z.Hash
+* hash functions for Z.Array and Z.Hash
+* docs

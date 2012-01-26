@@ -116,6 +116,9 @@ describe('Z.hash', function() {
     });
   });
 
+  describe('with a Date', function() {
+  });
+
   describe('with a plain object', function() {
     it('should return a number', function() {
       expect(typeof Z.hash({})).toBe('number');
@@ -140,7 +143,7 @@ describe('Z.hash', function() {
       expect(Z.hash(o)).toBe(Z.hash(o.x));
     });
 
-    it('should return the same value for recursive objects', function() {
+    it('should return the same value for equal recursive objects', function() {
       var o = {};
       o.x = o;
 
@@ -156,6 +159,33 @@ describe('Z.hash', function() {
       expect(Z.hash(o)).toBe(Z.hash({x: rec}));
       // FIXME: http://bugs.ruby-lang.org/issues/1448
       //expect(Z.hash(o)).toBe(Z.hash({x: [o]}));
+    });
+  });
+
+  describe('with a native array', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash([])).toBe('number');
+      expect(typeof Z.hash([1,2,'three'])).toBe('number');
+    });
+
+    it('should return the same value when the arrays are equivalent', function() {
+      expect(Z.hash([])).toBe(Z.hash([]));
+      expect(Z.hash(['x'])).toBe(Z.hash(['x']));
+      expect(Z.hash([1,2,'three'])).toBe(Z.hash([1,2,'three']));
+    });
+
+    it('should return different values for arrays with the same items but in different orders', function() {
+      expect(Z.hash([1,2])).not.toBe(Z.hash([2,1]));
+      expect(Z.hash(['one', 'two', 3])).not.toBe(Z.hash(['two', 3, 1]));
+    });
+
+    it('should generate a value for recursive arrays', function() {
+      var a = [], b = [1];
+      a[0] = a;
+      b[1] = b;
+
+      expect(Z.hash(a)).toBe(Z.hash(a[0]));
+      expect(Z.hash(b)).toBe(Z.hash(b[1]));
     });
   });
 });
