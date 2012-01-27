@@ -1,6 +1,6 @@
 (function(undefined) {
 
-var slice = Array.prototype.slice;
+var slice = Array.prototype.slice, toString = Object.prototype.toString;
 
 // The identity function - simply returns its argument.
 Z.identity = function(x) { return x; };
@@ -125,5 +125,36 @@ Z.murmur = function(key, seed) {
 
   return h1 >>> 0;
 };
+
+Z.type = function(o) {
+  if (o === null)      { return 'null'; }
+  if (o === undefined) { return 'undefined'; }
+
+  switch (toString.call(o)) {
+    case '[object Array]'     : return 'array';
+    case '[object Function]'  : return 'function';
+    case '[object String]'    : return 'string';
+    case '[object Number]'    : return 'number';
+    case '[object Boolean]'   : return 'boolean';
+    case '[object Date]'      : return 'date';
+    case '[object RegExp]'    : return 'regexp';
+    case '[object Object]'    : return o.isZObject ? 'zobject' : 'object';
+    default:
+      throw new Error(Z.fmt("Z.type: BUG: unknown type for %@", o));
+  }
+};
+
+Z.isNull      = function(o) { return Z.type(o) === 'null'; };
+Z.isUndefined = function(o) { return Z.type(o) === 'undefined'; };
+Z.isArray     = function(o) { return Z.type(o) === 'array'; };
+Z.isFunction  = function(o) { return Z.type(o) === 'function'; };
+Z.isString    = function(o) { return Z.type(o) === 'string'; };
+Z.isNumber    = function(o) { return Z.type(o) === 'number'; };
+Z.isBoolean   = function(o) { return Z.type(o) === 'boolean'; };
+Z.isDate      = function(o) { return Z.type(o) === 'date'; };
+Z.isRegExp    = function(o) { return Z.type(o) === 'regexp'; };
+Z.isObject    = function(o) { return Z.type(o) === 'object'; };
+Z.isZObject   = function(o) { return Z.type(o) === 'zobject'; };
+Z.isNaN       = function(o) { return o !== o; };
 
 }());

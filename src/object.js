@@ -235,7 +235,7 @@ Z.Object.open(function() {
     var paths, path, i, len, result;
 
     if (arguments.length === 1) {
-      if (Array.isArray(arguments[0])) {
+      if (Z.isArray(arguments[0])) {
         paths = arguments[0];
       }
       else if (arguments[0].isZArray) {

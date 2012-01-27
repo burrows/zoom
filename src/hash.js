@@ -95,7 +95,7 @@ function hash(o, seen) {
   else if (o.isZObject) {
     return o.hash();
   }
-  else if (Array.isArray(o)) {
+  else if (Z.isArray(o)) {
     v = o.length;
 
     for (i = 0, len = o.length; i < len; i++) {
