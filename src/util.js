@@ -2,6 +2,18 @@
 
 var slice = Array.prototype.slice, toString = Object.prototype.toString;
 
+// Polyfill for Object.create. Creates a new object with the given object as the
+// prototype.
+//
+// * `o` - The prototype object.
+//
+// Returns a new Object instance with `o` as the prototype.
+Z.create = Object.create || function(o) {
+  var f = function() {};
+  f.prototype = o;
+  return new f();
+};
+
 // The identity function - simply returns its argument.
 Z.identity = function(x) { return x; };
 

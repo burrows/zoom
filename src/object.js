@@ -68,7 +68,7 @@ Z.Object.open(function() {
       proto = args[i].createMixin(proto);
     }
 
-    o = Object.create(proto);
+    o = Z.create(proto);
 
     o.isPrototype    = true;
     o.__z_objectId__ = objectId++;

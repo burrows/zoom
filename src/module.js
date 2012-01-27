@@ -9,7 +9,7 @@ Z.Module = Z.Object.extend(function() {
   });
 
   this.def('createMixin', function(prototype) {
-    var o = Object.create(prototype), k;
+    var o = Z.create(prototype), k;
 
     o.__z_module__ = this;
 
