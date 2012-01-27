@@ -9,9 +9,16 @@ var slice = Array.prototype.slice, toString = Object.prototype.toString;
 //
 // Returns a new Object instance with `o` as the prototype.
 Z.create = Object.create || function(o) {
-  var f = function() {};
+  var f = function() {}, o2;
   f.prototype = o;
-  return new f();
+  o2 = new f();
+  o2.__z_proto__ = o;
+  return o2;
+};
+
+Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
+  if (o === Z.Object) { return Object.prototype; }
+  return o.__z_proto__ || null;
 };
 
 // The identity function - simply returns its argument.

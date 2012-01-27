@@ -1,7 +1,7 @@
 NODE_PATH := build
 
 SRCS := main.js       \
-	      util.js       \
+        util.js       \
         object.js     \
         module.js     \
         orderable.js  \

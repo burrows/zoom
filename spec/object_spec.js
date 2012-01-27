@@ -6,8 +6,8 @@ describe('Z.Object.extend', function() {
   it('should return an object whose prototype is the receiver', function() {
     var X1 = Z.Object.extend(), X2 = X1.extend();
 
-    expect(Object.getPrototypeOf(X1)).toBe(Z.Object);
-    expect(Object.getPrototypeOf(X2)).toBe(X1);
+    expect(Z.getPrototypeOf(X1)).toBe(Z.Object);
+    expect(Z.getPrototypeOf(X2)).toBe(X1);
   });
 
   it('should assign an auto-incrementing id to each object created', function() {
@@ -62,8 +62,8 @@ describe('Z.Object.extend', function() {
 describe('Z.Object.create', function() {
   it('should return an object whose prototype is the receiver', function() {
     var o1 = Z.Object.create(), o2 = o1.create();
-    expect(Object.getPrototypeOf(o1)).toBe(Z.Object);
-    expect(Object.getPrototypeOf(o2)).toBe(o1);
+    expect(Z.getPrototypeOf(o1)).toBe(Z.Object);
+    expect(Z.getPrototypeOf(o2)).toBe(o1);
   });
 
   it('should assign an auto-incrementing id to each object created', function() {
