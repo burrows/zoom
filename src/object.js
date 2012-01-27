@@ -144,7 +144,7 @@ Z.Object.open(function() {
       namespace = namespaces[i];
 
       for (k in namespace[0]) {
-        if (namespace[0][k] === this) {
+        if (namespace[0].hasOwnProperty(k) && namespace[0][k] === this) {
           return namespace[1].length > 0 ? Z.fmt("%@.%@", namespace[1], k) : k;
         }
       }
