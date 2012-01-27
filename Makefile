@@ -10,11 +10,13 @@ SRCS := zoom.js       \
         mapper.js     \
         model.js
 
+LIBS := json2.js augment.js
+
 default: spec
 
 zoom: build/zoom.js
 
-build/zoom.js: $(addprefix src/,$(SRCS))
+build/zoom.js: $(addprefix lib/,$(LIBS)) $(addprefix src/,$(SRCS))
 	@mkdir -p build
 	cat $^ > $@
 

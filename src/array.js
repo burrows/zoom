@@ -40,7 +40,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     else if (typeof arg === 'number') {
       this.__z_items__ = new Array(arg);
     }
-    else if (Z.isNativeArray(arg)) {
+    else if (Array.isArray(arg)) {
       this.__z_items__ = arg.slice();
     }
     else if (arg && arg.isZArray) {
@@ -244,7 +244,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
       if (item && item.isZArray) {
         result = result.concat(item.flatten().toNative());
       }
-      else if (Z.isNativeArray(item)) {
+      else if (Array.isArray(item)) {
         result = result.concat(Z.A(item).flatten().toNative());
       }
       else {
@@ -495,7 +495,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 Z.A = function() {
   var args = slice.call(arguments), len = args.length, first = args[0];
 
-  if (len === 1 && (Z.isNativeArray(first) || (first && first.isZArray))) {
+  if (len === 1 && (Array.isArray(first) || (first && first.isZArray))) {
     return Z.Array.create(first);
   }
 

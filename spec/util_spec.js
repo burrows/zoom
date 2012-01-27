@@ -25,20 +25,6 @@ describe('Z.defaults', function() {
   });
 });
 
-describe('Z.isNativeArray', function() {
-  it('should return true for native arrays', function() {
-    expect(Z.isNativeArray([1, 2, 3])).toBe(true);
-  });
-
-  it('should return false for arguments objects', function() {
-    expect(Z.isNativeArray(arguments)).toBe(false);
-  });
-
-  it('should return false for Z.Arrays', function() {
-    return expect(Z.isNativeArray(Z.A())).toBe(false);
-  });
-});
-
 describe('Z.eq', function() {
   var A = Z.Object.extend(function() {
     this.property('foo');

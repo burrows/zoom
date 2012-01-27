@@ -68,7 +68,7 @@ Z.Object.open(function() {
       proto = args[i].createMixin(proto);
     }
 
-    o = Z.create(proto);
+    o = Object.create(proto);
 
     o.isPrototype    = true;
     o.__z_objectId__ = objectId++;
@@ -91,9 +91,9 @@ Z.Object.open(function() {
   });
 
   this.def('type', function() {
-    var p = Z.getPrototypeOf(this);
+    var p = Object.getPrototypeOf(this);
 
-    while (p && !p.isPrototype) { p = Z.getPrototypeOf(p); }
+    while (p && !p.isPrototype) { p = Object.getPrototypeOf(p); }
 
     return p;
   });
@@ -111,10 +111,10 @@ Z.Object.open(function() {
 
     while (o) {
       if (o.hasOwnProperty(name) && o[name] === caller) { break; }
-      o = Z.getPrototypeOf(o);
+      o = Object.getPrototypeOf(o);
     }
 
-    if (!(method = Z.getPrototypeOf(o)[name])) {
+    if (!(method = Object.getPrototypeOf(o)[name])) {
       throw new Error(Z.fmt('Z.Object.supr: no super method `%@` found for %@', name, this));
     }
 
@@ -128,7 +128,7 @@ Z.Object.open(function() {
   this.def('ancestors', function() {
     var a = [], p = this;
 
-    while ((p = Z.getPrototypeOf(p)) !== Object.prototype) {
+    while ((p = Object.getPrototypeOf(p)) !== Object.prototype) {
       a.push(p.hasOwnProperty('__z_module__') ? p.__z_module__ : p);
     }
 
@@ -157,7 +157,7 @@ Z.Object.open(function() {
     var p = this, name;
 
     while (p && p.isZObject && (name = p.name()) === '(Unknown)') {
-      p = Z.getPrototypeOf(p);
+      p = Object.getPrototypeOf(p);
     }
 
     return name;
@@ -235,7 +235,7 @@ Z.Object.open(function() {
     var paths, path, i, len, result;
 
     if (arguments.length === 1) {
-      if (Z.isNativeArray(arguments[0])) {
+      if (Array.isArray(arguments[0])) {
         paths = arguments[0];
       }
       else if (arguments[0].isZArray) {

@@ -54,16 +54,6 @@ Z.defaults = function(o) {
   return o;
 };
 
-// Returns whether the given object is a native javascript array. Uses
-// `Array.isArray` if it is available.
-//
-// * `o` - The object to check.
-//
-// Returns `true` if the object is a native array and `false` otherwise.
-Z.isNativeArray = Array.isArray || function(o) {
-  return !!(o && o.concat && o.unshift && !o.callee && !o.isZArray);
-};
-
 // Converts the given object to a string.
 //
 // FIXME: handle native objects
@@ -118,16 +108,6 @@ Z.fmt = function(s) {
   });
 };
 
-Z.create = Object.create || function(o) {
-  var f = function() {};
-  f.prototype = o;
-  return new f();
-};
-
-Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
-  throw new Error('polyfill this');
-};
-
 Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
 
 Z.removeNamespace = function(o) {
@@ -161,7 +141,7 @@ function hash(o, seen) {
   else if (o.isZObject) {
     return o.hash();
   }
-  else if (Z.isNativeArray(o)) {
+  else if (Array.isArray(o)) {
     v = o.length;
 
     for (i = 0, len = o.length; i < len; i++) {

@@ -1,4 +1,3 @@
-* separate out polyfills
 * separate out utils
   * isArray
   * isFunction
