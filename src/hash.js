@@ -72,4 +72,55 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 });
 
+Z.hash = function(o) { return hash(o, []); };
+
+// FIXME: This code is a bit buggy when it comes to recursive data structures
+// (objects and arrays), see http://bugs.ruby-lang.org/issues/1448 for more
+// info.
+function hash(o, seen) {
+  var type = typeof o, v, size, key, i, len;
+
+  if (o === null) {
+    return Z.murmur('null', 1);
+  }
+  else if (type === 'undefined') {
+    return Z.murmur('undefined', 1);
+  }
+  else if (type === 'function' || type === 'number') {
+    return Z.murmur(o.toString(), 1);
+  }
+  else if (type == 'string') {
+    return Z.murmur(o, 1);
+  }
+  else if (o.isZObject) {
+    return o.hash();
+  }
+  else if (Array.isArray(o)) {
+    v = o.length;
+
+    for (i = 0, len = o.length; i < len; i++) {
+      if (seen.indexOf(o[i]) >= 0) { continue; }
+      seen.push(o[i]);
+      v = ((v & 0x7fffffff) << 1) ^ hash(o[i], seen);
+    }
+
+    return v;
+  }
+  else {
+    v    = 0;
+    size = 0;
+
+    for (key in o) {
+      if (!o.hasOwnProperty(key)) { continue; }
+      size++;
+      if (seen.indexOf(o[key]) >= 0) { continue; }
+      seen.push(o[key]);
+      v ^= hash(key, seen);
+      v ^= hash(o[key], seen);
+    }
+
+    return v ^= size;
+  }
+}
+
 }());

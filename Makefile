@@ -1,6 +1,7 @@
 NODE_PATH := build
 
-SRCS := zoom.js       \
+SRCS := main.js       \
+	      util.js       \
         object.js     \
         module.js     \
         orderable.js  \
