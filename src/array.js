@@ -173,6 +173,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     return true;
   });
 
+  this.def('hash', function() {
+    return Z.hash(this.toNative());
+  });
+
   this.def('push', function() {
     var args = slice.call(arguments);
     return this.splice.apply(this, [this.length(), 0].concat(args));

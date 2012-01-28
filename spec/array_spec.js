@@ -1189,4 +1189,32 @@ describe('Observing paths that contain multiple arrays with item observers', fun
   });
 });
 
+describe('Z.Array.hash', function() {
+  it('should return a number', function() {
+    expect(typeof Z.A().hash()).toBe('number');
+    expect(typeof Z.A(1,2,'three').hash()).toBe('number');
+  });
+
+  it('should return the same value for equivalent arrays', function() {
+    expect(Z.A().hash()).toBe(Z.A().hash());
+    expect(Z.A('x').hash()).toBe(Z.A('x').hash());
+    expect(Z.A(1,2,'three').hash()).toBe(Z.A(1,2,'three').hash());
+  });
+
+  it('should return different values for arrays with the same items but in different orders', function() {
+    expect(Z.A(1,2).hash()).not.toBe(Z.A(2,1).hash());
+    expect(Z.A('one', 'two', 3).hash()).not.toBe(Z.A('two', 3, 1).hash());
+  });
+
+  it('should generate a value for recursive arrays', function() {
+    var a = Z.A(), b = Z.A(1);
+
+    a.at(0, a);
+    b.at(1, b);
+
+    expect(a.hash()).toBe(a.at(0).hash());
+    expect(b.hash()).toBe(b.at(1).hash());
+  });
+});
+
 }());

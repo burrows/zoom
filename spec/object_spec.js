@@ -1070,5 +1070,15 @@ describe('Z.Object dependent properties:', function() {
   });
 });
 
+describe('Z.Object.hash', function() {
+  it('should return a number', function() {
+    expect(typeof Z.Object.create().hash()).toBe('number');
+  });
+
+  it('should return different values for different object', function() {
+    expect(Z.Object.create().hash()).not.toBe(Z.Object.create().hash());
+  });
+});
+
 }());
 
