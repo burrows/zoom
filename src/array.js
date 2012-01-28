@@ -111,12 +111,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
       throw new Error(Z.fmt("Z.Array.splice: index `%@` is too small for %@", i, this));
     }
 
-    if (typeof n === 'undefined') {
-      if (idx < len) { willMutate(this, 'remove', idx, len - idx); }
-      this.__z_items__.splice(idx, len - idx);
-      if (idx < len) { didMutate(this, 'remove', idx, len - idx); }
-      return this;
-    }
+    if (n === undefined) { n = len - idx; }
 
     expand     = idx >= len;
     replaceNum = expand ? 0 : Z.min(n, items.length);
