@@ -225,7 +225,7 @@ Z.Object.open(function() {
   });
 
   this.def('hash', function() {
-    return Z.murmur(this.objectId().toString(), 0);
+    return Z.murmur(this.objectId().toString(), Z.hashSeed());
   });
 
   this.def('eq', function(o) { return this === o; });

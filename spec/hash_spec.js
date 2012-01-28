@@ -12,6 +12,51 @@ describe('Z.hash', function() {
     it('should always return the same value', function() {
       expect(Z.hash(undefined)).toBe(Z.hash(undefined));
       expect(Z.hash(null)).toBe(Z.hash(null));
+      expect(Z.hash(null)).not.toBe(Z.hash(undefined));
+    });
+  });
+
+  describe('with a native array', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash([])).toBe('number');
+      expect(typeof Z.hash([1,2,'three'])).toBe('number');
+    });
+
+    it('should return the same value when the arrays are equivalent', function() {
+      expect(Z.hash([])).toBe(Z.hash([]));
+      expect(Z.hash(['x'])).toBe(Z.hash(['x']));
+      expect(Z.hash([1,2,'three'])).toBe(Z.hash([1,2,'three']));
+    });
+
+    it('should return different values for arrays with the same items but in different orders', function() {
+      expect(Z.hash([1,2])).not.toBe(Z.hash([2,1]));
+      expect(Z.hash(['one', 'two', 3])).not.toBe(Z.hash(['two', 3, 1]));
+    });
+
+    it('should generate a value for recursive arrays', function() {
+      var a = [], b = [1];
+      a[0] = a;
+      b[1] = b;
+
+      expect(Z.hash(a)).toBe(Z.hash(a[0]));
+      expect(Z.hash(b)).toBe(Z.hash(b[1]));
+    });
+  });
+
+  describe('with a function', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash(function() {})).toBe('number');
+    });
+
+    it('should return the same value when the functions are the same and different otherwise', function() {
+      var f1 = function(a) { return a + 1; },
+          f2 = function(a) { return a + 1; },
+          f3 = function(a) { return a + 2; };
+
+      expect(Z.hash(f1)).toBe(Z.hash(f1));
+      expect(Z.hash(f1)).toBe(Z.hash(f2));
+      expect(Z.hash(f1)).not.toBe(Z.hash(f3));
+      expect(Z.hash(f2)).not.toBe(Z.hash(f3));
     });
   });
 
@@ -35,24 +80,85 @@ describe('Z.hash', function() {
     });
   });
 
-  describe('with a function', function() {
+  describe('with a number', function() {
     it('should return a number', function() {
-      expect(typeof Z.hash(function() {})).toBe('number');
+      expect(typeof Z.hash(1)).toBe('number');
+      expect(typeof Z.hash(3.14)).toBe('number');
+      expect(typeof Z.hash(NaN)).toBe('number');
     });
 
-    it('should return the same value when the functions are the same and different otherwise', function() {
-      var f1 = function(a) { return a + 1; },
-          f2 = function(a) { return a + 1; },
-          f3 = function(a) { return a + 2; };
+    it('should always return the same value when given the same number', function() {
+      expect(Z.hash(1)).toBe(Z.hash(1));
+      expect(Z.hash(3.14)).toBe(Z.hash(3.14));
+      expect(Z.hash(NaN)).toBe(Z.hash(NaN));
+      expect(Z.hash(1)).toBe(Z.hash(1.0));
+    });
 
-      expect(Z.hash(f1)).toBe(Z.hash(f1));
-      expect(Z.hash(f1)).toBe(Z.hash(f2));
-      expect(Z.hash(f1)).not.toBe(Z.hash(f3));
-      expect(Z.hash(f2)).not.toBe(Z.hash(f3));
+    it('should return different values for different numbers', function() {
+      expect(Z.hash(1)).not.toBe(Z.hash(2));
+      expect(Z.hash(3.14)).not.toBe(Z.hash(3.141));
+    });
+  });
+
+  describe('with a boolean', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash(true)).toBe('number');
+      expect(typeof Z.hash(false)).toBe('number');
+    });
+
+    it('should always return the same value when given the same boolean', function() {
+      expect(Z.hash(true)).toBe(Z.hash(true));
+      expect(Z.hash(false)).toBe(Z.hash(false));
+    });
+
+    it('should return different values for different booleans', function() {
+      expect(Z.hash(true)).not.toBe(Z.hash(false));
     });
   });
 
   describe('with a Date', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash(new Date())).toBe('number');
+    });
+
+    it('should always return the same value when given equal dates', function() {
+      expect(Z.hash(new Date(2012, 0, 28))).toBe(Z.hash(new Date(2012, 0, 28)));
+      expect(Z.hash(new Date(2012, 0, 28, 8, 26, 0, 0))).toBe(Z.hash(new Date(2012, 0, 28, 8, 26, 0, 0)));
+    });
+
+    it('should return different values for different dates', function() {
+      var d1 = new Date(2012, 0, 28),
+          d2 = new Date(2012, 0, 29),
+          d3 = new Date(2012, 1, 2, 6, 36, 0, 0),
+          d4 = new Date(2012, 1, 2, 6, 36, 0, 1);
+
+      expect(Z.hash(d1)).not.toBe(Z.hash(d2));
+      expect(Z.hash(d3)).not.toBe(Z.hash(d4));
+    });
+  });
+
+  describe('with a RegExp', function() {
+    it('should return a number', function() {
+      expect(typeof Z.hash(/x/)).toBe('number');
+      expect(typeof Z.hash(new RegExp('foo'))).toBe('number');
+    });
+
+    it('should always return the same value when given equal regexps', function() {
+      expect(Z.hash(/x.z/)).toBe(Z.hash(/x.z/));
+      expect(Z.hash(new RegExp('x.z'))).toBe(Z.hash(new RegExp('x.z')));
+      expect(Z.hash(/x.z/)).toBe(Z.hash(new RegExp('x.z')));
+      expect(Z.hash(/x.z/im)).toBe(Z.hash(/x.z/im));
+      expect(Z.hash(/x.z/mi)).toBe(Z.hash(/x.z/im));
+      expect(Z.hash(/x.z/mi)).toBe(Z.hash(new RegExp('x.z', 'im')));
+    });
+
+    it('should return different values when for different regexps', function() {
+      expect(Z.hash(/x.z/)).not.toBe(Z.hash(/x*z/));
+      expect(Z.hash(new RegExp('x*z'))).not.toBe(Z.hash(new RegExp('x.z')));
+      expect(Z.hash(/x.zy/)).not.toBe(Z.hash(new RegExp('x.z')));
+      expect(Z.hash(/x.z/i)).not.toBe(Z.hash(/x.z/im));
+      expect(Z.hash(/x.z/ig)).not.toBe(Z.hash(new RegExp('x.z', 'g')));
+    });
   });
 
   describe('with a plain object', function() {
@@ -98,30 +204,12 @@ describe('Z.hash', function() {
     });
   });
 
-  describe('with a native array', function() {
-    it('should return a number', function() {
-      expect(typeof Z.hash([])).toBe('number');
-      expect(typeof Z.hash([1,2,'three'])).toBe('number');
-    });
-
-    it('should return the same value when the arrays are equivalent', function() {
-      expect(Z.hash([])).toBe(Z.hash([]));
-      expect(Z.hash(['x'])).toBe(Z.hash(['x']));
-      expect(Z.hash([1,2,'three'])).toBe(Z.hash([1,2,'three']));
-    });
-
-    it('should return different values for arrays with the same items but in different orders', function() {
-      expect(Z.hash([1,2])).not.toBe(Z.hash([2,1]));
-      expect(Z.hash(['one', 'two', 3])).not.toBe(Z.hash(['two', 3, 1]));
-    });
-
-    it('should generate a value for recursive arrays', function() {
-      var a = [], b = [1];
-      a[0] = a;
-      b[1] = b;
-
-      expect(Z.hash(a)).toBe(Z.hash(a[0]));
-      expect(Z.hash(b)).toBe(Z.hash(b[1]));
+  describe('with a Z.Object', function() {
+    it("should invoke the object's `hash` method", function() {
+      var o = Z.Object.create();
+      spyOn(o, 'hash');
+      Z.hash(o);
+      expect(o.hash).toHaveBeenCalled();
     });
   });
 });
