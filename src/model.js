@@ -87,7 +87,7 @@ Z.Model = Z.Object.extend(function() {
 
     if ((model = retrieveFromIdentityMap(this, id))) {
       attributes = Z.dup(attributes);
-      delete attributes.id;
+      Z.del(attributes, 'id');
       model.set(attributes);
     }
     else {

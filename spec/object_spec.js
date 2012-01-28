@@ -275,19 +275,13 @@ describe('Z.Object.name', function() {
   });
 
   afterEach(function() {
-    delete Z.Stuff;
-    delete Z.root.MyNamespace;
+    Z.del(Z, 'Stuff');
+    Z.del(Z.root, 'MyNamespace');
   });
 
   it('should return the name of the object for objects in the Z namespace', function() {
     expect(Z.Object.name()).toBe('Z.Object');
     expect(Z.Stuff.name()).toBe('Z.Stuff');
-  });
-
-  it('should return the name of the object for objects in the global namespace', function() {
-    Z.root.Global = Z.Object.extend();
-    expect(Global.name()).toBe('Global');
-    delete Z.root.Global;
   });
 
   it('should return "(Unknown)" for objects not defined in a namespace', function() {

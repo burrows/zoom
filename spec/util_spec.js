@@ -74,8 +74,6 @@ describe('Z.type', function() {
   it("should return the string 'object' when passed an Object instance", function() {
     expect(Z.type({})).toBe('object');
     expect(Z.type({foo: 1})).toBe('object');
-    expect(Z.type(Object.create(null))).toBe('object');
-    expect(Z.type(Object.create({}))).toBe('object');
   });
 
   it("should return the string 'zobject' when passed an object with Z.Object in its prototype chain", function() {

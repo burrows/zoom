@@ -76,7 +76,7 @@ Z.dup = function(o) { return Z.merge({}, o); };
 // Returns the value of the given property name.
 Z.del = function(o, prop) {
   var val = o[prop];
-  delete o[prop];
+  try { delete o[prop]; } catch (e) { o[prop] = undefined; }
   return val;
 };
 

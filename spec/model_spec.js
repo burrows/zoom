@@ -336,8 +336,8 @@ describe('Z.Model many-to-one association', function() {
   });
 
   afterEach(function() {
-    delete Z.root.Foo;
-    delete Z.root.Bar;
+    Z.del(Z.root, 'Foo');
+    Z.del(Z.root, 'Bar');
   });
 
   it('should create properties on each side of the association', function() {
@@ -453,8 +453,8 @@ describe('Z.Model many-to-one association', function() {
   });
 
   afterEach(function() {
-    delete Z.root.Foo;
-    delete Z.root.Bar;
+    Z.del(Z.root, 'Foo');
+    Z.del(Z.root, 'Bar');
   });
 
   it('should create properties on each side of the association', function() {
@@ -536,8 +536,8 @@ describe('Z.Model one-to-one association', function() {
   });
 
   afterEach(function() {
-    delete Z.root.Foo;
-    delete Z.root.Bar;
+    Z.del(Z.root, 'Foo');
+    Z.del(Z.root, 'Bar');
   });
 
   it('should create properties on each side of the association', function() {

@@ -11,7 +11,7 @@ else {
   Z.root = window;
 }
 
-var slice = Array.prototype.slice, namespaces = [ [Z, 'Z'], [Z.root, ''] ];
+var slice = Array.prototype.slice, namespaces = [ [Z, 'Z'] ];
 
 // Converts the given object to a string.
 //

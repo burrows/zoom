@@ -113,7 +113,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
     if (typeof n === 'undefined') {
       if (idx < len) { willMutate(this, 'remove', idx, len - idx); }
-      this.__z_items__.splice(idx);
+      this.__z_items__.splice(idx, len - idx);
       if (idx < len) { didMutate(this, 'remove', idx, len - idx); }
       return this;
     }
@@ -184,7 +184,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('concat', function() {
-    var items = slice.call(arguments), a = [], i, len;
+    var items = slice.call(arguments), a = [], item, i, len;
 
     for (i = 0, len = items.length; i < len; i++) {
       item = items[i];
