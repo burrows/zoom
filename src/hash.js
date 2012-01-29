@@ -74,31 +74,16 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 });
 
-Z.hash = function(o) { return hash(o, []); };
-
 Z.hashSeed = function() { return seed; };
 
-// FIXME: This code is a bit buggy when it comes to recursive data structures
-// (objects and arrays), see http://bugs.ruby-lang.org/issues/1448 for more
-// info.
-function hash(o, seen) {
-  var v, size, key, i, len;
+Z.hash = function(o) {
+  var v, key, i, len;
 
   switch (Z.type(o)) {
     case 'null':
       return Z.murmur('null', seed);
     case 'undefined':
       return Z.murmur('undefined', seed);
-    case 'array':
-      v = o.length;
-
-      for (i = 0, len = o.length; i < len; i++) {
-        if (seen.indexOf(o[i]) >= 0) { continue; }
-        seen.push(o[i]);
-        v = ((v & 0x7fffffff) << 1) ^ hash(o[i], seen);
-      }
-
-      return v;
     case 'function':
     case 'number':
     case 'boolean':
@@ -115,23 +100,37 @@ function hash(o, seen) {
       if (o.multiline)  { v += 'm'; }
 
       return Z.murmur(v, seed);
+    case 'array':
+      v = o.length;
+
+      Z.detectOutermostRecursion(o, function() {
+        var i, len;
+        for (i = 0, len = o.length; i < len; i++) {
+          v = ((v & 0x7fffffff) << 1) ^ Z.hash(o[i]);
+        }
+      });
+
+      return v;
     case 'object':
-      v    = 0;
-      size = 0;
+      v = 0;
 
-      for (key in o) {
-        if (!o.hasOwnProperty(key)) { continue; }
-        size++;
-        if (seen.indexOf(o[key]) >= 0) { continue; }
-        seen.push(o[key]);
-        v ^= hash(key, seen);
-        v ^= hash(o[key], seen);
-      }
+      Z.detectOutermostRecursion(o, function() {
+        var key, size = 0;
 
-      return v ^= size;
+        for (key in o) {
+          if (!o.hasOwnProperty(key)) { continue; }
+          size++;
+          v ^= Z.hash(key);
+          v ^= Z.hash(o[key]);
+        }
+
+        v ^= size;
+      });
+
+      return v;
     case 'zobject':
       return o.hash();
   }
-}
+};
 
 }());

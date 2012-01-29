@@ -58,4 +58,3 @@ if (!Array.prototype.filter)
   };
 }
 
-

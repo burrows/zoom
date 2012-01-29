@@ -34,12 +34,28 @@ describe('Z.hash', function() {
     });
 
     it('should generate a value for recursive arrays', function() {
-      var a = [], b = [1];
-      a[0] = a;
-      b[1] = b;
+      var a = [], b = [1, 'two', 3.0];
+      a.push(a);
+      b.push(b, b, b, b, b);
 
-      expect(Z.hash(a)).toBe(Z.hash(a[0]));
-      expect(Z.hash(b)).toBe(Z.hash(b[1]));
+      expect(typeof Z.hash(a)).toBe('number');
+      expect(typeof Z.hash(b)).toBe('number');
+    });
+
+    it('should return the same value for equal recursive arrays', function() {
+      var a = [];
+      a.push(a);
+
+      expect(Z.hash(a)).toBe(Z.hash([a]));
+      expect(Z.hash(a)).toBe(Z.hash([[a]]));
+    });
+
+    it('should return the same value for equal recursive arrays through plain objects', function() {
+      var o = {}, a = [o];
+      o.x = a;
+
+      expect(Z.hash(a)).toBe(Z.hash([o]));
+      expect(Z.hash(a)).toBe(Z.hash([{x: a}]));
     });
   });
 
@@ -190,8 +206,7 @@ describe('Z.hash', function() {
       o.x = o;
 
       expect(Z.hash(o)).toBe(Z.hash({x: o}));
-      // FIXME: http://bugs.ruby-lang.org/issues/1448
-      //expect(Z.hash(o)).toBe(Z.hash({x: {x: o}}));
+      expect(Z.hash(o)).toBe(Z.hash({x: {x: o}}));
     });
 
     it('should return the same value for recursive hashes through arrays', function() {
@@ -199,8 +214,7 @@ describe('Z.hash', function() {
       o.x = rec;
 
       expect(Z.hash(o)).toBe(Z.hash({x: rec}));
-      // FIXME: http://bugs.ruby-lang.org/issues/1448
-      //expect(Z.hash(o)).toBe(Z.hash({x: [o]}));
+      expect(Z.hash(o)).toBe(Z.hash({x: [o]}));
     });
   });
 

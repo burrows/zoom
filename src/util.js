@@ -1,6 +1,10 @@
 (function(undefined) {
 
-var slice = Array.prototype.slice, toString = Object.prototype.toString;
+var slice                    = Array.prototype.slice,
+    toString                 = Object.prototype.toString,
+    seenObjects              = [],
+    InnerRecursionDetected   = {},
+    detectOutermostRecursion = false;
 
 // Polyfill for Object.create. Creates a new object with the given object as the
 // prototype.
@@ -175,5 +179,98 @@ Z.isRegExp    = function(o) { return Z.type(o) === 'regexp'; };
 Z.isObject    = function(o) { return Z.type(o) === 'object'; };
 Z.isZObject   = function(o) { return Z.type(o) === 'zobject'; };
 Z.isNaN       = function(o) { return o !== o; };
+
+// Used to detect cases of recursion on the same pair of objects. Returns `true`
+// if the given objects have already been seen. Otherwise the given function is
+// called and `false` is returned.
+//
+// This function is used internally when traversing objects and arrays to avoid
+// getting stuck in infinite loops when circular objects are encountered. It
+// should be wrapped around all recursive function calls where a circular object
+// may be encountered. See `Z.eq` for an example.
+//
+// * `o1` - The first object to check for recursion.
+// * `o2` - The paired object to check for recursion (optional, defaults to
+//          `undefined`).
+// * `f`  - A function that make the recursive funciton call.
+//
+// Returns `true` if recursion on the given objects has been detected. If the
+// given pair of objects has yet to be seen, calls `f` and returns `false`.
+Z.detectRecursion = function(o1, o2, f) {
+  var type = Z.type(o1);
+
+  if (type !== 'object' && type !== 'array' && type !== 'zobject') {
+    return false;
+  }
+
+  if (arguments.length === 2) { f = o2; o2 = undefined; }
+
+  if (seen(o1, o2)) {
+    return true;
+  }
+  else {
+    mark(o1, o2);
+    try { f(); } finally { unmark(o1, o2); }
+    return false;
+  }
+};
+
+// Similar to `Z.detectRecursion`, but short circuits all inner recursion levels
+// using `throw`.
+Z.detectOutermostRecursion = function(o1, o2, f) {
+  if (arguments.length === 2) { f = o2; o2 = undefined; }
+
+  if (detectOutermostRecursion) {
+    if (Z.detectRecursion(o1, o2, f)) {
+      throw InnerRecursionDetected;
+    }
+
+    return false;
+  }
+  else {
+    try {
+      detectOutermostRecursion = true;
+
+      try {
+        Z.detectRecursion(o1, o2, f);
+      }
+      catch (e) {
+        if (e !== InnerRecursionDetected) { throw e; }
+        return true;
+      }
+    }
+    finally {
+      detectOutermostRecursion = false;
+    }
+  }
+};
+
+function seen(o1, o2) {
+  var i, len;
+
+  for (i = 0, len = seenObjects.length; i < len; i++) {
+    if (seenObjects[i][0] === o1 && seenObjects[i][1] === o2) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function mark(o1, o2) {
+  seenObjects.push([o1, o2]);
+}
+
+function unmark(o1, o2) {
+  var i, len;
+
+  for (i = 0, len = seenObjects.length; i < len; i++) {
+    if (seenObjects[i][0] === o1 && seenObjects[i][1] === o2) {
+      seenObjects.splice(i, 1);
+      return;
+    }
+  }
+}
+
 
 }());
