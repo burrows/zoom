@@ -1207,14 +1207,31 @@ describe('Z.Array.hash', function() {
   });
 
   it('should generate a value for recursive arrays', function() {
-    var a = Z.A(), b = Z.A(1);
+    var a = Z.A(), b = Z.A(1, 'two', 3.0);
 
-    a.at(0, a);
-    b.at(1, b);
+    a.push(a);
+    b.push(b, b, b, b, b);
 
-    expect(a.hash()).toBe(a.at(0).hash());
-    expect(b.hash()).toBe(b.at(1).hash());
+    expect(typeof a.hash()).toBe('number');
+    expect(typeof b.hash()).toBe('number');
   });
+
+  it('should return the same value for equal recursive arrays', function() {
+    var a = Z.A();
+    a.push(a);
+
+    expect(a.hash()).toBe(Z.A(a).hash());
+    expect(a.hash()).toBe(Z.A(Z.A(a)).hash());
+  });
+
+  // FIXME: uncomment when Z.Hash is complete.
+  //it('should return the same value for equal recursive arrays through hashes', function() {
+  //  var h = Z.H(), a = Z.A(h);
+  //  h.at('x', a);
+
+  //  expect(a.hash()).toBe(Z.A(h).hash());
+  //  expect(a.hash()).toBe(Z.A(Z.H('x', a)).hash());
+  //});
 });
 
 }());
