@@ -93,6 +93,51 @@ Z.fmt = function(s) {
   });
 };
 
+// Converts the given object to a string.
+//
+// * `o` - The object to convert to a string.
+//
+// Returns a string representation of the given object.
+Z.inspect = function(o) {
+  var a, recursed;
+
+  switch (Z.type(o)) {
+    case 'null':
+      return 'null';
+    case 'undefined':
+      return 'undefined';
+    case 'function':
+      return '[Function]';
+    case 'string':
+      return "'" + o + "'";
+    case 'array':
+      if (o.length === 0) { return '[]'; }
+
+      a = [];
+
+      recursed = Z.detectRecursion(o, function() {
+        var i, len;
+        for (i = 0, len = o.length; i < len; i++) { a.push(Z.inspect(o[i])); }
+      });
+
+      return recursed ? '[...]' : '[' + a.join(', ') + ']';
+    case 'object':
+      a = [];
+
+      recursed = Z.detectRecursion(o, function() {
+        var k;
+        for (k in o) {
+          if (!o.hasOwnProperty(k)) { continue; }
+          a.push(k + ': ' + Z.inspect(o[k]));
+        }
+      });
+
+      return recursed ? '{...}' : '{' + a.join(', ') + '}';
+    default:
+      return o.toString();
+  }
+};
+
 // Borrowed from https://github.com/garycourt/murmurhash-js.
 Z.murmur = function(key, seed) {
   var remainder = key.length & 3, // key.length % 4
@@ -161,9 +206,10 @@ Z.type = function(o) {
     case '[object Boolean]'   : return 'boolean';
     case '[object Date]'      : return 'date';
     case '[object RegExp]'    : return 'regexp';
-    case '[object Object]'    : return o.isZObject ? 'zobject' : 'object';
+    case '[object Object]'    :
+      return o.isZObject === true ? 'zobject' : 'object';
     default:
-      throw new Error(Z.fmt("Z.type: BUG: unknown type for %@", o));
+      return 'unknown';
   }
 };
 

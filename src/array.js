@@ -52,7 +52,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('toString', function() {
-    var a = this.map(function(item) { return Z.toString(item); }).join(', ');
+    var a = this.map(function(item) {
+      return Z.inspect(item);
+    }).join(', ');
+
     return Z.fmt("#<%@:%@ [%@]>", this.prototypeName(), this.objectId(), a);
   });
 
@@ -64,7 +67,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
-  this.def('join', function(s) { return this.__z_items__.join(Z.toString(s)); });
+  this.def('join', function(s) {
+    return this.__z_items__.join(s);
+  });
 
   this.def('at', function(i, v) {
     var len = this.length();

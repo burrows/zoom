@@ -13,17 +13,6 @@ else {
 
 var slice = Array.prototype.slice, namespaces = [ [Z, 'Z'] ];
 
-// Converts the given object to a string.
-//
-// FIXME: handle native objects
-//
-// * `o` - The object to convert to a string.
-//
-// Returns a string representation of the given object.
-Z.toString = function(o) {
-  return (o && o.toString) ? o.toString() : String(o);
-};
-
 // Performs an object equality test. If the first argument is an instance of
 // `Z.Object` then it is sent the `eq` method, otherwise a deep object comparison
 // is performed.

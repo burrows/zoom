@@ -77,7 +77,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
 Z.hashSeed = function() { return seed; };
 
 Z.hash = function(o) {
-  var v, key, i, len;
+  var v;
 
   switch (Z.type(o)) {
     case 'null':

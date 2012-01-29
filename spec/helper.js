@@ -7,7 +7,7 @@
     return this.addMatchers({
       toEq: function(expected) {
         this.message = function() {
-          return "Expected object " + Z.toString(this.actual) + " to eq " + Z.toString(expected);
+          return "Expected object " + Z.inspect(this.actual) + " to eq " + Z.inspect(expected);
         };
         return Z.eq(this.actual, expected);
       }

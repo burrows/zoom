@@ -82,6 +82,10 @@ describe('Z.type', function() {
     expect(Z.type(Z.Array.create())).toBe('zobject');
     expect(Z.type(Z.Hash.create())).toBe('zobject');
   });
+
+  it("should return the string 'object' when passed `Z`", function() {
+    expect(Z.type(Z)).toBe('object');
+  });
 });
 
 describe('Z.isNaN', function() {
@@ -92,6 +96,68 @@ describe('Z.isNaN', function() {
     expect(Z.isNaN('')).toBe(false);
     expect(Z.isNaN([])).toBe(false);
     expect(Z.isNaN({})).toBe(false);
+  });
+});
+
+describe('Z.inspect', function() {
+  describe('given `null`', function() {
+    it('should return the string "null"', function() {
+      expect(Z.inspect(null)).toBe('null');
+    });
+  });
+
+  describe('given `undefined`', function() {
+    it('should return the string "undefined"', function() {
+      expect(Z.inspect(undefined)).toBe('undefined');
+    });
+  });
+
+  describe('given a function', function() {
+    it('should return the string "[Function]"', function() {
+      expect(Z.inspect(function() {})).toBe('[Function]');
+    });
+  });
+
+  describe('given a string', function() {
+    it('should return the string wrapped in single quotes', function() {
+      expect(Z.inspect('')).toBe("''");
+      expect(Z.inspect('foo')).toBe("'foo'");
+    });
+  });
+
+  describe('given a native array', function() {
+    it('should return a string containing all inspected items separated by commas', function() {
+      expect(Z.inspect([])).toBe('[]');
+      expect(Z.inspect([1, 'two', 3.1])).toBe("[1, 'two', 3.1]");
+    });
+
+    it('should handle recursive arrays', function() {
+      var a = [1, 2];
+      a.push(a);
+      expect(Z.inspect(a)).toBe('[1, 2, [...]]');
+    });
+  });
+
+  describe('given a plain object', function() {
+    it('should return a string containing all key/value pairs', function() {
+      expect(Z.inspect({})).toBe('{}');
+      expect(Z.inspect({foo: 1, bar: 2, baz: [1,2,3]})).toBe('{foo: 1, bar: 2, baz: [1, 2, 3]}');
+    });
+
+    it('should handle recursive objects', function() {
+      var o = {foo: 'one'};
+      o.bar = o;
+      expect(Z.inspect(o)).toBe("{foo: 'one', bar: {...}}");
+    });
+  });
+
+  describe('given a Z.Object', function() {
+    it("should invoke the object's `toString` method", function() {
+      var o = Z.Object.create();
+      spyOn(o, 'toString');
+      Z.inspect(o);
+      expect(o.toString).toHaveBeenCalled();
+    });
   });
 });
 
