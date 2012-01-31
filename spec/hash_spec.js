@@ -267,4 +267,41 @@ describe('Z.Hash constructor', function() {
   });
 });
 
+describe('Z.H', function() {
+  describe('with a plain object', function() {
+    it('should set each key/value pair in the object', function() {
+      var h = Z.H({foo: 1, bar: 2, baz: 'stuff'});
+
+      expect(Z.H().size()).toBe(0);
+      expect(h.size()).toBe(3);
+      expect(h.at('foo')).toBe(1);
+      expect(h.at('bar')).toBe(2);
+      expect(h.at('baz')).toBe('stuff');
+    });
+  });
+
+  describe('with an even number of arguments', function() {
+    it('should set each pair of objects as key/value pairs', function() {
+      var h = Z.H(1, 'one', 2, 'two', {foo: 1}, {x: 'y'});
+
+      expect(h.size()).toBe(3);
+      expect(h.at(1)).toBe('one');
+      expect(h.at(2)).toBe('two');
+      expect(h.at({foo: 1})).toEq({x: 'y'});
+    });
+  });
+
+  describe('with an odd number of arguments', function() {
+    it('should throw an exception', function() {
+      expect(function() {
+        Z.H('blah');
+      }).toThrow('Z.H: given 1 arguments, expected 1 plain object or an even number of arguments');
+
+      expect(function() {
+        Z.H(1,2,3);
+      }).toThrow('Z.H: given 3 arguments, expected 1 plain object or an even number of arguments');
+    });
+  });
+});
+
 }());

@@ -144,4 +144,31 @@ Z.hash = function(o) {
   }
 };
 
+Z.H = function() {
+  var len = arguments.length, h, k, i;
+
+  if (len === 1 && Z.isObject(arguments[0])) {
+    h = Z.Hash.create();
+
+    for (k in arguments[0]) {
+      if (!arguments[0].hasOwnProperty(k)) { continue; }
+      h.at(k, arguments[0][k]);
+    }
+
+    return h;
+  }
+  else if (len % 2 === 0) {
+    h = Z.Hash.create();
+
+    for (i = 0; i < len; i += 2) {
+      h.at(arguments[i], arguments[i+1]);
+    }
+
+    return h;
+  }
+  else {
+    throw new Error(Z.fmt("Z.H: given %@ arguments, expected 1 plain object or an even number of arguments", len));
+  }
+};
+
 }());
