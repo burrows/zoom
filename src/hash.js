@@ -3,29 +3,35 @@
 var seed = Math.floor(Math.random() * 0xffffffff);
 
 Z.Hash = Z.Object.extend(Z.Enumerable, function() {
-  this.def('initialize', function() {
+  this.def('initialize', function(def) {
+    var nargs = arguments.length;
+
+    if (nargs > 1) {
+      throw new Error(Z.fmt("Z.Hash.initialize: given %@ arguments, expected 0 or 1", nargs));
+    }
+
     this.supr();
     this.__z_buckets__ = {};
-    this.__z_size__ = 0;
+    this.__z_size__    = 0;
+    this.__z_default__ = nargs === 1 ? def : null;
   });
 
   this.property('size', {
-    readonly: true,
-    get: function() { return this.__z_size__; }
+    readonly: true, get: function() { return this.__z_size__; }
   });
 
   this.def('at', function(k, v) {
     var hash = Z.hash(k), bucket = this.__z_buckets__[hash], entry, i, len;
 
     if (arguments.length === 1) {
-      if (!bucket) { return null; }
+      if (!bucket) { return defaultValue(this, k); }
 
       for (i = 0, len = bucket.length; i < len; i++) {
         entry = bucket[i];
         if (Z.eq(k, entry.key)) { return entry.value; }
       }
 
-      return null;
+      return defaultValue(this, k);
     }
     else {
       if (bucket) {
@@ -72,6 +78,11 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.def('values', function() {
     return this.map(function(k, v) { return v; });
   });
+
+  function defaultValue(h, k) {
+    var def = h.__z_default__;
+    return typeof def === 'function' ? def.call(null, h, k) : def;
+  }
 });
 
 Z.hashSeed = function() { return seed; };

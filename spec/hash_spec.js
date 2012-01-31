@@ -228,7 +228,43 @@ describe('Z.hash', function() {
   });
 });
 
-describe('Z.Hash', function() {
+describe('Z.Hash constructor', function() {
+  describe('with no arguments', function() {
+    it('should create a hash of size 0', function() {
+      expect(Z.Hash.create().size()).toBe(0);
+    });
+  });
+
+  describe('with one non-function argument', function() {
+    it('should create a hash of size 0 and use the given value as the default value', function() {
+      var h = Z.Hash.create(9);
+
+      expect(h.size()).toBe(0);
+      expect(h.at('somekey')).toBe(9);
+    });
+  });
+
+  describe('with one function argument', function() {
+    it('should create a hash of size 0 and invoke the given function when trying to get an unknown key', function() {
+      var h = Z.Hash.create(function(h, k) { return h.at(k, k); });
+
+      expect(h.size()).toBe(0);
+      expect(h.at('x')).toBe('x');
+      expect(h.size()).toBe(1);
+      expect(h.at('y')).toBe('y');
+      expect(h.size()).toBe(2);
+      expect(h.at('x')).toBe('x');
+      expect(h.size()).toBe(2);
+    });
+  });
+
+  describe('with more than one argument', function() {
+    it('should throw an exception', function() {
+      expect(function() {
+        Z.Hash.create(1,2,3);
+      }).toThrow('Z.Hash.initialize: given 3 arguments, expected 0 or 1');
+    });
+  });
 });
 
 }());
