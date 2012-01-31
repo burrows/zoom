@@ -13,21 +13,6 @@ else {
 
 var slice = Array.prototype.slice, namespaces = [ [Z, 'Z'] ];
 
-// Performs an object equality test. If the first argument is an instance of
-// `Z.Object` then it is sent the `eq` method, otherwise a deep object comparison
-// is performed.
-//
-// FIXME: do a deep object comparison when given native objects
-//
-// `a` - Any object.
-// `b` - Any object.
-//
-// Returns `true` if the objects are equal and `false` otherwise.
-Z.eq = function(a, b) {
-  if (a && a.isZObject) { return a.eq(b); }
-  return a === b;
-};
-
 Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
 
 Z.removeNamespace = function(o) {

@@ -138,6 +138,80 @@ Z.inspect = function(o) {
   }
 };
 
+// Performs an object equality test. If the first argument is an instance of
+// `Z.Object` then it is sent the `eq` method, otherwise custom equality code is
+// run based on the object type.
+//
+// `a` - Any object.
+// `b` - Any object.
+//
+// Returns `true` if the objects are equal and `false` otherwise.
+Z.eq = function(a, b) {
+  var atype, btype, akeys, bkeys, r;
+
+  // identical objects are equal
+  if (a === b) { return true; }
+
+  atype = Z.type(a);
+
+  // if the first argument is a Z.Object, delegate to its `eq` method
+  if (atype === 'zobject') { return a.eq(b); }
+
+  btype = Z.type(b);
+
+  // native objects that are not of the same type are not equal
+  if (atype !== btype) { return false; }
+
+  switch (atype) {
+    case 'boolean':
+    case 'string':
+    case 'date':
+      return a.valueOf() === b.valueOf();
+    case 'regexp':
+      return a.source     === b.source    &&
+             a.global     === b.global    &&
+             a.multiline  === b.multiline &&
+             a.ignoreCase === b.ignoreCase;
+    case 'number':
+      return a.valueOf() === b.valueOf();
+    case 'array':
+      if (a.length !== b.length) { return false; }
+
+      r = true;
+
+      Z.detectRecursion(a, b, function() {
+        var i, len;
+
+        for (i = 0, len = a.length; i < len; i++) {
+          if (!Z.eq(a[i], b[i])) { r = false; break; }
+        }
+      });
+
+      return r;
+    case 'object':
+      akeys = Object.keys(a);
+      bkeys = Object.keys(b);
+
+      if (akeys.length !== bkeys.length) { return false; }
+
+      r = true;
+
+      Z.detectRecursion(a, b, function() {
+        var i, len;
+
+        for (i = 0, len = akeys.length; i < len; i++) {
+          var key = akeys[i];
+          if (!b.hasOwnProperty(key)) { r = false; break; }
+          if (!Z.eq(a[key], b[key])) { r = false; break; }
+        }
+      });
+
+      return r;
+    default:
+      return false;
+  }
+};
+
 // Borrowed from https://github.com/garycourt/murmurhash-js.
 Z.murmur = function(key, seed) {
   var remainder = key.length & 3, // key.length % 4

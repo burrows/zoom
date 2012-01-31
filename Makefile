@@ -21,7 +21,10 @@ build/zoom.js: $(addprefix src/,$(SRCS))
 	cat $^ > $@
 
 lint: zoom
-	./node_modules/.bin/jshint src/*.js spec/*.js
+	./node_modules/.bin/jshint src/*.js
+
+lintspec:
+	./node_modules/.bin/jshint spec/*.js
 
 spec: zoom lint
 	./node_modules/.bin/jasmine-node ./spec
