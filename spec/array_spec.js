@@ -5,7 +5,7 @@ if (typeof Z === 'undefined') { require('./helper'); }
 describe('Z.Array constructor', function() {
   it('should create an array of the given size when passed a single number', function() {
     var a = Z.Array.create(3);
-    expect(a.length()).toBe(3);
+    expect(a.size()).toBe(3);
     expect(a.at(0)).toBeUndefined();
     expect(a.at(1)).toBeUndefined();
     expect(a.at(2)).toBeUndefined();
@@ -15,10 +15,10 @@ describe('Z.Array constructor', function() {
     var a1 = Z.Array.create([1, 2]),
         a2 = Z.Array.create(['a', 'b', 'c']);
 
-    expect(a1.length()).toBe(2);
+    expect(a1.size()).toBe(2);
     expect(a1.at(0)).toBe(1);
     expect(a1.at(1)).toBe(2);
-    expect(a2.length()).toBe(3);
+    expect(a2.size()).toBe(3);
     expect(a2.at(0)).toEqual('a');
     expect(a2.at(1)).toEqual('b');
     expect(a2.at(2)).toEqual('c');
@@ -28,10 +28,10 @@ describe('Z.Array constructor', function() {
     var a1 = Z.Array.create(Z.Array.create([1, 2])),
         a2 = Z.Array.create(Z.Array.create(['a', 'b', 'c']));
 
-    expect(a1.length()).toBe(2);
+    expect(a1.size()).toBe(2);
     expect(a1.at(0)).toBe(1);
     expect(a1.at(1)).toBe(2);
-    expect(a2.length()).toBe(3);
+    expect(a2.size()).toBe(3);
     expect(a2.at(0)).toEqual('a');
     expect(a2.at(1)).toEqual('b');
     expect(a2.at(2)).toEqual('c');
@@ -39,7 +39,7 @@ describe('Z.Array constructor', function() {
 
   it('should create an empty array when no arguments are given', function() {
     var a = Z.Array.create();
-    expect(a.length()).toBe(0);
+    expect(a.size()).toBe(0);
   });
 });
 
@@ -51,9 +51,9 @@ describe('Z.A', function() {
   it('should return a Z.Array of length 1 containing the argument when one non-array argument is given', function() {
     var a1 = Z.A(9), a2 = Z.A('a');
 
-    expect(a1.length()).toBe(1);
+    expect(a1.size()).toBe(1);
     expect(a1).toEq(Z.Array.create([9]));
-    expect(a2.length()).toBe(1);
+    expect(a2.size()).toBe(1);
     expect(a2).toEq(Z.Array.create(['a']));
   });
 
@@ -89,39 +89,39 @@ describe('Z.Array.toNative', function() {
 
 describe('Z.Array `length` property', function() {
   it('should return the current length of the array', function() {
-    expect((Z.Array.create(8)).length()).toBe(8);
-    expect((Z.Array.create([1, 2, 3])).get('length')).toBe(3);
-    expect(Z.A([1, 2, 3, 4]).length()).toBe(4);
+    expect((Z.Array.create(8)).size()).toBe(8);
+    expect((Z.Array.create([1, 2, 3])).get('size')).toBe(3);
+    expect(Z.A([1, 2, 3, 4]).size()).toBe(4);
   });
 
   it('should update when the array changes', function() {
     var a = Z.A(1, 2, 3);
 
-    expect(a.length()).toBe(3);
+    expect(a.size()).toBe(3);
     a.pop();
-    expect(a.length()).toBe(2);
+    expect(a.size()).toBe(2);
     a.push(4);
-    expect(a.length()).toBe(3);
+    expect(a.size()).toBe(3);
   });
 
   it('should update the length of the array when set', function() {
     var a = Z.Array.create();
 
-    expect(a.get('length')).toBe(0);
-    a.length(9);
-    expect(a.get('length')).toBe(9);
+    expect(a.get('size')).toBe(0);
+    a.size(9);
+    expect(a.get('size')).toBe(9);
     expect(a.toNative().length).toBe(9);
-    a.set('length', 5);
-    expect(a.get('length')).toBe(5);
+    a.set('size', 5);
+    expect(a.get('size')).toBe(5);
     expect(a.toNative().length).toBe(5);
   });
 
-  it('should notify observers when the length changes', function() {
+  it('should notify observers when the size changes', function() {
     var a        = Z.A([1, 2, 3, 4, 5]),
         observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
 
     a = Z.A([1, 2, 3, 4, 5]);
-    a.observe('length', observer, 'action', { previous: true, current: true });
+    a.observe('size', observer, 'action', { previous: true, current: true });
     a.push(6);
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].previous).toBe(5);

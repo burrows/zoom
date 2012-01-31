@@ -228,4 +228,7 @@ describe('Z.hash', function() {
   });
 });
 
+describe('Z.Hash', function() {
+});
+
 }());

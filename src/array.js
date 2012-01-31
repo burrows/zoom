@@ -5,7 +5,7 @@ var slice = Array.prototype.slice;
 Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.isZArray = true;
 
-  this.property('length', {
+  this.property('size', {
     get: function() { return this.__z_items__.length; },
     set: function(v) { return this.__z_items__.length = v; }
   });
@@ -72,7 +72,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('at', function(i, v) {
-    var len = this.length();
+    var len = this.size();
     
     if (i < 0) { i = len + i; }
 
@@ -107,7 +107,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('splice', function(i, n) {
     var items = slice.call(arguments, 2),
-        len   = this.length(),
+        len   = this.size(),
         idx   = i < 0 ? len + i : i,
         expand, insertIdx, insertNum, removeIdx, removeNum, replaceIdx,
         replaceNum;
@@ -142,7 +142,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('slice', function(i, n) {
-    var len = this.length(), a;
+    var len = this.size(), a;
 
     if (i < 0) { i = len + i; }
 
@@ -166,10 +166,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('eq', function(other) {
-    var len = this.length();
+    var len = this.size();
 
     if (!other || !other.isZArray) { return false; }
-    if (len !== other.length()) { return false; }
+    if (len !== other.size()) { return false; }
 
     for (i = 0; i < len; i++) {
       if (!Z.eq(this.at(i), other.at(i))) { return false; }
@@ -184,7 +184,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('push', function() {
     var args = slice.call(arguments);
-    return this.splice.apply(this, [this.length(), 0].concat(args));
+    return this.splice.apply(this, [this.size(), 0].concat(args));
   });
 
   this.def('concat', function() {
@@ -204,7 +204,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('pop', function(n) {
-    var len = this.length();
+    var len = this.size();
 
     if (typeof n !== 'undefined' && n < 0) {
       throw new Error('Z.Array.pop: array size must be positive');
@@ -222,7 +222,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('shift', function(n) {
-    var len = this.length();
+    var len = this.size();
 
     if (typeof n !== 'undefined' && n < 0) {
       throw new Error('Z.Array.shift: array size must be positive');
@@ -242,7 +242,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.def('flatten', function() {
     var result = [], item, i, len;
 
-    for (i = 0, len = this.length(); i < len; i++) {
+    for (i = 0, len = this.size(); i < len; i++) {
       item = this.at(i);
 
       if (item && item.isZArray) {
@@ -320,7 +320,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
     switch (head) {
       case '@count':
-        return this.length();
+        return this.size();
       case '@max':
         return this._get(tail).inject(function(acc, item) {
           return Z.max(acc, item);
@@ -334,7 +334,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
           return acc + item;
         });
       case '@avg':
-        return this._get(['@sum'].concat(tail)) / this.length();
+        return this._get(['@sum'].concat(tail)) / this.size();
       default:
         return this.supr(path);
     }
@@ -345,13 +345,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   function willMutate(array, type, idx, n) {
-    var len       = array.length(),
+    var len       = array.size(),
         prevItems = array.slice(idx, n),
         registrations, r, i, notification;
 
     switch (type) {
       case 'insert':
-        array.willChangeProperty('length');
+        array.willChangeProperty('size');
         if (idx === 0)  { array.willChangeProperty('first'); }
         if (idx >= len) { array.willChangeProperty('last'); }
         array.willChangeProperty('@', {
@@ -361,7 +361,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         });
         break;
       case 'remove':
-        array.willChangeProperty('length');
+        array.willChangeProperty('size');
         if (idx === 0)       { array.willChangeProperty('first'); }
         if (idx + n === len) { array.willChangeProperty('last'); }
         array.willChangeProperty('@', {
@@ -407,13 +407,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   }
 
   function didMutate(array, type, idx, n) {
-    var len      = array.length(),
+    var len      = array.size(),
         curItems = array.slice(idx, n),
         registrations, r, i, notification;
 
     switch (type) {
       case 'insert':
-        array.didChangeProperty('length');
+        array.didChangeProperty('size');
         if (idx === 0)       { array.didChangeProperty('first'); }
         if (idx + n === len) { array.didChangeProperty('last'); }
         array.didChangeProperty('@', {
@@ -424,7 +424,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         registerItemObservers(array, curItems.toNative());
         break;
       case 'remove':
-        array.didChangeProperty('length');
+        array.didChangeProperty('size');
         if (idx === 0)     { array.didChangeProperty('first'); }
         if (idx + n > len) { array.didChangeProperty('last'); }
         array.didChangeProperty('@', {

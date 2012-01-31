@@ -276,13 +276,13 @@ Z.Model = Z.Object.extend(function() {
     if (!inverse) { return; }
 
     if (current && !association.addingInverse) {
-      for (i = 0, len = current.length(); i < len; i++) {
+      for (i = 0, len = current.size(); i < len; i++) {
         current.at(i).inverseDidAdd(inverse, this);
       }
     }
 
     if (previous && !association.removingInverse) {
-      for (i = 0, len = previous.length(); i < len; i++) {
+      for (i = 0, len = previous.size(); i < len; i++) {
         previous.at(i).inverseDidRemove(inverse, this);
       }
     }
