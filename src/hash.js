@@ -21,9 +21,16 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('at', function(k, v) {
-    var hash = Z.hash(k), bucket = this.__z_buckets__[hash], entry, i, len;
+    var nargs = arguments.length, hash, bucket, entry, i, len;
 
-    if (arguments.length === 1) {
+    if (nargs < 1 || nargs > 2) {
+      throw new Error(Z.fmt("Z.Hash.at: given %@ arguments, expected 1 or 2", nargs));
+    }
+
+    hash   = Z.hash(k);
+    bucket = this.__z_buckets__[hash];
+
+    if (nargs === 1) {
       if (!bucket) { return defaultValue(this, k); }
 
       for (i = 0, len = bucket.length; i < len; i++) {
@@ -53,6 +60,38 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
 
       return v;
     }
+  });
+
+  this.def('del', function(k) {
+    var hash, bucket, entry, i, len;
+
+    if (arguments.length !== 1) {
+      throw new Error(Z.fmt("Z.Hash.del: given %@ arguments, expected 1", arguments.length));
+    }
+
+    hash   = Z.hash(k);
+    bucket = this.__z_buckets__[hash];
+
+    if (!bucket) { return null; }
+
+    for (i = 0, len = bucket.length; i < len; i++) {
+      entry = bucket[i];
+      if (Z.eq(k, entry.key)) {
+        bucket.splice(i, 1);
+        this.__z_size__--;
+        return entry.value;
+      }
+    }
+
+    return null;
+  });
+
+  this.def('toString', function() {
+    var a = this.map(function(k, v) {
+      return Z.inspect(k) + ': ' + Z.inspect(v);
+    }).join(', ');
+
+    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(), a);
   });
 
   this.def('each', function(f) {

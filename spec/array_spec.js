@@ -72,7 +72,7 @@ describe('Z.A', function() {
 });
 
 describe('Z.Array.toString', function() {
-  it('should return a string with the class name, object id, and array contents', function() {
+  it('should return a string with the prototype name, object id, and array contents', function() {
     var a = Z.A(1, 2, 3);
     expect(a.toString()).toEqual("#<Z.Array:" + (a.objectId()) + " [1, 2, 3]>");
   });

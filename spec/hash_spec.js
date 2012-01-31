@@ -304,4 +304,88 @@ describe('Z.H', function() {
   });
 });
 
+describe('Z.Hash.at', function() {
+  var h;
+
+  beforeEach(function() { h = Z.H('foo', 1, 'bar', 2); });
+
+  describe('with one argument', function() {
+    it('should return the value for the given key', function() {
+      expect(h.at('foo')).toBe(1);
+      expect(h.at('bar')).toBe(2);
+      expect(h.at('xyz')).toBe(null);
+    });
+  });
+
+  describe('with two arguments', function() {
+    it('should set the given value for the given key', function() {
+      h.at('foo', 'abc');
+      expect(h.at('foo')).toBe('abc');
+      h.at(12, 'twelve');
+      expect(h.at(12)).toBe('twelve');
+    });
+
+    it('should return the value', function() {
+      expect(h.at('x', 'y')).toBe('y');
+    });
+  });
+
+  describe('with zero or more than two arguments', function() {
+    it('should throw an exception', function() {
+      expect(function() {
+        h.at();
+      }).toThrow('Z.Hash.at: given 0 arguments, expected 1 or 2');
+
+      expect(function() {
+        h.at('foo', 'bar', 'baz');
+      }).toThrow('Z.Hash.at: given 3 arguments, expected 1 or 2');
+    });
+  });
+});
+
+describe('Z.Hash.del', function() {
+  var h;
+
+  beforeEach(function() { h = Z.H('foo', 1, 'bar', 2); });
+
+  it('should return the value of the given key', function() {
+    expect(h.del('foo')).toBe(1);
+    expect(h.del('xyz')).toBe(null);
+  });
+
+  it("should return null when the key doesn't exist", function() {
+    var h2 = Z.Hash.create(9);
+
+    expect(h.del('xyz')).toBe(null);
+    expect(h2.del('foo')).toBe(null);
+  });
+
+  it('should remove the key/value pair from the hash', function() {
+    expect(h.size()).toBe(2);
+    h.del('foo');
+    expect(h.size()).toBe(1);
+    h.del('bar');
+    expect(h.size()).toBe(0);
+  });
+
+  it('should not affect the size if the key is not in the hash', function() {
+    expect(h.size()).toBe(2);
+    h.del('blah');
+    expect(h.size()).toBe(2);
+  });
+
+  it('should throw an exception if not given one argument', function() {
+    expect(function() {
+      h.del();
+    }).toThrow('Z.Hash.del: given 0 arguments, expected 1');
+
+    expect(function() {
+      h.del('a', 'b', 'c');
+    }).toThrow('Z.Hash.del: given 3 arguments, expected 1');
+  });
+});
+
+describe('Z.Hash `size` property', function() {
+});
+
 }());
