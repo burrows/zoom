@@ -316,12 +316,6 @@ Z.isNaN       = function(o) { return o !== o; };
 // Returns `true` if recursion on the given objects has been detected. If the
 // given pair of objects has yet to be seen, calls `f` and returns `false`.
 Z.detectRecursion = function(o1, o2, f) {
-  var type = Z.type(o1);
-
-  if (type !== 'object' && type !== 'array' && type !== 'zobject') {
-    return false;
-  }
-
   if (arguments.length === 2) { f = o2; o2 = undefined; }
 
   if (seen(o1, o2)) {
@@ -390,6 +384,5 @@ function unmark(o1, o2) {
     }
   }
 }
-
 
 }());
