@@ -36,7 +36,7 @@ clean:
 	rm -rf ./build
 
 fixme:
-	ack FIXME ./src
+	ack FIXME ./src ./spec
 
 .PHONY: default zoom clean lint spec repl fixme
 

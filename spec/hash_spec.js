@@ -574,6 +574,16 @@ describe('Z.Hash.eq', function() {
   });
 });
 
+describe('Z.Hash.hasProperty', function() {
+  it('should return `true` for all property names', function() {
+    var h = Z.H();
+
+    expect(h.hasProperty('size')).toBe(true);
+    expect(h.hasProperty('foo')).toBe(true);
+    expect(h.hasProperty('abcdef')).toBe(true);
+  });
+});
+
 describe('Z.Hash.getUnknownProperty', function() {
   it('should return the value at the given key', function() {
     var h = Z.H('a', 'b', 'c', 'd');
@@ -588,6 +598,44 @@ describe('Z.Hash.setUnknownProperty', function() {
     h.set('abc', 123);
     expect(h.size()).toBe(1);
     expect(h.at('abc')).toBe(123);
+  });
+});
+
+describe('Z.Hash.observe with an unknown property', function() {
+  var h, observer = { action: function(n) { this.notifications.push(n); } };
+
+  beforeEach(function() {
+    observer.notifications = [];
+    h = Z.H({foo: 1});
+    h.observe('foo', observer, 'action', { previous: true, current: true });
+    h.observe('newkey', observer, 'action', { previous: true, current: true });
+  });
+
+  it('should trigger notifications when a key that matches the given name is set', function() {
+    h.at('foo', 11);
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].type).toBe('change');
+    expect(observer.notifications[0].path).toBe('foo');
+    expect(observer.notifications[0].previous).toBe(1);
+    expect(observer.notifications[0].current).toBe(11);
+  });
+
+  it('should trigger notifications when a key that matches the given name is inserted', function() {
+    h.at('newkey', 'hello');
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].type).toBe('change');
+    expect(observer.notifications[0].path).toBe('newkey');
+    expect(observer.notifications[0].previous).toBe(null);
+    expect(observer.notifications[0].current).toBe('hello');
+  });
+
+  it('should trigger notifications when a key that matches the given name is deleted', function() {
+    h.del('foo');
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].type).toBe('change');
+    expect(observer.notifications[0].path).toBe('foo');
+    expect(observer.notifications[0].previous).toBe(1);
+    expect(observer.notifications[0].current).toBe(null);
   });
 });
 
