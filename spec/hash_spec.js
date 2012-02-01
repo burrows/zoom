@@ -575,9 +575,20 @@ describe('Z.Hash.eq', function() {
 });
 
 describe('Z.Hash.getUnknownProperty', function() {
+  it('should return the value at the given key', function() {
+    var h = Z.H('a', 'b', 'c', 'd');
+    expect(h.get('a')).toBe('b');
+    expect(h.get('c')).toBe('d');
+  });
 });
 
 describe('Z.Hash.setUnknownProperty', function() {
+  it('should insert the given key/value pair', function() {
+    var h = Z.H();
+    h.set('abc', 123);
+    expect(h.size()).toBe(1);
+    expect(h.at('abc')).toBe(123);
+  });
 });
 
 }());
