@@ -1223,14 +1223,13 @@ describe('Z.Array.hash', function() {
     expect(a.hash()).toBe(Z.A(Z.A(a)).hash());
   });
 
-  // FIXME: uncomment when Z.Hash is complete.
-  //it('should return the same value for equal recursive arrays through hashes', function() {
-  //  var h = Z.H(), a = Z.A(h);
-  //  h.at('x', a);
+  it('should return the same value for equal recursive arrays through hashes', function() {
+    var h = Z.H(), a = Z.A(h);
+    h.at('x', a);
 
-  //  expect(a.hash()).toBe(Z.A(h).hash());
-  //  expect(a.hash()).toBe(Z.A(Z.H('x', a)).hash());
-  //});
+    expect(a.hash()).toBe(Z.A(h).hash());
+    expect(a.hash()).toBe(Z.A(Z.H('x', a)).hash());
+  });
 });
 
 }());
