@@ -3,6 +3,8 @@
 var seed = Math.floor(Math.random() * 0xffffffff);
 
 Z.Hash = Z.Object.extend(Z.Enumerable, function() {
+  this.isZHash = true;
+
   this.def('initialize', function(def) {
     var nargs = arguments.length;
 
@@ -138,6 +140,40 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('values', function() {
     return this.map(function(k, v) { return v; });
+  });
+
+  this.def('hash', function() {
+    var self = this, val = this.__z_size__;
+
+    Z.detectOutermostRecursion(this, function() {
+      self.each(function(k, v) {
+        val ^= Z.hash(k);
+        val ^= Z.hash(v);
+      });
+    });
+
+    return val;
+  });
+
+  this.def('eq', function(other) {
+    var self = this, size = this.__z_size__, r = true, keys;
+
+    if (Z.type(other) !== 'zobject' || !other.isZHash) { return false; }
+    if (size !== other.__z_size__) { return false; }
+
+    keys = this.keys();
+
+    Z.detectRecursion(this, other, function() {
+      var key, i;
+
+      for (i = 0; i < size; i++) {
+        key = keys.at(i);
+        if (!other.hasKey(key)) { r = false; break; }
+        if (!Z.eq(self.at(key), other.at(key))) { r = false; break; }
+      }
+    });
+
+    return r;
   });
 
   this.def('getUnknownProperty', function(k) {

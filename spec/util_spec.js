@@ -396,7 +396,7 @@ describe('Z.eq', function() {
     });
 
     it('should handle recursive objects', function() {
-      o = {};
+      var o = {};
       o.a = o;
 
       expect(Z.eq(o, o.a)).toBe(true);

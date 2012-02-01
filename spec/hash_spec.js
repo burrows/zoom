@@ -209,7 +209,7 @@ describe('Z.hash', function() {
       expect(Z.hash(o)).toBe(Z.hash({x: {x: o}}));
     });
 
-    it('should return the same value for recursive hashes through arrays', function() {
+    it('should return the same value for recursive objects through arrays', function() {
       var o = {}, rec = [o];
       o.x = rec;
 
@@ -488,7 +488,96 @@ describe('Z.Hash.values', function() {
   });
 });
 
+describe('Z.Hash.hash', function() {
+  it('should return a number', function() {
+    expect(typeof Z.H().hash()).toBe('number');
+    expect(typeof Z.H(1,2,'three','four').hash()).toBe('number');
+  });
+
+  it('should return the same value for equivalent hashes', function() {
+    expect(Z.H().hash()).toBe(Z.H().hash());
+    expect(Z.H('x', 1).hash()).toBe(Z.H('x', 1).hash());
+    expect(Z.H(1,2,'three','four').hash()).toBe(Z.H('three','four',1,2).hash());
+  });
+
+  it("should return a value that doesn't depend on the order of the keys", function() {
+    expect(Z.H({foo: 1, bar: 2}).hash()).toBe(Z.H({bar: 2, foo: 1}).hash());
+    expect(Z.H({foo: ['a', 'b'], bar: 3}).hash()).toBe(Z.H({bar: 3, foo: ['a', 'b']}).hash());
+  });
+
+  it('should generate a value for recursive hashes', function() {
+    var h = Z.H();
+    h.at('x', h);
+
+    expect(h.hash()).toBe(h.at('x').hash());
+  });
+
+  it('should return the same value for equal recursive objects', function() {
+    var h = Z.H();
+    h.at('x', h);
+
+    expect(h.hash()).toBe(Z.H('x', h).hash());
+    expect(h.hash()).toBe(Z.H('x', Z.H('x', h)).hash());
+  });
+
+  it('should return the same value for recursive hashes through arrays', function() {
+    var h = Z.H(), rec = Z.A(h);
+    h.at('x', rec);
+
+    expect(h.hash()).toBe(Z.H('x', rec).hash());
+    expect(h.hash()).toBe(Z.H('x', Z.A(h)).hash());
+  });
+});
+
+describe('Z.Hash.eq', function() {
+  it('should return `false` when passed something other than a Z.Hash', function() {
+    var h = Z.H();
+
+    expect(h.eq({})).toBe(false);
+    expect(h.eq([])).toBe(false);
+    expect(h.eq('foo')).toBe(false);
+    expect(h.eq(9)).toBe(false);
+    expect(h.eq(null)).toBe(false);
+    expect(h.eq(undefined)).toBe(false);
+  });
+
+  it('should return `false` when the number of keys differ between the two hashes', function() {
+    expect(Z.H().eq(Z.H('foo', 1))).toBe(false);
+    expect(Z.H('foo', 1, 'bar', 2).eq(Z.H('foo', 1))).toBe(false);
+  });
+
+  it('should return `false` when there are different keys', function() {
+    expect(Z.H('foo', 1).eq(Z.H('food', 1))).toBe(false);
+  });
+
+  it('should return `false` when there are different values for the same keys', function() {
+    expect(Z.H('foo', 1).eq(Z.H('foo', 2))).toBe(false);
+    expect(Z.H('foo', 1, 'bar', 2).eq(Z.H('foo', 2, 'bar', 3))).toBe(false);
+  });
+
+  it('should return `true` when each key/value pair is equal', function() {
+    expect(Z.H().eq(Z.H())).toBe(true);
+    expect(Z.H({foo: 1}).eq(Z.H({foo: 1}))).toBe(true);
+    expect(Z.H({foo: 1, bar: 2}).eq(Z.H({foo: 1, bar: 2}))).toBe(true);
+    expect(Z.H({bar: 2, foo: 1}).eq(Z.H({foo: 1, bar: 2}))).toBe(true);
+  });
+
+  it('should handle nested hashes', function() {
+    expect(Z.H('a', Z.H('b', 'c')).eq(Z.H('a', Z.H('b', 'c')))).toBe(true);
+    expect(Z.H('a', Z.H('b', 'c')).eq(Z.H('a', Z.H('b', 'd')))).toBe(false);
+  });
+
+  it('should handle recursive hashes', function() {
+    var h = Z.H();
+    h.at('a', h);
+    expect(h.eq(h.at('a'))).toBe(true);
+  });
+});
+
 describe('Z.Hash.getUnknownProperty', function() {
+});
+
+describe('Z.Hash.setUnknownProperty', function() {
 });
 
 }());
