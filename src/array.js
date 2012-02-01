@@ -20,10 +20,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     set: function(v) { return this.at(-1, v); }
   });
 
-  this.property('@', {
-    readonly: true,
-    get: function() { return this; }
-  });
+  this.property('@', { readonly: true, get: function() { return this; } });
 
   this.def('initialize', function() {
     var arg = arguments[0];

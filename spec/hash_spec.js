@@ -639,4 +639,45 @@ describe('Z.Hash.observe with an unknown property', function() {
   });
 });
 
+describe('Z.Hash `@` property', function() {
+  var observer = { action: function(n) { this.notifications.push(n); } }, h;
+
+  beforeEach(function() {
+    observer.notifications = [];
+    h = Z.H('foo', 1, 'bar', 2, 'baz', 3);
+    h.observe('@', observer, 'action', { previous: true, current: true });
+  });
+
+  it('should return the hash object', function() {
+    expect(h.get('@')).toBe(h);
+  });
+
+  it('should notify observers on insertions', function() {
+    h.at('stuff', 9);
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].type).toEqual('insert');
+    expect(observer.notifications[0].key).toEqual('stuff');
+    expect(observer.notifications[0].previous).toBe(null);
+    expect(observer.notifications[0].current).toBe(9);
+  });
+
+  it('should notify observers on updates', function() {
+    h.at('foo', [1,2,3]);
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].type).toEqual('update');
+    expect(observer.notifications[0].key).toEqual('foo');
+    expect(observer.notifications[0].previous).toBe(1);
+    expect(observer.notifications[0].current).toEq([1,2,3]);
+  });
+
+  it('should notify observers on deletions', function() {
+    h.del('bar');
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].type).toEqual('remove');
+    expect(observer.notifications[0].key).toEqual('bar');
+    expect(observer.notifications[0].previous).toBe(2);
+    expect(observer.notifications[0].current).toBe(null);
+  });
+});
+
 }());

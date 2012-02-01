@@ -778,6 +778,10 @@ describe('Z.Array `@` property', function() {
     a.observe('@', observer, 'action', { previous: true, current: true });
   });
 
+  it('should return the array object', function() {
+    expect(a.get('@')).toBe(a);
+  });
+
   it('should notify observers when items are appended to the end of the array', function() {
     a.push(10);
     expect(observer.notifications.length).toBe(1);
