@@ -87,8 +87,8 @@ describe('Z.Array.toNative', function() {
   });
 });
 
-describe('Z.Array `length` property', function() {
-  it('should return the current length of the array', function() {
+describe('Z.Array `size` property', function() {
+  it('should return the current size of the array', function() {
     expect((Z.Array.create(8)).size()).toBe(8);
     expect((Z.Array.create([1, 2, 3])).get('size')).toBe(3);
     expect(Z.A([1, 2, 3, 4]).size()).toBe(4);
@@ -120,7 +120,6 @@ describe('Z.Array `length` property', function() {
     var a        = Z.A([1, 2, 3, 4, 5]),
         observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
 
-    a = Z.A([1, 2, 3, 4, 5]);
     a.observe('size', observer, 'action', { previous: true, current: true });
     a.push(6);
     expect(observer.notifications.length).toBe(1);

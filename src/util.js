@@ -166,14 +166,13 @@ Z.eq = function(a, b) {
     case 'boolean':
     case 'string':
     case 'date':
+    case 'number':
       return a.valueOf() === b.valueOf();
     case 'regexp':
       return a.source     === b.source    &&
              a.global     === b.global    &&
              a.multiline  === b.multiline &&
              a.ignoreCase === b.ignoreCase;
-    case 'number':
-      return a.valueOf() === b.valueOf();
     case 'array':
       if (a.length !== b.length) { return false; }
 

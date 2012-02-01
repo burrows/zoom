@@ -50,12 +50,16 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
           }
         }
 
+        this.willChangeProperty('size');
         bucket.push({ key: k, value: v });
         this.__z_size__++;
+        this.didChangeProperty('size');
       }
       else {
+        this.willChangeProperty('size');
         this.__z_buckets__[hash] = [{ key: k, value: v }];
         this.__z_size__++;
+        this.didChangeProperty('size');
       }
 
       return v;
@@ -77,13 +81,31 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     for (i = 0, len = bucket.length; i < len; i++) {
       entry = bucket[i];
       if (Z.eq(k, entry.key)) {
+        this.willChangeProperty('size');
         bucket.splice(i, 1);
         this.__z_size__--;
+        this.didChangeProperty('size');
         return entry.value;
       }
     }
 
     return null;
+  });
+
+  this.def('hasKey', function(k) {
+    var bucket, i, len;
+
+    if (arguments.length !== 1) {
+      throw new Error(Z.fmt("Z.Hash.hasKey: given %@ arguments, expected 1", arguments.length));
+    }
+
+    if ((bucket = this.__z_buckets__[Z.hash(k)])) {
+      for (i = 0, len = bucket.length; i < len; i++) {
+        if (Z.eq(k, bucket[i].key)) { return true; }
+      }
+    }
+
+    return false;
   });
 
   this.def('toString', function() {
@@ -116,6 +138,14 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('values', function() {
     return this.map(function(k, v) { return v; });
+  });
+
+  this.def('getUnknownProperty', function(k) {
+    return this.at(k);
+  });
+
+  this.def('setUnknownProperty', function(k, v) {
+    return this.at(k, v);
   });
 
   function defaultValue(h, k) {

@@ -385,7 +385,110 @@ describe('Z.Hash.del', function() {
   });
 });
 
+describe('Z.Hash.hasKey', function() {
+  var h = Z.H('foo', 1, /x/, 2, {}, 3, [1,2], 4);
+
+  it('should return `false` if the given key is not in the hash', function() {
+    expect(h.hasKey('bar')).toBe(false);
+    expect(h.hasKey(/y/)).toBe(false);
+    expect(h.hasKey(/x/i)).toBe(false);
+    expect(h.hasKey({a: 1})).toBe(false);
+    expect(h.hasKey([])).toBe(false);
+    expect(h.hasKey([1])).toBe(false);
+  });
+
+  it('should return `true` if the given key is in the hash', function() {
+    expect(h.hasKey('foo')).toBe(true);
+    expect(h.hasKey(/x/)).toBe(true);
+    expect(h.hasKey({})).toBe(true);
+    expect(h.hasKey([1,2])).toBe(true);
+  });
+
+  it('throw an exception if not given one argument', function() {
+    expect(function() {
+      Z.H().hasKey();
+    }).toThrow('Z.Hash.hasKey: given 0 arguments, expected 1');
+
+    expect(function() {
+      Z.H().hasKey(1, 2);
+    }).toThrow('Z.Hash.hasKey: given 2 arguments, expected 1');
+  });
+});
+
 describe('Z.Hash `size` property', function() {
+  it('should return the current size of the hash', function() {
+    expect(Z.H().size()).toBe(0);
+    expect(Z.H('foo', 1, 'bar', 2, 'baz', 3).get('size')).toBe(3);
+  });
+
+  it('should update when key/value pairs are added or removed', function() {
+    var h = Z.H('foo', 1, 'bar', 2, 'baz', 3);
+
+    expect(h.size()).toBe(3);
+    h.at('quux', 4);
+    expect(h.size()).toBe(4);
+    h.del('foo');
+    expect(h.size()).toBe(3);
+  });
+
+  it('should be readonly', function() {
+    var h = Z.H();
+
+    expect(function() {
+      h.size(18);
+    }).toThrow('Z.Object.set: attempted to set readonly property `size` for ' + h.toString());
+  });
+
+  it('should notify observers when the size changes', function() {
+    var h        = Z.H('foo', 1, 'bar', 2),
+        observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
+
+    h.observe('size', observer, 'action', { previous: true, current: true });
+    h.at('baz', 3);
+    expect(observer.notifications.length).toBe(1);
+    expect(observer.notifications[0].previous).toBe(2);
+    expect(observer.notifications[0].current).toBe(3);
+    h.at('baz', 4);
+    expect(observer.notifications.length).toBe(1);
+    h.del('foo');
+    expect(observer.notifications.length).toBe(2);
+    expect(observer.notifications[1].previous).toBe(3);
+    expect(observer.notifications[1].current).toBe(2);
+  });
+});
+
+describe('Z.Hash.each', function() {
+  it('should yield each key/value pair in the hash to the given function', function() {
+    var h = Z.H('foo', 1, 'bar', 2, 'baz', 3), keys = [], values = [];
+
+    h.each(function(k, v) { keys.push(k); values.push(v); });
+
+    expect(keys.sort()).toEq(['bar', 'baz', 'foo']);
+    expect(values.sort()).toEq([1, 2, 3]);
+  });
+});
+
+describe('Z.Hash.keys', function() {
+  it('should return a Z.Array containing all keys in the hash', function() {
+    var h = Z.H('foo', 1, 'bar', 2, 'baz', 3), keys = h.keys();
+
+    expect(keys.isZArray).toBe(true);
+    expect(keys.size()).toBe(3);
+    expect(keys.toNative().sort()).toEq(['bar', 'baz', 'foo']);
+  });
+});
+
+describe('Z.Hash.values', function() {
+  it('should return a Z.Array containing all values in the hash', function() {
+    var h = Z.H('foo', 1, 'bar', 2, 'baz', 3), values = h.values();
+
+    expect(values.isZArray).toBe(true);
+    expect(values.size()).toBe(3);
+    expect(values.toNative().sort()).toEq([1, 2, 3]);
+  });
+});
+
+describe('Z.Hash.getUnknownProperty', function() {
 });
 
 }());
