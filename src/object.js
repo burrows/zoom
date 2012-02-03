@@ -164,7 +164,16 @@ Z.Object.open(function() {
   });
 
   this.def('toString', function() {
-    return Z.fmt("#<%@:%@>", this.prototypeName(), this.objectId());
+    var descriptors = this.propertyDescriptors(), props = [], k;
+
+    for (k in descriptors) {
+      if (descriptors[k].get === null) {
+        props.push(k + ': ' + Z.inspect(this.get(k)));
+      }
+    }
+
+    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(),
+                 props.join(', '));
   });
 
   this.def('property', function(name, opts) {

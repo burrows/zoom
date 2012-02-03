@@ -301,13 +301,17 @@ describe('Z.Object.name', function() {
 });
 
 describe('Z.Object.toString', function() {
-  // FIXME: add test for property names
-  it('should return a string containing the object name, object id and current property values', function() {
-    var o;
+  var X = Z.Object.extend(function() {
+    this.property('x');
+    this.property('y');
+    this.property('z', {get: function() {}});
+  });
 
-    Z.root.Foo = Z.Object.extend();
-    o = Z.Object.create();
-    expect(o.toString()).toEqual("#<Z.Object:" + (o.objectId()) + ">");
+  it('should return a string containing the object name, object id and current non-computed property values', function() {
+    var o1 = Z.Object.create(), o2 = X.create({x: 1, y: 2});
+
+    expect(o1.toString()).toEqual("#<Z.Object:" + (o1.objectId()) + " {}>");
+    expect(o2.toString()).toEqual("#<Z.Object:" + (o2.objectId()) + " {x: 1, y: 2}>");
   });
 });
 
