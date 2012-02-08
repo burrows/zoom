@@ -129,11 +129,16 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('toString', function() {
-    var a = this.map(function(k, v) {
-      return Z.inspect(k) + ': ' + Z.inspect(v);
-    }).join(', ');
+    var self = this, a, recursed;
 
-    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(), a);
+    recursed = Z.detectRecursion(this, function() {
+      a = self.map(function(k, v) {
+        return Z.inspect(k) + ': ' + Z.inspect(v);
+      });
+    });
+
+    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(),
+                 recursed ? '...' : a.join(', '));
   });
 
   this.def('each', function(f) {

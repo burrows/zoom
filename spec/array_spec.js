@@ -76,6 +76,16 @@ describe('Z.Array.toString', function() {
     var a = Z.A(1, 2, 3);
     expect(a.toString()).toEqual("#<Z.Array:" + (a.objectId()) + " [1, 2, 3]>");
   });
+
+  it('should handle recursive arrays', function() {
+    var a1 = Z.A(), a2 = Z.A();
+
+    a1.push(a1);
+    a2.push([9, a2]);
+
+    expect(a1.toString()).toEqual(Z.fmt("#<Z.Array:%@ [#<Z.Array:%@ [...]>]>", a1.objectId(), a1.objectId()));
+    expect(a2.toString()).toEqual(Z.fmt("#<Z.Array:%@ [[9, #<Z.Array:%@ [...]>]]>", a2.objectId(), a2.objectId()));
+  });
 });
 
 describe('Z.Array.toNative', function() {

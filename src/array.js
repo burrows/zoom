@@ -49,11 +49,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('toString', function() {
-    var a = this.map(function(item) {
-      return Z.inspect(item);
-    }).join(', ');
-
-    return Z.fmt("#<%@:%@ [%@]>", this.prototypeName(), this.objectId(), a);
+    return Z.fmt("#<%@:%@ %@>", this.prototypeName(), this.objectId(),
+                 Z.inspect(this.toNative()));
   });
 
   this.def('toNative', function() { return this.__z_items__; });
