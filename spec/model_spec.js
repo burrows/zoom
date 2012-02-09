@@ -95,10 +95,14 @@ describe('Z.Model.load', function() {
       expect(TestModel.fetch(127)).toBe(m);
     });
 
-    it('should set the state of the instance to LOADED', function() {
-      var m = TestModel.load({ id: 128, foo: 's', bar: 1 });
+    it('should unset all of the state bits', function() {
+      var m = TestModel.load({ id: 128, foo: 's', bar: 1 }), state = m.state();
 
-      expect(m.state()).toBe(Z.Model.LOADED);
+      expect(state & Z.Model.NEW).toBeFalsy();
+      expect(state & Z.Model.DIRTY).toBeFalsy();
+      expect(state & Z.Model.INVALID).toBeFalsy();
+      expect(state & Z.Model.BUSY).toBeFalsy();
+      expect(state & Z.Model.DESTROYED).toBeFalsy();
     });
   });
 
@@ -112,17 +116,22 @@ describe('Z.Model.load', function() {
       expect(m.bar()).toBe(2);
     });
 
-    it('should set the state of the instance to LOADED', function() {
-      var m = TestModel.load({ id: 201, foo: 's', bar: 1 });
+    it('should unset all of the state bits', function() {
+      var m = TestModel.load({ id: 201, foo: 's', bar: 1 }), state;
 
-      m.state(Z.Model.DIRTY);
-      expect(m.state()).toBe(Z.Model.DIRTY);
+      m.foo('x');
+
+      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
 
       TestModel.load({ id: 201, foo: 's3', bar: 3 });
+      
+      state = m.state();
 
-      expect(m.state()).toBe(Z.Model.LOADED);
-      expect(m.foo()).toBe('s3');
-      expect(m.bar()).toBe(3);
+      expect(state & Z.Model.NEW).toBeFalsy();
+      expect(state & Z.Model.DIRTY).toBeFalsy();
+      expect(state & Z.Model.INVALID).toBeFalsy();
+      expect(state & Z.Model.BUSY).toBeFalsy();
+      expect(state & Z.Model.DESTROYED).toBeFalsy();
     });
   });
 
@@ -143,16 +152,14 @@ describe('Z.Model.initialize', function() {
     expect(m.get('bar')).toBe(1);
   });
 
-  it('should set the the state to NEW', function() {
-    var m = TestModel.create({ foo: 'abc', bar: 1 });
+  it('should set the NEW state bit', function() {
+    var m = TestModel.create({ foo: 'abc', bar: 1 }), state = m.state();
 
-    expect(m.state()).toBe(Z.Model.NEW);
-  });
-
-  it('should set the state the the given state when passed a state as the second argument', function() {
-    var m = TestModel.create({ foo: 'abc', bar: 1 }, Z.Model.LOADED);
-
-    expect(m.state()).toBe(Z.Model.LOADED);
+    expect(state & Z.Model.NEW).toBeTruthy();
+    expect(state & Z.Model.DIRTY).toBeFalsy();
+    expect(state & Z.Model.INVALID).toBeFalsy();
+    expect(state & Z.Model.BUSY).toBeFalsy();
+    expect(state & Z.Model.DESTROYED).toBeFalsy();
   });
 });
 
@@ -183,7 +190,7 @@ describe('Z.Model.fetch', function() {
 
   describe('for an id of a model that is already loaded into the identity map', function() {
     it('should return a reference to the already existing object', function() {
-      var m = TestModel.create({id: 1234, foo: 'a', bar: 2}, Z.Model.LOADED);
+      var m = TestModel.load({id: 1234, foo: 'a', bar: 2});
 
       expect(TestModel.fetch(1234)).toBe(m);
     });
@@ -195,15 +202,19 @@ describe('Z.Model.fetch', function() {
       expect(TestModel.mapper.fetchModel).toHaveBeenCalledWith(TestModel, 18);
     });
 
-    it('should return an instance of the model in the EMPTY state', function() {
-      var m = TestModel.fetch(19);
+    it('should return an instance of the model with the BUSY state bit set', function() {
+      var m = TestModel.fetch(19), state = m.state();
 
       expect(m.type()).toBe(TestModel);
       expect(m.id()).toBe(19);
-      expect(m.state()).toBe(Z.Model.EMPTY);
+      expect(state & Z.Model.NEW).toBeFalsy();
+      expect(state & Z.Model.DIRTY).toBeFalsy();
+      expect(state & Z.Model.INVALID).toBeFalsy();
+      expect(state & Z.Model.BUSY).toBeTruthy();
+      expect(state & Z.Model.DESTROYED).toBeFalsy();
     });
 
-    it('should add the EMPTY instance to the identity map', function() {
+    it('should add the instance to the identity map', function() {
       var m = TestModel.fetch(20);
 
       expect(TestModel.fetch(20)).toBe(m);
@@ -214,12 +225,16 @@ describe('Z.Model.fetch', function() {
 describe('Z.Model.fetchModelDidFail', function() {
   beforeEach(function() { Z.Model.clearIdentityMap(); });
 
-  it('should retrieve the record with the given id from the identity map and set its state to `NOT_FOUND`', function() {
-    var m = TestModel.create({id: 1}, Z.Model.EMPTY);
+  it('should retrieve the record with the given id from the identity map and unset the BUSY state bit', function() {
+    var m;
 
-    expect(m.state()).toBe(Z.Model.EMPTY);
+    spyOn(TestModel.mapper, 'fetchModel');
+
+    m = TestModel.fetch(1);
+
+    expect(m.state() & Z.Model.BUSY).toBeTruthy();
     TestModel.fetchModelDidFail(1);
-    expect(m.state()).toBe(Z.Model.NOT_FOUND);
+    expect(m.state() & Z.Model.BUSY).toBeFalsy();
   });
 
   it('should throw an exception if a record with the given id is not in the identity map', function() {
@@ -236,61 +251,79 @@ describe('Z.Model.save', function() {
     spyOn(Z.Model.mapper, 'updateModel');
   });
 
-  describe('for a NEW model', function() {
+  describe('for an object with the NEW state bit set', function() {
     it("should invoke the `createModel` method on type's mapper", function() {
       var m = TestModel.create({id: 1, foo: 'x', bar: 9 });
 
+      expect(m.state() & Z.Model.NEW).toBeTruthy();
       m.save();
       expect(TestModel.mapper.createModel).toHaveBeenCalledWith(m);
+      expect(TestModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
-  describe('for a DIRTY model', function() {
+  describe('for an object with the DIRTY state bit set', function() {
     it("should invoke the `updateModel` method on type's mapper", function() {
-      var m = TestModel.create({id: 1, foo: 'x', bar: 9 }, Z.Model.DIRTY);
+      var m = TestModel.load({id: 1, foo: 'x', bar: 9 });
 
+      m.foo('y');
+      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
       m.save();
+      expect(TestModel.mapper.createModel).not.toHaveBeenCalled();
       expect(TestModel.mapper.updateModel).toHaveBeenCalledWith(m);
     });
   });
 
-  describe('for a LOADED model', function() {
+  describe('for a model instance that is not NEW or DIRTY', function() {
     it("should do nothing", function() {
-      var m = TestModel.load({id: 1, foo: 'x', bar: 9 });
+      var m = TestModel.load({id: 1, foo: 'x', bar: 9 }), state = m.state();
 
+      expect(state & Z.Model.NEW).toBeFalsy();
+      expect(state & Z.Model.DIRTY).toBeFalsy();
       m.save();
       expect(TestModel.mapper.createModel).not.toHaveBeenCalled();
       expect(TestModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
-  describe('for a model that is not NEW, DIRTY, or LOADED', function() {
+  // FIXME: implement this once we have a way of making models invalid
+  //describe('for a model that has its INVALID state bit set', function() {
+  //  it("should do nothing", function() {
+  //    var m = TestModel.load({id: 1, foo: 'x', bar: 9 });
+  //    // make invalid
+  //    expect(TestModel.mapper.createModel).not.toHaveBeenCalled();
+  //    expect(TestModel.mapper.updateModel).not.toHaveBeenCalled();
+  //  });
+  //});
+
+  describe('for a model that has its BUSY state bit set', function() {
     it('should throw an exception', function() {
-      var m = TestModel.create({id: 1}, Z.Model.EMPTY);
+      var m = TestModel.load({id: 1, foo: 'x'});
+
+      m.foo('y');
+      m.save();
+
+      expect(m.state() & Z.Model.BUSY).toBeTruthy();
 
       expect(function() {
         m.save();
-      }).toThrow('Z.Model.save: attempted to save a model in the `empty` state');
+      }).toThrow('Z.Model.save: attempted to save a BUSY model');
+    });
+  });
+
+  describe('for a model that has its DESTROYED state bit set', function() {
+    it('should throw an exception', function() {
+      var m = TestModel.load({id: 1, foo: 'x', bar: 2});
+
+      spyOn(TestModel.mapper, 'destroyModel');
+      m.destroy();
+      m.destroyModelDidSucceed(1);
+
+      expect(m.state() & Z.Model.DESTROYED).toBeTruthy();
 
       expect(function() {
-        m = TestModel.create({id: 1}, Z.Model.DESTROYED);
         m.save();
-      }).toThrow('Z.Model.save: attempted to save a model in the `destroyed` state');
-
-      expect(function() {
-        m = TestModel.create({id: 1}, Z.Model.BUSY);
-        m.save();
-      }).toThrow('Z.Model.save: attempted to save a model in the `busy` state');
-
-      expect(function() {
-        m = TestModel.create({id: 1}, Z.Model.NOT_FOUND);
-        m.save();
-      }).toThrow('Z.Model.save: attempted to save a model in the `not found` state');
-
-      expect(function() {
-        m = TestModel.create({id: 1}, Z.Model.ERROR);
-        m.save();
-      }).toThrow('Z.Model.save: attempted to save a model in the `error` state');
+      }).toThrow('Z.Model.save: attempted to save a DESTROYED model');
     });
   });
 });

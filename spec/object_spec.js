@@ -353,16 +353,16 @@ describe('Z.Object.hasProperty', function() {
     this.property('bar');
   });
 
-  it('should return true if a property with the given name exists on the prototype', function() {
+  it('should return `true` if a property with the given name exists on the prototype', function() {
     expect(A.hasProperty('foo')).toBe(true);
     expect(B.hasProperty('bar')).toBe(true);
   });
 
-  it('should return true if a property with the given name exists on a super prototype', function() {
+  it('should return `true` if a property with the given name exists on a super prototype', function() {
     expect(B.hasProperty('foo')).toBe(true);
   });
 
-  it('should return false if a property with the given name does not exist on the prototype', function() {
+  it('should return `false` if a property with the given name does not exist on the prototype', function() {
     expect(A.hasProperty('idontexist')).toBe(false);
     expect(A.hasProperty('bar')).toBe(false);
   });

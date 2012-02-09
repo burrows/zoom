@@ -9,4 +9,7 @@ Z.Mapper = Z.Object.extend(function() {
 
   this.def('updateModel', function(model) {
   });
+
+  this.def('destroyModel', function(model) {
+  });
 });

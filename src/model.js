@@ -3,25 +3,22 @@
 var slice = Array.prototype.slice;
 
 Z.Model = Z.Object.extend(function() {
-  var attributeTypes = {}, identityMap = {};
+  var attributeTypes = {}, identityMap = {}, NEW, DIRTY, INVALID, BUSY;
 
   this.isZModel = true;
 
   this.mapper = Z.Mapper.create();
 
-  // Model states
-  this.NEW       = 'new';
-  this.EMPTY     = 'empty';
-  this.LOADED    = 'loaded';
-  this.DIRTY     = 'dirty';
-  this.DESTROYED = 'destroyed';
-  this.BUSY      = 'busy';
-  this.NOT_FOUND = 'not found';
-  this.ERROR     = 'error';
+  // Model state bits
+  this.NEW       = NEW       = 1;
+  this.DIRTY     = DIRTY     = 2;
+  this.INVALID   = INVALID   = 4;
+  this.BUSY      = BUSY      = 8;
+  this.DESTROYED = DESTROYED = 16;
 
   this.property('id', {
     set: function(v) {
-      if (this.__id__) {
+      if (this.hasOwnProperty('__id__')) {
         throw new Error(Z.fmt("Z.Model.id (setter): overwriting a model's identity is not allowed: %@", this));
       }
 
@@ -29,7 +26,31 @@ Z.Model = Z.Object.extend(function() {
     }
   });
 
-  this.property('state');
+  this.property('state', { readonly: true });
+
+  this.property('stateString', {
+    readonly: true,
+    get: function() {
+      var state = this.state(), a;
+
+      if (state & DESTROYED) { return 'DESTROYED'; }
+
+      a = [];
+
+      if (state & NEW) {
+        a.push('NEW');
+      }
+      else {
+        a.push('LOADED');
+        a.push(state & DIRTY ? 'DIRTY' : 'CLEAN');
+      }
+
+      a.push(state & INVALID ? 'INVALID' : 'VALID');
+      a.push(state & BUSY ? 'BUSY' : 'READY');
+
+      return a.join('-');
+    }
+  });
 
   this.def('attribute', function(name, type, opts) {
     var privateProp   = Z.fmt("__z_%@__", name),
@@ -49,7 +70,12 @@ Z.Model = Z.Object.extend(function() {
       },
 
       set: function(v) {
-        if (this.state() === Z.Model.CLEAN) { this.state(Z.Model.DIRTY); }
+        var state = this.__state__;
+
+        if (!(state & NEW) && !(state & DIRTY)) {
+          setStateBit(this, DIRTY);
+        }
+
         return this[privateProp] = attributeType.toRawFn(v);
       }
     });
@@ -94,7 +120,7 @@ Z.Model = Z.Object.extend(function() {
       model = this.create(attributes);
     }
 
-    model.state(Z.Model.LOADED);
+    setState(model, 0);
 
     return model;
   });
@@ -103,7 +129,8 @@ Z.Model = Z.Object.extend(function() {
     var model = retrieveFromIdentityMap(this, id);
 
     if (!model) {
-      model = this.create({id: id}, Z.Model.EMPTY);
+      model = this.create({id: id});
+      setState(model, BUSY);
       this.mapper.fetchModel(this, id);
     }
 
@@ -117,23 +144,40 @@ Z.Model = Z.Object.extend(function() {
       throw new Error('Z.Model.fetchModelDidFail: no object exists with id ' + id);
     }
 
-    model.state(Z.Model.NOT_FOUND);
+    unsetStateBit(model, BUSY);
   });
 
   this.def('save', function() {
     var state = this.state();
 
-    if (state === Z.Model.LOADED) { return; }
+    if (state & BUSY) {
+      throw new Error(Z.fmt("Z.Model.save: attempted to save a BUSY model"));
+    }
 
-    if (state === Z.Model.NEW) {
+    if (state & DESTROYED) {
+      throw new Error(Z.fmt("Z.Model.save: attempted to save a DESTROYED model"));
+    }
+
+    if (state & NEW) {
+      setStateBit(this, BUSY);
       this.mapper.createModel(this);
     }
-    else if (state === Z.Model.DIRTY) {
+    else if (state & DIRTY) {
+      setStateBit(this, BUSY);
       this.mapper.updateModel(this);
     }
-    else {
-      throw new Error(Z.fmt("Z.Model.save: attempted to save a model in the `%@` state", state));
-    }
+
+    return this;
+  });
+
+  this.def('destroy', function() {
+    setState(this, DESTROYED | BUSY);
+    this.mapper.destroyModel(this);
+    return this;
+  });
+
+  this.def('destroyModelDidSucceed', function() {
+    unsetStateBit(this, BUSY);
   });
 
   this.def('toJSON', function() {
@@ -193,9 +237,9 @@ Z.Model = Z.Object.extend(function() {
   this.def('initialize', function(attributes, state) {
     var associations = this.associationDescriptors(), association, k, id;
 
-    this.supr.apply(this, slice.call(arguments));
+    this.__state__ = NEW;
 
-    this.state(state || Z.Model.NEW);
+    this.supr.apply(this, slice.call(arguments));
 
     if (attributes && attributes.hasOwnProperty('id')) {
       addToIdentityMap(this);
@@ -247,6 +291,30 @@ Z.Model = Z.Object.extend(function() {
 
     association.removingInverse = false;
   });
+
+  function setState(m, state) {
+    m.willChangeProperty('state');
+    m.willChangeProperty('stateString');
+    m.__state__ = state;
+    m.didChangeProperty('state');
+    m.didChangeProperty('stateString');
+  }
+
+  function setStateBit(m, bit) {
+    m.willChangeProperty('state');
+    m.willChangeProperty('stateString');
+    m.__state__ = m.__state__ | bit;
+    m.didChangeProperty('state');
+    m.didChangeProperty('stateString');
+  }
+
+  function unsetStateBit(m, bit) {
+    m.willChangeProperty('state');
+    m.willChangeProperty('stateString');
+    m.__state__ = m.__state__ & (~bit & 0xff);
+    m.didChangeProperty('state');
+    m.didChangeProperty('stateString');
+  }
 
   function addToIdentityMap(model) {
     var typeId = model.type().objectId();

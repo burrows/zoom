@@ -172,12 +172,12 @@ describe('Z.Array.at', function() {
       expect(a.at(-4)).toBe('the');
     });
 
-    it('should return null when given a positive index that is out of range', function() {
+    it('should return `null` when given a positive index that is out of range', function() {
       expect(a.at(4)).toBeNull();
       expect(a.at(112)).toBeNull();
     });
 
-    it('should return null when given a negative index that is out of range', function() {
+    it('should return `null` when given a negative index that is out of range', function() {
       expect(a.at(-5)).toBeNull();
       expect(a.at(-1743)).toBeNull();
     });
@@ -211,7 +211,7 @@ describe('Z.Array.index', function() {
     expect(Z.A(Z.A(1, 2), Z.A(3, 4), Z.A(5, 6)).index(Z.A(3, 4))).toBe(1);
   });
 
-  it('should return null if the item does not exist in the array', function() {
+  it('should return `null` if the item does not exist in the array', function() {
     expect(Z.A(0,1,2,3).index(4)).toBe(null);
     expect(Z.A(Z.A(1, 2), Z.A(3, 4), Z.A(5, 6)).index(Z.A(3, 4, 5))).toBe(null);
   });
@@ -304,7 +304,7 @@ describe('Z.Array.slice', function() {
       expect(a.slice(-3)).toEq(Z.A([3, 4, 5]));
     });
 
-    it('should return null when given an out of bounds index', function() {
+    it('should return `null` when given an out of bounds index', function() {
       expect(a.slice(20)).toBe(null);
       expect(a.slice(-20)).toBe(null);
     });
@@ -326,7 +326,7 @@ describe('Z.Array.slice', function() {
       expect(a.slice(-4, 8)).toEq(Z.A([2, 3, 4, 5]));
     });
 
-    it('should return null when given an out of bounds index', function() {
+    it('should return `null` when given an out of bounds index', function() {
       expect(a.slice(20, 2)).toBeNull();
       expect(a.slice(-20, 2)).toBeNull();
     });
@@ -334,7 +334,7 @@ describe('Z.Array.slice', function() {
 });
 
 describe('Z.Array.slice$', function() {
-  it('should return null and not mutate the receiver if the given index is out of bounds', function() {
+  it('should return `null` and not mutate the receiver if the given index is out of bounds', function() {
     var a = Z.A(0, 1, 2, 3, 4, 5);
 
     expect(a.slice$(20)).toBeNull();
@@ -358,26 +358,26 @@ describe('Z.Array.slice$', function() {
 });
 
 describe('Z.Array.eq', function() {
-  it('should return true when the arrays are identical', function() {
+  it('should return `true` when the arrays are identical', function() {
     var a = Z.Array.create();
     expect(a.eq(a)).toBe(true);
   });
 
-  it('should return true when the arrays have the same contents', function() {
+  it('should return `true` when the arrays have the same contents', function() {
     var a1 = Z.A(1, 2, 3);
         a2 = Z.A(1, 2, 3);
 
     expect(a1.eq(a2)).toBe(true);
   });
 
-  it('should return false when given something other than an array', function() {
+  it('should return `false` when given something other than an array', function() {
     expect((Z.Array.create()).eq("foo")).toBe(false);
     expect((Z.Array.create()).eq([])).toBe(false);
     expect((Z.Array.create()).eq({})).toBe(false);
     expect((Z.Array.create()).eq(Z.Object.create())).toBe(false);
   });
 
-  it('should return false when the array contents differ', function() {
+  it('should return `false` when the array contents differ', function() {
     var a1 = Z.A(1, 2, 3),
         a2 = Z.A(1, 2, 4);
 
@@ -390,7 +390,7 @@ describe('Z.Array `first` property', function() {
     expect(Z.A([5, 6, 7]).first()).toBe(5);
   });
 
-  it('should return null when the array is empty', function() {
+  it('should return `null` when the array is empty', function() {
     expect(Z.A([]).first()).toBe(null);
   });
 
@@ -423,7 +423,7 @@ describe('Z.Array `last` property', function() {
     expect(Z.A([5, 6, 7]).last()).toBe(7);
   });
 
-  it('should return null when the array is empty', function() {
+  it('should return `null` when the array is empty', function() {
     expect(Z.A([]).last()).toBe(null);
   });
 
@@ -499,7 +499,7 @@ describe('Z.Array.pop', function() {
       expect(a.pop()).toBe(3);
     });
 
-    it('should return null when the array is empty', function() {
+    it('should return `null` when the array is empty', function() {
       expect(Z.A([]).pop()).toBe(null);
     });
 
@@ -556,7 +556,7 @@ describe('Z.Array.shift', function() {
       expect(a.shift()).toBe(1);
     });
 
-    it('should return null when the array is empty', function() {
+    it('should return `null` when the array is empty', function() {
       expect(Z.A([]).shift()).toBe(null);
     });
 

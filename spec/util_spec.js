@@ -230,7 +230,7 @@ describe('Z.eq', function() {
     expect(Z.eq(NaN, NaN)).toBe(false);
   });
 
-  it('should return false when `NaN` is compared with any other number value', function() {
+  it('should return `false` when `NaN` is compared with any other number value', function() {
     expect(Z.eq(NaN, 1)).toBe(false);
     expect(Z.eq(1, NaN)).toBe(false);
     expect(Z.eq(new Number(1), NaN)).toBe(false);
