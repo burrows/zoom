@@ -28,6 +28,8 @@ Z.Model = Z.Object.extend(function() {
 
   this.property('state', { readonly: true });
 
+  this.property('changes');
+
   this.def('stateString', function() {
     var state = this.state(), a;
 
@@ -69,10 +71,17 @@ Z.Model = Z.Object.extend(function() {
       },
 
       set: function(v) {
-        var state = this.__state__;
+        var state = this.__state__, changes;
 
-        if (!(state & NEW) && !(state & DIRTY)) {
-          setStateBit(this, DIRTY);
+        if (!(state & NEW)) {
+          if (!(state & DIRTY)) {
+            setStateBit(this, DIRTY);
+            changes = this.set('changes', Z.H());
+          }
+
+          changes = changes || this.changes();
+
+          if (!changes.hasKey(name)) { changes.at(name, this.get(name)); }
         }
 
         return this[privateProp] = attributeType.toRawFn(v);

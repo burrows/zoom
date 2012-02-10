@@ -260,6 +260,13 @@ describe('Z.Model setting attributes', function() {
       expect(m.state() & Z.Model.NEW).toBeTruthy();
       expect(m.state() & Z.Model.DIRTY).toBeFalsy();
     });
+
+    it('should not create the `changes` hash', function() {
+      var m = TestModel.create();
+      expect(m.get('changes')).toBeUndefined();
+      m.set('bar', 9);
+      expect(m.get('changes')).toBeUndefined();
+    });
   });
 
   describe('for a LOADED model', function() {
@@ -271,6 +278,30 @@ describe('Z.Model setting attributes', function() {
       m.set('foo', 'hello');
       expect(m.state() & Z.Model.NEW).toBeFalsy();
       expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+    });
+
+    it("should create the `changes` hash containing the changed attribute's previous value", function() {
+      var m = TestModel.load({id: 123, bar: 8});
+
+      expect(m.get('changes')).toBeUndefined();
+      m.set('bar', 9);
+      expect(m.get('changes')).not.toBeUndefined();
+      expect(m.get('changes').type()).toBe(Z.Hash);
+      expect(m.get('changes.bar')).toBe(8);
+    });
+
+    it('should only add the attribute to the `changes` hash if it has yet to be changed', function() {
+      var m = TestModel.load({id: 123, foo: 'a', bar: 8});
+
+      m.set('foo', 'b');
+      expect(m.get('changes.foo')).toBe('a');
+      m.set('foo', 'c');
+      expect(m.get('changes.foo')).toBe('a');
+
+      m.set('bar', 9);
+      expect(m.get('changes.bar')).toBe(8);
+      m.set('bar', 10);
+      expect(m.get('changes.bar')).toBe(8);
     });
   });
 });
