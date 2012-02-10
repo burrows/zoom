@@ -130,20 +130,18 @@ Z.Model = Z.Object.extend(function() {
     if (!model) {
       model = this.create({id: id});
       setState(model, BUSY);
-      this.mapper.fetchModel(this, id);
+      this.mapper.fetchModel(model);
     }
 
     return model;
   });
 
-  this.def('fetchModelDidFail', function(id) {
-    var model = retrieveFromIdentityMap(this, id);
+  this.def('fetchModelDidSucceed', function() {
+    unsetStateBit(this, BUSY);
+  });
 
-    if (!model) {
-      throw new Error('Z.Model.fetchModelDidFail: no object exists with id ' + id);
-    }
-
-    unsetStateBit(model, BUSY);
+  this.def('fetchModelDidFail', function() {
+    unsetStateBit(this, BUSY);
   });
 
   this.def('save', function() {

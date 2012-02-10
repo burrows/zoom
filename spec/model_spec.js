@@ -197,9 +197,11 @@ describe('Z.Model.fetch', function() {
   });
 
   describe('for an id of a model that is not in the identity map', function() {
+    beforeEach(function() { Z.Model.clearIdentityMap(); });
+
     it("should invoke the `fetchModel` method on the type's mapper", function() {
-      TestModel.fetch(18);
-      expect(TestModel.mapper.fetchModel).toHaveBeenCalledWith(TestModel, 18);
+      var m = TestModel.fetch(18);
+      expect(TestModel.mapper.fetchModel).toHaveBeenCalledWith(m);
     });
 
     it('should return an instance of the model with the BUSY state bit set', function() {
@@ -216,16 +218,25 @@ describe('Z.Model.fetch', function() {
 
     it('should add the instance to the identity map', function() {
       var m = TestModel.fetch(20);
-
       expect(TestModel.fetch(20)).toBe(m);
     });
+  });
+});
+
+describe('Z.Model.fetchModelDidSucceed', function() {
+  it('should unset the BUSY state bit', function() {
+    var m = TestModel.fetch(22);
+
+    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    m.fetchModelDidSucceed();
+    expect(m.state() & Z.Model.BUSY).toBeFalsy();
   });
 });
 
 describe('Z.Model.fetchModelDidFail', function() {
   beforeEach(function() { Z.Model.clearIdentityMap(); });
 
-  it('should retrieve the record with the given id from the identity map and unset the BUSY state bit', function() {
+  it('should unset the BUSY state bit', function() {
     var m;
 
     spyOn(TestModel.mapper, 'fetchModel');
@@ -233,14 +244,8 @@ describe('Z.Model.fetchModelDidFail', function() {
     m = TestModel.fetch(1);
 
     expect(m.state() & Z.Model.BUSY).toBeTruthy();
-    TestModel.fetchModelDidFail(1);
+    m.fetchModelDidFail();
     expect(m.state() & Z.Model.BUSY).toBeFalsy();
-  });
-
-  it('should throw an exception if a record with the given id is not in the identity map', function() {
-    expect(function() {
-      TestModel.fetchModelDidFail(3);
-    }).toThrow('Z.Model.fetchModelDidFail: no object exists with id 3');
   });
 });
 
