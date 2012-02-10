@@ -249,6 +249,32 @@ describe('Z.Model.fetchModelDidFail', function() {
   });
 });
 
+describe('Z.Model setting attributes', function() {
+  describe('for a NEW model', function() {
+    it('should not set the DIRTY state bit', function() {
+      var m = TestModel.create();
+
+      expect(m.state() & Z.Model.NEW).toBeTruthy();
+      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      m.set('foo', 'hello');
+      expect(m.state() & Z.Model.NEW).toBeTruthy();
+      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+    });
+  });
+
+  describe('for a LOADED model', function() {
+    it('should set the DIRTY state bit', function() {
+      var m = TestModel.load({id: 121});
+
+      expect(m.state() & Z.Model.NEW).toBeFalsy();
+      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      m.set('foo', 'hello');
+      expect(m.state() & Z.Model.NEW).toBeFalsy();
+      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+    });
+  });
+});
+
 describe('Z.Model.save', function() {
   beforeEach(function() {
     Z.Model.clearIdentityMap();

@@ -303,12 +303,14 @@ Z.Model = Z.Object.extend(function() {
   }
 
   function setStateBit(m, bit) {
+    if (m.__state__ & bit) { return; }
     m.willChangeProperty('state');
     m.__state__ = m.__state__ | bit;
     m.didChangeProperty('state');
   }
 
   function unsetStateBit(m, bit) {
+    if (!(m.__state__ & bit)) { return; }
     m.willChangeProperty('state');
     m.__state__ = m.__state__ & (~bit & 0xff);
     m.didChangeProperty('state');
