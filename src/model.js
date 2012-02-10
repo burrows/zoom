@@ -75,7 +75,7 @@ Z.Model = Z.Object.extend(function() {
 
         if (!(state & NEW)) {
           if (!(state & DIRTY)) {
-            setStateBit(this, DIRTY);
+            setStateBits(this, DIRTY);
             changes = this.set('changes', Z.H());
           }
 
@@ -146,11 +146,11 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetchModelDidSucceed', function() {
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, BUSY);
   });
 
   this.def('fetchModelDidFail', function() {
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, BUSY);
   });
 
   this.def('save', function() {
@@ -165,11 +165,11 @@ Z.Model = Z.Object.extend(function() {
     }
 
     if (state & NEW) {
-      setStateBit(this, BUSY);
+      setStateBits(this, BUSY);
       this.mapper.createModel(this);
     }
     else if (state & DIRTY) {
-      setStateBit(this, BUSY);
+      setStateBits(this, BUSY);
       this.mapper.updateModel(this);
     }
 
@@ -177,22 +177,20 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('createModelDidSucceed', function() {
-    unsetStateBit(this, NEW);
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, NEW | BUSY);
   });
 
   this.def('createModelDidFail', function() {
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, BUSY);
   });
 
   this.def('updateModelDidSucceed', function() {
-    unsetStateBit(this, DIRTY);
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, DIRTY | BUSY);
     this.get('changes').clear();
   });
 
   this.def('updateModelDidFail', function() {
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, BUSY);
   });
 
   this.def('destroy', function() {
@@ -202,7 +200,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('destroyModelDidSucceed', function() {
-    unsetStateBit(this, BUSY);
+    unsetStateBits(this, BUSY);
   });
 
   this.def('toJSON', function() {
@@ -330,17 +328,17 @@ Z.Model = Z.Object.extend(function() {
     m.didChangeProperty('state');
   }
 
-  function setStateBit(m, bit) {
-    if (m.__state__ & bit) { return; }
+  function setStateBits(m, bits) {
+    if ((m.__state__ & bits) === bits) { return; }
     m.willChangeProperty('state');
-    m.__state__ = m.__state__ | bit;
+    m.__state__ = m.__state__ | bits;
     m.didChangeProperty('state');
   }
 
-  function unsetStateBit(m, bit) {
-    if (!(m.__state__ & bit)) { return; }
+  function unsetStateBits(m, bits) {
+    if ((m.__state__ & bits) === 0) { return; }
     m.willChangeProperty('state');
-    m.__state__ = m.__state__ & (~bit & 0xff);
+    m.__state__ = m.__state__ & (~bits & 0xff);
     m.didChangeProperty('state');
   }
 
