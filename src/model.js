@@ -33,7 +33,9 @@ Z.Model = Z.Object.extend(function() {
     get: function() {
       var state = this.state(), a;
 
-      if (state & DESTROYED) { return 'DESTROYED'; }
+      if (state & DESTROYED) {
+        return state & BUSY ? 'DESTROYED-BUSY' : 'DESTROYED';
+      }
 
       a = [];
 
