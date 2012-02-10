@@ -176,6 +176,21 @@ Z.Model = Z.Object.extend(function() {
     return this;
   });
 
+  this.def('createModelDidSucceed', function() {
+    unsetStateBit(this, NEW);
+    unsetStateBit(this, BUSY);
+  });
+
+  this.def('createModelDidFail', function() {
+    unsetStateBit(this, BUSY);
+  });
+
+  this.def('updateModelDidSucceed', function() {
+  });
+
+  this.def('updateModelDidFail', function() {
+  });
+
   this.def('destroy', function() {
     setState(this, DESTROYED | BUSY);
     this.mapper.destroyModel(this);

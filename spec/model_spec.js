@@ -390,6 +390,32 @@ describe('Z.Model.save', function() {
   });
 });
 
+describe('Z.Model.createModelDidSucceed', function() {
+  it('should unset the NEW and BUSY state bits', function() {
+    var m = TestModel.create({foo: 'x', bar: 2});
+
+    m.save();
+    expect(m.state() & Z.Model.NEW).toBeTruthy();
+    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    m.createModelDidSucceed();
+    expect(m.state() & Z.Model.NEW).toBeFalsy();
+    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+  });
+});
+
+describe('Z.Model.createModelDidFail', function() {
+  it('should unset the BUSY state bit', function() {
+    var m = TestModel.create({foo: 'x', bar: 2});
+
+    m.save();
+    expect(m.state() & Z.Model.NEW).toBeTruthy();
+    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    m.createModelDidFail();
+    expect(m.state() & Z.Model.NEW).toBeTruthy();
+    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+  });
+});
+
 describe('Z.Model.clearIdentityMap', function() {
   it('should remove all objects from the identity map', function() {
     var m = TestModel.create({id: 1111});
