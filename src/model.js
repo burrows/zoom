@@ -28,30 +28,27 @@ Z.Model = Z.Object.extend(function() {
 
   this.property('state', { readonly: true });
 
-  this.property('stateString', {
-    readonly: true,
-    get: function() {
-      var state = this.state(), a;
+  this.def('stateString', function() {
+    var state = this.state(), a;
 
-      if (state & DESTROYED) {
-        return state & BUSY ? 'DESTROYED-BUSY' : 'DESTROYED';
-      }
-
-      a = [];
-
-      if (state & NEW) {
-        a.push('NEW');
-      }
-      else {
-        a.push('LOADED');
-        a.push(state & DIRTY ? 'DIRTY' : 'CLEAN');
-      }
-
-      a.push(state & INVALID ? 'INVALID' : 'VALID');
-      a.push(state & BUSY ? 'BUSY' : 'READY');
-
-      return a.join('-');
+    if (state & DESTROYED) {
+      return state & BUSY ? 'DESTROYED-BUSY' : 'DESTROYED';
     }
+
+    a = [];
+
+    if (state & NEW) {
+      a.push('NEW');
+    }
+    else {
+      a.push('LOADED');
+      a.push(state & DIRTY ? 'DIRTY' : 'CLEAN');
+    }
+
+    a.push(state & INVALID ? 'INVALID' : 'VALID');
+    a.push(state & BUSY ? 'BUSY' : 'READY');
+
+    return a.join('-');
   });
 
   this.def('attribute', function(name, type, opts) {
@@ -296,26 +293,20 @@ Z.Model = Z.Object.extend(function() {
 
   function setState(m, state) {
     m.willChangeProperty('state');
-    m.willChangeProperty('stateString');
     m.__state__ = state;
     m.didChangeProperty('state');
-    m.didChangeProperty('stateString');
   }
 
   function setStateBit(m, bit) {
     m.willChangeProperty('state');
-    m.willChangeProperty('stateString');
     m.__state__ = m.__state__ | bit;
     m.didChangeProperty('state');
-    m.didChangeProperty('stateString');
   }
 
   function unsetStateBit(m, bit) {
     m.willChangeProperty('state');
-    m.willChangeProperty('stateString');
     m.__state__ = m.__state__ & (~bit & 0xff);
     m.didChangeProperty('state');
-    m.didChangeProperty('stateString');
   }
 
   function addToIdentityMap(model) {
