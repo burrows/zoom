@@ -112,6 +112,12 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return null;
   });
 
+  this.def('clear', function() {
+    var self = this;
+    this.keys().each(function(k) { self.del(k); });
+    return this;
+  });
+
   this.def('hasKey', function(k) {
     var bucket, i, len;
 

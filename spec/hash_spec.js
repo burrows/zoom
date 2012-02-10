@@ -592,6 +592,15 @@ describe('Z.Hash.eq', function() {
   });
 });
 
+describe('Z.Hash.clear', function() {
+  it('should remove all key/value pairs', function() {
+    var h = Z.H('foo', 1, {}, 2, 'bar', 3);
+    expect(h.size()).toBe(3);
+    h.clear();
+    expect(h.size()).toBe(0);
+  });
+});
+
 describe('Z.Hash.hasProperty', function() {
   it('should return `true` for all property names', function() {
     var h = Z.H();
