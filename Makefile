@@ -1,7 +1,7 @@
 NODE_PATH := build
 
 SRCS := polyfill.js   \
-	      main.js       \
+        main.js       \
         util.js       \
         object.js     \
         module.js     \
@@ -27,7 +27,7 @@ lintspec:
 	./node_modules/.bin/jshint spec/*.js
 
 spec: zoom lint
-	./node_modules/.bin/jasmine-node ./spec
+	NODE_PATH=$(NODE_PATH) ./node_modules/.bin/jasmine-node ./spec
 
 repl: zoom
 	NODE_NO_READLINE=1 rlwrap node ./util/repl.js
