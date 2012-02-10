@@ -416,6 +416,60 @@ describe('Z.Model.createModelDidFail', function() {
   });
 });
 
+describe('Z.Model.updateModelDidSucceed', function() {
+  it('should unset the DIRTY and BUSY state bits', function() {
+    var m = TestModel.load({id: 224, foo: 'x', bar: 2});
+
+    m.set('foo', 'a');
+    m.save();
+
+    expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    m.updateModelDidSucceed();
+    expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+  });
+
+  it('should clear the `changes` hash', function() {
+    var m = TestModel.load({id: 224, foo: 'x', bar: 2});
+
+    m.set('foo', 'a');
+    m.set('bar', 3);
+    m.save();
+
+    expect(m.get('changes.size')).toBe(2);
+    m.updateModelDidSucceed();
+    expect(m.get('changes.size')).toBe(0);
+  });
+});
+
+describe('Z.Model.updateModelDidFail', function() {
+  it('should unset the BUSY state bit', function() {
+    var m = TestModel.load({id: 224, foo: 'x', bar: 2});
+
+    m.set('foo', 'a');
+    m.save();
+
+    expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    m.updateModelDidFail();
+    expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+  });
+
+  it('should not clear the `changes` hash', function() {
+    var m = TestModel.load({id: 224, foo: 'x', bar: 2});
+
+    m.set('foo', 'a');
+    m.set('bar', 3);
+    m.save();
+
+    expect(m.get('changes.size')).toBe(2);
+    m.updateModelDidFail();
+    expect(m.get('changes.size')).toBe(2);
+  });
+});
+
 describe('Z.Model.clearIdentityMap', function() {
   it('should remove all objects from the identity map', function() {
     var m = TestModel.create({id: 1111});

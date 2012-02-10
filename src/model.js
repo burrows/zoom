@@ -186,9 +186,13 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('updateModelDidSucceed', function() {
+    unsetStateBit(this, DIRTY);
+    unsetStateBit(this, BUSY);
+    this.get('changes').clear();
   });
 
   this.def('updateModelDidFail', function() {
+    unsetStateBit(this, BUSY);
   });
 
   this.def('destroy', function() {
