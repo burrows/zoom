@@ -349,6 +349,11 @@ describe('Z.Model.toJSON', function() {
       var x = X.create({foo: 'abc', bar: 22});
       expect(x.toJSON()).toEqual({foo: 'abc', bar: 22});
     });
+
+    it('should include the `id` property', function() {
+      var x = X.load({id: 19, foo: 'abc', bar: 22});
+      expect(x.toJSON()).toEqual({id: 19, foo: 'abc', bar: 22});
+    });
   });
 });
 

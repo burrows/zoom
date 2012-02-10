@@ -182,6 +182,8 @@ Z.Model = Z.Object.extend(function() {
   this.def('toJSON', function() {
     var attrs = this.attributeNames(), o = {}, i, len;
 
+    o.id = this.id();
+
     for (i = 0, len = attrs.length; i < len; i++) {
       o[attrs[i]] = this.get(attrs[i]);
     }
@@ -289,6 +291,11 @@ Z.Model = Z.Object.extend(function() {
     }
 
     association.removingInverse = false;
+  });
+
+  this.def('toString', function() {
+    return Z.fmt("#<%@:%@ (%@) %@>", this.prototypeName(), this.objectId(),
+                 this.stateString(), Z.inspect(this.toJSON()));
   });
 
   function setState(m, state) {
