@@ -186,7 +186,7 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('updateModelDidSucceed', function() {
     unsetStateBits(this, DIRTY | BUSY);
-    this.get('changes').clear();
+    this.changes().clear();
   });
 
   this.def('updateModelDidFail', function() {
@@ -201,6 +201,23 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('destroyModelDidSucceed', function() {
     unsetStateBits(this, BUSY);
+  });
+
+  this.def('undoChanges', function() {
+    var self = this, state = this.state(), changes;
+
+    if (state & DESTROYED) {
+      throw new Error("Z.Model.undoChanges: attempted to undo changes on a DESTROYED model: " + this.toString());
+    }
+
+    if (!(state & DIRTY)) { return this; }
+
+    changes = this.changes();
+    changes.each(function(k, v) { self.set(k, v); });
+    changes.clear();
+    unsetStateBits(this, DIRTY);
+
+    return this;
   });
 
   this.def('toJSON', function() {

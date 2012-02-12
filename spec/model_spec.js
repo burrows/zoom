@@ -470,6 +470,74 @@ describe('Z.Model.updateModelDidFail', function() {
   });
 });
 
+describe('Z.Model.undoChanges', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+  describe('on a NEW model', function() {
+    it('should do nothing', function() {
+      var m = TestModel.create({foo: 'v', bar: 12});
+
+      m.undoChanges();
+      expect(m.state() & Z.Model.NEW).toBeTruthy();
+      expect(m.foo()).toBe('v');
+      expect(m.bar()).toBe(12);
+    });
+  });
+
+  describe('on a CLEAN model', function() {
+    it('should do nothing', function() {
+      var m = TestModel.load({id: 5, foo: 'v', bar: 12});
+
+      m.undoChanges();
+      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      expect(m.foo()).toBe('v');
+      expect(m.bar()).toBe(12);
+    });
+  });
+
+  describe('on a DESTROYED model', function() {
+    it('throw an exception', function() {
+      var m = TestModel.load({id: 5, foo: 'v', bar: 12});
+
+      m.destroy().destroyModelDidSucceed();
+
+      expect(m.state() & Z.Model.DESTROYED).toBeTruthy();
+
+      expect(function() {
+        m.undoChanges();
+      }).toThrow("Z.Model.undoChanges: attempted to undo changes on a DESTROYED model: " + m.toString());
+    });
+  });
+
+  describe('on a DIRTY model', function() {
+    var m;
+
+    beforeEach(function() {
+      m = TestModel.load({id: 5, foo: 'v', bar: 12});
+      m.foo('x');
+      m.bar(21);
+    });
+
+    it('should set all attribute values back to their CLEAN state', function() {
+      m.undoChanges();
+      expect(m.foo()).toBe('v');
+      expect(m.bar()).toBe(12);
+    });
+
+    it('should clear the `changes` hash', function() {
+      expect(m.get('changes.size')).toBe(2);
+      m.undoChanges();
+      expect(m.get('changes.size')).toBe(0);
+    });
+
+    it('should unset the DIRTY state bit', function() {
+      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+      m.undoChanges();
+      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+    });
+  });
+});
+
 describe('Z.Model.clearIdentityMap', function() {
   it('should remove all objects from the identity map', function() {
     var m = TestModel.create({id: 1111});
