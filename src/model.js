@@ -232,14 +232,13 @@ Z.Model = Z.Object.extend(function() {
     }
 
     this.errors().at(attr).push(message);
+    setStateBits(this, INVALID);
   });
 
   this.def('validate', function() {
-    var validators = this.__z_validators__,
-        errors     = this.errors(),
-        validator, i, len;
+    var validators = this.__z_validators__, validator, i, len;
 
-    if (errors) { errors.clear(); }
+    if (this.errors()) { this.errors().clear(); }
 
     if (!validators) { return; }
 
@@ -253,16 +252,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
-    errors = errors || this.errors();
-
-    if (!errors) { return; }
-
-    if (errors.size() > 0) {
-      setStateBits(this, INVALID);
-    }
-    else {
-      unsetStateBits(this, INVALID);
-    }
+    if (this.get('errors.size') === 0) { unsetStateBits(this, INVALID); }
   });
 
   this.def('toJSON', function() {

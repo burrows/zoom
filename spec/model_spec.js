@@ -574,6 +574,12 @@ describe('Z.Model.addError', function() {
     m.addError('foo', 'something');
     expect(m.errors().at('foo')).toEq(Z.A('blah', 'something'));
   });
+
+  it('should set the INVALID state bit', function() {
+    expect(m.state() & Z.Model.INVALID).toBeFalsy();
+    m.addError('foo', 'this is an error');
+    expect(m.state() & Z.Model.INVALID).toBeTruthy();
+  });
 });
 
 describe('Z.Model.validate', function() {
