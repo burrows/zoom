@@ -364,15 +364,19 @@ describe('Z.Model.save', function() {
     });
   });
 
-  // FIXME: implement this once we have a way of making models invalid
-  //describe('for a model that has its INVALID state bit set', function() {
-  //  it("should do nothing", function() {
-  //    var m = BasicModel.load({id: 1, foo: 'x', bar: 9 });
-  //    // make invalid
-  //    expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
-  //    expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
-  //  });
-  //});
+  describe('for a model that has its INVALID state bit set', function() {
+    it("should do nothing", function() {
+      var m = ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
+
+      m.set('bar', 1);
+      m.validate();
+      expect(m.state() & Z.Model.INVALID).toBeTruthy();
+      m.save();
+
+      expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
+      expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
+    });
+  });
 
   describe('for a model that has its BUSY state bit set', function() {
     it('should throw an exception', function() {

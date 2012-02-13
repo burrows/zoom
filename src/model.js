@@ -165,6 +165,8 @@ Z.Model = Z.Object.extend(function() {
       throw new Error(Z.fmt("Z.Model.save: attempted to save a DESTROYED model"));
     }
 
+    if (state & INVALID) { return this; }
+
     if (state & NEW) {
       setStateBits(this, BUSY);
       this.mapper.createModel(this);
