@@ -644,6 +644,62 @@ describe('Z.Model.validate', function() {
     expect(m.errors().size()).toBe(0);
     expect(m.state() & Z.Model.INVALID).toBeFalsy();
   });
+
+  describe('with conditional validators', function() {
+    var A = Z.Model.extend(function() {
+      this.registerValidator('validatorA', { if: 'shouldValidate'});
+      this.registerValidator('validatorB', { unless: function() {
+        return this.shouldntValidate();
+      }});
+
+      this.property('shouldValidate');
+      this.property('shouldntValidate');
+      this.attribute('foo', 'integer');
+
+      this.def('validatorA', function() {});
+      this.def('validatorB', function() {});
+    });
+
+    it('should run an `if` validator if the given method returns a truthy value', function() {
+      var m = A.create()
+
+      spyOn(m, 'validatorA');
+
+      m.shouldValidate(true);
+      m.validate();
+      expect(m.validatorA).toHaveBeenCalled();
+    });
+
+    it('should not run an `if` validator if the given method returns a falsy value', function() {
+      var m = A.create()
+
+      spyOn(m, 'validatorA');
+
+      m.shouldValidate(false);
+      m.validate();
+      expect(m.validatorA).not.toHaveBeenCalled();
+    });
+
+    it('should run an `unless` validator if the given method returns a falsy value', function() {
+      var m = A.create()
+
+      spyOn(m, 'validatorB');
+
+      m.shouldntValidate(false);
+      m.validate();
+      expect(m.validatorB).toHaveBeenCalled();
+    });
+
+    it('should not run an `unless` validator if the given method returns a truthy value', function() {
+      var m = A.create()
+
+      spyOn(m, 'validatorB');
+
+      m.shouldntValidate(true);
+      m.validate();
+      expect(m.validatorB).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('Z.Model.clearIdentityMap', function() {

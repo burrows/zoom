@@ -225,7 +225,7 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('registerValidator', function(f, opts) {
     this.__z_validators__ = this.__z_validators__ || [];
-    this.__z_validators__.push([f, opts]);
+    this.__z_validators__.push([f, opts || {}]);
   });
 
   this.def('addError', function(attr, message) {
@@ -237,20 +237,33 @@ Z.Model = Z.Object.extend(function() {
     setStateBits(this, INVALID);
   });
 
+  function callValidatorFn(context, fn) {
+    return typeof fn === 'function' ? fn.call(context) : context[fn]();
+  }
+
   this.def('validate', function() {
-    var validators = this.__z_validators__, validator, i, len;
+    var validators = this.__z_validators__, validator, opts, i, len;
 
     if (this.errors()) { this.errors().clear(); }
 
     if (!validators) { return; }
 
     for (i = 0, len = validators.length; i < len; i++) {
-      validator = validators[i];
-      if (typeof validator[0] === 'function') {
-        validator[0].call(this);
+      validator = validators[i][0];
+      opts      = validators[i][1];
+
+      if (opts.hasOwnProperty('if')) {
+        if (callValidatorFn(this, opts['if'])) {
+          callValidatorFn(this, validator);
+        }
+      }
+      else if (opts.hasOwnProperty('unless')) {
+        if (!callValidatorFn(this, opts.unless)) {
+          callValidatorFn(this, validator);
+        }
       }
       else {
-        this[validator[0]]();
+        callValidatorFn(this, validator);
       }
     }
 
