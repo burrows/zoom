@@ -29,6 +29,7 @@ Z.Model = Z.Object.extend(function() {
   this.property('state', { readonly: true });
 
   this.property('changes');
+  this.property('errors');
 
   this.def('stateString', function() {
     var state = this.state(), a;
@@ -218,6 +219,50 @@ Z.Model = Z.Object.extend(function() {
     unsetStateBits(this, DIRTY);
 
     return this;
+  });
+
+  this.def('registerValidator', function(f, opts) {
+    this.__z_validators__ = this.__z_validators__ || [];
+    this.__z_validators__.push([f, opts]);
+  });
+
+  this.def('addError', function(attr, message) {
+    if (!this.errors()) {
+      this.errors(Z.Hash.create(function(h, k) { return h.at(k, Z.A()); }));
+    }
+
+    this.errors().at(attr).push(message);
+  });
+
+  this.def('validate', function() {
+    var validators = this.__z_validators__,
+        errors     = this.errors(),
+        validator, i, len;
+
+    if (errors) { errors.clear(); }
+
+    if (!validators) { return; }
+
+    for (i = 0, len = validators.length; i < len; i++) {
+      validator = validators[i];
+      if (typeof validator[0] === 'function') {
+        validator[0].call(this);
+      }
+      else {
+        this[validator[0]]();
+      }
+    }
+
+    errors = errors || this.errors();
+
+    if (!errors) { return; }
+
+    if (errors.size() > 0) {
+      setStateBits(this, INVALID);
+    }
+    else {
+      unsetStateBits(this, INVALID);
+    }
   });
 
   this.def('toJSON', function() {
