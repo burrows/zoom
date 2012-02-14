@@ -3,7 +3,9 @@
 var slice = Array.prototype.slice;
 
 Z.Model = Z.Object.extend(function() {
-  var attributeTypes = {}, identityMap = {}, NEW, DIRTY, INVALID, BUSY;
+  var attributeTypes = {},
+      identityMap    = {},
+      NEW, DIRTY, INVALID, BUSY, DESTROYED;
 
   this.isZModel = true;
 
