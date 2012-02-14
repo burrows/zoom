@@ -647,7 +647,7 @@ describe('Z.Model.validate', function() {
 
   describe('with conditional validators', function() {
     var A = Z.Model.extend(function() {
-      this.registerValidator('validatorA', { if: 'shouldValidate'});
+      this.registerValidator('validatorA', { 'if': 'shouldValidate'});
       this.registerValidator('validatorB', { unless: function() {
         return this.shouldntValidate();
       }});
