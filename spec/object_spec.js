@@ -11,7 +11,7 @@ describe('Z.Object.extend', function() {
   });
 
   it('should assign an auto-incrementing id to each object created', function() {
-    var X1 = Z.Object.extend(), X2 = Z.Object.extend(); X3 = Z.Object.extend();
+    var X1 = Z.Object.extend(), X2 = Z.Object.extend(), X3 = Z.Object.extend();
 
     expect(typeof X1.objectId()).toEqual('number');
     expect(typeof X2.objectId()).toEqual('number');
@@ -40,11 +40,13 @@ describe('Z.Object.extend', function() {
   });
 
   describe('when passed 1 or more Z.Module arguments', function() {
-    var Mod1 = Z.Module.create(function() {
+    var Mod1, Mod2;
+
+    Mod1 = Z.Module.create(function() {
       this.def('foo', function() {});
     });
 
-    var Mod2 = Z.Module.create(function() {
+    Mod2 = Z.Module.create(function() {
       this.def('bar', function() {});
     });
 
@@ -67,7 +69,7 @@ describe('Z.Object.create', function() {
   });
 
   it('should assign an auto-incrementing id to each object created', function() {
-    var o1 = Z.Object.create(), o2 = Z.Object.create(); o3 = Z.Object.create();
+    var o1 = Z.Object.create(), o2 = Z.Object.create(), o3 = Z.Object.create();
 
     expect(typeof o1.objectId()).toEqual('number');
     expect(typeof o2.objectId()).toEqual('number');
@@ -129,7 +131,9 @@ describe('Z.Object.type', function() {
 });
 
 describe('Z.Object.supr', function() {
-  var Parent = Z.Object.extend(function() {
+  var Parent, Child, GrandChild, p, c, g;
+
+  Parent = Z.Object.extend(function() {
     this.def('foo', function() {
       return ['Parent.foo'];
     });
@@ -147,7 +151,7 @@ describe('Z.Object.supr', function() {
     });
   });
 
-  var Child = Parent.extend(function() {
+  Child = Parent.extend(function() {
     this.def('foo', function() {
       return this.supr().concat('Child.foo');
     });
@@ -161,7 +165,7 @@ describe('Z.Object.supr', function() {
     });
   });
 
-  var GrandChild = Child.extend(function() {
+  GrandChild = Child.extend(function() {
     this.def('foo', function() {
       return this.supr().concat('GrandChild.foo');
     });
@@ -174,8 +178,6 @@ describe('Z.Object.supr', function() {
       return this.supr();
     });
   });
-
-  var p, c, g;
 
   beforeEach(function() {
     p = Parent.create(); c = Child.create(); g = GrandChild.create();
@@ -271,7 +273,7 @@ describe('Z.Object.name', function() {
   beforeEach(function() {
     Z.Stuff = Z.Object.extend();
     Z.root.MyNamespace = {};
-    MyNamespace.Thing = Z.Object.extend();
+    Z.root.MyNamespace.Thing = Z.Object.extend();
   });
 
   afterEach(function() {
@@ -290,13 +292,13 @@ describe('Z.Object.name', function() {
   });
 
   it('should return "(Unknown)" for objects defined in a namespace other than Z but not registered', function() {
-    expect(MyNamespace.Thing.name()).toBe('(Unknown)');
+    expect(Z.root.MyNamespace.Thing.name()).toBe('(Unknown)');
   });
 
   it('should return the name of the object for objects defined in a namespace other than Z that is registered', function() {
-    Z.addNamespace(MyNamespace, 'MyNamespace');
-    expect(MyNamespace.Thing.name()).toBe('MyNamespace.Thing');
-    Z.removeNamespace(MyNamespace);
+    Z.addNamespace(Z.root.MyNamespace, 'MyNamespace');
+    expect(Z.root.MyNamespace.Thing.name()).toBe('MyNamespace.Thing');
+    Z.removeNamespace(Z.root.MyNamespace);
   });
 });
 
@@ -909,7 +911,7 @@ describe('Z.Object KVO support:', function() {
     });
 
     it('should include the `previous` key in the notification when notifying prior to a property change when the `previous` option is set', function() {
-      var user = User.create({ address: Address.create({ street: 'main' }) });
+      var user = User.create({ address: Address.create({ street: 'main' }) }),
           observer = {
         notifications: [],
         action: function(n) { this.notifications.push(n); }

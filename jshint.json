@@ -16,7 +16,17 @@
   "mootools"      : false,
   "dojo"          : false,
 
-  "predef"        : [ "Z", "expect", "describe", "it", "beforeEach", "spyOn", "waits", "waitsFor" ],
+  "predef"        : [
+    "Z",
+    "expect",
+    "describe",
+    "it",
+    "beforeEach",
+    "afterEach",
+    "spyOn",
+    "waits",
+    "waitsFor"
+  ],
 
   // Development.
   "debug"         : false,  // Allow debugger statements e.g. browser breakpoints.

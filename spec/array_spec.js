@@ -364,9 +364,7 @@ describe('Z.Array.eq', function() {
   });
 
   it('should return `true` when the arrays have the same contents', function() {
-    var a1 = Z.A(1, 2, 3);
-        a2 = Z.A(1, 2, 3);
-
+    var a1 = Z.A(1, 2, 3), a2 = Z.A(1, 2, 3);
     expect(a1.eq(a2)).toBe(true);
   });
 

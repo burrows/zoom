@@ -661,7 +661,7 @@ describe('Z.Model.validate', function() {
     });
 
     it('should run an `if` validator if the given method returns a truthy value', function() {
-      var m = A.create()
+      var m = A.create();
 
       spyOn(m, 'validatorA');
 
@@ -671,7 +671,7 @@ describe('Z.Model.validate', function() {
     });
 
     it('should not run an `if` validator if the given method returns a falsy value', function() {
-      var m = A.create()
+      var m = A.create();
 
       spyOn(m, 'validatorA');
 
@@ -681,7 +681,7 @@ describe('Z.Model.validate', function() {
     });
 
     it('should run an `unless` validator if the given method returns a falsy value', function() {
-      var m = A.create()
+      var m = A.create();
 
       spyOn(m, 'validatorB');
 
@@ -691,7 +691,7 @@ describe('Z.Model.validate', function() {
     });
 
     it('should not run an `unless` validator if the given method returns a truthy value', function() {
-      var m = A.create()
+      var m = A.create();
 
       spyOn(m, 'validatorB');
 
