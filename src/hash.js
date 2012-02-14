@@ -5,6 +5,11 @@ var seed = Math.floor(Math.random() * 0xffffffff);
 Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.isZHash = true;
 
+  function defaultValue(h, k) {
+    var def = h.__z_default__;
+    return typeof def === 'function' ? def.call(null, h, k) : def;
+  }
+
   this.def('initialize', function(def) {
     var nargs = arguments.length;
 
@@ -214,11 +219,6 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('hasProperty', function() { return true; });
-
-  function defaultValue(h, k) {
-    var def = h.__z_default__;
-    return typeof def === 'function' ? def.call(null, h, k) : def;
-  }
 });
 
 Z.hashSeed = function() { return seed; };

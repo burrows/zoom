@@ -5,6 +5,156 @@ var slice = Array.prototype.slice;
 Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.isZArray = true;
 
+  function registerItemObservers(array, items) {
+    var registrations = array.__z_itemRegistrations__, i, j, rlen, ilen, r;
+
+    if (!registrations) { return; }
+
+    for (i = 0, rlen = registrations.length; i < rlen; i++) {
+      r = registrations[i];
+
+      for (j = 0, ilen = items.length; j < ilen; j++) {
+        items[j].registerObserver(r.tail, r.path, r.observee, r.observer,
+                                  r.action, r.opts);
+      }
+    }
+  }
+
+  function deregisterItemObservers(array, items) {
+    var registrations = array.__z_itemRegistrations__, i, j, rlen, ilen, r;
+
+    if (!registrations) { return; }
+
+    for (i = 0, rlen = registrations.length; i < rlen; i++) {
+      r = registrations[i];
+
+      for (j = 0, ilen = items.length; j < ilen; j++) {
+        items[j].deregisterObserver(r.tail, r.path, r.observee, r.observer,
+                                    r.action);
+      }
+    }
+  }
+
+  function willMutate(array, type, idx, n) {
+    var len       = array.size(),
+        prevItems = array.slice(idx, n),
+        registrations, r, i, notification;
+
+    switch (type) {
+      case 'insert':
+        array.willChangeProperty('size');
+        if (idx === 0)  { array.willChangeProperty('first'); }
+        if (idx >= len) { array.willChangeProperty('last'); }
+        array.willChangeProperty('@', {
+          type     : 'insert',
+          range    : [idx, n],
+          previous : undefined
+        });
+        break;
+      case 'remove':
+        array.willChangeProperty('size');
+        if (idx === 0)       { array.willChangeProperty('first'); }
+        if (idx + n === len) { array.willChangeProperty('last'); }
+        array.willChangeProperty('@', {
+          type     : 'remove',
+          range    : [idx, n],
+          previous : prevItems
+        });
+        deregisterItemObservers(array, prevItems.toNative());
+        break;
+      case 'replace':
+        if (idx === 0)       { array.willChangeProperty('first'); }
+        if (idx === len - 1) { array.willChangeProperty('last'); }
+        array.willChangeProperty('@', {
+          type     : 'replace',
+          range    : [idx, n],
+          previous : prevItems
+        });
+        deregisterItemObservers(array, prevItems.toNative());
+        break;
+    }
+
+    if (!(registrations = array.__z_itemRegistrations__)) { return; }
+
+    for (i = 0, len = registrations.length; i < len; i++) {
+      r = registrations[i];
+
+      if (r.opts.previous) { r.previous = r.observee.get(r.path); }
+
+      if (r.opts.prior) {
+        notification = {
+          type     : 'change',
+          isPrior  : true,
+          path     : r.path,
+          observee : r.observee
+        };
+
+        if (r.opts.context) { notification.context = r.opts.context; }
+        if (r.opts.previous) { notification.previous = r.previous; }
+
+        r.callback.call(r.observer, notification);
+      }
+    }
+  }
+
+  function didMutate(array, type, idx, n) {
+    var len      = array.size(),
+        curItems = array.slice(idx, n),
+        registrations, r, i, notification;
+
+    switch (type) {
+      case 'insert':
+        array.didChangeProperty('size');
+        if (idx === 0)       { array.didChangeProperty('first'); }
+        if (idx + n === len) { array.didChangeProperty('last'); }
+        array.didChangeProperty('@', {
+          type    : 'insert',
+          range   : [idx, n],
+          current : curItems
+        });
+        registerItemObservers(array, curItems.toNative());
+        break;
+      case 'remove':
+        array.didChangeProperty('size');
+        if (idx === 0)     { array.didChangeProperty('first'); }
+        if (idx + n > len) { array.didChangeProperty('last'); }
+        array.didChangeProperty('@', {
+          type    : 'remove',
+          range   : [idx, n],
+          current : undefined
+        });
+        break;
+      case 'replace':
+        if (idx === 0) { array.didChangeProperty('first'); }
+        if (idx === len - 1) { array.didChangeProperty('last'); }
+        array.didChangeProperty('@', {
+          type    : 'replace',
+          range   : [idx, n],
+          current : curItems
+        });
+        registerItemObservers(array, curItems.toNative());
+        break;
+    }
+
+    if (!(registrations = array.__z_itemRegistrations__)) { return; }
+
+    for (i = 0, len = registrations.length; i < len; i++) {
+      r = registrations[i];
+
+      notification = {
+        type     : 'change',
+        path     : r.path,
+        observee : r.observee
+      };
+
+      if (r.opts.context)  { notification.context  = r.opts.context; }
+      if (r.opts.previous) { notification.previous = r.previous; }
+      if (r.opts.current)  { notification.current  = r.observee.get(r.path); }
+
+      r.callback.call(r.observer, notification);
+    }
+  }
+
   this.property('size', {
     get: function() { return this.__z_items__.length; },
     set: function(v) { return this.__z_items__.length = v; }
@@ -160,7 +310,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('eq', function(other) {
-    var len = this.size();
+    var len = this.size(), i;
 
     if (!other || !other.isZArray) { return false; }
     if (len !== other.size()) { return false; }
@@ -335,156 +485,6 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.def('getUnknownProperty', function(k) {
     return this.pluck(k).flatten();
   });
-
-  function willMutate(array, type, idx, n) {
-    var len       = array.size(),
-        prevItems = array.slice(idx, n),
-        registrations, r, i, notification;
-
-    switch (type) {
-      case 'insert':
-        array.willChangeProperty('size');
-        if (idx === 0)  { array.willChangeProperty('first'); }
-        if (idx >= len) { array.willChangeProperty('last'); }
-        array.willChangeProperty('@', {
-          type     : 'insert',
-          range    : [idx, n],
-          previous : undefined
-        });
-        break;
-      case 'remove':
-        array.willChangeProperty('size');
-        if (idx === 0)       { array.willChangeProperty('first'); }
-        if (idx + n === len) { array.willChangeProperty('last'); }
-        array.willChangeProperty('@', {
-          type     : 'remove',
-          range    : [idx, n],
-          previous : prevItems
-        });
-        deregisterItemObservers(array, prevItems.toNative());
-        break;
-      case 'replace':
-        if (idx === 0)       { array.willChangeProperty('first'); }
-        if (idx === len - 1) { array.willChangeProperty('last'); }
-        array.willChangeProperty('@', {
-          type     : 'replace',
-          range    : [idx, n],
-          previous : prevItems
-        });
-        deregisterItemObservers(array, prevItems.toNative());
-        break;
-    }
-
-    if (!(registrations = array.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
-
-      if (r.opts.previous) { r.previous = r.observee.get(r.path); }
-
-      if (r.opts.prior) {
-        notification = {
-          type     : 'change',
-          isPrior  : true,
-          path     : r.path,
-          observee : r.observee
-        };
-
-        if (r.opts.context) { notification.context = r.opts.context; }
-        if (r.opts.previous) { notification.previous = r.previous; }
-
-        r.callback.call(r.observer, notification);
-      }
-    }
-  }
-
-  function didMutate(array, type, idx, n) {
-    var len      = array.size(),
-        curItems = array.slice(idx, n),
-        registrations, r, i, notification;
-
-    switch (type) {
-      case 'insert':
-        array.didChangeProperty('size');
-        if (idx === 0)       { array.didChangeProperty('first'); }
-        if (idx + n === len) { array.didChangeProperty('last'); }
-        array.didChangeProperty('@', {
-          type    : 'insert',
-          range   : [idx, n],
-          current : curItems
-        });
-        registerItemObservers(array, curItems.toNative());
-        break;
-      case 'remove':
-        array.didChangeProperty('size');
-        if (idx === 0)     { array.didChangeProperty('first'); }
-        if (idx + n > len) { array.didChangeProperty('last'); }
-        array.didChangeProperty('@', {
-          type    : 'remove',
-          range   : [idx, n],
-          current : undefined
-        });
-        break;
-      case 'replace':
-        if (idx === 0) { array.didChangeProperty('first'); }
-        if (idx === len - 1) { array.didChangeProperty('last'); }
-        array.didChangeProperty('@', {
-          type    : 'replace',
-          range   : [idx, n],
-          current : curItems
-        });
-        registerItemObservers(array, curItems.toNative());
-        break;
-    }
-
-    if (!(registrations = array.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
-
-      notification = {
-        type     : 'change',
-        path     : r.path,
-        observee : r.observee
-      };
-
-      if (r.opts.context)  { notification.context  = r.opts.context; }
-      if (r.opts.previous) { notification.previous = r.previous; }
-      if (r.opts.current)  { notification.current  = r.observee.get(r.path); }
-
-      r.callback.call(r.observer, notification);
-    }
-  }
-
-  function registerItemObservers(array, items) {
-    var registrations = array.__z_itemRegistrations__, i, j, rlen, ilen, r;
-
-    if (!registrations) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      for (j = 0, ilen = items.length; j < ilen; j++) {
-        items[j].registerObserver(r.tail, r.path, r.observee, r.observer,
-                                  r.action, r.opts);
-      }
-    }
-  }
-
-  function deregisterItemObservers(array, items) {
-    var registrations = array.__z_itemRegistrations__, i, j, rlen, ilen, r;
-
-    if (!registrations) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      for (j = 0, ilen = items.length; j < ilen; j++) {
-        items[j].deregisterObserver(r.tail, r.path, r.observee, r.observer,
-                                    r.action);
-      }
-    }
-  }
 });
 
 // shortcut for instantiating a new array

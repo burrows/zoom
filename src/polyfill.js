@@ -1,3 +1,5 @@
+/*jshint onevar: false, newcap: false */
+
 if (!Array.prototype.indexOf) {
   Array.prototype.indexOf = function(searchElement /*, fromIndex */ ) {
     if (this === null) {
@@ -11,7 +13,7 @@ if (!Array.prototype.indexOf) {
     var n = 0;
     if (arguments.length > 0) {
       n = Number(arguments[1]);
-      if (n != n) { // shortcut for verifying if it's NaN
+      if (n !== n) { // shortcut for verifying if it's NaN
         n = 0;
       } else if (n !== 0 && n !== Infinity && n !== -Infinity) {
         n = (n > 0 || -1) * Math.floor(Math.abs(n));
@@ -34,13 +36,15 @@ if (!Array.prototype.filter)
 {
   Array.prototype.filter = function(fun /*, thisp */)
   {
-    if (this === null)
+    if (this === null) {
       throw new TypeError();
+    }
 
     var t = Object(this);
     var len = t.length >>> 0;
-    if (typeof fun != "function")
+    if (typeof fun !== "function") {
       throw new TypeError();
+    }
 
     var res = [];
     var thisp = arguments[1];
@@ -49,8 +53,9 @@ if (!Array.prototype.filter)
       if (i in t)
       {
         var val = t[i]; // in case fun mutates this
-        if (fun.call(thisp, val, i, t))
+        if (fun.call(thisp, val, i, t)) {
           res.push(val);
+        }
       }
     }
 
@@ -86,11 +91,11 @@ if (!Object.keys) {
 
       if (hasDontEnumBug) {
         for (var i=0; i < dontEnumsLength; i++) {
-          if (hasOwnProp.call(obj, dontEnums[i])) result.push(dontEnums[i]);
+          if (hasOwnProp.call(obj, dontEnums[i])) { result.push(dontEnums[i]); }
         }
       }
       return result;
     };
-  })();
+  }());
 }
 

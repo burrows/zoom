@@ -26,7 +26,7 @@ Z.Object.open(function() {
   function getProperty(o, k) {
     var prop = o[Z.fmt("__z_property_%@__", k)];
     if (!prop) { return o.getUnknownProperty(k); }
-    return prop.get ? prop.get.call(o) : o[Z.fmt("__%@__", k)]; 
+    return prop.get ? prop.get.call(o) : o[Z.fmt("__%@__", k)];
   }
 
   function setProperty(o, k, v) {
@@ -336,7 +336,7 @@ Z.Object.open(function() {
   });
 
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
-    var head = rpath[0], tail = rpath.slice(1), registration, regs;
+    var head = rpath[0], tail = rpath.slice(1), registration, regs, val;
 
     if (!this.hasProperty(head)) {
       throw new Error(Z.fmt("Z.Object.registerObserver: undefined key `%@` for %@", head, this));

@@ -18,6 +18,84 @@ Z.Model = Z.Object.extend(function() {
   this.BUSY      = BUSY      = 8;
   this.DESTROYED = DESTROYED = 16;
 
+  function setState(m, state) {
+    m.willChangeProperty('state');
+    m.__state__ = state;
+    m.didChangeProperty('state');
+  }
+
+  function setStateBits(m, bits) {
+    if ((m.__state__ & bits) === bits) { return; }
+    m.willChangeProperty('state');
+    m.__state__ = m.__state__ | bits;
+    m.didChangeProperty('state');
+  }
+
+  function unsetStateBits(m, bits) {
+    if ((m.__state__ & bits) === 0) { return; }
+    m.willChangeProperty('state');
+    m.__state__ = m.__state__ & (~bits & 0xff);
+    m.didChangeProperty('state');
+  }
+
+  function addToIdentityMap(model) {
+    var typeId = model.type().objectId();
+
+    identityMap[typeId] = identityMap[typeId] || {};
+    identityMap[typeId][model.id()] = model;
+  }
+
+  function retrieveFromIdentityMap(type, id) {
+    var typeId = type.objectId(), map = identityMap[typeId];
+    return map && map[id] ? map[id] : null;
+  }
+
+  function didSetIdentity(notification) {
+    addToIdentityMap(notification.observee);
+    this.stopObserving('id', this, didSetIdentity);
+  }
+
+  function hasManyAssociationDidChange(notification) {
+    var name        = notification.context.name,
+        previous    = notification.previous,
+        current     = notification.current,
+        association = this.associationDescriptorFor(name),
+        inverse     = association.inverse,
+        i, len;
+
+    if (!inverse) { return; }
+
+    if (current && !association.addingInverse) {
+      for (i = 0, len = current.size(); i < len; i++) {
+        current.at(i).inverseDidAdd(inverse, this);
+      }
+    }
+
+    if (previous && !association.removingInverse) {
+      for (i = 0, len = previous.size(); i < len; i++) {
+        previous.at(i).inverseDidRemove(inverse, this);
+      }
+    }
+  }
+
+  function hasOneAssociationDidChange(notification) {
+    var name        = notification.context.name,
+        previous    = notification.previous,
+        current     = notification.current,
+        association = this.associationDescriptorFor(name),
+        inverse     = association.inverse;
+
+    if (!inverse) { return; }
+
+    if (current && !association.addingInverse) {
+      current.inverseDidAdd(inverse, this);
+    }
+
+    if (previous && !association.removingInverse) {
+      previous.inverseDidRemove(inverse, this);
+    }
+  }
+
   this.property('id', {
     set: function(v) {
       if (this.hasOwnProperty('__id__')) {
@@ -390,84 +468,6 @@ Z.Model = Z.Object.extend(function() {
     return Z.fmt("#<%@:%@ (%@) %@>", this.prototypeName(), this.objectId(),
                  this.stateString(), Z.inspect(this.toJSON()));
   });
-
-  function setState(m, state) {
-    m.willChangeProperty('state');
-    m.__state__ = state;
-    m.didChangeProperty('state');
-  }
-
-  function setStateBits(m, bits) {
-    if ((m.__state__ & bits) === bits) { return; }
-    m.willChangeProperty('state');
-    m.__state__ = m.__state__ | bits;
-    m.didChangeProperty('state');
-  }
-
-  function unsetStateBits(m, bits) {
-    if ((m.__state__ & bits) === 0) { return; }
-    m.willChangeProperty('state');
-    m.__state__ = m.__state__ & (~bits & 0xff);
-    m.didChangeProperty('state');
-  }
-
-  function addToIdentityMap(model) {
-    var typeId = model.type().objectId();
-
-    identityMap[typeId] = identityMap[typeId] || {};
-    identityMap[typeId][model.id()] = model;
-  }
-
-  function retrieveFromIdentityMap(type, id) {
-    var typeId = type.objectId(), map = identityMap[typeId];
-    return map && map[id] ? map[id] : null;
-  }
-
-  function didSetIdentity(notification) {
-    addToIdentityMap(notification.observee);
-    this.stopObserving('id', this, didSetIdentity);
-  }
-
-  function hasManyAssociationDidChange(notification) {
-    var name        = notification.context.name,
-        previous    = notification.previous,
-        current     = notification.current,
-        association = this.associationDescriptorFor(name),
-        inverse     = association.inverse,
-        i, len;
-
-    if (!inverse) { return; }
-
-    if (current && !association.addingInverse) {
-      for (i = 0, len = current.size(); i < len; i++) {
-        current.at(i).inverseDidAdd(inverse, this);
-      }
-    }
-
-    if (previous && !association.removingInverse) {
-      for (i = 0, len = previous.size(); i < len; i++) {
-        previous.at(i).inverseDidRemove(inverse, this);
-      }
-    }
-  }
-
-  function hasOneAssociationDidChange(notification) {
-    var name        = notification.context.name,
-        previous    = notification.previous,
-        current     = notification.current,
-        association = this.associationDescriptorFor(name),
-        inverse     = association.inverse;
-
-    if (!inverse) { return; }
-
-    if (current && !association.addingInverse) {
-      current.inverseDidAdd(inverse, this);
-    }
-
-    if (previous && !association.removingInverse) {
-      previous.inverseDidRemove(inverse, this);
-    }
-  }
 
   function stringToRaw(v) { return v ? v.toString() : v; }
   function integerToRaw(v) {

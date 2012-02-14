@@ -17,7 +17,7 @@ Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
 
 Z.removeNamespace = function(o) {
   namespaces = namespaces.filter(function(namespace) {
-    return namespace[0] != o;
+    return namespace[0] !== o;
   });
 };
 

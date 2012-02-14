@@ -6,6 +6,33 @@ var slice                    = Array.prototype.slice,
     InnerRecursionDetected   = {},
     detectOutermostRecursion = false;
 
+function seen(o1, o2) {
+  var i, len;
+
+  for (i = 0, len = seenObjects.length; i < len; i++) {
+    if (seenObjects[i][0] === o1 && seenObjects[i][1] === o2) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function mark(o1, o2) {
+  seenObjects.push([o1, o2]);
+}
+
+function unmark(o1, o2) {
+  var i, len;
+
+  for (i = 0, len = seenObjects.length; i < len; i++) {
+    if (seenObjects[i][0] === o1 && seenObjects[i][1] === o2) {
+      seenObjects.splice(i, 1);
+      return;
+    }
+  }
+}
+
 // Polyfill for Object.create. Creates a new object with the given object as the
 // prototype.
 //
@@ -196,10 +223,10 @@ Z.eq = function(a, b) {
       r = true;
 
       Z.detectRecursion(a, b, function() {
-        var i, len;
+        var i, len, key;
 
         for (i = 0, len = akeys.length; i < len; i++) {
-          var key = akeys[i];
+          key = akeys[i];
           if (!b.hasOwnProperty(key)) { r = false; break; }
           if (!Z.eq(a[key], b[key])) { r = false; break; }
         }
@@ -357,32 +384,5 @@ Z.detectOutermostRecursion = function(o1, o2, f) {
     }
   }
 };
-
-function seen(o1, o2) {
-  var i, len;
-
-  for (i = 0, len = seenObjects.length; i < len; i++) {
-    if (seenObjects[i][0] === o1 && seenObjects[i][1] === o2) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function mark(o1, o2) {
-  seenObjects.push([o1, o2]);
-}
-
-function unmark(o1, o2) {
-  var i, len;
-
-  for (i = 0, len = seenObjects.length; i < len; i++) {
-    if (seenObjects[i][0] === o1 && seenObjects[i][1] === o2) {
-      seenObjects.splice(i, 1);
-      return;
-    }
-  }
-}
 
 }());
