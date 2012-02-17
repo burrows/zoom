@@ -11,17 +11,17 @@ Z.Model = Z.Object.extend(function() {
 
   this.mapper = Z.Mapper.create();
 
-  // server state
+  // source state
   this.NEW       = NEW       = 'new';
   this.EMPTY     = EMPTY     = 'empty';
   this.LOADED    = LOADED    = 'loaded';
   this.DESTROYED = DESTROYED = 'destroyed';
 
-  function setServerState(o, state) {
-    if (o.__serverState__ !== state) {
-      o.willChangeProperty('serverState');
-      o.__serverState__ = state;
-      o.didChangeProperty('serverState');
+  function setSourceState(o, state) {
+    if (o.__sourceState__ !== state) {
+      o.willChangeProperty('sourceState');
+      o.__sourceState__ = state;
+      o.didChangeProperty('sourceState');
     }
   }
 
@@ -107,7 +107,7 @@ Z.Model = Z.Object.extend(function() {
     }
   });
 
-  this.property('serverState', { readonly: true });
+  this.property('sourceState', { readonly: true });
   this.property('isDirty', { readonly: true });
   this.property('isInvalid', { readonly: true });
   this.property('isBusy', { readonly: true });
@@ -116,7 +116,7 @@ Z.Model = Z.Object.extend(function() {
   this.property('errors');
 
   this.def('stateString', function() {
-    var a = [this.serverState().toUpperCase()];
+    var a = [this.sourceState().toUpperCase()];
 
     if (this.isDirty())   { a.push('DIRTY'); }
     if (this.isInvalid()) { a.push('INVALID'); }
@@ -145,7 +145,7 @@ Z.Model = Z.Object.extend(function() {
       set: function(v) {
         var changes;
 
-        if (this.serverState() !== NEW) {
+        if (this.sourceState() !== NEW) {
           if (!this.isDirty()) {
             setStateBool(this, 'isDirty', true);
             changes = this.set('changes', Z.H());
@@ -200,7 +200,7 @@ Z.Model = Z.Object.extend(function() {
       model = this.create(attributes);
     }
 
-    setServerState(model, Z.Model.LOADED);
+    setSourceState(model, Z.Model.LOADED);
     setStateBool(model, 'isDirty', false);
     setStateBool(model, 'isInvalid', false);
     setStateBool(model, 'isBusy', false);
@@ -213,7 +213,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (!model) {
       model = this.create({id: id});
-      setServerState(model, Z.Model.EMPTY);
+      setSourceState(model, Z.Model.EMPTY);
       setStateBool(model, 'isBusy', true);
       this.mapper.fetchModel(model);
     }
@@ -222,7 +222,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetchModelDidSucceed', function() {
-    setServerState(this, LOADED);
+    setSourceState(this, LOADED);
     setStateBool(this, 'isBusy', false);
   });
 
@@ -231,19 +231,19 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('save', function() {
-    var serverState = this.serverState();
+    var sourceState = this.sourceState();
 
     if (this.isBusy()) {
       throw new Error(Z.fmt("Z.Model.save: attempted to save a BUSY model"));
     }
 
-    if (serverState === DESTROYED) {
+    if (sourceState === DESTROYED) {
       throw new Error(Z.fmt("Z.Model.save: attempted to save a DESTROYED model"));
     }
 
     if (this.isInvalid()) { return this; }
 
-    if (serverState === NEW) {
+    if (sourceState === NEW) {
       setStateBool(this, 'isBusy', true);
       this.mapper.createModel(this);
     }
@@ -256,7 +256,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('createModelDidSucceed', function() {
-    setServerState(this, LOADED);
+    setSourceState(this, LOADED);
     setStateBool(this, 'isBusy', false);
   });
 
@@ -275,7 +275,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('destroy', function() {
-    setServerState(this, DESTROYED);
+    setSourceState(this, DESTROYED);
     setStateBool(this, 'isBusy', true);
     this.mapper.destroyModel(this);
     return this;
@@ -286,9 +286,9 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('undoChanges', function() {
-    var self = this, serverState = this.serverState(), changes;
+    var self = this, sourceState = this.sourceState(), changes;
 
-    if (serverState === DESTROYED) {
+    if (sourceState === DESTROYED) {
       throw new Error("Z.Model.undoChanges: attempted to undo changes on a DESTROYED model: " + this.toString());
     }
 
@@ -404,7 +404,7 @@ Z.Model = Z.Object.extend(function() {
   this.def('initialize', function(attributes, state) {
     var associations = this.associationDescriptors(), association, k, id;
 
-    this.__serverState__ = NEW;
+    this.__sourceState__ = NEW;
     this.__isDirty__     = false;
     this.__isInvalid__   = false;
     this.__isBusy__      = false;

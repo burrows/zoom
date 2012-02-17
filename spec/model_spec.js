@@ -111,9 +111,9 @@ describe('Z.Model.load', function() {
       expect(BasicModel.fetch(127)).toBe(m);
     });
 
-    it('should set `serverState` to `LOADED`', function() {
+    it('should set `sourceState` to `LOADED`', function() {
       var m = BasicModel.load({ id: 128, foo: 's', bar: 1 });
-      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.sourceState()).toBe(Z.Model.LOADED);
     });
 
     it('should set `isDirty`, `isInvalid`, and `isBusy` to `false`', function() {
@@ -143,7 +143,7 @@ describe('Z.Model.load', function() {
 
       BasicModel.load({ id: 201, foo: 's3', bar: 3 });
       
-      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(false);
       expect(m.isInvalid()).toBe(false);
       expect(m.isBusy()).toBe(false);
@@ -167,10 +167,10 @@ describe('Z.Model.initialize', function() {
     expect(m.get('bar')).toBe(1);
   });
 
-  it('should set `serverState` to `NEW`', function() {
+  it('should set `sourceState` to `NEW`', function() {
     var m = BasicModel.create({ foo: 'abc', bar: 1 });
 
-    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.sourceState()).toBe(Z.Model.NEW);
     expect(m.isDirty()).toBe(false);
     expect(m.isInvalid()).toBe(false);
     expect(m.isBusy()).toBe(false);
@@ -218,13 +218,13 @@ describe('Z.Model.fetch', function() {
       expect(BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
     });
 
-    it('should return an instance of the model with `serverState` set to `EMPTY` and `isBusy` set to `true`', function() {
+    it('should return an instance of the model with `sourceState` set to `EMPTY` and `isBusy` set to `true`', function() {
       var m = BasicModel.fetch(19);
 
       expect(m.type()).toBe(BasicModel);
       expect(m.id()).toBe(19);
 
-      expect(m.serverState()).toBe(Z.Model.EMPTY);
+      expect(m.sourceState()).toBe(Z.Model.EMPTY);
       expect(m.isDirty()).toBe(false);
       expect(m.isInvalid()).toBe(false);
       expect(m.isBusy()).toBe(true);
@@ -240,12 +240,12 @@ describe('Z.Model.fetch', function() {
 describe('Z.Model.fetchModelDidSucceed', function() {
   beforeEach(function() { Z.Model.clearIdentityMap(); });
 
-  it('should set `serverState` to `LOADED`', function() {
+  it('should set `sourceState` to `LOADED`', function() {
     var m = BasicModel.fetch(22);
 
-    expect(m.serverState()).toBe(Z.Model.EMPTY);
+    expect(m.sourceState()).toBe(Z.Model.EMPTY);
     m.fetchModelDidSucceed();
-    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
   });
 
   it('should set `isBusy` to `false`', function() {
@@ -278,10 +278,10 @@ describe('Z.Model setting attributes', function() {
     it('should not set `isDirty`', function() {
       var m = BasicModel.create();
 
-      expect(m.serverState()).toBe(Z.Model.NEW);
+      expect(m.sourceState()).toBe(Z.Model.NEW);
       expect(m.isDirty()).toBe(false);
       m.set('foo', 'hello');
-      expect(m.serverState()).toBe(Z.Model.NEW);
+      expect(m.sourceState()).toBe(Z.Model.NEW);
       expect(m.isDirty()).toBe(false);
     });
 
@@ -297,10 +297,10 @@ describe('Z.Model setting attributes', function() {
     it('should set `isDirty`', function() {
       var m = BasicModel.load({id: 121});
 
-      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(false);
       m.set('foo', 'hello');
-      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(true);
     });
 
@@ -341,7 +341,7 @@ describe('Z.Model.save', function() {
     it("should invoke the `createModel` method on type's mapper", function() {
       var m = BasicModel.create({id: 1, foo: 'x', bar: 9 });
 
-      expect(m.serverState()).toBe(Z.Model.NEW);
+      expect(m.sourceState()).toBe(Z.Model.NEW);
       m.save();
       expect(BasicModel.mapper.createModel).toHaveBeenCalledWith(m);
       expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
@@ -364,7 +364,7 @@ describe('Z.Model.save', function() {
     it("should do nothing", function() {
       var m = BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
-      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(false);
       m.save();
       expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
@@ -409,7 +409,7 @@ describe('Z.Model.save', function() {
       m.destroy();
       m.destroyModelDidSucceed(1);
 
-      expect(m.serverState()).toBe(Z.Model.DESTROYED);
+      expect(m.sourceState()).toBe(Z.Model.DESTROYED);
 
       expect(function() {
         m.save();
@@ -419,14 +419,14 @@ describe('Z.Model.save', function() {
 });
 
 describe('Z.Model.createModelDidSucceed', function() {
-  it('should set `serverState` to `LOADED` and `isBusy` to `false`', function() {
+  it('should set `sourceState` to `LOADED` and `isBusy` to `false`', function() {
     var m = BasicModel.create({foo: 'x', bar: 2});
 
     m.save();
-    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.sourceState()).toBe(Z.Model.NEW);
     expect(m.isBusy()).toBe(true);
     m.createModelDidSucceed();
-    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
     expect(m.isBusy()).toBe(false);
   });
 });
@@ -436,10 +436,10 @@ describe('Z.Model.createModelDidFail', function() {
     var m = BasicModel.create({foo: 'x', bar: 2});
 
     m.save();
-    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.sourceState()).toBe(Z.Model.NEW);
     expect(m.isBusy()).toBe(true);
     m.createModelDidFail();
-    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.sourceState()).toBe(Z.Model.NEW);
     expect(m.isBusy()).toBe(false);
   });
 });
@@ -451,11 +451,11 @@ describe('Z.Model.updateModelDidSucceed', function() {
     m.set('foo', 'a');
     m.save();
 
-    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
     expect(m.isDirty()).toBe(true);
     expect(m.isBusy()).toBe(true);
     m.updateModelDidSucceed();
-    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
     expect(m.isDirty()).toBe(false);
     expect(m.isBusy()).toBe(false);
   });
@@ -480,11 +480,11 @@ describe('Z.Model.updateModelDidFail', function() {
     m.set('foo', 'a');
     m.save();
 
-    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
     expect(m.isDirty()).toBe(true);
     expect(m.isBusy()).toBe(true);
     m.updateModelDidFail();
-    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
     expect(m.isDirty()).toBe(true);
     expect(m.isBusy()).toBe(false);
   });
@@ -510,7 +510,7 @@ describe('Z.Model.undoChanges', function() {
       var m = BasicModel.create({foo: 'v', bar: 12});
 
       m.undoChanges();
-      expect(m.serverState()).toBe(Z.Model.NEW);
+      expect(m.sourceState()).toBe(Z.Model.NEW);
       expect(m.foo()).toBe('v');
       expect(m.bar()).toBe(12);
     });
@@ -533,7 +533,7 @@ describe('Z.Model.undoChanges', function() {
 
       m.destroy().destroyModelDidSucceed();
 
-      expect(m.serverState()).toBe(Z.Model.DESTROYED);
+      expect(m.sourceState()).toBe(Z.Model.DESTROYED);
 
       expect(function() {
         m.undoChanges();
