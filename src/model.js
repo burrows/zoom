@@ -47,11 +47,6 @@ Z.Model = Z.Object.extend(function() {
     return map && map[id] ? map[id] : null;
   }
 
-  function didSetIdentity(notification) {
-    addToIdentityMap(notification.observee);
-    this.stopObserving('id', this, didSetIdentity);
-  }
-
   function hasManyAssociationDidChange(notification) {
     var name        = notification.context.name,
         previous    = notification.previous,
@@ -103,7 +98,10 @@ Z.Model = Z.Object.extend(function() {
         throw new Error(Z.fmt("Z.Model.id (setter): overwriting a model's identity is not allowed: %@", this));
       }
 
-      return this.__id__ = v;
+      this.__id__ = v;
+      addToIdentityMap(this);
+
+      return v;
     }
   });
 
@@ -414,7 +412,6 @@ Z.Model = Z.Object.extend(function() {
     if (attributes && attributes.hasOwnProperty('id')) {
       addToIdentityMap(this);
     }
-    else { this.observe('id', this, didSetIdentity); }
 
     for (k in associations) {
       association = associations[k];
