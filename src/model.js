@@ -5,37 +5,34 @@ var slice = Array.prototype.slice;
 Z.Model = Z.Object.extend(function() {
   var attributeTypes = {},
       identityMap    = {},
-      NEW, DIRTY, INVALID, BUSY, DESTROYED;
+      NEW, EMPTY, LOADED, DESTROYED;
 
   this.isZModel = true;
 
   this.mapper = Z.Mapper.create();
 
-  // Model state bits
-  this.NEW       = NEW       = 1;
-  this.DIRTY     = DIRTY     = 2;
-  this.INVALID   = INVALID   = 4;
-  this.BUSY      = BUSY      = 8;
-  this.DESTROYED = DESTROYED = 16;
+  // server state
+  this.NEW       = NEW       = 'new';
+  this.EMPTY     = EMPTY     = 'empty';
+  this.LOADED    = LOADED    = 'loaded';
+  this.DESTROYED = DESTROYED = 'destroyed';
 
-  function setState(m, state) {
-    m.willChangeProperty('state');
-    m.__state__ = state;
-    m.didChangeProperty('state');
+  function setServerState(o, state) {
+    if (o.__serverState__ !== state) {
+      o.willChangeProperty('serverState');
+      o.__serverState__ = state;
+      o.didChangeProperty('serverState');
+    }
   }
 
-  function setStateBits(m, bits) {
-    if ((m.__state__ & bits) === bits) { return; }
-    m.willChangeProperty('state');
-    m.__state__ = m.__state__ | bits;
-    m.didChangeProperty('state');
-  }
+  function setStateBool(o, prop, b) {
+    var name = '__' + prop + '__';
 
-  function unsetStateBits(m, bits) {
-    if ((m.__state__ & bits) === 0) { return; }
-    m.willChangeProperty('state');
-    m.__state__ = m.__state__ & (~bits & 0xff);
-    m.didChangeProperty('state');
+    if (o[name] !== b) {
+      o.willChangeProperty(prop);
+      o[name] = b;
+      o.didChangeProperty(prop);
+    }
   }
 
   function addToIdentityMap(model) {
@@ -96,6 +93,10 @@ Z.Model = Z.Object.extend(function() {
     }
   }
 
+  function callValidatorFn(context, fn) {
+    return typeof fn === 'function' ? fn.call(context) : context[fn]();
+  }
+
   this.property('id', {
     set: function(v) {
       if (this.hasOwnProperty('__id__')) {
@@ -106,30 +107,20 @@ Z.Model = Z.Object.extend(function() {
     }
   });
 
-  this.property('state', { readonly: true });
+  this.property('serverState', { readonly: true });
+  this.property('isDirty', { readonly: true });
+  this.property('isInvalid', { readonly: true });
+  this.property('isBusy', { readonly: true });
 
   this.property('changes');
   this.property('errors');
 
   this.def('stateString', function() {
-    var state = this.state(), a;
+    var a = [this.serverState().toUpperCase()];
 
-    if (state & DESTROYED) {
-      return state & BUSY ? 'DESTROYED-BUSY' : 'DESTROYED';
-    }
-
-    a = [];
-
-    if (state & NEW) {
-      a.push('NEW');
-    }
-    else {
-      a.push('LOADED');
-      a.push(state & DIRTY ? 'DIRTY' : 'CLEAN');
-    }
-
-    a.push(state & INVALID ? 'INVALID' : 'VALID');
-    a.push(state & BUSY ? 'BUSY' : 'READY');
+    if (this.isDirty())   { a.push('DIRTY'); }
+    if (this.isInvalid()) { a.push('INVALID'); }
+    if (this.isBusy())    { a.push('BUSY'); }
 
     return a.join('-');
   });
@@ -152,11 +143,11 @@ Z.Model = Z.Object.extend(function() {
       },
 
       set: function(v) {
-        var state = this.__state__, changes;
+        var changes;
 
-        if (!(state & NEW)) {
-          if (!(state & DIRTY)) {
-            setStateBits(this, DIRTY);
+        if (this.serverState() !== NEW) {
+          if (!this.isDirty()) {
+            setStateBool(this, 'isDirty', true);
             changes = this.set('changes', Z.H());
           }
 
@@ -209,7 +200,10 @@ Z.Model = Z.Object.extend(function() {
       model = this.create(attributes);
     }
 
-    setState(model, 0);
+    setServerState(model, Z.Model.LOADED);
+    setStateBool(model, 'isDirty', false);
+    setStateBool(model, 'isInvalid', false);
+    setStateBool(model, 'isBusy', false);
 
     return model;
   });
@@ -219,7 +213,8 @@ Z.Model = Z.Object.extend(function() {
 
     if (!model) {
       model = this.create({id: id});
-      setState(model, BUSY);
+      setServerState(model, Z.Model.EMPTY);
+      setStateBool(model, 'isBusy', true);
       this.mapper.fetchModel(model);
     }
 
@@ -227,32 +222,33 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetchModelDidSucceed', function() {
-    unsetStateBits(this, BUSY);
+    setServerState(this, LOADED);
+    setStateBool(this, 'isBusy', false);
   });
 
   this.def('fetchModelDidFail', function() {
-    unsetStateBits(this, BUSY);
+    setStateBool(this, 'isBusy', false);
   });
 
   this.def('save', function() {
-    var state = this.state();
+    var serverState = this.serverState();
 
-    if (state & BUSY) {
+    if (this.isBusy()) {
       throw new Error(Z.fmt("Z.Model.save: attempted to save a BUSY model"));
     }
 
-    if (state & DESTROYED) {
+    if (serverState === DESTROYED) {
       throw new Error(Z.fmt("Z.Model.save: attempted to save a DESTROYED model"));
     }
 
-    if (state & INVALID) { return this; }
+    if (this.isInvalid()) { return this; }
 
-    if (state & NEW) {
-      setStateBits(this, BUSY);
+    if (serverState === NEW) {
+      setStateBool(this, 'isBusy', true);
       this.mapper.createModel(this);
     }
-    else if (state & DIRTY) {
-      setStateBits(this, BUSY);
+    else if (this.isDirty()) {
+      setStateBool(this, 'isBusy', true);
       this.mapper.updateModel(this);
     }
 
@@ -260,45 +256,48 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('createModelDidSucceed', function() {
-    unsetStateBits(this, NEW | BUSY);
+    setServerState(this, LOADED);
+    setStateBool(this, 'isBusy', false);
   });
 
   this.def('createModelDidFail', function() {
-    unsetStateBits(this, BUSY);
+    setStateBool(this, 'isBusy', false);
   });
 
   this.def('updateModelDidSucceed', function() {
-    unsetStateBits(this, DIRTY | BUSY);
+    setStateBool(this, 'isDirty', false);
+    setStateBool(this, 'isBusy', false);
     this.changes().clear();
   });
 
   this.def('updateModelDidFail', function() {
-    unsetStateBits(this, BUSY);
+    setStateBool(this, 'isBusy', false);
   });
 
   this.def('destroy', function() {
-    setState(this, DESTROYED | BUSY);
+    setServerState(this, DESTROYED);
+    setStateBool(this, 'isBusy', true);
     this.mapper.destroyModel(this);
     return this;
   });
 
   this.def('destroyModelDidSucceed', function() {
-    unsetStateBits(this, BUSY);
+    setStateBool(this, 'isBusy', false);
   });
 
   this.def('undoChanges', function() {
-    var self = this, state = this.state(), changes;
+    var self = this, serverState = this.serverState(), changes;
 
-    if (state & DESTROYED) {
+    if (serverState === DESTROYED) {
       throw new Error("Z.Model.undoChanges: attempted to undo changes on a DESTROYED model: " + this.toString());
     }
 
-    if (!(state & DIRTY)) { return this; }
+    if (!this.isDirty()) { return this; }
 
     changes = this.changes();
     changes.each(function(k, v) { self.set(k, v); });
     changes.clear();
-    unsetStateBits(this, DIRTY);
+    setStateBool(this, 'isDirty', false);
 
     return this;
   });
@@ -314,12 +313,8 @@ Z.Model = Z.Object.extend(function() {
     }
 
     this.errors().at(attr).push(message);
-    setStateBits(this, INVALID);
+    setStateBool(this, 'isInvalid', true);
   });
-
-  function callValidatorFn(context, fn) {
-    return typeof fn === 'function' ? fn.call(context) : context[fn]();
-  }
 
   this.def('validate', function() {
     var validators = this.__z_validators__, validator, opts, i, len;
@@ -347,7 +342,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
-    if (this.get('errors.size') === 0) { unsetStateBits(this, INVALID); }
+    if (this.get('errors.size') === 0) { setStateBool(this, 'isInvalid', false); }
   });
 
   this.def('toJSON', function() {
@@ -409,7 +404,10 @@ Z.Model = Z.Object.extend(function() {
   this.def('initialize', function(attributes, state) {
     var associations = this.associationDescriptors(), association, k, id;
 
-    this.__state__ = NEW;
+    this.__serverState__ = NEW;
+    this.__isDirty__     = false;
+    this.__isInvalid__   = false;
+    this.__isBusy__      = false;
 
     this.supr.apply(this, slice.call(arguments));
 

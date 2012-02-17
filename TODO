@@ -1,1 +1,5 @@
+* find a better name than serverState (sourceState?)
+* remove id observer, just do what it does in the setter?
+* batched property changes
+* default property values
 * docs

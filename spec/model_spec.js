@@ -111,14 +111,16 @@ describe('Z.Model.load', function() {
       expect(BasicModel.fetch(127)).toBe(m);
     });
 
-    it('should unset all of the state bits', function() {
-      var m = BasicModel.load({ id: 128, foo: 's', bar: 1 }), state = m.state();
+    it('should set `serverState` to `LOADED`', function() {
+      var m = BasicModel.load({ id: 128, foo: 's', bar: 1 });
+      expect(m.serverState()).toBe(Z.Model.LOADED);
+    });
 
-      expect(state & Z.Model.NEW).toBeFalsy();
-      expect(state & Z.Model.DIRTY).toBeFalsy();
-      expect(state & Z.Model.INVALID).toBeFalsy();
-      expect(state & Z.Model.BUSY).toBeFalsy();
-      expect(state & Z.Model.DESTROYED).toBeFalsy();
+    it('should set `isDirty`, `isInvalid`, and `isBusy` to `false`', function() {
+      var m = BasicModel.load({ id: 128, foo: 's', bar: 1 });
+      expect(m.isDirty()).toBe(false);
+      expect(m.isInvalid()).toBe(false);
+      expect(m.isBusy()).toBe(false);
     });
   });
 
@@ -132,22 +134,19 @@ describe('Z.Model.load', function() {
       expect(m.bar()).toBe(2);
     });
 
-    it('should unset all of the state bits', function() {
-      var m = BasicModel.load({ id: 201, foo: 's', bar: 1 }), state;
+    it('should set the state to `LOADED`', function() {
+      var m = BasicModel.load({ id: 201, foo: 's', bar: 1 });
 
       m.foo('x');
 
-      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+      expect(m.isDirty()).toBe(true);
 
       BasicModel.load({ id: 201, foo: 's3', bar: 3 });
       
-      state = m.state();
-
-      expect(state & Z.Model.NEW).toBeFalsy();
-      expect(state & Z.Model.DIRTY).toBeFalsy();
-      expect(state & Z.Model.INVALID).toBeFalsy();
-      expect(state & Z.Model.BUSY).toBeFalsy();
-      expect(state & Z.Model.DESTROYED).toBeFalsy();
+      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.isDirty()).toBe(false);
+      expect(m.isInvalid()).toBe(false);
+      expect(m.isBusy()).toBe(false);
     });
   });
 
@@ -168,14 +167,13 @@ describe('Z.Model.initialize', function() {
     expect(m.get('bar')).toBe(1);
   });
 
-  it('should set the NEW state bit', function() {
-    var m = BasicModel.create({ foo: 'abc', bar: 1 }), state = m.state();
+  it('should set `serverState` to `NEW`', function() {
+    var m = BasicModel.create({ foo: 'abc', bar: 1 });
 
-    expect(state & Z.Model.NEW).toBeTruthy();
-    expect(state & Z.Model.DIRTY).toBeFalsy();
-    expect(state & Z.Model.INVALID).toBeFalsy();
-    expect(state & Z.Model.BUSY).toBeFalsy();
-    expect(state & Z.Model.DESTROYED).toBeFalsy();
+    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.isDirty()).toBe(false);
+    expect(m.isInvalid()).toBe(false);
+    expect(m.isBusy()).toBe(false);
   });
 });
 
@@ -190,7 +188,7 @@ describe('Z.Model id property', function() {
     expect(m.id()).toBe(1);
   });
 
-  it('should add the model to the identity map once its been set for the firs time', function() {
+  it('should add the model to the identity map once its been set for the first time', function() {
     var m = BasicModel.create();
 
     m.set('id', 8734);
@@ -220,16 +218,16 @@ describe('Z.Model.fetch', function() {
       expect(BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
     });
 
-    it('should return an instance of the model with the BUSY state bit set', function() {
-      var m = BasicModel.fetch(19), state = m.state();
+    it('should return an instance of the model with `serverState` set to `EMPTY` and `isBusy` set to `true`', function() {
+      var m = BasicModel.fetch(19);
 
       expect(m.type()).toBe(BasicModel);
       expect(m.id()).toBe(19);
-      expect(state & Z.Model.NEW).toBeFalsy();
-      expect(state & Z.Model.DIRTY).toBeFalsy();
-      expect(state & Z.Model.INVALID).toBeFalsy();
-      expect(state & Z.Model.BUSY).toBeTruthy();
-      expect(state & Z.Model.DESTROYED).toBeFalsy();
+
+      expect(m.serverState()).toBe(Z.Model.EMPTY);
+      expect(m.isDirty()).toBe(false);
+      expect(m.isInvalid()).toBe(false);
+      expect(m.isBusy()).toBe(true);
     });
 
     it('should add the instance to the identity map', function() {
@@ -240,41 +238,51 @@ describe('Z.Model.fetch', function() {
 });
 
 describe('Z.Model.fetchModelDidSucceed', function() {
-  it('should unset the BUSY state bit', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+  it('should set `serverState` to `LOADED`', function() {
     var m = BasicModel.fetch(22);
 
-    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    expect(m.serverState()).toBe(Z.Model.EMPTY);
     m.fetchModelDidSucceed();
-    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+    expect(m.serverState()).toBe(Z.Model.LOADED);
+  });
+
+  it('should set `isBusy` to `false`', function() {
+    var m = BasicModel.fetch(22);
+
+    expect(m.isBusy()).toBe(true);
+    m.fetchModelDidSucceed();
+    expect(m.isBusy()).toBe(false);
   });
 });
 
 describe('Z.Model.fetchModelDidFail', function() {
   beforeEach(function() { Z.Model.clearIdentityMap(); });
 
-  it('should unset the BUSY state bit', function() {
+  it('should set `isBusy` to `false`', function() {
     var m;
 
     spyOn(BasicModel.mapper, 'fetchModel');
 
     m = BasicModel.fetch(1);
 
-    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    expect(m.isBusy()).toBe(true);
     m.fetchModelDidFail();
-    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+    expect(m.isBusy()).toBe(false);
   });
 });
 
 describe('Z.Model setting attributes', function() {
-  describe('for a NEW model', function() {
-    it('should not set the DIRTY state bit', function() {
+  describe('for a `NEW` model', function() {
+    it('should not set `isDirty`', function() {
       var m = BasicModel.create();
 
-      expect(m.state() & Z.Model.NEW).toBeTruthy();
-      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      expect(m.serverState()).toBe(Z.Model.NEW);
+      expect(m.isDirty()).toBe(false);
       m.set('foo', 'hello');
-      expect(m.state() & Z.Model.NEW).toBeTruthy();
-      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      expect(m.serverState()).toBe(Z.Model.NEW);
+      expect(m.isDirty()).toBe(false);
     });
 
     it('should not create the `changes` hash', function() {
@@ -285,15 +293,15 @@ describe('Z.Model setting attributes', function() {
     });
   });
 
-  describe('for a LOADED model', function() {
-    it('should set the DIRTY state bit', function() {
+  describe('for a `LOADED` model', function() {
+    it('should set `isDirty`', function() {
       var m = BasicModel.load({id: 121});
 
-      expect(m.state() & Z.Model.NEW).toBeFalsy();
-      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.isDirty()).toBe(false);
       m.set('foo', 'hello');
-      expect(m.state() & Z.Model.NEW).toBeFalsy();
-      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.isDirty()).toBe(true);
     });
 
     it("should create the `changes` hash containing the changed attribute's previous value", function() {
@@ -333,44 +341,44 @@ describe('Z.Model.save', function() {
     it("should invoke the `createModel` method on type's mapper", function() {
       var m = BasicModel.create({id: 1, foo: 'x', bar: 9 });
 
-      expect(m.state() & Z.Model.NEW).toBeTruthy();
+      expect(m.serverState()).toBe(Z.Model.NEW);
       m.save();
       expect(BasicModel.mapper.createModel).toHaveBeenCalledWith(m);
       expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
-  describe('for an object with the DIRTY state bit set', function() {
+  describe('for a dirty object', function() {
     it("should invoke the `updateModel` method on type's mapper", function() {
       var m = BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
       m.foo('y');
-      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+      expect(m.isDirty()).toBe(true);
       m.save();
       expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
       expect(BasicModel.mapper.updateModel).toHaveBeenCalledWith(m);
     });
   });
 
-  describe('for a model instance that is not NEW or DIRTY', function() {
+  describe('for a model instance that is not new or dirty', function() {
     it("should do nothing", function() {
-      var m = BasicModel.load({id: 1, foo: 'x', bar: 9 }), state = m.state();
+      var m = BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
-      expect(state & Z.Model.NEW).toBeFalsy();
-      expect(state & Z.Model.DIRTY).toBeFalsy();
+      expect(m.serverState()).toBe(Z.Model.LOADED);
+      expect(m.isDirty()).toBe(false);
       m.save();
       expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
       expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
-  describe('for a model that has its INVALID state bit set', function() {
+  describe('for a model that is invalid', function() {
     it("should do nothing", function() {
       var m = ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
 
       m.set('bar', 1);
       m.validate();
-      expect(m.state() & Z.Model.INVALID).toBeTruthy();
+      expect(m.isInvalid()).toBe(true);
       m.save();
 
       expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
@@ -378,14 +386,14 @@ describe('Z.Model.save', function() {
     });
   });
 
-  describe('for a model that has its BUSY state bit set', function() {
+  describe('for a model that is busy', function() {
     it('should throw an exception', function() {
       var m = BasicModel.load({id: 1, foo: 'x'});
 
       m.foo('y');
       m.save();
 
-      expect(m.state() & Z.Model.BUSY).toBeTruthy();
+      expect(m.isBusy()).toBe(true);
 
       expect(function() {
         m.save();
@@ -393,7 +401,7 @@ describe('Z.Model.save', function() {
     });
   });
 
-  describe('for a model that has its DESTROYED state bit set', function() {
+  describe('for a model that is destroyed', function() {
     it('should throw an exception', function() {
       var m = BasicModel.load({id: 1, foo: 'x', bar: 2});
 
@@ -401,7 +409,7 @@ describe('Z.Model.save', function() {
       m.destroy();
       m.destroyModelDidSucceed(1);
 
-      expect(m.state() & Z.Model.DESTROYED).toBeTruthy();
+      expect(m.serverState()).toBe(Z.Model.DESTROYED);
 
       expect(function() {
         m.save();
@@ -411,43 +419,45 @@ describe('Z.Model.save', function() {
 });
 
 describe('Z.Model.createModelDidSucceed', function() {
-  it('should unset the NEW and BUSY state bits', function() {
+  it('should set `serverState` to `LOADED` and `isBusy` to `false`', function() {
     var m = BasicModel.create({foo: 'x', bar: 2});
 
     m.save();
-    expect(m.state() & Z.Model.NEW).toBeTruthy();
-    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.isBusy()).toBe(true);
     m.createModelDidSucceed();
-    expect(m.state() & Z.Model.NEW).toBeFalsy();
-    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.isBusy()).toBe(false);
   });
 });
 
 describe('Z.Model.createModelDidFail', function() {
-  it('should unset the BUSY state bit', function() {
+  it('should `isBusy` to `false`', function() {
     var m = BasicModel.create({foo: 'x', bar: 2});
 
     m.save();
-    expect(m.state() & Z.Model.NEW).toBeTruthy();
-    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.isBusy()).toBe(true);
     m.createModelDidFail();
-    expect(m.state() & Z.Model.NEW).toBeTruthy();
-    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+    expect(m.serverState()).toBe(Z.Model.NEW);
+    expect(m.isBusy()).toBe(false);
   });
 });
 
 describe('Z.Model.updateModelDidSucceed', function() {
-  it('should unset the DIRTY and BUSY state bits', function() {
+  it('should set `isDirty` and `isBusy` to `false`', function() {
     var m = BasicModel.load({id: 224, foo: 'x', bar: 2});
 
     m.set('foo', 'a');
     m.save();
 
-    expect(m.state() & Z.Model.DIRTY).toBeTruthy();
-    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(true);
+    expect(m.isBusy()).toBe(true);
     m.updateModelDidSucceed();
-    expect(m.state() & Z.Model.DIRTY).toBeFalsy();
-    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(false);
+    expect(m.isBusy()).toBe(false);
   });
 
   it('should clear the `changes` hash', function() {
@@ -464,17 +474,19 @@ describe('Z.Model.updateModelDidSucceed', function() {
 });
 
 describe('Z.Model.updateModelDidFail', function() {
-  it('should unset the BUSY state bit', function() {
+  it('should set `isBusy` to `false`', function() {
     var m = BasicModel.load({id: 224, foo: 'x', bar: 2});
 
     m.set('foo', 'a');
     m.save();
 
-    expect(m.state() & Z.Model.DIRTY).toBeTruthy();
-    expect(m.state() & Z.Model.BUSY).toBeTruthy();
+    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(true);
+    expect(m.isBusy()).toBe(true);
     m.updateModelDidFail();
-    expect(m.state() & Z.Model.DIRTY).toBeTruthy();
-    expect(m.state() & Z.Model.BUSY).toBeFalsy();
+    expect(m.serverState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(true);
+    expect(m.isBusy()).toBe(false);
   });
 
   it('should not clear the `changes` hash', function() {
@@ -493,35 +505,35 @@ describe('Z.Model.updateModelDidFail', function() {
 describe('Z.Model.undoChanges', function() {
   beforeEach(function() { Z.Model.clearIdentityMap(); });
 
-  describe('on a NEW model', function() {
+  describe('on a new model', function() {
     it('should do nothing', function() {
       var m = BasicModel.create({foo: 'v', bar: 12});
 
       m.undoChanges();
-      expect(m.state() & Z.Model.NEW).toBeTruthy();
+      expect(m.serverState()).toBe(Z.Model.NEW);
       expect(m.foo()).toBe('v');
       expect(m.bar()).toBe(12);
     });
   });
 
-  describe('on a CLEAN model', function() {
+  describe('on a clean model', function() {
     it('should do nothing', function() {
       var m = BasicModel.load({id: 5, foo: 'v', bar: 12});
 
       m.undoChanges();
-      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      expect(m.isDirty()).toBe(false);
       expect(m.foo()).toBe('v');
       expect(m.bar()).toBe(12);
     });
   });
 
-  describe('on a DESTROYED model', function() {
+  describe('on a destroyed model', function() {
     it('throw an exception', function() {
       var m = BasicModel.load({id: 5, foo: 'v', bar: 12});
 
       m.destroy().destroyModelDidSucceed();
 
-      expect(m.state() & Z.Model.DESTROYED).toBeTruthy();
+      expect(m.serverState()).toBe(Z.Model.DESTROYED);
 
       expect(function() {
         m.undoChanges();
@@ -529,7 +541,7 @@ describe('Z.Model.undoChanges', function() {
     });
   });
 
-  describe('on a DIRTY model', function() {
+  describe('on a dirty model', function() {
     var m;
 
     beforeEach(function() {
@@ -538,7 +550,7 @@ describe('Z.Model.undoChanges', function() {
       m.bar(21);
     });
 
-    it('should set all attribute values back to their CLEAN state', function() {
+    it('should set all attribute values back to their original state', function() {
       m.undoChanges();
       expect(m.foo()).toBe('v');
       expect(m.bar()).toBe(12);
@@ -550,10 +562,10 @@ describe('Z.Model.undoChanges', function() {
       expect(m.get('changes.size')).toBe(0);
     });
 
-    it('should unset the DIRTY state bit', function() {
-      expect(m.state() & Z.Model.DIRTY).toBeTruthy();
+    it('should set `isDirty` to `false`', function() {
+      expect(m.isDirty()).toBe(true);
       m.undoChanges();
-      expect(m.state() & Z.Model.DIRTY).toBeFalsy();
+      expect(m.isDirty()).toBe(false);
     });
   });
 });
@@ -579,10 +591,10 @@ describe('Z.Model.addError', function() {
     expect(m.errors().at('foo')).toEq(Z.A('blah', 'something'));
   });
 
-  it('should set the INVALID state bit', function() {
-    expect(m.state() & Z.Model.INVALID).toBeFalsy();
+  it('should set `isInvalid` to `true`', function() {
+    expect(m.isInvalid()).toBe(false);
     m.addError('foo', 'this is an error');
-    expect(m.state() & Z.Model.INVALID).toBeTruthy();
+    expect(m.isInvalid()).toBe(true);
   });
 });
 
@@ -615,34 +627,34 @@ describe('Z.Model.validate', function() {
     expect(inlineValidatorThis).toBe(m);
   });
 
-  it('should set the INVALID state bit if any validators add an error to the `errors` hash', function() {
-    expect(m.state() & Z.Model.INVALID).toBeFalsy();
+  it('should set `isInvalid` if any validators add an error to the `errors` hash', function() {
+    expect(m.isInvalid()).toBe(false);
     m.validate();
     expect(m.errors()).toBeUndefined();
-    expect(m.state() & Z.Model.INVALID).toBeFalsy();
+    expect(m.isInvalid()).toBe(false);
     m.foo(null);
     m.validate();
     expect(m.errors().size()).toBe(1);
-    expect(m.state() & Z.Model.INVALID).toBeTruthy();
+    expect(m.isInvalid()).toBe(true);
     m.bar(8);
     m.validate();
     expect(m.errors().size()).toBe(2);
-    expect(m.state() & Z.Model.INVALID).toBeTruthy();
+    expect(m.isInvalid()).toBe(true);
   });
 
-  it('should unset the INVALID state bit if all validators do not add to the `errors` hash', function() {
+  it('should unset `isInvalid` if none of the validators add to the `errors` hash', function() {
     m.foo(null);
     m.bar(8);
 
     m.validate();
     expect(m.errors().size()).toBe(2);
-    expect(m.state() & Z.Model.INVALID).toBeTruthy();
+    expect(m.isInvalid()).toBe(true);
 
     m.foo('a');
     m.bar(21);
     m.validate();
     expect(m.errors().size()).toBe(0);
-    expect(m.state() & Z.Model.INVALID).toBeFalsy();
+    expect(m.isInvalid()).toBe(false);
   });
 
   describe('with conditional validators', function() {
