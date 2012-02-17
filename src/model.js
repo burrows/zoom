@@ -3,9 +3,7 @@
 var slice = Array.prototype.slice;
 
 Z.Model = Z.Object.extend(function() {
-  var attributeTypes = {},
-      identityMap    = {},
-      NEW, EMPTY, LOADED, DESTROYED;
+  var attributeTypes = {}, identityMap = {}, NEW, EMPTY, LOADED, DESTROYED;
 
   this.isZModel = true;
 
@@ -17,22 +15,38 @@ Z.Model = Z.Object.extend(function() {
   this.LOADED    = LOADED    = 'loaded';
   this.DESTROYED = DESTROYED = 'destroyed';
 
-  function setSourceState(o, state) {
-    if (o.__sourceState__ !== state) {
+  function setState(o, state) {
+    var source = false, dirty = false, invalid = false, busy = false;
+
+    if (state.hasOwnProperty('source') && state.source !== o.__sourceState__) {
+      source = true;
       o.willChangeProperty('sourceState');
-      o.__sourceState__ = state;
-      o.didChangeProperty('sourceState');
     }
-  }
 
-  function setStateBool(o, prop, b) {
-    var name = '__' + prop + '__';
-
-    if (o[name] !== b) {
-      o.willChangeProperty(prop);
-      o[name] = b;
-      o.didChangeProperty(prop);
+    if (state.hasOwnProperty('dirty') && state.dirty !== o.__isDirty__) {
+      dirty = true;
+      o.willChangeProperty('isDirty');
     }
+
+    if (state.hasOwnProperty('invalid') && state.invalid !== o.__isInvalid__) {
+      invalid = true;
+      o.willChangeProperty('isInvalid');
+    }
+
+    if (state.hasOwnProperty('busy') && state.busy !== o.__isBusy__) {
+      busy = true;
+      o.willChangeProperty('isBusy');
+    }
+
+    if (source)  { o.__sourceState__ = state.source; }
+    if (dirty)   { o.__isDirty__     = state.dirty; }
+    if (invalid) { o.__isInvalid__   = state.invalid; }
+    if (busy)    { o.__isBusy__      = state.busy; }
+
+    if (source)  { o.didChangeProperty('sourceState'); }
+    if (dirty)   { o.didChangeProperty('isDirty'); }
+    if (invalid) { o.didChangeProperty('isInvalid'); }
+    if (busy)    { o.didChangeProperty('isBusy'); }
   }
 
   function addToIdentityMap(model) {
@@ -145,8 +159,8 @@ Z.Model = Z.Object.extend(function() {
 
         if (this.sourceState() !== NEW) {
           if (!this.isDirty()) {
-            setStateBool(this, 'isDirty', true);
             changes = this.set('changes', Z.H());
+            setState(this, {dirty: true});
           }
 
           changes = changes || this.changes();
@@ -198,10 +212,7 @@ Z.Model = Z.Object.extend(function() {
       model = this.create(attributes);
     }
 
-    setSourceState(model, Z.Model.LOADED);
-    setStateBool(model, 'isDirty', false);
-    setStateBool(model, 'isInvalid', false);
-    setStateBool(model, 'isBusy', false);
+    setState(model, {source: LOADED, dirty: false, invalid: false, busy: false});
 
     return model;
   });
@@ -211,8 +222,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (!model) {
       model = this.create({id: id});
-      setSourceState(model, Z.Model.EMPTY);
-      setStateBool(model, 'isBusy', true);
+      setState(model, {source: EMPTY, busy: true});
       this.mapper.fetchModel(model);
     }
 
@@ -220,12 +230,11 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetchModelDidSucceed', function() {
-    setSourceState(this, LOADED);
-    setStateBool(this, 'isBusy', false);
+    setState(this, {source: LOADED, busy: false});
   });
 
   this.def('fetchModelDidFail', function() {
-    setStateBool(this, 'isBusy', false);
+    setState(this, {busy: false});
   });
 
   this.def('save', function() {
@@ -242,11 +251,11 @@ Z.Model = Z.Object.extend(function() {
     if (this.isInvalid()) { return this; }
 
     if (sourceState === NEW) {
-      setStateBool(this, 'isBusy', true);
+      setState(this, {busy: true});
       this.mapper.createModel(this);
     }
     else if (this.isDirty()) {
-      setStateBool(this, 'isBusy', true);
+      setState(this, {busy: true});
       this.mapper.updateModel(this);
     }
 
@@ -254,33 +263,30 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('createModelDidSucceed', function() {
-    setSourceState(this, LOADED);
-    setStateBool(this, 'isBusy', false);
+    setState(this, {source: LOADED, busy: false});
   });
 
   this.def('createModelDidFail', function() {
-    setStateBool(this, 'isBusy', false);
+    setState(this, {busy: false});
   });
 
   this.def('updateModelDidSucceed', function() {
-    setStateBool(this, 'isDirty', false);
-    setStateBool(this, 'isBusy', false);
     this.changes().clear();
+    setState(this, {dirty: false, busy: false});
   });
 
   this.def('updateModelDidFail', function() {
-    setStateBool(this, 'isBusy', false);
+    setState(this, {busy: false});
   });
 
   this.def('destroy', function() {
-    setSourceState(this, DESTROYED);
-    setStateBool(this, 'isBusy', true);
+    setState(this, {source: DESTROYED, busy: true});
     this.mapper.destroyModel(this);
     return this;
   });
 
   this.def('destroyModelDidSucceed', function() {
-    setStateBool(this, 'isBusy', false);
+    setState(this, {busy: false});
   });
 
   this.def('undoChanges', function() {
@@ -295,7 +301,7 @@ Z.Model = Z.Object.extend(function() {
     changes = this.changes();
     changes.each(function(k, v) { self.set(k, v); });
     changes.clear();
-    setStateBool(this, 'isDirty', false);
+    setState(this, {dirty: false});
 
     return this;
   });
@@ -311,7 +317,7 @@ Z.Model = Z.Object.extend(function() {
     }
 
     this.errors().at(attr).push(message);
-    setStateBool(this, 'isInvalid', true);
+    setState(this, {invalid: true});
   });
 
   this.def('validate', function() {
@@ -340,7 +346,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
-    if (this.get('errors.size') === 0) { setStateBool(this, 'isInvalid', false); }
+    if (this.get('errors.size') === 0) { setState(this, {invalid: false}); }
   });
 
   this.def('toJSON', function() {
