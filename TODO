@@ -1,3 +1,6 @@
+* update Z.Model.load to handle associations
+* figure out model serialization
+* implement named finders
+* default attribute values
 * batched property changes
-* default property values
 * docs

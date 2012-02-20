@@ -385,4 +385,28 @@ Z.detectOutermostRecursion = function(o1, o2, f) {
   }
 };
 
+// Resolves a path into an actual object reference. The path is assumed to be
+// relative to the given context object or the global object if a context is
+// not given.
+//
+// * `path` - A string containing the path to resolve.
+// * `ctx`  - The object to resolve the path from.
+//
+// Returns the resolved object or `undefined` if it doesn't exist.
+Z.resolve = function(path, ctx) {
+  var head, tail;
+
+  ctx  = ctx || Z.root;
+
+  if (ctx.isZObject) { return ctx.get(path); }
+
+  path = path.split('.');
+  head = path[0];
+  tail = path.slice(1);
+
+  if (tail.length === 0) { return ctx[head]; }
+
+  return ctx[head] ? Z.resolve(tail.join('.'), ctx[head]) : undefined;
+};
+
 }());
