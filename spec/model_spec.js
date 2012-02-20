@@ -1,13 +1,13 @@
 (function() {
 
-var Z = this.Z || require('zoom'), BasicModel, ValidatedModel;
+var Z = this.Z || require('zoom'), X = {}, BasicModel, ValidatedModel;
 
-BasicModel = Z.Model.extend(function() {
+X.BasicModel = BasicModel = Z.Model.extend(function() {
   this.attribute('foo', 'string');
   this.attribute('bar', 'integer');
 });
 
-ValidatedModel = Z.Model.extend(function() {
+X.ValidatedModel = ValidatedModel = Z.Model.extend(function() {
   this.attribute('foo', 'string');
   this.attribute('bar', 'integer');
   this.registerValidator('validatePresenceOfFoo');
@@ -22,6 +22,8 @@ ValidatedModel = Z.Model.extend(function() {
     if (!bar || bar < 20) { this.addError('bar', 'bar must be over 20'); }
   });
 });
+
+Z.addNamespace(X);
 
 describe('Z.Model.attribute', function() {
   it('should define a property with the given name', function() {
@@ -89,6 +91,26 @@ describe('Z.Model.attribute', function() {
       x.set('bar', '88.88');
       expect(x.get('bar')).toBe(89);
     });
+  });
+});
+
+describe('Z.Model.empty', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+  it('should return an instance of the model with `sourceState` set to `EMPTY` and the given id', function() {
+    var m = BasicModel.empty(127);
+
+    expect(m.id()).toBe(127);
+    expect(m.sourceState()).toBe(Z.Model.EMPTY);
+    expect(m.isBusy()).toBe(false);
+  });
+
+  it('should throw an exception if an instance with the given id already exists in the identity map', function() {
+    var m = BasicModel.load({id: 128});
+
+    expect(function() {
+      BasicModel.empty(128);
+    }).toThrow('Z.Model.empty: an instance of `BasicModel` with the id `128` already exists');
   });
 });
 
@@ -273,7 +295,42 @@ describe('Z.Model.fetchModelDidFail', function() {
   });
 });
 
+describe('Z.Model getting attributes', function() {
+  beforeEach(function() {
+    Z.Model.clearIdentityMap();
+    spyOn(BasicModel.mapper, 'fetchModel');
+  });
+
+  describe('for an `EMPTY` model', function() {
+    it('should invoke `fetchModel` on the mapper', function() {
+      var m = BasicModel.empty(945);
+
+      m.foo();
+      expect(BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
+    });
+
+    it('should set `isBusy` to `true`', function() {
+      var m = BasicModel.empty(945);
+      expect(m.isBusy()).toBe(false);
+      m.foo();
+      expect(m.isBusy()).toBe(true);
+    });
+  });
+});
+
 describe('Z.Model setting attributes', function() {
+  beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+  describe('for an `EMPTY` model', function() {
+    it('should throw an exception', function() {
+      var m = BasicModel.empty(222);
+
+      expect(function() {
+        m.set('foo', 'abc');
+      }).toThrow('Z.Model.set: attempted to set an attribute of an EMPTY model: ' + m.toString());
+    });
+  });
+
   describe('for a `NEW` model', function() {
     it('should not set `isDirty`', function() {
       var m = BasicModel.create();

@@ -151,13 +151,22 @@ Z.Model = Z.Object.extend(function() {
 
     this.property(name, {
       get: function() {
+        if (this.sourceState() === EMPTY) {
+          setState(this, {busy: true});
+          this.mapper.fetchModel(this);
+        }
+
         return attributeType.fromRawFn(this[privateProp]);
       },
 
       set: function(v) {
-        var changes;
+        var state = this.sourceState(), changes;
 
-        if (this.sourceState() !== NEW) {
+        if (state === EMPTY) {
+          throw new Error(Z.fmt('Z.Model.set: attempted to set an attribute of an EMPTY model: %@', this));
+        }
+
+        if (state !== NEW) {
           if (!this.isDirty()) {
             changes = this.set('changes', Z.H());
             setState(this, {dirty: true});
@@ -195,6 +204,18 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('clearIdentityMap', function() { identityMap = {}; });
+
+  this.def('empty', function(id) {
+    var m;
+
+    if (retrieveFromIdentityMap(this, id)) {
+      throw new Error(Z.fmt("Z.Model.empty: an instance of `%@` with the id `%@` already exists", this.name(), id));
+    }
+
+    m = this.create({id: id});
+    setState(m, {source: EMPTY});
+    return m;
+  });
 
   this.def('load', function(attributes) {
     var id = attributes.id, model;
@@ -466,8 +487,15 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('toString', function() {
-    return Z.fmt("#<%@:%@ (%@) %@>", this.prototypeName(), this.objectId(),
-                 this.stateString(), Z.inspect(this.toJSON()));
+    var name        = this.prototypeName(),
+        oid         = this.objectId(),
+        id          = this.id(),
+        state       = this.sourceState(),
+        stateString = this.stateString();
+
+    return state === EMPTY ?
+      Z.fmt("#<%@:%@ (%@) {id: %@}>", name, oid, stateString, id) :
+      Z.fmt("#<%@:%@ (%@) %@>", name, oid, stateString, Z.inspect(this.toJSON()));
   });
 
   function stringToRaw(v) { return v ? v.toString() : v; }
