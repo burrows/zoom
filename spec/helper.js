@@ -10,6 +10,13 @@
           return "Expected object " + Z.inspect(this.actual) + " to eq " + Z.inspect(expected);
         };
         return Z.eq(this.actual, expected);
+      },
+
+      toBe: function(expected) {
+        this.message = function() {
+          return "Expected object " + Z.inspect(this.actual) + " to be " + Z.inspect(expected);
+        };
+        return this.actual === expected;
       }
     });
   });

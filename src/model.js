@@ -61,46 +61,115 @@ Z.Model = Z.Object.extend(function() {
     return map && map[id] ? map[id] : null;
   }
 
-  function hasManyAssociationDidChange(notification) {
-    var name        = notification.context.name,
-        previous    = notification.previous,
-        current     = notification.current,
-        association = this.associationDescriptorFor(name),
-        inverse     = association.inverse,
-        i, len;
+  function _setHasOne(model, descriptor, val) {
+    var name   = descriptor.name,
+        master = descriptor.master,
+        key    = Z.fmt("__%@__", name),
+        state  = model.sourceState();
 
-    if (!inverse) { return; }
-
-    if (current && !association.addingInverse) {
-      for (i = 0, len = current.size(); i < len; i++) {
-        current.at(i).inverseDidAdd(inverse, this);
-      }
+    if (master && state === EMPTY) {
+      throw new Error(Z.fmt("Z.Model hasOne setter (%@): master side is EMPTY: %@", name, val));
     }
 
-    if (previous && !association.removingInverse) {
-      for (i = 0, len = previous.size(); i < len; i++) {
-        previous.at(i).inverseDidRemove(inverse, this);
-      }
-    }
-  }
-
-  function hasOneAssociationDidChange(notification) {
-    var name        = notification.context.name,
-        previous    = notification.previous,
-        current     = notification.current,
-        association = this.associationDescriptorFor(name),
-        inverse     = association.inverse;
-
-    if (!inverse) { return; }
-
-    if (current && !association.addingInverse) {
-      current.inverseDidAdd(inverse, this);
+    if (master && model.isBusy()) {
+      throw new Error(Z.fmt("Z.Model hasOne setter (%@): master side is BUSY: %@", name, val));
     }
 
-    if (previous && !association.removingInverse) {
-      previous.inverseDidRemove(inverse, this);
+    model.willChangeProperty(name);
+    model[key] = val;
+    model.didChangeProperty(name);
+
+    if (state === LOADED && descriptor.master) {
+      setState(model, {dirty: true});
     }
   }
+
+  function inverseDidRemove(model, associationName) {
+    var descriptor = model.associationDescriptorFor(associationName);
+
+    if (descriptor.type === 'hasOne') {
+      _setHasOne(model, descriptor, null);
+    }
+    //else if (association.type === 'hasMany') {
+    //  //this.get(associationName).remove(object);
+    //}
+  }
+
+  function inverseDidAdd(model, associationName, val) {
+    var descriptor = model.associationDescriptorFor(associationName);
+
+    if (descriptor.type === 'hasOne') {
+      _setHasOne(model, descriptor, val);
+    }
+    //else if (association.type === 'hasMany') {
+    //}
+  }
+
+  function getHasOne(model, descriptor) {
+    return model[Z.fmt("__%@__", descriptor.name)] || null;
+  }
+
+  function setHasOne(model, descriptor, val) {
+    var name    = descriptor.name,
+        key     = Z.fmt("__%@__", name),
+        prev    = model[key],
+        type    = Z.resolve(descriptor.modelType),
+        inverse = descriptor.inverse,
+        state   = model.sourceState();
+
+    if (val && (!Z.isZObject(val) || (!val.isA(type)))) {
+      throw new Error(Z.fmt("Z.Model hasOne setter (%@): expected an object of type `%@`, but was given: %@", name, descriptor.modelType, val));
+    }
+
+    _setHasOne(model, descriptor, val);
+
+    if (inverse && prev) { inverseDidRemove(prev, inverse); }
+    if (inverse && val) { inverseDidAdd(val, inverse, model); }
+
+    return val;
+  }
+
+
+  //function hasManyAssociationDidChange(notification) {
+  //  var name        = notification.context.name,
+  //      previous    = notification.previous,
+  //      current     = notification.current,
+  //      association = this.associationDescriptorFor(name),
+  //      inverse     = association.inverse,
+  //      i, len;
+
+  //  if (!inverse) { return; }
+
+  //  if (current && !association.addingInverse) {
+  //    for (i = 0, len = current.size(); i < len; i++) {
+  //      current.at(i).inverseDidAdd(inverse, this);
+  //    }
+  //  }
+
+  //  if (previous && !association.removingInverse) {
+  //    for (i = 0, len = previous.size(); i < len; i++) {
+  //      previous.at(i).inverseDidRemove(inverse, this);
+  //    }
+  //  }
+  //}
+
+  //function hasOneAssociationDidChange(notification) {
+  //  var name        = notification.context.name,
+  //      previous    = notification.previous,
+  //      current     = notification.current,
+  //      association = this.associationDescriptorFor(name),
+  //      inverse     = association.inverse;
+
+  //  if (!inverse) { return; }
+
+  //  if (current && !association.addingInverse) {
+  //    current.inverseDidAdd(inverse, this);
+  //  }
+
+  //  if (previous && !association.removingInverse) {
+  //    previous.inverseDidRemove(inverse, this);
+  //  }
+  //}
 
   function callValidatorFn(context, fn) {
     return typeof fn === 'function' ? fn.call(context) : context[fn]();
@@ -395,18 +464,19 @@ Z.Model = Z.Object.extend(function() {
     });
   });
 
-  this.def('hasOne', function(name, model, opts) {
+  this.def('hasOne', function(name, type, opts) {
     var assocKey   = Z.fmt("__z_association_%@__", name),
-        privateKey = Z.fmt("__%@__", name);
+        privateKey = Z.fmt("__%@__", name),
+        descriptor;
 
-    this[assocKey] = Z.merge(Z.dup(opts), {
-      type: 'hasOne', name: name, model: model
+    this[assocKey] = descriptor = Z.merge(Z.dup(opts), {
+      type: 'hasOne', name: name, modelType: type
     });
 
     this.property(name, {
-      get: function() {
-        return this[privateKey] = this[privateKey] || null;
-      }
+      auto: false,
+      get: function() { return getHasOne(this, descriptor); },
+      set: function(v) { return setHasOne(this, descriptor, v); }
     });
   });
 
@@ -427,8 +497,6 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('initialize', function(attributes, state) {
-    var associations = this.associationDescriptors(), association, k, id;
-
     this.__sourceState__ = NEW;
     this.__isDirty__     = false;
     this.__isInvalid__   = false;
@@ -439,51 +507,6 @@ Z.Model = Z.Object.extend(function() {
     if (attributes && attributes.hasOwnProperty('id')) {
       addToIdentityMap(this);
     }
-
-    for (k in associations) {
-      association = associations[k];
-
-      if (association.type === 'hasMany') {
-        this.observe(k + '.@', this, hasManyAssociationDidChange, {
-          previous: true, current: true, context: { name: k }
-        });
-      }
-      else if (association.type === 'hasOne') {
-        this.observe(k, this, hasOneAssociationDidChange, {
-          previous: true, current: true, context: { name: k }
-        });
-      }
-    }
-  });
-
-  this.def('inverseDidAdd', function(associationName, object) {
-    var association = this.associationDescriptorFor(associationName);
-
-    association.addingInverse = true;
-
-    if (association.type === 'hasOne') {
-      this.set(associationName, object);
-    }
-    else if (association.type === 'hasMany') {
-      this.get(associationName).push(object);
-    }
-
-    association.addingInverse = false;
-  });
-
-  this.def('inverseDidRemove', function(associationName, object) {
-    var association = this.associationDescriptorFor(associationName);
-
-    association.removingInverse = true;
-
-    if (association.type === 'hasOne') {
-      this.set(associationName, null);
-    }
-    else if (association.type === 'hasMany') {
-      this.get(associationName).remove(object);
-    }
-
-    association.removingInverse = false;
   });
 
   this.def('toString', function() {
