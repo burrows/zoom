@@ -427,84 +427,77 @@ describe('Z.Model.save', function() {
     spyOn(Z.Model.mapper, 'updateModel');
   });
 
-  describe('for an object with the NEW state bit set', function() {
-    it("should invoke the `createModel` method on type's mapper", function() {
-      var m = Test.BasicModel.create({id: 1, foo: 'x', bar: 9 });
+  it("should invoke the mapper's `createModel` method when the model state is `NEW`", function() {
+    var m = Test.BasicModel.create({id: 1, foo: 'x', bar: 9 });
 
-      expect(m.sourceState()).toBe(Z.Model.NEW);
-      m.save();
-      expect(Test.BasicModel.mapper.createModel).toHaveBeenCalledWith(m);
-      expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
-    });
+    expect(m.sourceState()).toBe(Z.Model.NEW);
+    m.save();
+    expect(Test.BasicModel.mapper.createModel).toHaveBeenCalledWith(m);
+    expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
-  describe('for a dirty object', function() {
-    it("should invoke the `updateModel` method on type's mapper", function() {
-      var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
+  it("should invoke the mapper's `updateModel` method when the model is `DIRTY`", function() {
+    var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
-      m.foo('y');
-      expect(m.isDirty()).toBe(true);
-      m.save();
-      expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
-      expect(Test.BasicModel.mapper.updateModel).toHaveBeenCalledWith(m);
-    });
+    m.foo('y');
+    expect(m.isDirty()).toBe(true);
+    m.save();
+    expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
+    expect(Test.BasicModel.mapper.updateModel).toHaveBeenCalledWith(m);
   });
 
-  describe('for a model instance that is not new or dirty', function() {
-    it("should do nothing", function() {
-      var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
+  it("should do nothing for a model that is `LOADED` and `isDirty` is false", function() {
+    var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
-      expect(m.sourceState()).toBe(Z.Model.LOADED);
-      expect(m.isDirty()).toBe(false);
-      m.save();
-      expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
-      expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
-    });
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(false);
+    m.save();
+    expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
+    expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
-  describe('for a model that is invalid', function() {
-    it("should do nothing", function() {
-      var m = Test.ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
+  it("should do nothing for a model that is invalid", function() {
+    var m = Test.ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
 
-      m.set('bar', 1);
-      m.validate();
-      expect(m.isInvalid()).toBe(true);
-      m.save();
+    m.set('bar', 1);
+    expect(m.isInvalid()).toBe(false);
+    m.save();
+    expect(m.isInvalid()).toBe(true);
 
-      expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
-      expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
-    });
+    expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
+    expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
-  describe('for a model that is busy', function() {
-    it('should throw an exception', function() {
-      var m = Test.BasicModel.load({id: 1, foo: 'x'});
+  it('should throw an exception for a model that is `BUSY`', function() {
+    var m = Test.BasicModel.load({id: 1, foo: 'x'});
 
-      m.foo('y');
+    m.foo('y');
+    m.save();
+
+    expect(m.isBusy()).toBe(true);
+
+    expect(function() {
       m.save();
-
-      expect(m.isBusy()).toBe(true);
-
-      expect(function() {
-        m.save();
-      }).toThrow('Z.Model.save: attempted to save a BUSY model');
-    });
+    }).toThrow("Test.BasicModel.save: can't save a model in the LOADED-DIRTY-BUSY state: " + m.toString());
   });
 
-  describe('for a model that is destroyed', function() {
-    it('should throw an exception', function() {
-      var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 2});
+  it('should throw an exception for a model that is `DESTROYED`', function() {
+    var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 2});
 
-      spyOn(Test.BasicModel.mapper, 'destroyModel');
-      m.destroy();
-      m.destroyModelDidSucceed(1);
+    m.destroy().destroyModelDidSucceed(1);
+    expect(m.sourceState()).toBe(Z.Model.DESTROYED);
 
-      expect(m.sourceState()).toBe(Z.Model.DESTROYED);
+    expect(function() {
+      m.save();
+    }).toThrow("Test.BasicModel.save: can't save a model in the DESTROYED state: " + m.toString());
+  });
 
-      expect(function() {
-        m.save();
-      }).toThrow('Z.Model.save: attempted to save a DESTROYED model');
-    });
+  it('should throw an exception for a model that is `EMPTY`', function() {
+    var m = Test.BasicModel.empty(88);
+
+    expect(function() {
+      m.save();
+    }).toThrow("Test.BasicModel.save: can't save a model in the EMPTY state: " + m.toString());
   });
 });
 

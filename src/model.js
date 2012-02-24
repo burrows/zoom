@@ -281,19 +281,18 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('save', function() {
-    var sourceState = this.sourceState();
+    var state = this.sourceState();
 
-    if (this.isBusy()) {
-      throw new Error(Z.fmt("Z.Model.save: attempted to save a BUSY model"));
+    if ((state !== NEW && state !== LOADED) || this.isBusy()) {
+      throw new Error(Z.fmt("%@.save: can't save a model in the %@ state: %@",
+                           this.type().name(), this.stateString(), this));
     }
 
-    if (sourceState === DESTROYED) {
-      throw new Error(Z.fmt("Z.Model.save: attempted to save a DESTROYED model"));
-    }
+    this.validate();
 
     if (this.isInvalid()) { return this; }
 
-    if (sourceState === NEW) {
+    if (state === NEW) {
       setState(this, {busy: true});
       this.mapper.createModel(this);
     }
