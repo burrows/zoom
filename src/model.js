@@ -324,12 +324,31 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('destroy', function() {
-    setState(this, {source: DESTROYED, busy: true});
-    this.mapper.destroyModel(this);
+    var state = this.sourceState();
+
+    if (state === DESTROYED) { return this; }
+
+    if (this.isBusy()) {
+      throw new Error(Z.fmt("%@.destroy: can't destroy a model in the %@ state: %@",
+                            this.type().name(), this.stateString(), this));
+    }
+
+    if (state === NEW) {
+      this.destroyModelDidSucceed();
+    }
+    else {
+      setState(this, {busy: true});
+      this.mapper.destroyModel(this);
+    }
+
     return this;
   });
 
   this.def('destroyModelDidSucceed', function() {
+    setState(this, {source: DESTROYED, busy: false, invalid: false, dirty: false});
+  });
+
+  this.def('destroyModelDidFail', function() {
     setState(this, {busy: false});
   });
 

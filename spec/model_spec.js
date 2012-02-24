@@ -592,6 +592,108 @@ describe('Z.Model.updateModelDidFail', function() {
   });
 });
 
+describe('Z.Model.destroy', function() {
+  var m;
+
+  beforeEach(function() {
+    m = Test.BasicModel.load({id: 144});
+    spyOn(Test.BasicModel.mapper, 'destroyModel');
+  });
+
+  it("should invoke the mapper's `destroyModel` method", function() {
+    m.destroy();
+    expect(m.mapper.destroyModel).toHaveBeenCalledWith(m);
+  });
+
+  it('should set `isBusy` to `true`', function() {
+    expect(m.isBusy()).toBe(false);
+    m.destroy();
+    expect(m.isBusy()).toBe(true);
+  });
+
+  it('should work when the model state is `EMPTY`', function() {
+    m = Test.BasicModel.empty(447);
+
+    m.destroy();
+
+    expect(m.mapper.destroyModel).toHaveBeenCalledWith(m);
+    expect(m.isBusy()).toBe(true);
+  });
+
+  it('should not invoke the mapper `destroyModel` method when the model state is `NEW`', function() {
+    m = Test.BasicModel.create();
+
+    m.destroy();
+
+    expect(m.mapper.destroyModel).not.toHaveBeenCalled();
+    expect(m.sourceState()).toBe(Z.Model.DESTROYED);
+    expect(m.isBusy()).toBe(false);
+  });
+
+  it('should do nothing when the model state is `DESTROYED`', function() {
+    m.destroy().destroyModelDidSucceed();
+
+    expect(m.sourceState()).toBe(Z.Model.DESTROYED);
+    expect(m.isBusy()).toBe(false);
+
+    m.destroy();
+
+    expect(m.mapper.destroyModel.callCount).toBe(1);
+    expect(m.sourceState()).toBe(Z.Model.DESTROYED);
+    expect(m.isBusy()).toBe(false);
+  });
+
+  it('should throw an exception when the model is `BUSY`', function() {
+    m.refresh();
+
+    expect(m.isBusy()).toBe(true);
+
+    expect(function() {
+      m.destroy();
+    }).toThrow("Test.BasicModel.destroy: can't destroy a model in the LOADED-BUSY state: " + m.toString());
+  });
+});
+
+describe('Z.Model.destroyModelDidSucceed', function() {
+  it('should set the state to `DESTROYED` and clear `isDirty`, `isBusy` and `isInvalid`', function() {
+    var m = Test.ValidatedModel.load({id: 144, foo: 'hey', bar: 222});
+
+    m.bar(9);
+    m.validate();
+    m.destroy();
+
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(true);
+    expect(m.isInvalid()).toBe(true);
+    expect(m.isBusy()).toBe(true);
+    m.destroyModelDidSucceed();
+    expect(m.sourceState()).toBe(Z.Model.DESTROYED);
+    expect(m.isDirty()).toBe(false);
+    expect(m.isInvalid()).toBe(false);
+    expect(m.isBusy()).toBe(false);
+  });
+});
+
+describe('Z.Model.destroyModelDidFail', function() {
+  it('should not change the state and clear `isBusy`', function() {
+    var m = Test.ValidatedModel.load({id: 144, foo: 'hey', bar: 222});
+
+    m.bar(9);
+    m.validate();
+    m.destroy();
+
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(true);
+    expect(m.isInvalid()).toBe(true);
+    expect(m.isBusy()).toBe(true);
+    m.destroyModelDidFail();
+    expect(m.sourceState()).toBe(Z.Model.LOADED);
+    expect(m.isDirty()).toBe(true);
+    expect(m.isInvalid()).toBe(true);
+    expect(m.isBusy()).toBe(false);
+  });
+});
+
 describe('Z.Model.undoChanges', function() {
   describe('on a new model', function() {
     it('should do nothing', function() {
