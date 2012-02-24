@@ -171,8 +171,9 @@ Z.Model = Z.Object.extend(function() {
       set: function(v) {
         var state = this.sourceState(), changes;
 
-        if (state === EMPTY) {
-          throw new Error(Z.fmt('Z.Model.set: attempted to set an attribute of an EMPTY model: %@', this));
+        if (state === EMPTY || this.isBusy()) {
+          throw new Error(Z.fmt("%@ attribute setter: can't set attributes on a model in the %@ state: %@",
+                                this.type().name(), this.stateString(), this));
         }
 
         if (state !== NEW) {

@@ -355,14 +355,22 @@ describe('Z.Model getting attributes', function() {
 });
 
 describe('Z.Model setting attributes', function() {
-  describe('for an `EMPTY` model', function() {
-    it('should throw an exception', function() {
-      var m = Test.BasicModel.empty(222);
+  it('should throw an exception for a model that is `EMPTY`', function() {
+    var m = Test.BasicModel.empty(222);
 
-      expect(function() {
-        m.set('foo', 'abc');
-      }).toThrow('Z.Model.set: attempted to set an attribute of an EMPTY model: ' + m.toString());
-    });
+    expect(function() {
+      m.set('foo', 'abc');
+    }).toThrow("Test.BasicModel attribute setter: can't set attributes on a model in the EMPTY state: " + m.toString());
+  });
+
+  it('should throw an exception for a model that is `BUSY`', function() {
+    var m = Test.BasicModel.load({id: 1});
+
+    m.refresh();
+    expect(m.isBusy()).toBe(true);
+    expect(function() {
+      m.foo('x');
+    }).toThrow("Test.BasicModel attribute setter: can't set attributes on a model in the LOADED-BUSY state: " + m.toString());
   });
 
   describe('for a `NEW` model', function() {
