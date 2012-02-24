@@ -285,6 +285,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
+  this.def('clear', function() { return this.splice(0, this.size()); });
+
   this.def('slice', function(i, n) {
     var len = this.size(), a;
 

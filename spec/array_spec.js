@@ -357,6 +357,18 @@ describe('Z.Array.slice$', function() {
   });
 });
 
+describe('Z.Array.clear', function() {
+  it('should remove all items from the array', function() {
+    var a = Z.A(1,2,3);
+
+    expect(a.size()).toBe(3);
+    a.clear();
+    expect(a.size()).toBe(0);
+    a.clear();
+    expect(a.size()).toBe(0);
+  });
+});
+
 describe('Z.Array.eq', function() {
   it('should return `true` when the arrays are identical', function() {
     var a = Z.Array.create();
