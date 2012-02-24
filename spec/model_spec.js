@@ -284,6 +284,54 @@ describe('Z.Model.fetchModelDidFail', function() {
   });
 });
 
+describe('Z.Model.refresh', function() {
+  var m;
+
+  beforeEach(function() {
+    spyOn(Test.BasicModel.mapper, 'fetchModel');
+    m = Test.BasicModel.load({id: 34});
+  });
+
+  it("should invoke the mapper's `fetchModel` method", function() {
+    m.refresh();
+    expect(Test.BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
+  });
+
+  it("should return the receiver", function() {
+    expect(m.refresh()).toBe(m);
+  });
+
+  it("should set `isBusy` to `true`", function() {
+    expect(m.isBusy()).toBe(false);
+    m.refresh();
+    expect(m.isBusy()).toBe(true);
+  });
+
+  it('should throw an exception when called on a `NEW` model', function() {
+    m = Test.BasicModel.create();
+
+    expect(function() {
+      m.refresh();
+    }).toThrow("Test.BasicModel.refresh: can't refresh a model in the NEW state: " + m.toString());
+  });
+
+  it('should throw an exception when called on an `BUSY` model', function() {
+    m.refresh();
+    expect(m.isBusy()).toBe(true);
+
+    expect(function() {
+      m.refresh();
+    }).toThrow("Test.BasicModel.refresh: can't refresh a model in the LOADED-BUSY state: " + m.toString());
+  });
+
+  it('should throw an exception when called on a `DESTROYED` model', function() {
+    m.destroy().destroyModelDidSucceed();
+    expect(function() {
+      m.refresh();
+    }).toThrow("Test.BasicModel.refresh: can't refresh a model in the DESTROYED state: " + m.toString());
+  });
+});
+
 describe('Z.Model getting attributes', function() {
   beforeEach(function() {
     spyOn(Test.BasicModel.mapper, 'fetchModel');
@@ -875,7 +923,7 @@ describe('Z.Model `hasOne` association', function() {
     it('should throw an exception when setting on a `BUSY` model', function() {
       var f = Test.Foo.load({id: 12});
 
-      f.fetch();
+      f.refresh();
       expect(f.isBusy()).toBe(true);
       expect(function() {
         f.bar(Test.Bar.create());
@@ -1049,7 +1097,7 @@ describe('Z.Model `hasMany` association', function() {
     it('should throw an exception when adding objects to a `BUSY` model', function() {
       var f = Test.Foo.load({id: 12});
 
-      f.fetch();
+      f.refresh();
       expect(f.isBusy()).toBe(true);
       expect(function() {
         f.bars().push(Test.Bar.create());

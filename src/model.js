@@ -248,13 +248,28 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetch', function(id) {
-    var model = this.isPrototype ?
-      retrieveFromIdentityMap(this, id) || this.empty(id) : this;
+    var model = retrieveFromIdentityMap(this, id);
 
-    setState(model, {busy: true});
-    model.mapper.fetchModel(model);
+    if (!model) {
+      model = this.empty(id);
+      setState(model, {busy: true});
+      model.mapper.fetchModel(model);
+    }
 
     return model;
+  });
+
+  this.def('refresh', function() {
+    var state = this.sourceState();
+
+    if (state !== LOADED || this.isBusy()) {
+      throw new Error(Z.fmt("%@.refresh: can't refresh a model in the %@ state: %@",
+                            this.type().name(), this.stateString(), this));
+    }
+
+    setState(this, {busy: true});
+    this.mapper.fetchModel(this);
+    return this;
   });
 
   this.def('fetchModelDidSucceed', function() {
