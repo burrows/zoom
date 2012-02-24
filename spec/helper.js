@@ -2,6 +2,9 @@
   var root = typeof exports !== 'undefined' ? global : window;
 
   root.Z = root.Z || require('zoom');
+  root.Test = root.Test || {};
+
+  Z.addNamespace(Test, 'Test');
 
   beforeEach(function() {
     return this.addMatchers({

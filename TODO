@@ -1,4 +1,3 @@
-* rename sourceState to state
 * update Z.Model.load to handle associations
 * update private methods to use `this`
 * figure out model serialization

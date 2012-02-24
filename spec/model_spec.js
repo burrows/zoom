@@ -1,13 +1,15 @@
 (function() {
 
-var Z = this.Z || require('zoom'), X = {}, BasicModel, ValidatedModel;
+if (typeof Z === 'undefined') { require('./helper'); }
 
-X.BasicModel = BasicModel = Z.Model.extend(function() {
+beforeEach(function() { Z.Model.clearIdentityMap(); });
+
+Test.BasicModel = Z.Model.extend(function() {
   this.attribute('foo', 'string');
   this.attribute('bar', 'integer');
 });
 
-X.ValidatedModel = ValidatedModel = Z.Model.extend(function() {
+Test.ValidatedModel = Z.Model.extend(function() {
   this.attribute('foo', 'string');
   this.attribute('bar', 'integer');
   this.registerValidator('validatePresenceOfFoo');
@@ -23,19 +25,17 @@ X.ValidatedModel = ValidatedModel = Z.Model.extend(function() {
   });
 });
 
-Z.addNamespace(X);
-
 describe('Z.Model.attribute', function() {
   it('should define a property with the given name', function() {
-    expect(BasicModel.hasProperty('foo')).toBe(true);
-    expect(BasicModel.create({foo: 'hello'}).foo()).toBe('hello');
-    expect(BasicModel.create({foo: 'goodbye'}).get('foo')).toBe('goodbye');
+    expect(Test.BasicModel.hasProperty('foo')).toBe(true);
+    expect(Test.BasicModel.create({foo: 'hello'}).foo()).toBe('hello');
+    expect(Test.BasicModel.create({foo: 'goodbye'}).get('foo')).toBe('goodbye');
   });
 
   describe('`string` type', function() {
     var x;
 
-    beforeEach(function() { x = BasicModel.create(); });
+    beforeEach(function() { x = Test.BasicModel.create(); });
 
     it('should not transform string values', function() {
       x.set('foo', 'regular string');
@@ -64,7 +64,7 @@ describe('Z.Model.attribute', function() {
   describe('`integer` type', function() {
     var x;
 
-    beforeEach(function() { x = BasicModel.create(); });
+    beforeEach(function() { x = Test.BasicModel.create(); });
 
     it('should not transform integer values', function() {
       x.set('bar', 9);
@@ -95,10 +95,8 @@ describe('Z.Model.attribute', function() {
 });
 
 describe('Z.Model.empty', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
-
   it('should return an instance of the model with `sourceState` set to `EMPTY` and the given id', function() {
-    var m = BasicModel.empty(127);
+    var m = Test.BasicModel.empty(127);
 
     expect(m.id()).toBe(127);
     expect(m.sourceState()).toBe(Z.Model.EMPTY);
@@ -106,40 +104,38 @@ describe('Z.Model.empty', function() {
   });
 
   it('should throw an exception if an instance with the given id already exists in the identity map', function() {
-    var m = BasicModel.load({id: 128});
+    var m = Test.BasicModel.load({id: 128});
 
     expect(function() {
-      BasicModel.empty(128);
-    }).toThrow('Z.Model.empty: an instance of `BasicModel` with the id `128` already exists');
+      Test.BasicModel.empty(128);
+    }).toThrow('Z.Model.empty: an instance of `Test.BasicModel` with the id `128` already exists');
   });
 });
 
 describe('Z.Model.load', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
-
   describe('given attributes containing an id not in the identity map', function() {
     it('should return a new model instance with the given attributes', function() {
-      var m = BasicModel.load({ id: 126, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 126, foo: 's', bar: 1 });
 
-      expect(m.type()).toBe(BasicModel);
+      expect(m.type()).toBe(Test.BasicModel);
       expect(m.id()).toBe(126);
       expect(m.foo()).toBe('s');
       expect(m.bar()).toBe(1);
     });
 
     it('should add the new model instance to the identity map', function() {
-      var m = BasicModel.load({ id: 127, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 127, foo: 's', bar: 1 });
 
-      expect(BasicModel.fetch(127)).toBe(m);
+      expect(Test.BasicModel.fetch(127)).toBe(m);
     });
 
     it('should set `sourceState` to `LOADED`', function() {
-      var m = BasicModel.load({ id: 128, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 128, foo: 's', bar: 1 });
       expect(m.sourceState()).toBe(Z.Model.LOADED);
     });
 
     it('should set `isDirty`, `isInvalid`, and `isBusy` to `false`', function() {
-      var m = BasicModel.load({ id: 128, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 128, foo: 's', bar: 1 });
       expect(m.isDirty()).toBe(false);
       expect(m.isInvalid()).toBe(false);
       expect(m.isBusy()).toBe(false);
@@ -148,23 +144,23 @@ describe('Z.Model.load', function() {
 
   describe('given attributes containing an id that is in the identity map', function() {
     it('should update and return the object that is already in the identity map', function() {
-      var m = BasicModel.load({ id: 200, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 200, foo: 's', bar: 1 });
 
-      BasicModel.load({ id: 200, foo: 's2', bar: 2 });
+      Test.BasicModel.load({ id: 200, foo: 's2', bar: 2 });
 
       expect(m.foo()).toBe('s2');
       expect(m.bar()).toBe(2);
     });
 
     it('should set the state to `LOADED`', function() {
-      var m = BasicModel.load({ id: 201, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 201, foo: 's', bar: 1 });
 
       m.foo('x');
 
       expect(m.isDirty()).toBe(true);
 
-      BasicModel.load({ id: 201, foo: 's3', bar: 3 });
-      
+      Test.BasicModel.load({ id: 201, foo: 's3', bar: 3 });
+
       expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(false);
       expect(m.isInvalid()).toBe(false);
@@ -175,7 +171,7 @@ describe('Z.Model.load', function() {
   describe('given attributes that do not include an id', function() {
     it('should throw an exception', function() {
       expect(function() {
-        BasicModel.load({ foo: 's', bar: 1 });
+        Test.BasicModel.load({ foo: 's', bar: 1 });
       }).toThrow('Z.Model.load: an `id` attribute is required');
     });
   });
@@ -183,14 +179,14 @@ describe('Z.Model.load', function() {
 
 describe('Z.Model.initialize', function() {
   it('should set the given attributes', function() {
-    var m = BasicModel.create({ foo: 'abc', bar: 1 });
+    var m = Test.BasicModel.create({ foo: 'abc', bar: 1 });
 
     expect(m.foo()).toBe('abc');
     expect(m.get('bar')).toBe(1);
   });
 
   it('should set `sourceState` to `NEW`', function() {
-    var m = BasicModel.create({ foo: 'abc', bar: 1 });
+    var m = Test.BasicModel.create({ foo: 'abc', bar: 1 });
 
     expect(m.sourceState()).toBe(Z.Model.NEW);
     expect(m.isDirty()).toBe(false);
@@ -201,7 +197,7 @@ describe('Z.Model.initialize', function() {
 
 describe('Z.Model id property', function() {
   it('should throw an exception when setting it when it already has a non-null value', function() {
-    var m = BasicModel.create({ id: 1 });
+    var m = Test.BasicModel.create({ id: 1 });
 
     expect(m.id()).toBe(1);
     expect(function() {
@@ -211,39 +207,36 @@ describe('Z.Model id property', function() {
   });
 
   it('should add the model to the identity map once its been set for the first time', function() {
-    var m = BasicModel.create();
+    var m = Test.BasicModel.create();
 
     m.set('id', 8734);
-    expect(BasicModel.fetch(8734)).toBe(m);
+    expect(Test.BasicModel.fetch(8734)).toBe(m);
   });
 });
 
 describe('Z.Model.fetch', function() {
   beforeEach(function() {
-    spyOn(BasicModel.mapper, 'fetchModel');
-    Z.Model.clearIdentityMap();
+    spyOn(Test.BasicModel.mapper, 'fetchModel');
   });
 
   describe('for an id of a model that is already loaded into the identity map', function() {
     it('should return a reference to the already existing object', function() {
-      var m = BasicModel.load({id: 1234, foo: 'a', bar: 2});
+      var m = Test.BasicModel.load({id: 1234, foo: 'a', bar: 2});
 
-      expect(BasicModel.fetch(1234)).toBe(m);
+      expect(Test.BasicModel.fetch(1234)).toBe(m);
     });
   });
 
   describe('for an id of a model that is not in the identity map', function() {
-    beforeEach(function() { Z.Model.clearIdentityMap(); });
-
     it("should invoke the `fetchModel` method on the type's mapper", function() {
-      var m = BasicModel.fetch(18);
-      expect(BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
+      var m = Test.BasicModel.fetch(18);
+      expect(Test.BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
     });
 
     it('should return an instance of the model with `sourceState` set to `EMPTY` and `isBusy` set to `true`', function() {
-      var m = BasicModel.fetch(19);
+      var m = Test.BasicModel.fetch(19);
 
-      expect(m.type()).toBe(BasicModel);
+      expect(m.type()).toBe(Test.BasicModel);
       expect(m.id()).toBe(19);
 
       expect(m.sourceState()).toBe(Z.Model.EMPTY);
@@ -253,17 +246,15 @@ describe('Z.Model.fetch', function() {
     });
 
     it('should add the instance to the identity map', function() {
-      var m = BasicModel.fetch(20);
-      expect(BasicModel.fetch(20)).toBe(m);
+      var m = Test.BasicModel.fetch(20);
+      expect(Test.BasicModel.fetch(20)).toBe(m);
     });
   });
 });
 
 describe('Z.Model.fetchModelDidSucceed', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
-
   it('should set `sourceState` to `LOADED`', function() {
-    var m = BasicModel.fetch(22);
+    var m = Test.BasicModel.fetch(22);
 
     expect(m.sourceState()).toBe(Z.Model.EMPTY);
     m.fetchModelDidSucceed();
@@ -271,7 +262,7 @@ describe('Z.Model.fetchModelDidSucceed', function() {
   });
 
   it('should set `isBusy` to `false`', function() {
-    var m = BasicModel.fetch(22);
+    var m = Test.BasicModel.fetch(22);
 
     expect(m.isBusy()).toBe(true);
     m.fetchModelDidSucceed();
@@ -280,14 +271,12 @@ describe('Z.Model.fetchModelDidSucceed', function() {
 });
 
 describe('Z.Model.fetchModelDidFail', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
-
   it('should set `isBusy` to `false`', function() {
     var m;
 
-    spyOn(BasicModel.mapper, 'fetchModel');
+    spyOn(Test.BasicModel.mapper, 'fetchModel');
 
-    m = BasicModel.fetch(1);
+    m = Test.BasicModel.fetch(1);
 
     expect(m.isBusy()).toBe(true);
     m.fetchModelDidFail();
@@ -297,20 +286,19 @@ describe('Z.Model.fetchModelDidFail', function() {
 
 describe('Z.Model getting attributes', function() {
   beforeEach(function() {
-    Z.Model.clearIdentityMap();
-    spyOn(BasicModel.mapper, 'fetchModel');
+    spyOn(Test.BasicModel.mapper, 'fetchModel');
   });
 
   describe('for an `EMPTY` model', function() {
     it('should invoke `fetchModel` on the mapper', function() {
-      var m = BasicModel.empty(945);
+      var m = Test.BasicModel.empty(945);
 
       m.foo();
-      expect(BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
+      expect(Test.BasicModel.mapper.fetchModel).toHaveBeenCalledWith(m);
     });
 
     it('should set `isBusy` to `true`', function() {
-      var m = BasicModel.empty(945);
+      var m = Test.BasicModel.empty(945);
       expect(m.isBusy()).toBe(false);
       m.foo();
       expect(m.isBusy()).toBe(true);
@@ -319,11 +307,9 @@ describe('Z.Model getting attributes', function() {
 });
 
 describe('Z.Model setting attributes', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
-
   describe('for an `EMPTY` model', function() {
     it('should throw an exception', function() {
-      var m = BasicModel.empty(222);
+      var m = Test.BasicModel.empty(222);
 
       expect(function() {
         m.set('foo', 'abc');
@@ -333,7 +319,7 @@ describe('Z.Model setting attributes', function() {
 
   describe('for a `NEW` model', function() {
     it('should not set `isDirty`', function() {
-      var m = BasicModel.create();
+      var m = Test.BasicModel.create();
 
       expect(m.sourceState()).toBe(Z.Model.NEW);
       expect(m.isDirty()).toBe(false);
@@ -343,7 +329,7 @@ describe('Z.Model setting attributes', function() {
     });
 
     it('should not create the `changes` hash', function() {
-      var m = BasicModel.create();
+      var m = Test.BasicModel.create();
       expect(m.get('changes')).toBeUndefined();
       m.set('bar', 9);
       expect(m.get('changes')).toBeUndefined();
@@ -352,7 +338,7 @@ describe('Z.Model setting attributes', function() {
 
   describe('for a `LOADED` model', function() {
     it('should set `isDirty`', function() {
-      var m = BasicModel.load({id: 121});
+      var m = Test.BasicModel.load({id: 121});
 
       expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(false);
@@ -362,7 +348,7 @@ describe('Z.Model setting attributes', function() {
     });
 
     it("should create the `changes` hash containing the changed attribute's previous value", function() {
-      var m = BasicModel.load({id: 123, bar: 8});
+      var m = Test.BasicModel.load({id: 123, bar: 8});
 
       expect(m.get('changes')).toBeUndefined();
       m.set('bar', 9);
@@ -372,7 +358,7 @@ describe('Z.Model setting attributes', function() {
     });
 
     it('should only add the attribute to the `changes` hash if it has yet to be changed', function() {
-      var m = BasicModel.load({id: 123, foo: 'a', bar: 8});
+      var m = Test.BasicModel.load({id: 123, foo: 'a', bar: 8});
 
       m.set('foo', 'b');
       expect(m.get('changes.foo')).toBe('a');
@@ -389,63 +375,62 @@ describe('Z.Model setting attributes', function() {
 
 describe('Z.Model.save', function() {
   beforeEach(function() {
-    Z.Model.clearIdentityMap();
     spyOn(Z.Model.mapper, 'createModel');
     spyOn(Z.Model.mapper, 'updateModel');
   });
 
   describe('for an object with the NEW state bit set', function() {
     it("should invoke the `createModel` method on type's mapper", function() {
-      var m = BasicModel.create({id: 1, foo: 'x', bar: 9 });
+      var m = Test.BasicModel.create({id: 1, foo: 'x', bar: 9 });
 
       expect(m.sourceState()).toBe(Z.Model.NEW);
       m.save();
-      expect(BasicModel.mapper.createModel).toHaveBeenCalledWith(m);
-      expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
+      expect(Test.BasicModel.mapper.createModel).toHaveBeenCalledWith(m);
+      expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
   describe('for a dirty object', function() {
     it("should invoke the `updateModel` method on type's mapper", function() {
-      var m = BasicModel.load({id: 1, foo: 'x', bar: 9 });
+      var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
       m.foo('y');
       expect(m.isDirty()).toBe(true);
       m.save();
-      expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
-      expect(BasicModel.mapper.updateModel).toHaveBeenCalledWith(m);
+      expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
+      expect(Test.BasicModel.mapper.updateModel).toHaveBeenCalledWith(m);
     });
   });
 
   describe('for a model instance that is not new or dirty', function() {
     it("should do nothing", function() {
-      var m = BasicModel.load({id: 1, foo: 'x', bar: 9 });
+      var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
 
       expect(m.sourceState()).toBe(Z.Model.LOADED);
       expect(m.isDirty()).toBe(false);
       m.save();
-      expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
-      expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
+      expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
+      expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
   describe('for a model that is invalid', function() {
     it("should do nothing", function() {
-      var m = ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
+      var m = Test.ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
 
       m.set('bar', 1);
       m.validate();
       expect(m.isInvalid()).toBe(true);
       m.save();
 
-      expect(BasicModel.mapper.createModel).not.toHaveBeenCalled();
-      expect(BasicModel.mapper.updateModel).not.toHaveBeenCalled();
+      expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
+      expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
     });
   });
 
   describe('for a model that is busy', function() {
     it('should throw an exception', function() {
-      var m = BasicModel.load({id: 1, foo: 'x'});
+      var m = Test.BasicModel.load({id: 1, foo: 'x'});
 
       m.foo('y');
       m.save();
@@ -460,9 +445,9 @@ describe('Z.Model.save', function() {
 
   describe('for a model that is destroyed', function() {
     it('should throw an exception', function() {
-      var m = BasicModel.load({id: 1, foo: 'x', bar: 2});
+      var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 2});
 
-      spyOn(BasicModel.mapper, 'destroyModel');
+      spyOn(Test.BasicModel.mapper, 'destroyModel');
       m.destroy();
       m.destroyModelDidSucceed(1);
 
@@ -477,7 +462,7 @@ describe('Z.Model.save', function() {
 
 describe('Z.Model.createModelDidSucceed', function() {
   it('should set `sourceState` to `LOADED` and `isBusy` to `false`', function() {
-    var m = BasicModel.create({foo: 'x', bar: 2});
+    var m = Test.BasicModel.create({foo: 'x', bar: 2});
 
     m.save();
     expect(m.sourceState()).toBe(Z.Model.NEW);
@@ -490,7 +475,7 @@ describe('Z.Model.createModelDidSucceed', function() {
 
 describe('Z.Model.createModelDidFail', function() {
   it('should `isBusy` to `false`', function() {
-    var m = BasicModel.create({foo: 'x', bar: 2});
+    var m = Test.BasicModel.create({foo: 'x', bar: 2});
 
     m.save();
     expect(m.sourceState()).toBe(Z.Model.NEW);
@@ -503,7 +488,7 @@ describe('Z.Model.createModelDidFail', function() {
 
 describe('Z.Model.updateModelDidSucceed', function() {
   it('should set `isDirty` and `isBusy` to `false`', function() {
-    var m = BasicModel.load({id: 224, foo: 'x', bar: 2});
+    var m = Test.BasicModel.load({id: 224, foo: 'x', bar: 2});
 
     m.set('foo', 'a');
     m.save();
@@ -518,7 +503,7 @@ describe('Z.Model.updateModelDidSucceed', function() {
   });
 
   it('should clear the `changes` hash', function() {
-    var m = BasicModel.load({id: 224, foo: 'x', bar: 2});
+    var m = Test.BasicModel.load({id: 224, foo: 'x', bar: 2});
 
     m.set('foo', 'a');
     m.set('bar', 3);
@@ -532,7 +517,7 @@ describe('Z.Model.updateModelDidSucceed', function() {
 
 describe('Z.Model.updateModelDidFail', function() {
   it('should set `isBusy` to `false`', function() {
-    var m = BasicModel.load({id: 224, foo: 'x', bar: 2});
+    var m = Test.BasicModel.load({id: 224, foo: 'x', bar: 2});
 
     m.set('foo', 'a');
     m.save();
@@ -547,7 +532,7 @@ describe('Z.Model.updateModelDidFail', function() {
   });
 
   it('should not clear the `changes` hash', function() {
-    var m = BasicModel.load({id: 224, foo: 'x', bar: 2});
+    var m = Test.BasicModel.load({id: 224, foo: 'x', bar: 2});
 
     m.set('foo', 'a');
     m.set('bar', 3);
@@ -560,11 +545,9 @@ describe('Z.Model.updateModelDidFail', function() {
 });
 
 describe('Z.Model.undoChanges', function() {
-  beforeEach(function() { Z.Model.clearIdentityMap(); });
-
   describe('on a new model', function() {
     it('should do nothing', function() {
-      var m = BasicModel.create({foo: 'v', bar: 12});
+      var m = Test.BasicModel.create({foo: 'v', bar: 12});
 
       m.undoChanges();
       expect(m.sourceState()).toBe(Z.Model.NEW);
@@ -575,7 +558,7 @@ describe('Z.Model.undoChanges', function() {
 
   describe('on a clean model', function() {
     it('should do nothing', function() {
-      var m = BasicModel.load({id: 5, foo: 'v', bar: 12});
+      var m = Test.BasicModel.load({id: 5, foo: 'v', bar: 12});
 
       m.undoChanges();
       expect(m.isDirty()).toBe(false);
@@ -586,7 +569,7 @@ describe('Z.Model.undoChanges', function() {
 
   describe('on a destroyed model', function() {
     it('throw an exception', function() {
-      var m = BasicModel.load({id: 5, foo: 'v', bar: 12});
+      var m = Test.BasicModel.load({id: 5, foo: 'v', bar: 12});
 
       m.destroy().destroyModelDidSucceed();
 
@@ -602,7 +585,7 @@ describe('Z.Model.undoChanges', function() {
     var m;
 
     beforeEach(function() {
-      m = BasicModel.load({id: 5, foo: 'v', bar: 12});
+      m = Test.BasicModel.load({id: 5, foo: 'v', bar: 12});
       m.foo('x');
       m.bar(21);
     });
@@ -631,8 +614,7 @@ describe('Z.Model.addError', function() {
   var m;
 
   beforeEach(function() {
-    Z.Model.clearIdentityMap();
-    m = ValidatedModel.load({id: 9, foo: 'hey', bar: 99});
+    m = Test.ValidatedModel.load({id: 9, foo: 'hey', bar: 99});
   });
 
   it("should create the `errors` hash if it doesn't exist", function() {
@@ -658,7 +640,7 @@ describe('Z.Model.addError', function() {
 describe('Z.Model.validate', function() {
   var m, inlineValidatorRan, inlineValidatorThis;
 
-  ValidatedModel.open(function() {
+  Test.ValidatedModel.open(function() {
     this.registerValidator(function() {
       inlineValidatorRan  = true;
       inlineValidatorThis = this;
@@ -666,8 +648,7 @@ describe('Z.Model.validate', function() {
   });
 
   beforeEach(function() {
-    Z.Model.clearIdentityMap();
-    m = ValidatedModel.load({id: 4, foo: 'xyz', bar: 76});
+    m = Test.ValidatedModel.load({id: 4, foo: 'xyz', bar: 76});
     inlineValidatorRan  = false;
     inlineValidatorThis = null;
   });
@@ -773,11 +754,11 @@ describe('Z.Model.validate', function() {
 
 describe('Z.Model.clearIdentityMap', function() {
   it('should remove all objects from the identity map', function() {
-    var m = BasicModel.create({id: 1111});
+    var m = Test.BasicModel.create({id: 1111});
 
-    expect(BasicModel.fetch(1111)).toBe(m);
+    expect(Test.BasicModel.fetch(1111)).toBe(m);
     Z.Model.clearIdentityMap();
-    expect(BasicModel.fetch(1111)).not.toBe(m);
+    expect(Test.BasicModel.fetch(1111)).not.toBe(m);
   });
 });
 
@@ -800,43 +781,295 @@ describe('Z.Model.toJSON', function() {
   });
 });
 
-describe('Z.Model many-to-one association', function() {
-  var Foo, Bar;
+describe('Z.Model `hasOne` association', function() {
+  describe('with no inverse and `master` option set to `false`', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasOne('bar', 'Test.Bar', {master: false});
+      });
 
-  Foo = Z.Model.extend(function() {
-    this.hasMany('bars', 'Bar', { inverse: 'foo' });
+      Test.Bar = Z.Model.extend();
+    });
+
+    it('should create a property with the given name', function() {
+      expect(Test.Foo.hasProperty('bar')).toBe(true);
+    });
+
+    it('should initialize the `hasOne` property to `null`', function() {
+      expect(Test.Foo.create().bar()).toBe(null);
+    });
+
+    it('should not mark the model as `DIRTY` when setting the hasOne side', function() {
+      var f = Test.Foo.load({id: 91}), b = Test.Bar.create({id: 121});
+
+      expect(f.isDirty()).toBe(false);
+      f.bar(b);
+      expect(f.isDirty()).toBe(false);
+    });
+
+    it('should not mark the model as `DIRTY` when unsetting the hasOne side', function() {
+      var f = Test.Foo.load({id: 91}), b = Test.Bar.create({id: 121});
+
+      expect(f.isDirty()).toBe(false);
+      f.bar(b);
+      expect(f.isDirty()).toBe(false);
+      f.bar(null);
+      expect(f.isDirty()).toBe(false);
+    });
+
+    it('should throw an exception when setting an object of the wrong type', function() {
+      var baz = Z.Model.extend().create(), f = Test.Foo.create();
+
+      expect(function() {
+        f.bar(baz);
+      }).toThrow(Z.fmt('Test.Foo.bar: expected an object of type `Test.Bar` but received %@ instead', baz));
+    });
   });
 
-  Bar = Z.Model.extend(function() {
-    this.hasOne('foo', 'Foo', { inverse: 'bars' });
+  describe('with no inverse and `master` option set to `true`', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasOne('bar', 'Test.Bar', {master: true});
+      });
+
+      Test.Bar = Z.Model.extend();
+    });
+
+    it('should mark the model as `DIRTY` when setting', function() {
+      var f = Test.Foo.load({id: 12});
+
+      expect(f.isDirty()).toBe(false);
+      f.bar(Test.Bar.create());
+      expect(f.isDirty()).toBe(true);
+    });
+
+    it('should mark the model as `DIRTY` when clearing', function() {
+      var f = Test.Foo.load({id: 12}), b = Test.Bar.load({id: 19});
+
+      f.bar(b);
+      f.save().updateModelDidSucceed();
+
+      expect(f.isDirty()).toBe(false);
+      f.bar(null);
+      expect(f.isDirty()).toBe(true);
+    });
+
+    it('should throw an exception when setting on an `EMPTY` model', function() {
+      var f = Test.Foo.empty(4);
+
+      expect(function() {
+        f.bar(Test.Bar.create());
+      }).toThrow("Test.Foo.bar: can't set a hasOne association when the master side is EMPTY: " + f.toString());
+    });
+
+    it('should throw an exception when setting on a `DESTROYED` model', function() {
+      var f = Test.Foo.load({id: 9});
+
+      f.destroy().destroyModelDidSucceed();
+
+      expect(function() {
+        f.bar(Test.Bar.create());
+      }).toThrow("Test.Foo.bar: can't set a hasOne association when the master side is DESTROYED: " + f.toString());
+    });
+
+    it('should throw an exception when setting on a `BUSY` model', function() {
+      var f = Test.Foo.load({id: 12});
+
+      f.fetch();
+      expect(f.isBusy()).toBe(true);
+      expect(function() {
+        f.bar(Test.Bar.create());
+      }).toThrow("Test.Foo.bar: can't set a hasOne association when the master side is LOADED-BUSY: " + f.toString());
+    });
   });
 
-  beforeEach(function() {
-    Z.root.Foo = Foo;
-    Z.root.Bar = Bar;
+  describe('with `hasOne` inverse', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasOne('bar', 'Test.Bar', {inverse: 'foo'});
+      });
+
+      Test.Bar = Z.Model.extend(function() {
+        this.hasOne('foo', 'Test.Foo', {inverse: 'bar'});
+      });
+    });
+
+    it('should set the receiver as the inverse when setting', function() {
+      var f1 = Test.Foo.create(),
+          f2 = Test.Foo.create(),
+          b1 = Test.Bar.create(),
+          b2 = Test.Bar.create();
+
+      f1.bar(b1);
+      expect(b1.foo()).toBe(f1);
+
+      b2.foo(f2);
+      expect(b2.foo()).toBe(f2);
+    });
+
+    it('should clear both sides of the association when setting one side to `null`', function() {
+      var f = Test.Foo.create(), b = Test.Bar.create();
+
+      f.bar(b);
+      expect(f.bar()).toBe(b);
+      expect(b.foo()).toBe(f);
+      f.bar(null);
+      expect(f.bar()).toBe(null);
+      expect(b.foo()).toBe(null);
+    });
   });
 
-  afterEach(function() {
-    Z.del(Z.root, 'Foo');
-    Z.del(Z.root, 'Bar');
+  describe('with `hasMany` inverse', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasOne('bar', 'Test.Bar', {inverse: 'foos'});
+      });
+
+      Test.Bar = Z.Model.extend(function() {
+        this.hasMany('foos', 'Test.Foo', {inverse: 'bar'});
+      });
+    });
+
+    it('should add the receiver to the inverse array when setting', function() {
+      var f1 = Test.Foo.create(), f2 = Test.Foo.create(), b = Test.Bar.create();
+
+      f1.bar(b);
+      expect(b.foos()).toEq(Z.A(f1));
+      f2.bar(b);
+      expect(b.foos()).toEq(Z.A(f1, f2));
+    });
+
+    it('should remove the receiver from teh inverse array when clearing', function() {
+      var f1 = Test.Foo.create(), f2 = Test.Foo.create(), b = Test.Bar.create();
+
+      f1.bar(b);
+      f2.bar(b);
+
+      expect(b.foos()).toEq(Z.A(f1, f2));
+
+      f1.bar(null);
+      expect(b.foos()).toEq(Z.A(f2));
+      f2.bar(null);
+      expect(b.foos()).toEq(Z.A());
+    });
+  });
+});
+
+describe('Z.Model `hasMany` association', function() {
+  describe('with no inverse and `master` option set to `false`', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasMany('bars', 'Test.Bar', {master: false});
+      });
+
+      Test.Bar = Z.Model.extend();
+    });
+
+    it('should create a property with the given name', function() {
+      expect(Test.Foo.hasProperty('bars')).toBe(true);
+    });
+
+    it('should initialize the `hasMany` property to an empty `Z.Array`', function() {
+      expect(Test.Foo.create().bars()).toEq(Z.A());
+    });
+
+    it('should not mark the model as `DIRTY` when adding objects', function() {
+      var f = Test.Foo.load({id: 12});
+
+      expect(f.isDirty()).toBe(false);
+      f.bars().push(Test.Bar.create());
+      expect(f.isDirty()).toBe(false);
+    });
+
+    it('should not mark the model as `DIRTY` when removing objects', function() {
+      var f = Test.Foo.load({id: 12});
+
+      expect(f.isDirty()).toBe(false);
+      f.bars().push(Test.Bar.create());
+      expect(f.isDirty()).toBe(false);
+      f.bars().pop();
+      expect(f.isDirty()).toBe(false);
+    });
+
+    it('should throw an exception when adding objects of the wrong type', function() {
+      var baz = Z.Model.extend().create(), f = Test.Foo.create();
+
+      expect(function() {
+        f.bars().push(baz);
+      }).toThrow(Z.fmt('Test.Foo.bars: expected an object of type `Test.Bar` but received %@ instead', baz));
+    });
   });
 
-  it('should create properties on each side of the association', function() {
-    expect(Foo.hasProperty('bars')).toBe(true);
-    expect(Bar.hasProperty('foo')).toBe(true);
+  describe('with no inverse and `master` option set to `true`', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasMany('bars', 'Test.Bar', {master: true});
+      });
+
+      Test.Bar = Z.Model.extend();
+    });
+
+    it('should mark the model as `DIRTY` when adding objects', function() {
+      var f = Test.Foo.load({id: 12});
+
+      expect(f.isDirty()).toBe(false);
+      f.bars().push(Test.Bar.create());
+      expect(f.isDirty()).toBe(true);
+    });
+
+    it('should mark the model as `DIRTY` when removing objects', function() {
+      var f = Test.Foo.load({id: 12}), b = Test.Bar.load({id: 19});
+
+      f.bars().push(b);
+      f.save().updateModelDidSucceed();
+
+      expect(f.isDirty()).toBe(false);
+      f.bars().pop();
+      expect(f.isDirty()).toBe(true);
+    });
+
+    it('should throw an exception when adding objects to an `EMPTY` model', function() {
+      var f = Test.Foo.empty(4);
+
+      expect(function() {
+        f.bars().push(Test.Bar.create());
+      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the master side is EMPTY: " + f.toString());
+    });
+
+    it('should throw an exception when adding objects to a `DESTROYED` model', function() {
+      var f = Test.Foo.load({id: 12});
+
+      f.destroy().destroyModelDidSucceed();
+
+      expect(function() {
+        f.bars().push(Test.Bar.create());
+      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the master side is DESTROYED: " + f.toString());
+    });
+
+    it('should throw an exception when adding objects to a `BUSY` model', function() {
+      var f = Test.Foo.load({id: 12});
+
+      f.fetch();
+      expect(f.isBusy()).toBe(true);
+      expect(function() {
+        f.bars().push(Test.Bar.create());
+      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the master side is LOADED-BUSY: " + f.toString());
+    });
   });
 
-  it('should initialize hasMany property to an empty Z.Array', function() {
-    expect(Foo.create().bars()).toEq(Z.A());
-  });
+  describe('with `hasOne` inverse', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasMany('bars', 'Test.Bar', {inverse: 'foo'});
+      });
 
-  it('should initialize hasOne property to null', function() {
-    expect(Bar.create().foo()).toBe(null);
-  });
+      Test.Bar = Z.Model.extend(function() {
+        this.hasOne('foo', 'Test.Foo', {inverse: 'bars'});
+      });
+    });
 
-  describe('adding objects to the hasMany side', function() {
-    it('should set the inverse on the hasOne side if the `inverse` option is set on the hasMany side', function() {
-      var f = Foo.create(), b1 = Bar.create(), b2 = Bar.create();
+    it('should set the inverse on the hasOne side when adding to the hasMany side', function() {
+      var f = Test.Foo.create(), b1 = Test.Bar.create(), b2 = Test.Bar.create();
 
       expect(b1.foo()).toBe(null);
       expect(b2.foo()).toBe(null);
@@ -847,11 +1080,9 @@ describe('Z.Model many-to-one association', function() {
       expect(b1.foo()).toBe(f);
       expect(b2.foo()).toBe(f);
     });
-  });
 
-  describe('removing objects from the hasMany side', function() {
-    it('should clear the inverse on the hasOne side', function() {
-      var f = Foo.create(), b1 = Bar.create(), b2 = Bar.create();
+    it('should clear the inverse on the hasOne side when removing from the hasMany side', function() {
+      var f = Test.Foo.create(), b1 = Test.Bar.create(), b2 = Test.Bar.create();
 
       f.bars().push(b1);
       f.bars().push(b2);
@@ -861,11 +1092,9 @@ describe('Z.Model many-to-one association', function() {
       expect(b1.foo()).toBe(f);
       expect(b2.foo()).toBe(null);
     });
-  });
 
-  describe('clearing the Z.Array object on the hasMany side', function() {
-    it('should clear the inverse on all items previously in the array', function() {
-      var f = Foo.create(), b1 = Bar.create(), b2 = Bar.create();
+    it('should clear the inverse on the hasOne side when the hasMany side is cleared', function() {
+      var f = Test.Foo.create(), b1 = Test.Bar.create(), b2 = Test.Bar.create();
 
       f.bars().push(b1);
       f.bars().push(b2);
@@ -877,69 +1106,21 @@ describe('Z.Model many-to-one association', function() {
     });
   });
 
-  describe('setting an object on the hasOne side', function() {
-    it('should add the receiver to the array on the hasMany side', function() {
-      var f = Foo.create(), b = Bar.create();
+  describe('with `hasMany` inverse', function() {
+    beforeEach(function() {
+      Test.Foo = Z.Model.extend(function() {
+        this.hasMany('bars', 'Test.Bar', {inverse: 'foos'});
+      });
 
-      expect(b.foo()).toBe(null);
-      expect(f.bars()).toEq(Z.A());
-      b.set('foo', f);
-      expect(b.foo()).toBe(f);
-      expect(f.bars()).toEq(Z.A(b));
+      Test.Bar = Z.Model.extend(function() {
+        this.hasMany('foos', 'Test.Foo', {inverse: 'bars'});
+      });
     });
 
-    it('should remove the receiver from its previous association if one exists', function() {
-      var f1 = Foo.create(), f2 = Foo.create(), b = Bar.create();
-
-      b.foo(f1);
-      expect(f1.bars()).toEq(Z.A(b));
-      expect(f2.bars()).toEq(Z.A());
-      b.foo(f2);
-      expect(f1.bars()).toEq(Z.A());
-      expect(f2.bars()).toEq(Z.A(b));
-      b.foo(null);
-      expect(f1.bars()).toEq(Z.A());
-      expect(f2.bars()).toEq(Z.A());
-    });
-  });
-});
-
-describe('Z.Model many-to-many association', function() {
-  var Foo, Bar;
-
-  Foo = Z.Model.extend(function() {
-    this.hasMany('bars', 'Bar', { inverse: 'foos' });
-  });
-
-  Bar = Z.Model.extend(function() {
-    this.hasMany('foos', 'Foo', { inverse: 'bars' });
-  });
-
-  beforeEach(function() {
-    Z.root.Foo = Foo;
-    Z.root.Bar = Bar;
-  });
-
-  afterEach(function() {
-    Z.del(Z.root, 'Foo');
-    Z.del(Z.root, 'Bar');
-  });
-
-  it('should create properties on each side of the association', function() {
-    expect(Foo.hasProperty('bars')).toBe(true);
-    expect(Bar.hasProperty('foos')).toBe(true);
-  });
-
-  it('should initialize both hasMany properties to empty Z.Arrays', function() {
-    expect(Foo.create().bars()).toEq(Z.A());
-    expect(Bar.create().foos()).toEq(Z.A());
-  });
-
-  describe('adding objects to the association', function() {
-    it("should add the given object to the receiver's array and the receiver to the given object's array", function() {
-      var f1 = Foo.create(),
-          b1 = Bar.create(),
-          b2 = Bar.create();
+    it('should add to the other side when an object is added', function() {
+      var f1 = Test.Foo.create(),
+          b1 = Test.Bar.create(),
+          b2 = Test.Bar.create();
 
       expect(f1.bars()).toEq(Z.A());
       expect(b1.foos()).toEq(Z.A());
@@ -957,13 +1138,11 @@ describe('Z.Model many-to-many association', function() {
       expect(b1.foos()).toEq(Z.A(f1));
       expect(b2.foos()).toEq(Z.A(f1));
     });
-  });
 
-  describe('removing objects from the association', function() {
-    it("should remove the given object from the receiver's array and the receiver from the given object's array", function() {
-      var f1 = Foo.create(),
-          b1 = Bar.create(),
-          b2 = Bar.create();
+    it('should remove from the other side when an object is added', function() {
+      var f1 = Test.Foo.create(),
+          b1 = Test.Bar.create(),
+          b2 = Test.Bar.create();
 
       f1.bars().push(b1);
       f1.bars().push(b2);
@@ -983,169 +1162,6 @@ describe('Z.Model many-to-many association', function() {
       expect(f1.bars()).toEq(Z.A());
       expect(b1.foos()).toEq(Z.A());
       expect(b2.foos()).toEq(Z.A());
-    });
-  });
-});
-
-describe('Z.Model one-to-one association', function() {
-  var Foo, Bar, Baz;
-
-  Foo = Z.Model.extend(function() {
-    this.hasOne('bar', 'Bar', { inverse: 'foo', master: true });
-  });
-
-  Bar = Z.Model.extend(function() {
-    this.hasOne('foo', 'Foo', { inverse: 'bar' });
-  });
-
-  Baz = Z.Model.extend();
-
-  beforeEach(function() {
-    Z.Model.clearIdentityMap();
-    Z.root.Foo = Foo;
-    Z.root.Bar = Bar;
-  });
-
-  afterEach(function() {
-    Z.del(Z.root, 'Foo');
-    Z.del(Z.root, 'Bar');
-  });
-
-  it('should create properties on each side of the association', function() {
-    expect(Foo.hasProperty('bar')).toBe(true);
-    expect(Bar.hasProperty('foo')).toBe(true);
-  });
-
-  it('should initialize both hasOne properties to null', function() {
-    expect(Foo.create().bar()).toBe(null);
-    expect(Bar.create().foo()).toBe(null);
-  });
-
-  describe('setting one side of the association', function() {
-    it("should set receiver as the inverse", function() {
-      var f1 = Foo.create(),
-          f2 = Foo.create(),
-          b1 = Bar.create(),
-          b2 = Bar.create();
-
-      f1.bar(b1);
-      expect(b1.foo()).toBe(f1);
-
-      b2.foo(f2);
-      expect(b2.foo()).toBe(f2);
-    });
-
-    it('should clear both sides of the association when one side is set to null', function() {
-      var f = Foo.create(), b = Bar.create();
-
-      f.bar(b);
-      expect(f.bar()).toBe(b);
-      expect(b.foo()).toBe(f);
-      f.bar(null);
-      expect(f.bar()).toBe(null);
-      expect(b.foo()).toBe(null);
-    });
-
-    it('should throw an exception if the given value is not of the correct type', function() {
-      var f = Foo.create(), baz = Baz.create();
-
-      expect(function() {
-        f.bar(baz);
-      }).toThrow('Z.Model hasOne setter (bar): expected an object of type `Bar`, but was given: ' + baz.toString());
-    });
-
-    it('should throw an exception if the master side model is EMPTY', function() {
-      var f = Foo.empty(9), b = Bar.create();
-
-      expect(function() {
-        f.bar(b);
-      }).toThrow('Z.Model hasOne setter (bar): master side is EMPTY: ' + b.toString());
-
-      expect(function() {
-        b.foo(f);
-      }).toThrow('Z.Model hasOne setter (bar): master side is EMPTY: ' + b.toString());
-    });
-
-    it('should not throw an exception when the non-master side is EMPTY', function() {
-      var f1 = Foo.create(),
-          b1 = Bar.empty(21),
-          f2 = Foo.create(),
-          b2 = Bar.empty(22);
-
-      f1.bar(b1);
-      expect(f1.bar()).toBe(b1);
-      expect(b1.foo()).toBe(f1);
-
-      b2.foo(f2);
-      expect(f2.bar()).toBe(b2);
-      expect(b2.foo()).toBe(f2);
-    });
-
-    it('should throw an exception if the master side model is BUSY', function() {
-      var f = Foo.create(), b = Bar.create();
-
-      spyOn(f.mapper, 'createModel');
-
-      f.save();
-
-      expect(function() {
-        f.bar(b);
-      }).toThrow('Z.Model hasOne setter (bar): master side is BUSY: ' + b.toString());
-
-      expect(function() {
-        b.foo(f);
-      }).toThrow('Z.Model hasOne setter (bar): master side is BUSY: ' + b.toString());
-    });
-
-    it('should not throw an exception when the non-master side is BUSY', function() {
-      var f1 = Foo.create(),
-          b1 = Bar.create(),
-          f2 = Foo.create(),
-          b2 = Bar.create();
-
-      spyOn(Bar.mapper, 'createModel');
-
-      b1.save();
-      b2.save();
-
-      expect(b1.isBusy()).toBe(true);
-      f1.bar(b1);
-      expect(f1.bar()).toBe(b1);
-      expect(b1.foo()).toBe(f1);
-
-      expect(b2.isBusy()).toBe(true);
-      b2.foo(f2);
-      expect(f2.bar()).toBe(b2);
-      expect(b2.foo()).toBe(f2);
-    });
-
-    it('should not mark the master side as dirty when its NEW', function() {
-      var f = Foo.create(), b = Bar.create();
-
-      expect(f.isDirty()).toBe(false);
-      expect(b.isDirty()).toBe(false);
-      f.bar(b);
-      expect(f.isDirty()).toBe(false);
-      expect(b.isDirty()).toBe(false);
-    });
-
-    it('should mark the master side as dirty when its LOADED', function() {
-      var f1 = Foo.load({id: 1}),
-          b1 = Bar.load({id: 1}),
-          f2 = Foo.load({id: 2}),
-          b2 = Bar.load({id: 2});
-
-      expect(f1.isDirty()).toBe(false);
-      expect(b1.isDirty()).toBe(false);
-      f1.bar(b1);
-      expect(f1.isDirty()).toBe(true);
-      expect(b1.isDirty()).toBe(false);
-
-      expect(f2.isDirty()).toBe(false);
-      expect(b2.isDirty()).toBe(false);
-      b2.foo(f2);
-      expect(f2.isDirty()).toBe(true);
-      expect(b2.isDirty()).toBe(false);
     });
   });
 });

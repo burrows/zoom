@@ -1,7 +1,6 @@
 
 Z.Mapper = Z.Object.extend(function() {
   this.def('fetchModel', function(model) {
-    //setTimeout(function() { type.fetchModelDidFail(id); }, 1);
   });
 
   this.def('createModel', function(model) {
