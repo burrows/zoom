@@ -1135,6 +1135,21 @@ describe('Z.Model `hasMany` association', function() {
       expect(Test.Foo.create().bars()).toEq(Z.A());
     });
 
+    it('should replace all items in the array when the given items when set', function() {
+      var f  = Test.Foo.create(),
+          b1 = Test.Bar.create(),
+          b2 = Test.Bar.create(),
+          b3 = Test.Bar.create(),
+          b4 = Test.Bar.create();
+
+      f.bars().push(b1);
+      expect(f.bars()).toEq(Z.A(b1));
+      f.bars([b2, b3]);
+      expect(f.bars()).toEq(Z.A(b2, b3));
+      f.bars(Z.A(b1, b4));
+      expect(f.bars()).toEq(Z.A(b1, b4));
+    });
+
     it('should not mark the model as `DIRTY` when adding objects', function() {
       var f = Test.Foo.load({id: 12});
 

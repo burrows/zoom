@@ -111,6 +111,15 @@ Z.Model = Z.Object.extend(function() {
     return model[key] = model[key] || Z.HasManyArray.create(model, descriptor);
   }
 
+  function setHasMany(model, descriptor, v) {
+    var key = Z.fmt("__%@__", descriptor.name),
+        a   = getHasMany(model, descriptor);
+
+    a.splice.apply(a, [0, a.size()].concat(v.isZArray ? v.toNative() : v));
+
+    return v;
+  }
+
   function callValidatorFn(context, fn) {
     return typeof fn === 'function' ? fn.call(context) : context[fn]();
   }
@@ -450,8 +459,8 @@ Z.Model = Z.Object.extend(function() {
     });
 
     this.property(name, {
-      readonly: true,
       get: function() { return getHasMany(this, descriptor); },
+      set: function(v) { return setHasMany(this, descriptor, v); },
     });
   });
 
