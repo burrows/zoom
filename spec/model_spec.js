@@ -193,6 +193,17 @@ describe('Z.Model.initialize', function() {
     expect(m.isInvalid()).toBe(false);
     expect(m.isBusy()).toBe(false);
   });
+
+  it('should not throw an exception when given a key that does not match an attribute name', function() {
+    var m;
+
+    expect(function() {
+      m = Test.BasicModel.create({ foo: 'abc', bar: 1, blah: 8 });
+    }).not.toThrow();
+
+    expect(m.foo()).toBe('abc');
+    expect(m.bar()).toBe(1);
+  });
 });
 
 describe('Z.Model id property', function() {

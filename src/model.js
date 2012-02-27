@@ -192,6 +192,10 @@ Z.Model = Z.Object.extend(function() {
     });
   });
 
+  this.def('hasAttribute', function(name) {
+    return !!this['__z_attribute_' + name + '__'];
+  });
+
   this.def('attributeNames', function() {
     var names = [], k, match;
 
@@ -467,17 +471,25 @@ Z.Model = Z.Object.extend(function() {
     return this[Z.fmt('__z_association_%@__', name)];
   });
 
-  this.def('initialize', function(attributes, state) {
+  this.def('initialize', function(attributes) {
+    var props = {}, key;
+
     this.__sourceState__ = NEW;
     this.__isDirty__     = false;
     this.__isInvalid__   = false;
     this.__isBusy__      = false;
 
-    this.supr.apply(this, slice.call(arguments));
+    if (attributes) {
+      for (key in attributes) {
+        if (this.hasAttribute(key)) { props[key] = attributes[key]; }
+      }
 
-    if (attributes && attributes.hasOwnProperty('id')) {
-      addToIdentityMap(this);
+      if (attributes.hasOwnProperty('id')) { props.id = attributes.id; }
     }
+
+    this.supr(props);
+
+    if (props.hasOwnProperty('id')) { addToIdentityMap(this); }
   });
 
   this.def('inverseDidAdd', function(associationName, model) {
