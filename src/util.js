@@ -300,6 +300,7 @@ Z.type = function(o) {
 
   switch (toString.call(o)) {
     case '[object Array]'     : return 'array';
+    case '[object Arguments]' : return 'arguments';
     case '[object Function]'  : return 'function';
     case '[object String]'    : return 'string';
     case '[object Number]'    : return 'number';
@@ -316,6 +317,7 @@ Z.type = function(o) {
 Z.isNull      = function(o) { return Z.type(o) === 'null'; };
 Z.isUndefined = function(o) { return Z.type(o) === 'undefined'; };
 Z.isArray     = function(o) { return Z.type(o) === 'array'; };
+Z.isArguments = function(o) { return Z.type(o) === 'arguments'; };
 Z.isFunction  = function(o) { return Z.type(o) === 'function'; };
 Z.isString    = function(o) { return Z.type(o) === 'string'; };
 Z.isNumber    = function(o) { return Z.type(o) === 'number'; };

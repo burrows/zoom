@@ -40,6 +40,11 @@ describe('Z.type', function() {
     expect(Z.type([1,2,3])).toBe('array');
   });
 
+  it("should return the string 'arguments' when passed an Arguments instance", function() {
+    var args = (function() { return arguments; }());
+    expect(Z.type(args)).toBe('arguments');
+  });
+
   it("should return the string 'function' when passed a Function instance", function() {
     expect(Z.type(function() {})).toBe('function');
     expect(Z.type(Object)).toBe('function');

@@ -248,6 +248,7 @@ Z.hash = function(o) {
 
       return Z.murmur(v, seed);
     case 'array':
+    case 'arguments':
       v = o.length;
 
       Z.detectOutermostRecursion(o, function() {

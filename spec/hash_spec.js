@@ -59,6 +59,13 @@ describe('Z.hash', function() {
     });
   });
 
+  describe('with an Arguments object', function() {
+    it('should return the same value as the equivalent native array', function() {
+      var args = (function() { return arguments; }(1,2,3));
+      expect(Z.hash(args)).toEq(Z.hash([1,2,3]));
+    });
+  });
+
   describe('with a function', function() {
     it('should return a number', function() {
       expect(typeof Z.hash(function() {})).toBe('number');
