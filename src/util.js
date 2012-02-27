@@ -309,7 +309,9 @@ Z.type = function(o) {
     case '[object Date]'      : return 'date';
     case '[object RegExp]'    : return 'regexp';
     case '[object Object]'    :
-      return o.isZObject === true ? 'zobject' : 'object';
+      if (o.hasOwnProperty('callee')) { return 'arguments'; } // ie fallback
+      else { return o.isZObject === true ? 'zobject' : 'object'; }
+      break;
     default:
       return 'unknown';
   }
