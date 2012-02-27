@@ -201,10 +201,6 @@ Z.Model = Z.Object.extend(function() {
     });
   });
 
-  this.def('hasAttribute', function(name) {
-    return !!this['__z_attribute_' + name + '__'];
-  });
-
   this.def('attributeNames', function() {
     var names = [], k, match;
 
@@ -490,10 +486,8 @@ Z.Model = Z.Object.extend(function() {
 
     if (attributes) {
       for (key in attributes) {
-        if (this.hasAttribute(key)) { props[key] = attributes[key]; }
+        if (this.hasProperty(key)) { props[key] = attributes[key]; }
       }
-
-      if (attributes.hasOwnProperty('id')) { props.id = attributes.id; }
     }
 
     this.supr(props);

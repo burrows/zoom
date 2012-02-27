@@ -25,6 +25,25 @@ Test.ValidatedModel = Z.Model.extend(function() {
   });
 });
 
+Test.Author = Z.Model.extend(function() {
+  this.attribute('first', 'string');
+  this.attribute('last', 'string');
+  this.hasMany('posts', 'Test.Post', {inverse: 'author'});
+});
+
+Test.Post = Z.Model.extend(function() {
+  this.attribute('title', 'string');
+  this.attribute('body', 'string');
+  this.hasOne('author', 'Test.Author', {inverse: 'posts', master: true});
+  this.hasMany('tags', 'Test.Tag', {inverse: 'posts', master: true});
+});
+
+Test.Tag = Z.Model.extend(function() {
+  this.attribute('name', 'string');
+  this.hasMany('posts', 'Test.Post', {inverse: 'tags'});
+});
+
+
 describe('Z.Model.attribute', function() {
   it('should define a property with the given name', function() {
     expect(Test.BasicModel.hasProperty('foo')).toBe(true);
@@ -144,10 +163,11 @@ describe('Z.Model.load', function() {
 
   describe('given attributes containing an id that is in the identity map', function() {
     it('should update and return the object that is already in the identity map', function() {
-      var m = Test.BasicModel.load({ id: 200, foo: 's', bar: 1 });
+      var m = Test.BasicModel.load({ id: 200, foo: 's', bar: 1 }), m2;
 
-      Test.BasicModel.load({ id: 200, foo: 's2', bar: 2 });
+      m2 = Test.BasicModel.load({ id: 200, foo: 's2', bar: 2 });
 
+      expect(m2).toBe(m);
       expect(m.foo()).toBe('s2');
       expect(m.bar()).toBe(2);
     });
@@ -175,6 +195,20 @@ describe('Z.Model.load', function() {
       }).toThrow('Z.Model.load: an `id` attribute is required');
     });
   });
+
+  describe('given attributes containing a nested `hasOne` association', function() {
+    it('should load the nested model and hook up the association', function() {
+    });
+  });
+
+  describe('given attributes containing an id referece to a `hasOne` association', function() {
+  });
+
+  describe('given attributes containing a nested `hasMany` association', function() {
+  });
+
+  describe('given attributes containing a list of id refereces to a `hasMany` association', function() {
+  });
 });
 
 describe('Z.Model.initialize', function() {
@@ -194,6 +228,12 @@ describe('Z.Model.initialize', function() {
     expect(m.isBusy()).toBe(false);
   });
 
+  it('should allow setting non-attribute, non-association properties', function() {
+    var Foo = Z.Model.extend(function() { this.property('x'); });
+
+    expect(Foo.create({x: 9}).x()).toBe(9);
+  });
+
   it('should not throw an exception when given a key that does not match an attribute name', function() {
     var m;
 
@@ -203,6 +243,16 @@ describe('Z.Model.initialize', function() {
 
     expect(m.foo()).toBe('abc');
     expect(m.bar()).toBe(1);
+  });
+
+  it('should allow setting associations', function() {
+    var a  = Test.Author.create(),
+        t1 = Test.Tag.create(),
+        t2 = Test.Tag.create(),
+        p  = Test.Post.create({author: a, tags: [t1, t2]});
+
+    expect(p.author()).toBe(a);
+    expect(p.tags()).toEq(Z.A(t1, t2));
   });
 });
 
