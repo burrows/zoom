@@ -138,6 +138,7 @@ Z.inspect = function(o) {
     case 'string':
       return "'" + o + "'";
     case 'array':
+    case 'arguments':
       if (o.length === 0) { return '[]'; }
 
       a = [];

@@ -143,6 +143,13 @@ describe('Z.inspect', function() {
     });
   });
 
+  describe('given an Arguments object', function() {
+    it('should return a string containing all inspected items separated by commas', function() {
+      var args = (function() { return arguments; }(1,2,3));
+      expect(Z.inspect(args)).toBe('[1, 2, 3]');
+    });
+  });
+
   describe('given a plain object', function() {
     it('should return a string containing all key/value pairs', function() {
       expect(Z.inspect({})).toBe('{}');

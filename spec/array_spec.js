@@ -24,6 +24,15 @@ describe('Z.Array constructor', function() {
     expect(a2.at(2)).toEqual('c');
   });
 
+  it('should create an array whose contents are the given Arguments object', function() {
+    var f     = function() { return arguments; },
+        args1 = f();
+        args2 = f(1,2,3);
+
+    expect(Z.Array.create(args1)).toEq(Z.A());
+    expect(Z.Array.create(args2)).toEq(Z.A(1,2,3));
+  });
+
   it('should create an array whose contents are the given Z.Array', function() {
     var a1 = Z.Array.create(Z.Array.create([1, 2])),
         a2 = Z.Array.create(Z.Array.create(['a', 'b', 'c']));

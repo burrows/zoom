@@ -187,14 +187,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     else if (typeof arg === 'number') {
       this.__z_items__ = new Array(arg);
     }
-    else if (Z.isArray(arg)) {
-      this.__z_items__ = arg.slice();
+    else if (Z.isArray(arg) || Z.isArguments(arg)) {
+      this.__z_items__ = slice.apply(arg);
     }
     else if (arg && arg.isZArray) {
       this.__z_items__ = arg.toNative();
     }
     else {
-      throw new Error(Z.fmt("Z.Array.initialize: invalid argument (%@), expected a number or array", arg));
+      throw new Error(Z.fmt("Z.Array.initialize: invalid argument (%@), expected a number or array", Z.inspect(arg)));
     }
   });
 
