@@ -493,7 +493,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 Z.A = function() {
   var args = slice.call(arguments), len = args.length, first = args[0];
 
-  if (len === 1 && (Z.isArray(first) || (first && first.isZArray))) {
+  if (len === 1 && (Z.isArray(first) || Z.isArguments(first) || (first && first.isZArray))) {
     return Z.Array.create(first);
   }
 

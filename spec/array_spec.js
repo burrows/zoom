@@ -70,6 +70,11 @@ describe('Z.A', function() {
     expect(Z.A([1,2,3])).toEq(Z.Array.create([1,2,3]));
   });
 
+  it('should return a Z.Array with the given contents when given a single Arguments object', function() {
+    var args = (function() { return arguments; }('a', 'b'));
+    expect(Z.A(args)).toEq(Z.Array.create(['a', 'b']));
+  });
+
   it('should return a Z.Array with the given contents when given a single Z.Array', function() {
     var za = Z.Array.create(['a', 'b']);
     expect(Z.A(za)).toEq(za);
