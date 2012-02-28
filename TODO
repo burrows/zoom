@@ -1,8 +1,12 @@
-* improve Z.Model exception messages
+* Z.Array.get with an unknown property returns itself
 * update Z.Model.load to handle associations
+* improve Z.Model exception messages
+* some sort of way to access a list of all loaded models of a certain type
+  * maybe use a Z.Hash for the identity map so that it can be observed?
+  * create an IdentityMap object that inherits from Z.Hash
 * update private methods to use `this`
-* figure out model serialization
 * implement named finders
+* figure out model serialization
 * default attribute values
 * batched property changes
 * docs
