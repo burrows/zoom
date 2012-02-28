@@ -94,7 +94,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (val && (!Z.isZObject(val) || (!val.isA(type)))) {
       throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                            model.type().name(), name, descriptor.modelType, val));
+                            model.type().name(), name, descriptor.modelType, Z.inspect(val)));
     }
 
     _setHasOne(model, descriptor, val);
@@ -237,19 +237,48 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('load', function(attributes) {
-    var id = attributes.id, model;
+    var associations = this.associationDescriptors(),
+        hasOneAttrs  = {},
+        hasManyAttrs = {},
+        model, key, type, descriptor, data;
 
-    if (typeof id === 'undefined') {
-      throw new Error('Z.Model.load: an `id` attribute is required');
+    attributes = Z.dup(attributes);
+
+    if (typeof attributes.id === 'undefined') {
+      throw new Error(Z.fmt("%@.load: an `id` attribute is required", this.type().name()));
     }
 
-    if ((model = retrieveFromIdentityMap(this, id))) {
-      attributes = Z.dup(attributes);
-      Z.del(attributes, 'id');
-      model.set(attributes);
+    model = retrieveFromIdentityMap(this, attributes.id) ||
+      this.create({id: attributes.id});
+
+    Z.del(attributes, 'id');
+
+    // extract association hashes
+    for (key in associations) {
+      descriptor = associations[key];
+
+      if (data = Z.del(attributes, descriptor.name)) {
+        if (descriptor.type === 'hasOne') {
+          hasOneAttrs[descriptor.name] = data;
+        }
+      }
     }
-    else {
-      model = this.create(attributes);
+
+    // set raw attributes
+    model.set(attributes);
+
+    // load and set each association object
+    for (key in hasOneAttrs) {
+      descriptor = associations[key];
+      type       = Z.resolve(descriptor.modelType);
+
+      if (Z.type(hasOneAttrs[key]) === 'object') {
+        model.set(key, type.load(hasOneAttrs[key]));
+      }
+      else {
+        model.set(key, retrieveFromIdentityMap(type, hasOneAttrs[key]) || type.empty(hasOneAttrs[key]));
+      }
+
     }
 
     setState(model, {source: LOADED, dirty: false, invalid: false, busy: false});

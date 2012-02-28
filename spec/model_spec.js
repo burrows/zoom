@@ -43,7 +43,6 @@ Test.Tag = Z.Model.extend(function() {
   this.hasMany('posts', 'Test.Post', {inverse: 'tags'});
 });
 
-
 describe('Z.Model.attribute', function() {
   it('should define a property with the given name', function() {
     expect(Test.BasicModel.hasProperty('foo')).toBe(true);
@@ -198,10 +197,40 @@ describe('Z.Model.load', function() {
 
   describe('given attributes containing a nested `hasOne` association', function() {
     it('should load the nested model and hook up the association', function() {
+      var p = Test.Post.load({
+        id: 184, title: 'the title', body: 'the body', author: {
+          id: 9, first: 'Homer', last: 'Simpson'
+        }
+      });
+
+      expect(p.author()).toBe(Test.Author.fetch(9));
+      expect(p.get('author.id')).toBe(9);
+      expect(p.get('author.first')).toBe('Homer');
+      expect(p.get('author.last')).toBe('Simpson');
     });
   });
 
   describe('given attributes containing an id referece to a `hasOne` association', function() {
+    describe('where the id exists in the identity map', function() {
+      it('should hook up the association', function() {
+        var a = Test.Author.load({id: 10, first: 'Bart', last: 'Simpson'}), p;
+
+        expect(a.posts()).toEq(Z.A());
+        p = Test.Post.load({id: 185, author: 10});
+        expect(p.author()).toBe(a);
+        expect(a.posts()).toEq(Z.A(p));
+      });
+    });
+
+    describe('where the id does not exist in the identity map', function() {
+      it('should create an empty instance of the associated object and hook up the association', function() {
+        var p = Test.Post.load({id: 185, author: 11});
+
+        expect(p.author().id()).toBe(11);
+        expect(p.author().sourceState()).toBe(Z.Model.EMPTY);
+        expect(p.author().posts()).toEq(Z.A(p));
+      });
+    });
   });
 
   describe('given attributes containing a nested `hasMany` association', function() {
