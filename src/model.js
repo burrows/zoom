@@ -237,10 +237,9 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('load', function(attributes) {
-    var associations = this.associationDescriptors(),
-        hasOneAttrs  = {},
-        hasManyAttrs = {},
-        model, key, type, descriptor, data;
+    var associations    = this.associationDescriptors(),
+        associatedAttrs = { hasOne: {}, hasMany: {} },
+        model, key, type, descriptor, data, i, len;
 
     attributes = Z.dup(attributes);
 
@@ -258,9 +257,7 @@ Z.Model = Z.Object.extend(function() {
       descriptor = associations[key];
 
       if (data = Z.del(attributes, descriptor.name)) {
-        if (descriptor.type === 'hasOne') {
-          hasOneAttrs[descriptor.name] = data;
-        }
+        associatedAttrs[descriptor.type][descriptor.name] = data;
       }
     }
 
@@ -268,17 +265,30 @@ Z.Model = Z.Object.extend(function() {
     model.set(attributes);
 
     // load and set each association object
-    for (key in hasOneAttrs) {
+    for (key in associatedAttrs.hasOne) {
       descriptor = associations[key];
       type       = Z.resolve(descriptor.modelType);
 
-      if (Z.type(hasOneAttrs[key]) === 'object') {
-        model.set(key, type.load(hasOneAttrs[key]));
+      if (Z.type(associatedAttrs.hasOne[key]) === 'object') {
+        model.set(key, type.load(associatedAttrs.hasOne[key]));
       }
       else {
-        model.set(key, retrieveFromIdentityMap(type, hasOneAttrs[key]) || type.empty(hasOneAttrs[key]));
+        model.set(key, retrieveFromIdentityMap(type, associatedAttrs.hasOne[key]) || type.empty(associatedAttrs.hasOne[key]));
       }
+    }
 
+    for (key in associatedAttrs.hasMany) {
+      descriptor = associations[key];
+      type       = Z.resolve(descriptor.modelType);
+
+      for (i = 0, len = associatedAttrs.hasMany[key].length; i < len; i++) {
+        if (Z.type(associatedAttrs.hasMany[key][i]) === 'object') {
+          model.get(key).push(type.load(associatedAttrs.hasMany[key][i]));
+        }
+        else {
+          model.get(key).push(retrieveFromIdentityMap(type, associatedAttrs.hasMany[key][i]) || type.empty(associatedAttrs.hasMany[key][i]));
+        }
+      }
     }
 
     setState(model, {source: LOADED, dirty: false, invalid: false, busy: false});

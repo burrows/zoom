@@ -234,9 +234,80 @@ describe('Z.Model.load', function() {
   });
 
   describe('given attributes containing a nested `hasMany` association', function() {
+    it('should load all of the nested models and hook up associations', function() {
+      var p = Test.Post.load({
+        id: 127, title: 'the title', body: 'the body',
+        tags: [{id: 1, name: 'tag a'}, {id: 2, name: 'tag b'}]
+      });
+
+      expect(p.tags().at(0).id()).toBe(1);
+      expect(p.tags().at(0).name()).toBe('tag a');
+      expect(p.tags().at(0).posts()).toEq(Z.A(p));
+      expect(p.tags().at(1).id()).toBe(2);
+      expect(p.tags().at(1).name()).toBe('tag b');
+      expect(p.tags().at(1).posts()).toEq(Z.A(p));
+    });
   });
 
   describe('given attributes containing a list of id refereces to a `hasMany` association', function() {
+    describe('where the ids exist in the identity map', function() {
+      it('should hook up the associations', function() {
+        var t1 = Test.Tag.load({id: 324, name: 'blah'}),
+            t2 = Test.Tag.load({id: 673, name: 'stuff'}),
+            p;
+
+        expect(t1.posts()).toEq(Z.A());
+        expect(t2.posts()).toEq(Z.A());
+
+        p = Test.Post.load({
+          id: 127, title: 'the title', body: 'the body', tags: [324, 673]
+        });
+
+        expect(t1.posts()).toEq(Z.A(p));
+        expect(t2.posts()).toEq(Z.A(p));
+        expect(p.tags()).toEq(Z.A(t1, t2));
+      });
+    });
+
+    describe('where the id does not exist in the identity map', function() {
+      it('should create an empty instance of the associated models and hook up the associations', function() {
+        var p = Test.Post.load({
+          id: 127, title: 'the title', body: 'the body', tags: [32, 44]
+        });
+
+        expect(p.tags().at(0).id()).toBe(32);
+        expect(p.tags().at(0).sourceState()).toBe(Z.Model.EMPTY);
+        expect(p.tags().at(0).posts()).toEq(Z.A(p));
+        expect(p.tags().at(1).id()).toBe(44);
+        expect(p.tags().at(1).sourceState()).toBe(Z.Model.EMPTY);
+        expect(p.tags().at(1).posts()).toEq(Z.A(p));
+      });
+    });
+  });
+
+  describe('given attributes containing a mixture of nested models and id references', function() {
+    it('should create empty instances for the ids and hook up all associations', function() {
+      var t1 = Test.Tag.load({id: 555, name: 'blah'}), p;
+
+      p = Test.Post.load({
+        id: 721, title: 'the title', body: 'the body',
+        tags: [555, {id: 666, name: 'foo'}, 777]
+      });
+
+      expect(p.tags().at(0).id()).toBe(555);
+      expect(p.tags().at(0).sourceState()).toBe(Z.Model.LOADED);
+      expect(p.tags().at(0).posts()).toEq(Z.A(p));
+
+      expect(p.tags().at(1).id()).toBe(666);
+      expect(p.tags().at(1).sourceState()).toBe(Z.Model.LOADED);
+      expect(p.tags().at(1).posts()).toEq(Z.A(p));
+
+      expect(p.tags().at(2).id()).toBe(777);
+      expect(p.tags().at(2).sourceState()).toBe(Z.Model.EMPTY);
+      expect(p.tags().at(2).posts()).toEq(Z.A(p));
+
+      expect(p.tags().pluck('id')).toEq(Z.A(555, 666, 777));
+    });
   });
 });
 
