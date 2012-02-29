@@ -68,14 +68,19 @@ describe('Z.Enumerable.invoke', function() {
 });
 
 describe('Z.Enumerable.pluck', function() {
-  it('should get the given property from each item in the array and return a new array contain the values', function() {
+  it('should get the given property from each item in the array and return a new array containing the values', function() {
     a = Z.A(Foo.create({x: 1}), Foo.create({x: 2}), Foo.create({x: 3}));
     expect(a.pluck('x')).toEq(Z.A(1, 2, 3));
   });
 
-  it('should should pass through null and undefined values', function() {
+  it('should pass through null and undefined values', function() {
     a = Z.A(Foo.create({x: 1}), null, Foo.create({x: 2}), undefined, Foo.create({x: 3}));
     expect(a.pluck('x')).toEq(Z.A(1, null, 2, void 0, 3));
+  });
+
+  it('should access properties of native objects', function() {
+    a = Z.A({foo: 1}, {foo: 121});
+    expect(a.pluck('foo')).toEq(Z.A(1, 121));
   });
 });
 

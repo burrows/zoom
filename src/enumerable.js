@@ -50,7 +50,8 @@ Z.Enumerable = Z.Module.create(function() {
 
   this.def('pluck', function(path) {
     return this.map(function(item) {
-      return (item && item.isZObject) ? item.get(path) : item;
+      if (!item) { return item; }
+      return item.isZObject ? item.get(path) : item[path];
     });
   });
 });
