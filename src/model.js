@@ -530,8 +530,6 @@ Z.Model = Z.Object.extend(function() {
     }
 
     this.supr(props);
-
-    if (props.hasOwnProperty('id')) { addToIdentityMap(this); }
   });
 
   this.def('inverseDidAdd', function(associationName, model) {
