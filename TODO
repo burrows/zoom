@@ -1,8 +1,16 @@
-* update Z.Model.load to handle associations
-* improve Z.Model exception messages
+* calling toString on a Z.Model prototype raises an exception
+* refactor Z.Model.load
 * some sort of way to access a list of all loaded models of a certain type
   * maybe use a Z.Hash for the identity map so that it can be observed?
   * create an IdentityMap object that inherits from Z.Hash
+  * Z.Model.destroy should remove model from identity map?
+  * how to handle multiple levels of model subclassing?
+    * implement baseType method that returns the prototype just under Z.Model?
+    * identity map indexes by baseType
+* improve Z.Model exception messages
+* rename `Z.Object.name` to `Z.Object.typeName`
+* Z.Model.toString should print out associations
+  * use Z.detectRecursion
 * update private methods to use `this`
 * implement named finders
 * figure out model serialization
