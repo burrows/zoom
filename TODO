@@ -1,4 +1,3 @@
-* calling toString on a Z.Model prototype raises an exception
 * refactor Z.Model.load
 * some sort of way to access a list of all loaded models of a certain type
   * maybe use a Z.Hash for the identity map so that it can be observed?
@@ -8,7 +7,6 @@
     * implement baseType method that returns the prototype just under Z.Model?
     * identity map indexes by baseType
 * improve Z.Model exception messages
-* rename `Z.Object.name` to `Z.Object.typeName`
 * Z.Model.toString should print out associations
   * use Z.detectRecursion
 * update private methods to use `this`

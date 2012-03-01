@@ -135,7 +135,7 @@ describe('Z.Model.load', function() {
     it('should return a new model instance with the given attributes', function() {
       var m = Test.BasicModel.load({ id: 126, foo: 's', bar: 1 });
 
-      expect(m.type()).toBe(Test.BasicModel);
+      expect(m.prototype()).toBe(Test.BasicModel);
       expect(m.id()).toBe(126);
       expect(m.foo()).toBe('s');
       expect(m.bar()).toBe(1);
@@ -191,7 +191,7 @@ describe('Z.Model.load', function() {
     it('should throw an exception', function() {
       expect(function() {
         Test.BasicModel.load({ foo: 's', bar: 1 });
-      }).toThrow('Z.Model.load: an `id` attribute is required');
+      }).toThrow('Test.BasicModel.load: an `id` attribute is required');
     });
   });
 
@@ -397,7 +397,7 @@ describe('Z.Model.fetch', function() {
     it('should return an instance of the model with `sourceState` set to `EMPTY` and `isBusy` set to `true`', function() {
       var m = Test.BasicModel.fetch(19);
 
-      expect(m.type()).toBe(Test.BasicModel);
+      expect(m.prototype()).toBe(Test.BasicModel);
       expect(m.id()).toBe(19);
 
       expect(m.sourceState()).toBe(Z.Model.EMPTY);
@@ -570,7 +570,7 @@ describe('Z.Model setting attributes', function() {
       expect(m.get('changes')).toBeUndefined();
       m.set('bar', 9);
       expect(m.get('changes')).not.toBeUndefined();
-      expect(m.get('changes').type()).toBe(Z.Hash);
+      expect(m.get('changes').prototype()).toBe(Z.Hash);
       expect(m.get('changes.bar')).toBe(8);
     });
 

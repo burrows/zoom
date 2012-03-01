@@ -199,8 +199,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('toString', function() {
-    return Z.fmt("#<%@:%@ %@>", this.prototypeName(), this.objectId(),
-                 Z.inspect(this.toNative()));
+    if (this.isPrototype) { return this.supr(); }
+
+    return Z.fmt("#<%@:%@ %@>", this.prototype().prototypeName(),
+                 this.objectId(), Z.inspect(this.toNative()));
   });
 
   this.def('toNative', function() { return this.__z_items__; });

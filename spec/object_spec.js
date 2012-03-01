@@ -105,28 +105,30 @@ describe('Z.Object.create', function() {
   });
 });
 
-describe('Z.Object.type', function() {
-  it('should return null when called on `Z.Object`', function() {
-    expect(Z.Object.type()).toBe(null);
-  });
+describe('Z.Object.prototype', function() {
+  it('should throw an exception when called on a prototype object', function() {
+    expect(function() {
+      Z.Object.prototype();
+    }).toThrow('Z.Object.prototype: must be called on a concrete object');
 
-  it('should return `Z.Object` when called on objects extended from `Z.Object`', function() {
-    expect(Z.Object.extend().type()).toBe(Z.Object);
+    expect(function() {
+      Z.Object.extend().prototype();
+    }).toThrow('Z.Object.prototype: must be called on a concrete object');
   });
 
   it('should return the prototype object when called on objects created with `Z.Object.create`', function() {
     var Parent = Z.Object.extend(), Child = Parent.extend();
 
-    expect(Parent.create().type()).toBe(Parent);
-    expect(Child.create().type()).toBe(Child);
+    expect(Parent.create().prototype()).toBe(Parent);
+    expect(Child.create().prototype()).toBe(Child);
   });
 
   it('should return the first object in the prototype chain that has `isPrototype` set to `true`', function() {
     var X = Z.Object.extend();
 
-    expect(X.create().type()).toBe(X);
-    expect(X.create().create().type()).toBe(X);
-    expect(X.create().create().create().type()).toBe(X);
+    expect(X.create().prototype()).toBe(X);
+    expect(X.create().create().prototype()).toBe(X);
+    expect(X.create().create().create().prototype()).toBe(X);
   });
 });
 
@@ -269,7 +271,7 @@ describe('Z.Object.isA', function() {
   });
 });
 
-describe('Z.Object.name', function() {
+describe('Z.Object.prototypeName', function() {
   beforeEach(function() {
     Z.Stuff = Z.Object.extend();
     Z.root.MyNamespace = {};
@@ -281,23 +283,29 @@ describe('Z.Object.name', function() {
     Z.del(Z.root, 'MyNamespace');
   });
 
+  it('should throw an exception if called on a concrete object', function() {
+    expect(function() {
+      Z.Object.create().prototypeName();
+    }).toThrow('Z.Object.prototypeName: must be called on a prototype object');
+  });
+
   it('should return the name of the object for objects in the Z namespace', function() {
-    expect(Z.Object.name()).toBe('Z.Object');
-    expect(Z.Stuff.name()).toBe('Z.Stuff');
+    expect(Z.Object.prototypeName()).toBe('Z.Object');
+    expect(Z.Stuff.prototypeName()).toBe('Z.Stuff');
   });
 
   it('should return "(Unknown)" for objects not defined in a namespace', function() {
     var Something = Z.Object.extend();
-    expect(Something.name()).toBe('(Unknown)');
+    expect(Something.prototypeName()).toBe('(Unknown)');
   });
 
   it('should return "(Unknown)" for objects defined in a namespace other than Z but not registered', function() {
-    expect(Z.root.MyNamespace.Thing.name()).toBe('(Unknown)');
+    expect(Z.root.MyNamespace.Thing.prototypeName()).toBe('(Unknown)');
   });
 
   it('should return the name of the object for objects defined in a namespace other than Z that is registered', function() {
     Z.addNamespace(Z.root.MyNamespace, 'MyNamespace');
-    expect(Z.root.MyNamespace.Thing.name()).toBe('MyNamespace.Thing');
+    expect(Z.root.MyNamespace.Thing.prototypeName()).toBe('MyNamespace.Thing');
     Z.removeNamespace(Z.root.MyNamespace);
   });
 });
@@ -309,7 +317,15 @@ describe('Z.Object.toString', function() {
     this.property('z', {get: function() {}});
   });
 
-  it('should return a string containing the object name, object id and current non-computed property values', function() {
+  it('should return the prototype name when called on a prototype object', function() {
+    expect(Z.Object.toString()).toBe('Z.Object');
+    expect(Z.Array.toString()).toBe('Z.Array');
+    expect(Z.Hash.toString()).toBe('Z.Hash');
+    expect(Z.Model.toString()).toBe('Z.Model');
+    expect(X.toString()).toBe('(Unknown)');
+  });
+
+  it('should return a string containing the prototype name, object id and current non-computed property values', function() {
     var o1 = Z.Object.create(), o2 = X.create({x: 1, y: 2});
 
     expect(o1.toString()).toEqual("#<Z.Object:" + (o1.objectId()) + " {}>");

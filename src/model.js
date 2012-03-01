@@ -50,7 +50,7 @@ Z.Model = Z.Object.extend(function() {
   this.DESTROYED = DESTROYED = 'destroyed';
 
   function addToIdentityMap(model) {
-    var typeId = model.type().objectId();
+    var typeId = model.prototype().objectId();
 
     identityMap[typeId] = identityMap[typeId] || {};
     identityMap[typeId][model.id()] = model;
@@ -74,7 +74,7 @@ Z.Model = Z.Object.extend(function() {
     if (master) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the master side is %@: %@",
-                              model.type().name(), name, model.stateString(), model));
+                              model.prototype().prototypeName(), name, model.stateString(), model));
       }
     }
 
@@ -94,7 +94,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (val && (!Z.isZObject(val) || (!val.isA(type)))) {
       throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                            model.type().name(), name, descriptor.modelType, Z.inspect(val)));
+                            model.prototype().prototypeName(), name, descriptor.modelType, Z.inspect(val)));
     }
 
     _setHasOne(model, descriptor, val);
@@ -182,7 +182,7 @@ Z.Model = Z.Object.extend(function() {
 
         if (state === EMPTY || this.isBusy()) {
           throw new Error(Z.fmt("%@ attribute setter: can't set attributes on a model in the %@ state: %@",
-                                this.type().name(), this.stateString(), this));
+                                this.prototype().prototypeName(), this.stateString(), this));
         }
 
         if (state !== NEW) {
@@ -228,7 +228,7 @@ Z.Model = Z.Object.extend(function() {
     var m;
 
     if (retrieveFromIdentityMap(this, id)) {
-      throw new Error(Z.fmt("Z.Model.empty: an instance of `%@` with the id `%@` already exists", this.name(), id));
+      throw new Error(Z.fmt("Z.Model.empty: an instance of `%@` with the id `%@` already exists", this.prototypeName(), id));
     }
 
     m = this.create({id: id});
@@ -244,7 +244,8 @@ Z.Model = Z.Object.extend(function() {
     attributes = Z.dup(attributes);
 
     if (typeof attributes.id === 'undefined') {
-      throw new Error(Z.fmt("%@.load: an `id` attribute is required", this.type().name()));
+      throw new Error(Z.fmt("%@.load: an `id` attribute is required",
+                            this.prototypeName()));
     }
 
     model = retrieveFromIdentityMap(this, attributes.id) ||
@@ -313,7 +314,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (state !== LOADED || this.isBusy()) {
       throw new Error(Z.fmt("%@.refresh: can't refresh a model in the %@ state: %@",
-                            this.type().name(), this.stateString(), this));
+                            this.prototype().prototypeName(), this.stateString(), this));
     }
 
     setState(this, {busy: true});
@@ -334,7 +335,7 @@ Z.Model = Z.Object.extend(function() {
 
     if ((state !== NEW && state !== LOADED) || this.isBusy()) {
       throw new Error(Z.fmt("%@.save: can't save a model in the %@ state: %@",
-                           this.type().name(), this.stateString(), this));
+                           this.prototype().prototypeName(), this.stateString(), this));
     }
 
     this.validate();
@@ -378,7 +379,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (this.isBusy()) {
       throw new Error(Z.fmt("%@.destroy: can't destroy a model in the %@ state: %@",
-                            this.type().name(), this.stateString(), this));
+                            this.prototype().prototypeName(), this.stateString(), this));
     }
 
     if (state === NEW) {
@@ -559,11 +560,15 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('toString', function() {
-    var name        = this.prototypeName(),
-        oid         = this.objectId(),
-        id          = this.id(),
-        state       = this.sourceState(),
-        stateString = this.stateString();
+    var name, oid, id, state, stateString;
+
+    if (this.isPrototype) { return this.supr(); }
+
+     name        = this.prototype().prototypeName();
+     oid         = this.objectId();
+     id          = this.id();
+     state       = this.sourceState();
+     stateString = this.stateString();
 
     return state === EMPTY ?
       Z.fmt("#<%@:%@ (%@) {id: %@}>", name, oid, stateString, id) :
@@ -623,7 +628,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     if (master) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the master side is %@: %@",
-                              model.type().name(), descriptor.name, model.stateString(), model));
+                              model.prototype().prototypeName(), descriptor.name, model.stateString(), model));
 
       }
     }
@@ -631,7 +636,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     for (j = 0, len = added.length; j < len; j++) {
       if (!added[j].isA(type)) {
         throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                              model.type().name(), descriptor.name, descriptor.modelType, added[j]));
+                              model.prototype().prototypeName(), descriptor.name, descriptor.modelType, added[j]));
       }
     }
 

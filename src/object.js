@@ -90,8 +90,14 @@ Z.Object.open(function() {
     return o;
   });
 
-  this.def('type', function() {
-    var p = Z.getPrototypeOf(this);
+  this.def('prototype', function() {
+    var p;
+
+    if (this.isPrototype) {
+      throw new Error('Z.Object.prototype: must be called on a concrete object');
+    }
+
+    p = Z.getPrototypeOf(this);
 
     while (p && !p.isPrototype) { p = Z.getPrototypeOf(p); }
 
@@ -137,8 +143,12 @@ Z.Object.open(function() {
 
   this.def('isA', function(o) { return this.ancestors().indexOf(o) !== -1; });
 
-  this.def('name', function() {
+  this.def('prototypeName', function() {
     var namespaces = Z.namespaces(), namespace, i, len, k;
+
+    if (!this.isPrototype) {
+      throw new Error('Z.Object.prototypeName: must be called on a prototype object');
+    }
 
     for (i = 0, len = namespaces.length; i < len; i++) {
       namespace = namespaces[i];
@@ -153,18 +163,14 @@ Z.Object.open(function() {
     return '(Unknown)';
   });
 
-  this.def('prototypeName', function() {
-    var p = this, name;
-
-    while (p && p.isZObject && (name = p.name()) === '(Unknown)') {
-      p = Z.getPrototypeOf(p);
-    }
-
-    return name;
-  });
-
   this.def('toString', function() {
-    var descriptors = this.propertyDescriptors(), props = [], k;
+    var prototype, descriptors, props, k;
+
+    if (this.isPrototype) { return this.prototypeName(); }
+
+    prototype   = this.prototype();
+    descriptors = this.propertyDescriptors();
+    props       = [];
 
     for (k in descriptors) {
       if (descriptors[k].get === null) {
@@ -172,7 +178,7 @@ Z.Object.open(function() {
       }
     }
 
-    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(),
+    return Z.fmt("#<%@:%@ {%@}>", prototype.prototypeName(), this.objectId(),
                  props.join(', '));
   });
 
