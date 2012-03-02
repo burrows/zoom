@@ -169,12 +169,15 @@ Z.Model = Z.Object.extend(function() {
 
     this.property(name, {
       get: function() {
+        var def = opts['default'];
+
         if (this.sourceState() === EMPTY) {
           setState(this, {busy: true});
           this.mapper.fetchModel(this);
         }
 
-        return attributeType.fromRawFn(this[privateProp]);
+        return this.hasOwnProperty(privateProp) ?
+          attributeType.fromRawFn(this[privateProp]) : def;
       },
 
       set: function(v) {

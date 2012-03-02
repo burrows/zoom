@@ -50,6 +50,20 @@ describe('Z.Model.attribute', function() {
     expect(Test.BasicModel.create({foo: 'goodbye'}).get('foo')).toBe('goodbye');
   });
 
+  describe('generated property', function() {
+    it('should return the value given by the `default` option is the attribute has not previously been set', function() {
+      var Model = Z.Model.extend(function() {
+        this.attribute('foo', 'integer', {default: 9});
+        this.attribute('bar', 'integer');
+      }), m;
+
+      expect(Model.create().foo()).toBe(9);
+      expect(Model.create().bar()).toBeUndefined()
+      expect(Model.create({foo: 8, bar: 12}).foo()).toBe(8);
+      expect(Model.create({foo: 8, bar: 12}).bar()).toBe(12);
+    });
+  });
+
   describe('`string` type', function() {
     var x;
 

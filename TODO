@@ -10,6 +10,5 @@
 * update private methods to use `this`
 * implement named finders
 * figure out model serialization
-* default attribute values
 * batched property changes
 * docs
