@@ -50,7 +50,7 @@ Z.Model = Z.Object.extend(function() {
   this.DESTROYED = DESTROYED = 'destroyed';
 
   function addToIdentityMap(model) {
-    var id = model.id(), typeId = model.prototype().objectId();
+    var id = model.id(), typeId = model.basePrototype().objectId();
 
     identityMap[typeId] = identityMap[typeId] || {};
 
@@ -63,8 +63,8 @@ Z.Model = Z.Object.extend(function() {
   }
 
   function retrieveFromIdentityMap(type, id) {
-    var typeId = type.objectId(), map = identityMap[typeId];
-    return map && map[id] ? map[id] : null;
+    var typeId = type.basePrototype().objectId(), map = identityMap[typeId];
+    return (map && map[id]) ? map[id] : null;
   }
 
   function getHasOne(model, descriptor) {
@@ -327,6 +327,11 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('fetch', function(id) {
     var model = retrieveFromIdentityMap(this, id);
+
+    if (model && !model.isA(this)) {
+      throw new Error(Z.fmt("%@.fetch: a model with id `%@` was found in the identity map, but its prototype is `%@`",
+                            this.prototypeName(), id, model.prototypeName()));
+    }
 
     if (!model) {
       model = this.empty(id);

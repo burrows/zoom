@@ -43,6 +43,9 @@ Test.Tag = Z.Model.extend(function() {
   this.hasMany('posts', 'Test.Post', {inverse: 'tags'});
 });
 
+Test.Parent = Z.Model.extend();
+Test.Child  = Test.Parent.extend();
+
 describe('Z.Model.attribute', function() {
   it('should define a property with the given name', function() {
     expect(Test.BasicModel.hasProperty('foo')).toBe(true);
@@ -471,6 +474,40 @@ describe('Z.Model.fetch', function() {
     it('should add the instance to the identity map', function() {
       var m = Test.BasicModel.fetch(20);
       expect(Test.BasicModel.fetch(20)).toBe(m);
+    });
+  });
+
+  describe('when called on a parent model type', function() {
+    var p, c
+    beforeEach(function() {
+      p = Test.Parent.load({id: 101});
+      c = Test.Child.load({id: 201});
+    });
+
+    it('should find instances of the parent type', function() {
+      expect(Test.Parent.fetch(101)).toBe(p);
+    });
+
+    it('should find instances of the child type', function() {
+      expect(Test.Parent.fetch(201)).toBe(c);
+    });
+  });
+
+  describe('when called on a child model type', function() {
+    var p, c
+    beforeEach(function() {
+      p = Test.Parent.load({id: 101});
+      c = Test.Child.load({id: 201});
+    });
+
+    it('should find instances of the child type', function() {
+      expect(Test.Child.fetch(201)).toBe(c);
+    });
+
+    it('should throw an exception if an instance with the given id is found but is an instance of the parent type', function() {
+      expect(function() {
+        Test.Child.fetch(101);
+      }).toThrow('Test.Child.fetch: a model with id `101` was found in the identity map, but its prototype is `Test.Parent`');
     });
   });
 });
