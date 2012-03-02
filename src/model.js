@@ -67,20 +67,20 @@ Z.Model = Z.Object.extend(function() {
 
   function _setHasOne(model, descriptor, val) {
     var name   = descriptor.name,
-        master = descriptor.master,
+        owner  = descriptor.owner,
         key    = Z.fmt("__%@__", name),
         state  = model.sourceState();
 
-    if (master) {
+    if (owner) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
-        throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the master side is %@: %@",
+        throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the owner side is %@: %@",
                               model.prototype().prototypeName(), name, model.stateString(), model));
       }
     }
 
     model.willChangeProperty(name);
     model[key] = val;
-    if (master && state === LOADED) { setState(model, {dirty: true}); }
+    if (owner && state === LOADED) { setState(model, {dirty: true}); }
     model.didChangeProperty(name);
   }
 
@@ -634,7 +634,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     var model           = this.__z_model__,
         state           = model.sourceState(),
         descriptor      = this.__z_descriptor__,
-        master          = descriptor.master,
+        owner           = descriptor.owner,
         inverse         = descriptor.inverse,
         type            = Z.resolve(descriptor.modelType),
         handlingInverse = this.__handlingInverse__,
@@ -648,9 +648,9 @@ Z.HasManyArray = Z.Array.extend(function() {
       this.supr.apply(this, slice.call(arguments));
     }
 
-    if (master) {
+    if (owner) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
-        throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the master side is %@: %@",
+        throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the owner side is %@: %@",
                               model.prototype().prototypeName(), descriptor.name, model.stateString(), model));
 
       }
@@ -665,7 +665,7 @@ Z.HasManyArray = Z.Array.extend(function() {
 
     this.supr.apply(this, slice.call(arguments));
 
-    if (master && state === LOADED) { setState(model, {dirty: true}); }
+    if (owner && state === LOADED) { setState(model, {dirty: true}); }
 
     if (!handlingInverse && inverse) {
       for (j = 0, len = added.length; j < len; j++) {

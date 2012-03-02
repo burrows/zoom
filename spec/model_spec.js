@@ -34,8 +34,8 @@ Test.Author = Z.Model.extend(function() {
 Test.Post = Z.Model.extend(function() {
   this.attribute('title', 'string');
   this.attribute('body', 'string');
-  this.hasOne('author', 'Test.Author', {inverse: 'posts', master: true});
-  this.hasMany('tags', 'Test.Tag', {inverse: 'posts', master: true});
+  this.hasOne('author', 'Test.Author', {inverse: 'posts', owner: true});
+  this.hasMany('tags', 'Test.Tag', {inverse: 'posts', owner: true});
 });
 
 Test.Tag = Z.Model.extend(function() {
@@ -217,7 +217,7 @@ describe('Z.Model.load', function() {
       });
 
       Test.B = Z.Model.extend(function() {
-        this.hasOne('a', 'Test.A', {inverse: 'b', master: true});
+        this.hasOne('a', 'Test.A', {inverse: 'b', owner: true});
       });
 
       a = Test.A.load({id: 1, b: {id: 9, a: 1}});
@@ -278,7 +278,7 @@ describe('Z.Model.load', function() {
       });
 
       Test.B = Z.Model.extend(function() {
-        this.hasOne('a', 'Test.A', {inverse: 'bs', master: true});
+        this.hasOne('a', 'Test.A', {inverse: 'bs', owner: true});
       });
 
       a = Test.A.load({id: 1, bs: [{id: 9, a: 1}, {id: 10, a: 1}]});
@@ -1173,10 +1173,10 @@ describe('Z.Model.toString', function() {
 });
 
 describe('Z.Model `hasOne` association', function() {
-  describe('with no inverse and `master` option set to `false`', function() {
+  describe('with no inverse and `owner` option set to `false`', function() {
     beforeEach(function() {
       Test.Foo = Z.Model.extend(function() {
-        this.hasOne('bar', 'Test.Bar', {master: false});
+        this.hasOne('bar', 'Test.Bar', {owner: false});
       });
 
       Test.Bar = Z.Model.extend();
@@ -1217,10 +1217,10 @@ describe('Z.Model `hasOne` association', function() {
     });
   });
 
-  describe('with no inverse and `master` option set to `true`', function() {
+  describe('with no inverse and `owner` option set to `true`', function() {
     beforeEach(function() {
       Test.Foo = Z.Model.extend(function() {
-        this.hasOne('bar', 'Test.Bar', {master: true});
+        this.hasOne('bar', 'Test.Bar', {owner: true});
       });
 
       Test.Bar = Z.Model.extend();
@@ -1250,7 +1250,7 @@ describe('Z.Model `hasOne` association', function() {
 
       expect(function() {
         f.bar(Test.Bar.create());
-      }).toThrow("Test.Foo.bar: can't set a hasOne association when the master side is EMPTY: " + f.toString());
+      }).toThrow("Test.Foo.bar: can't set a hasOne association when the owner side is EMPTY: " + f.toString());
     });
 
     it('should throw an exception when setting on a `DESTROYED` model', function() {
@@ -1260,7 +1260,7 @@ describe('Z.Model `hasOne` association', function() {
 
       expect(function() {
         f.bar(Test.Bar.create());
-      }).toThrow("Test.Foo.bar: can't set a hasOne association when the master side is DESTROYED: " + f.toString());
+      }).toThrow("Test.Foo.bar: can't set a hasOne association when the owner side is DESTROYED: " + f.toString());
     });
 
     it('should throw an exception when setting on a `BUSY` model', function() {
@@ -1270,7 +1270,7 @@ describe('Z.Model `hasOne` association', function() {
       expect(f.isBusy()).toBe(true);
       expect(function() {
         f.bar(Test.Bar.create());
-      }).toThrow("Test.Foo.bar: can't set a hasOne association when the master side is LOADED-BUSY: " + f.toString());
+      }).toThrow("Test.Foo.bar: can't set a hasOne association when the owner side is LOADED-BUSY: " + f.toString());
     });
   });
 
@@ -1347,10 +1347,10 @@ describe('Z.Model `hasOne` association', function() {
 });
 
 describe('Z.Model `hasMany` association', function() {
-  describe('with no inverse and `master` option set to `false`', function() {
+  describe('with no inverse and `owner` option set to `false`', function() {
     beforeEach(function() {
       Test.Foo = Z.Model.extend(function() {
-        this.hasMany('bars', 'Test.Bar', {master: false});
+        this.hasMany('bars', 'Test.Bar', {owner: false});
       });
 
       Test.Bar = Z.Model.extend();
@@ -1406,10 +1406,10 @@ describe('Z.Model `hasMany` association', function() {
     });
   });
 
-  describe('with no inverse and `master` option set to `true`', function() {
+  describe('with no inverse and `owner` option set to `true`', function() {
     beforeEach(function() {
       Test.Foo = Z.Model.extend(function() {
-        this.hasMany('bars', 'Test.Bar', {master: true});
+        this.hasMany('bars', 'Test.Bar', {owner: true});
       });
 
       Test.Bar = Z.Model.extend();
@@ -1439,7 +1439,7 @@ describe('Z.Model `hasMany` association', function() {
 
       expect(function() {
         f.bars().push(Test.Bar.create());
-      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the master side is EMPTY: " + f.toString());
+      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the owner side is EMPTY: " + f.toString());
     });
 
     it('should throw an exception when adding objects to a `DESTROYED` model', function() {
@@ -1449,7 +1449,7 @@ describe('Z.Model `hasMany` association', function() {
 
       expect(function() {
         f.bars().push(Test.Bar.create());
-      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the master side is DESTROYED: " + f.toString());
+      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the owner side is DESTROYED: " + f.toString());
     });
 
     it('should throw an exception when adding objects to a `BUSY` model', function() {
@@ -1459,7 +1459,7 @@ describe('Z.Model `hasMany` association', function() {
       expect(f.isBusy()).toBe(true);
       expect(function() {
         f.bars().push(Test.Bar.create());
-      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the master side is LOADED-BUSY: " + f.toString());
+      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the owner side is LOADED-BUSY: " + f.toString());
     });
   });
 
