@@ -239,7 +239,7 @@ Z.Model = Z.Object.extend(function() {
   this.def('load', function(attributes) {
     var associations    = this.associationDescriptors(),
         associatedAttrs = { hasOne: {}, hasMany: {} },
-        model, key, type, descriptor, data, i, len;
+        model, other, key, type, descriptor, data, i, len;
 
     attributes = Z.dup(attributes);
 
@@ -271,11 +271,14 @@ Z.Model = Z.Object.extend(function() {
       type       = Z.resolve(descriptor.modelType);
 
       if (Z.type(associatedAttrs.hasOne[key]) === 'object') {
-        model.set(key, type.load(associatedAttrs.hasOne[key]));
+        other = type.load(associatedAttrs.hasOne[key]);
       }
       else {
-        model.set(key, retrieveFromIdentityMap(type, associatedAttrs.hasOne[key]) || type.empty(associatedAttrs.hasOne[key]));
+        other = retrieveFromIdentityMap(type, associatedAttrs.hasOne[key]) || type.empty(associatedAttrs.hasOne[key]);
       }
+
+      model.set(key, other);
+      setState(other, {dirty: false});
     }
 
     for (key in associatedAttrs.hasMany) {
@@ -284,11 +287,13 @@ Z.Model = Z.Object.extend(function() {
 
       for (i = 0, len = associatedAttrs.hasMany[key].length; i < len; i++) {
         if (Z.type(associatedAttrs.hasMany[key][i]) === 'object') {
-          model.get(key).push(type.load(associatedAttrs.hasMany[key][i]));
+          other = type.load(associatedAttrs.hasMany[key][i]);
         }
         else {
-          model.get(key).push(retrieveFromIdentityMap(type, associatedAttrs.hasMany[key][i]) || type.empty(associatedAttrs.hasMany[key][i]));
+          other = retrieveFromIdentityMap(type, associatedAttrs.hasMany[key][i]) || type.empty(associatedAttrs.hasMany[key][i]);
         }
+        model.get(key).push(other);
+        setState(other, {dirty: false});
       }
     }
 
@@ -566,7 +571,7 @@ Z.Model = Z.Object.extend(function() {
 
     name        = this.prototype().prototypeName();
     stateString = this.stateString();
-    a           = ['id: ' + this.id()];
+    a           = ['id: ' + Z.inspect(this.id())];
 
     if (this.sourceState() === EMPTY) {
       return Z.fmt("#<%@ (%@) %@>", name, stateString, a);

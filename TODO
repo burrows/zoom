@@ -1,3 +1,4 @@
+* rename `master` assocition property to `owner`
 * refactor Z.Model.load
 * some sort of way to access a list of all loaded models of a certain type
   * maybe use a Z.Hash for the identity map so that it can be observed?

@@ -208,6 +208,28 @@ describe('Z.Model.load', function() {
       expect(p.get('author.first')).toBe('Homer');
       expect(p.get('author.last')).toBe('Simpson');
     });
+
+    it('should not mark the associated model as `DIRTY` when it owns the association', function() {
+      var a;
+
+      Test.A = Z.Model.extend(function() {
+        this.hasOne('b', 'Test.B', {inverse: 'a'});
+      });
+
+      Test.B = Z.Model.extend(function() {
+        this.hasOne('a', 'Test.A', {inverse: 'b', master: true});
+      });
+
+      a = Test.A.load({id: 1, b: {id: 9, a: 1}});
+
+      expect(a.b().sourceState()).toBe(Z.Model.LOADED);
+      expect(a.b().isDirty()).toBe(false);
+      expect(a.b().isBusy()).toBe(false);
+      expect(a.b().isInvalid()).toBe(false);
+
+      Z.del(Test, 'A');
+      Z.del(Test, 'B');
+    });
   });
 
   describe('given attributes containing an id referece to a `hasOne` association', function() {
@@ -246,6 +268,32 @@ describe('Z.Model.load', function() {
       expect(p.tags().at(1).id()).toBe(2);
       expect(p.tags().at(1).name()).toBe('tag b');
       expect(p.tags().at(1).posts()).toEq(Z.A(p));
+    });
+
+    it('should not mark the associated models as `DIRTY` when they own the association', function() {
+      var a;
+
+      Test.A = Z.Model.extend(function() {
+        this.hasMany('bs', 'Test.B', {inverse: 'a'});
+      });
+
+      Test.B = Z.Model.extend(function() {
+        this.hasOne('a', 'Test.A', {inverse: 'bs', master: true});
+      });
+
+      a = Test.A.load({id: 1, bs: [{id: 9, a: 1}, {id: 10, a: 1}]});
+
+      expect(a.bs().at(0).sourceState()).toBe(Z.Model.LOADED);
+      expect(a.bs().at(0).isDirty()).toBe(false);
+      expect(a.bs().at(0).isBusy()).toBe(false);
+      expect(a.bs().at(0).isInvalid()).toBe(false);
+      expect(a.bs().at(1).sourceState()).toBe(Z.Model.LOADED);
+      expect(a.bs().at(1).isDirty()).toBe(false);
+      expect(a.bs().at(1).isBusy()).toBe(false);
+      expect(a.bs().at(1).isInvalid()).toBe(false);
+
+      Z.del(Test, 'A');
+      Z.del(Test, 'B');
     });
   });
 
@@ -1089,6 +1137,37 @@ describe('Z.Model.toJSON', function() {
     it('should include the `id` property', function() {
       var x = X.load({id: 19, foo: 'abc', bar: 22});
       expect(x.toJSON()).toEqual({id: 19, foo: 'abc', bar: 22});
+    });
+  });
+});
+
+describe('Z.Model.toString', function() {
+  describe('given an `EMPTY` model', function() {
+    it('should display the type name, state, and id', function() {
+      expect(Test.BasicModel.empty(123).toString()).toBe('#<Test.BasicModel (EMPTY) id: 123>');
+      expect(Test.BasicModel.empty('foo').toString()).toBe("#<Test.BasicModel (EMPTY) id: 'foo'>");
+    });
+  });
+
+  describe('given a `LOADED` model', function() {
+    it('should display the type name, state, id, attributes, and associated objects', function() {
+      var a = Test.Author.load({id: 3, first: 'Marge', last: 'Simpson'});
+
+      expect(a.toString()).toMatch(/^#<Test.Author \(LOADED\) id: 3/);
+      expect(a.toString()).toMatch(/first: 'Marge'/);
+      expect(a.toString()).toMatch(/last: 'Simpson'/);
+      expect(a.toString()).toMatch(/posts: \[\]/);
+    });
+
+    it('should only display the type, state, and id of models already seen', function() {
+      var a = Test.Author.load({
+        id: 4, first: 'Lisa', last: 'Simpson',
+        posts: [ {id: 9, title: 'the title', body: 'the body', tags: []} ]
+      });
+
+      expect(a.toString()).toMatch(/^#<Test.Author \(LOADED\) id: 4[^>]/);
+      expect(a.toString()).toMatch(/posts: \[#<Test.Post \(LOADED\) id: 9/);
+      expect(a.toString()).toMatch(/author: #<Test.Author \(LOADED\) id: 4>/);
     });
   });
 });
