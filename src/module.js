@@ -3,6 +3,8 @@
 Z.Module = Z.Object.extend(function() {
   this.def('initialize', function(f) {
     this.supr();
+
+    this.isPrototype  = true;
     this.__z_mixins__ = [];
 
     if (f) { this.open(f); }

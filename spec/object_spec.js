@@ -56,7 +56,7 @@ describe('Z.Object.extend', function() {
       expect(p.respondTo('foo')).toBe(true);
       expect(p.respondTo('bar')).toBe(true);
 
-      expect(p.ancestors()).toEqual([Mod2, Mod1, Z.Object]);
+      expect(p.ancestors()).toEq([p, Mod2, Mod1, Z.Object]);
     });
   });
 });
@@ -233,15 +233,15 @@ describe('Z.Object.ancestors', function() {
       P3 = P2.extend(M1, M2);
 
   it("should return an array containing the objects in the receiver's prototype chain up to Z.Object", function() {
-    expect(Z.Object.ancestors()).toEqual([]);
-    expect(Z.Object.create().ancestors()).toEqual([Z.Object]);
+    var o = Z.Object.create();
 
-    expect(M1.ancestors()).toEqual([Z.Module, Z.Object]);
-    expect(M2.ancestors()).toEqual([Z.Module, Z.Object]);
-    expect(P1.ancestors()).toEqual([Z.Object]);
-    expect(P2.ancestors()).toEqual([P1, Z.Object]);
-    expect(P3.ancestors()).toEqual([M2, M1, P2, P1, Z.Object]);
-    expect(P3.create().ancestors()).toEqual([P3, M2, M1, P2, P1, Z.Object]);
+    expect(Z.Object.ancestors()).toEq([Z.Object]);
+    expect(o.ancestors()).toEq([o, Z.Object]);
+    expect(M1.ancestors()).toEq([M1, Z.Module, Z.Object]);
+    expect(M2.ancestors()).toEq([M2, Z.Module, Z.Object]);
+    expect(P1.ancestors()).toEq([P1, Z.Object]);
+    expect(P2.ancestors()).toEq([P2, P1, Z.Object]);
+    expect(P3.ancestors()).toEq([P3, M2, M1, P2, P1, Z.Object]);
   });
 });
 
@@ -253,7 +253,7 @@ describe('Z.Object.isA', function() {
   it("should return true if the given object exists in the receiver's prototype chain", function() {
     var o = Z.Object.create(), p1 = P1.create(), p2 = P2.create();
 
-    expect(Z.Object.isA(Z.Object)).toBe(false);
+    expect(Z.Object.isA(Z.Object)).toBe(true);
     expect(o.isA(Z.Object)).toBe(true);
     expect(o.isA(P1)).toBe(false);
     expect(o.isA(P2)).toBe(false);

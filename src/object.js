@@ -132,7 +132,7 @@ Z.Object.open(function() {
   });
 
   this.def('ancestors', function() {
-    var a = [], p = this;
+    var p = this, a = [this];
 
     while ((p = Z.getPrototypeOf(p)) !== Object.prototype) {
       a.push(p.hasOwnProperty('__z_module__') ? p.__z_module__ : p);
@@ -141,7 +141,9 @@ Z.Object.open(function() {
     return a;
   });
 
-  this.def('isA', function(o) { return this.ancestors().indexOf(o) !== -1; });
+  this.def('isA', function(o) {
+    return this.ancestors().indexOf(o) !== -1;
+  });
 
   this.def('prototypeName', function() {
     var namespaces = Z.namespaces(), namespace, i, len, k;
