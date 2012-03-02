@@ -178,8 +178,8 @@ Z.Object.open(function() {
       }
     }
 
-    return Z.fmt("#<%@:%@ {%@}>", prototype.prototypeName(), this.objectId(),
-                 props.join(', '));
+    return Z.fmt("#<%@:%@%@>", prototype.prototypeName(), this.objectId(),
+                 props.length === 0 ? '' : ' ' + props.join(', '));
   });
 
   this.def('property', function(name, opts) {

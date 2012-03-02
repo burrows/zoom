@@ -560,19 +560,37 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('toString', function() {
-    var name, oid, id, state, stateString;
+    var self = this, name, stateString, a, descriptors, descriptor, recursed;
 
     if (this.isPrototype) { return this.supr(); }
 
-     name        = this.prototype().prototypeName();
-     oid         = this.objectId();
-     id          = this.id();
-     state       = this.sourceState();
-     stateString = this.stateString();
+    name        = this.prototype().prototypeName();
+    stateString = this.stateString();
+    a           = ['id: ' + this.id()];
 
-    return state === EMPTY ?
-      Z.fmt("#<%@:%@ (%@) {id: %@}>", name, oid, stateString, id) :
-      Z.fmt("#<%@:%@ (%@) %@>", name, oid, stateString, Z.inspect(this.toJSON()));
+    if (this.sourceState() === EMPTY) {
+      return Z.fmt("#<%@ (%@) %@>", name, stateString, a);
+    }
+
+    Z.detectRecursion(this, function() {
+      var descriptors = self.associationDescriptors(), descriptor, k;
+
+      self.attributeNames().forEach(function(attrName) {
+        a.push(Z.fmt("%@: %@", attrName, Z.inspect(self.get(attrName))));
+      });
+
+      for (k in descriptors) {
+        descriptor = descriptors[k];
+        if (descriptor.type === 'hasMany') {
+          a.push(Z.fmt("%@: %@", descriptor.name, Z.inspect(self.get(descriptor.name).toNative())));
+        }
+        else {
+          a.push(Z.fmt("%@: %@", descriptor.name, Z.inspect(self.get(descriptor.name))));
+        }
+      }
+    });
+
+    return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
   });
 
   function stringToRaw(v) { return v ? v.toString() : v; }

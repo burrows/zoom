@@ -328,7 +328,7 @@ describe('Z.Object.toString', function() {
   it('should return a string containing the prototype name, object id and current non-computed property values', function() {
     var o1 = Z.Object.create(), o2 = X.create({x: 1, y: 2});
 
-    expect(o1.toString()).toEqual("#<Z.Object:" + (o1.objectId()) + " {}>");
+    expect(o1.toString()).toEqual("#<Z.Object:" + (o1.objectId()) + '>');
     expect(o2.toString()).toMatch(/x: 1/);
     expect(o2.toString()).toMatch(/y: 2/);
   });

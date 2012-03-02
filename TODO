@@ -7,8 +7,6 @@
     * implement baseType method that returns the prototype just under Z.Model?
     * identity map indexes by baseType
 * improve Z.Model exception messages
-* Z.Model.toString should print out associations
-  * use Z.detectRecursion
 * update private methods to use `this`
 * implement named finders
 * figure out model serialization
