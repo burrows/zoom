@@ -1612,4 +1612,15 @@ describe('Z.Model.modelAncestors', function() {
   });
 });
 
+describe('Z.Model.basePrototype', function() {
+  it("should return the direct sub-prototype of `Z.Model` from the given object's inheritance chain", function() {
+    var A = Z.Model.extend(), B = A.extend(Z.Orderable), C = B.extend();
+
+    expect(A.basePrototype()).toBe(A);
+    expect(B.basePrototype()).toBe(A);
+    expect(C.basePrototype()).toBe(A);
+    expect(C.create().basePrototype()).toBe(A);
+  });
+});
+
 }());

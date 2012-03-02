@@ -224,6 +224,11 @@ Z.Model = Z.Object.extend(function() {
     return a;
   });
 
+  this.def('basePrototype', function() {
+    var a = this.modelAncestors();
+    return a[a.length - 1];
+  });
+
   this.def('attributeNames', function() {
     var names = [], k, match;
 
