@@ -150,8 +150,8 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
       });
     });
 
-    return Z.fmt("#<%@:%@ {%@}>", this.prototype().prototypeName(),
-                 this.objectId(), recursed ? '...' : a.join(', '));
+    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(),
+                 recursed ? '...' : a.join(', '));
   });
 
   this.def('each', function(f) {

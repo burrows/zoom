@@ -201,8 +201,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.def('toString', function() {
     if (this.isPrototype) { return this.supr(); }
 
-    return Z.fmt("#<%@:%@ %@>", this.prototype().prototypeName(),
-                 this.objectId(), Z.inspect(this.toNative()));
+    return Z.fmt("#<%@:%@ %@>", this.prototypeName(), this.objectId(),
+                 Z.inspect(this.toNative()));
   });
 
   this.def('toNative', function() { return this.__z_items__; });

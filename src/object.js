@@ -146,17 +146,15 @@ Z.Object.open(function() {
   });
 
   this.def('prototypeName', function() {
-    var namespaces = Z.namespaces(), namespace, i, len, k;
-
-    if (!this.isPrototype) {
-      throw new Error('Z.Object.prototypeName: must be called on a prototype object');
-    }
+    var o          = this.isPrototype ? this : this.prototype(),
+        namespaces = Z.namespaces(),
+        namespace, i, len, k;
 
     for (i = 0, len = namespaces.length; i < len; i++) {
       namespace = namespaces[i];
 
       for (k in namespace[0]) {
-        if (namespace[0].hasOwnProperty(k) && namespace[0][k] === this) {
+        if (namespace[0].hasOwnProperty(k) && namespace[0][k] === o) {
           return namespace[1].length > 0 ? Z.fmt("%@.%@", namespace[1], k) : k;
         }
       }

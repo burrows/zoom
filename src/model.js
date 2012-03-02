@@ -56,7 +56,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (identityMap[typeId].hasOwnProperty(id)) {
       throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
-                            model.prototype().prototypeName(), id));
+                            model.prototypeName(), id));
     }
 
     identityMap[typeId][id] = model;
@@ -80,7 +80,7 @@ Z.Model = Z.Object.extend(function() {
     if (owner) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the owner side is %@: %@",
-                              model.prototype().prototypeName(), name, model.stateString(), model));
+                              model.prototypeName(), name, model.stateString(), model));
       }
     }
 
@@ -100,7 +100,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (val && (!Z.isZObject(val) || (!val.isA(type)))) {
       throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                            model.prototype().prototypeName(), name, descriptor.modelType, Z.inspect(val)));
+                            model.prototypeName(), name, descriptor.modelType, Z.inspect(val)));
     }
 
     _setHasOne(model, descriptor, val);
@@ -134,7 +134,7 @@ Z.Model = Z.Object.extend(function() {
     set: function(v) {
       if (this.hasOwnProperty('__id__')) {
         throw new Error(Z.fmt("%@.id (setter): overwriting a model's identity is not allowed: %@",
-                              this.prototype().prototypeName(), this));
+                              this.prototypeName(), this));
       }
 
       this.__id__ = v;
@@ -192,7 +192,7 @@ Z.Model = Z.Object.extend(function() {
 
         if (state === EMPTY || this.isBusy()) {
           throw new Error(Z.fmt("%@.%@ (setter): can't set attributes on a model in the %@ state: %@",
-                                this.prototype().prototypeName(), name, this.stateString(), this));
+                                this.prototypeName(), name, this.stateString(), this));
         }
 
         if (state !== NEW) {
@@ -324,7 +324,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (state !== LOADED || this.isBusy()) {
       throw new Error(Z.fmt("%@.refresh: can't refresh a model in the %@ state: %@",
-                            this.prototype().prototypeName(), this.stateString(), this));
+                            this.prototypeName(), this.stateString(), this));
     }
 
     setState(this, {busy: true});
@@ -345,7 +345,7 @@ Z.Model = Z.Object.extend(function() {
 
     if ((state !== NEW && state !== LOADED) || this.isBusy()) {
       throw new Error(Z.fmt("%@.save: can't save a model in the %@ state: %@",
-                           this.prototype().prototypeName(), this.stateString(), this));
+                           this.prototypeName(), this.stateString(), this));
     }
 
     this.validate();
@@ -389,7 +389,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (this.isBusy()) {
       throw new Error(Z.fmt("%@.destroy: can't destroy a model in the %@ state: %@",
-                            this.prototype().prototypeName(), this.stateString(), this));
+                            this.prototypeName(), this.stateString(), this));
     }
 
     if (state === NEW) {
@@ -416,7 +416,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (sourceState === DESTROYED) {
       throw new Error(Z.fmt("%@.undoChanges: attempted to undo changes on a DESTROYED model: %@",
-                            this.prototype().prototypeName(), this.toString()));
+                            this.prototypeName(), this.toString()));
     }
 
     if (!this.isDirty()) { return this; }
@@ -549,7 +549,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (!descriptor) {
       throw new Error(Z.fmt("%@.inverseDidAdd: unknown association `%@`: %@",
-                            this.prototype().prototypeName(), associationName, this));
+                            this.prototypeName(), associationName, this));
     }
 
     if (descriptor.type === 'hasOne') {
@@ -576,7 +576,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (this.isPrototype) { return this.supr(); }
 
-    name        = this.prototype().prototypeName();
+    name        = this.prototypeName();
     stateString = this.stateString();
     a           = ['id: ' + Z.inspect(this.id())];
 
@@ -658,7 +658,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     if (owner) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the owner side is %@: %@",
-                              model.prototype().prototypeName(), descriptor.name, model.stateString(), model));
+                              model.prototypeName(), descriptor.name, model.stateString(), model));
 
       }
     }
@@ -666,7 +666,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     for (j = 0, len = added.length; j < len; j++) {
       if (!added[j].isA(type)) {
         throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                              model.prototype().prototypeName(), descriptor.name, descriptor.modelType, added[j]));
+                              model.prototypeName(), descriptor.name, descriptor.modelType, added[j]));
       }
     }
 

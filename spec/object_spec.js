@@ -283,12 +283,6 @@ describe('Z.Object.prototypeName', function() {
     Z.del(Z.root, 'MyNamespace');
   });
 
-  it('should throw an exception if called on a concrete object', function() {
-    expect(function() {
-      Z.Object.create().prototypeName();
-    }).toThrow('Z.Object.prototypeName: must be called on a prototype object');
-  });
-
   it('should return the name of the object for objects in the Z namespace', function() {
     expect(Z.Object.prototypeName()).toBe('Z.Object');
     expect(Z.Stuff.prototypeName()).toBe('Z.Stuff');
@@ -307,6 +301,12 @@ describe('Z.Object.prototypeName', function() {
     Z.addNamespace(Z.root.MyNamespace, 'MyNamespace');
     expect(Z.root.MyNamespace.Thing.prototypeName()).toBe('MyNamespace.Thing');
     Z.removeNamespace(Z.root.MyNamespace);
+  });
+
+  it("should return the name of the object's prototype when called on a concrete object", function() {
+    expect(Z.Object.create().prototypeName()).toBe('Z.Object');
+    expect(Z.A().prototypeName()).toBe('Z.Array');
+    expect(Z.H().prototypeName()).toBe('Z.Hash');
   });
 });
 
