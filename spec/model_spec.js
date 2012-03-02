@@ -134,14 +134,6 @@ describe('Z.Model.empty', function() {
     expect(m.sourceState()).toBe(Z.Model.EMPTY);
     expect(m.isBusy()).toBe(false);
   });
-
-  it('should throw an exception if an instance with the given id already exists in the identity map', function() {
-    var m = Test.BasicModel.load({id: 128});
-
-    expect(function() {
-      Test.BasicModel.empty(128);
-    }).toThrow('Test.BasicModel.empty: an instance of `Test.BasicModel` with the id `128` already exists');
-  });
 });
 
 describe('Z.Model.load', function() {
@@ -434,6 +426,14 @@ describe('Z.Model id property', function() {
 
     m.set('id', 8734);
     expect(Test.BasicModel.fetch(8734)).toBe(m);
+  });
+
+  it('should throw an exception if a model with the same type and id already exists in the identity map', function() {
+    var m = Test.BasicModel.load({id: 122});
+
+    expect(function() {
+      m = Test.BasicModel.create({id: 122});
+    }).toThrow('Test.BasicModel: a model with the id `122` already exists');
   });
 });
 

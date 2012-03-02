@@ -50,10 +50,16 @@ Z.Model = Z.Object.extend(function() {
   this.DESTROYED = DESTROYED = 'destroyed';
 
   function addToIdentityMap(model) {
-    var typeId = model.prototype().objectId();
+    var id = model.id(), typeId = model.prototype().objectId();
 
     identityMap[typeId] = identityMap[typeId] || {};
-    identityMap[typeId][model.id()] = model;
+
+    if (identityMap[typeId].hasOwnProperty(id)) {
+      throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
+                            model.prototype().prototypeName(), id));
+    }
+
+    identityMap[typeId][id] = model;
   }
 
   function retrieveFromIdentityMap(type, id) {
@@ -229,13 +235,8 @@ Z.Model = Z.Object.extend(function() {
   this.def('clearIdentityMap', function() { identityMap = {}; });
 
   this.def('empty', function(id) {
-    var name = this.prototypeName(), m;
+    var name = this.prototypeName(), m = this.create({id: id});
 
-    if (retrieveFromIdentityMap(this, id)) {
-      throw new Error(Z.fmt("%@.empty: an instance of `%@` with the id `%@` already exists", name, name, id));
-    }
-
-    m = this.create({id: id});
     setState(m, {source: EMPTY});
     return m;
   });
