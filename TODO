@@ -6,7 +6,6 @@
   * how to handle multiple levels of model subclassing?
     * implement baseType method that returns the prototype just under Z.Model?
     * identity map indexes by baseType
-* improve Z.Model exception messages
 * update private methods to use `this`
 * implement named finders
 * figure out model serialization

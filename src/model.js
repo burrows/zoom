@@ -127,7 +127,8 @@ Z.Model = Z.Object.extend(function() {
   this.property('id', {
     set: function(v) {
       if (this.hasOwnProperty('__id__')) {
-        throw new Error(Z.fmt("Z.Model.id (setter): overwriting a model's identity is not allowed: %@", this));
+        throw new Error(Z.fmt("%@.id (setter): overwriting a model's identity is not allowed: %@",
+                              this.prototype().prototypeName(), this));
       }
 
       this.__id__ = v;
@@ -160,7 +161,7 @@ Z.Model = Z.Object.extend(function() {
         attributeType = attributeTypes[type];
 
     if (!attributeType) {
-      throw new Error(Z.fmt("Z.Model.attribute: unknown type: %@", type));
+      throw new Error(Z.fmt("%@.attribute: unknown type: %@", this.prototypeName(), type));
     }
 
     opts = opts || {};
@@ -184,8 +185,8 @@ Z.Model = Z.Object.extend(function() {
         var state = this.sourceState(), changes;
 
         if (state === EMPTY || this.isBusy()) {
-          throw new Error(Z.fmt("%@ attribute setter: can't set attributes on a model in the %@ state: %@",
-                                this.prototype().prototypeName(), this.stateString(), this));
+          throw new Error(Z.fmt("%@.%@ (setter): can't set attributes on a model in the %@ state: %@",
+                                this.prototype().prototypeName(), name, this.stateString(), this));
         }
 
         if (state !== NEW) {
@@ -228,10 +229,10 @@ Z.Model = Z.Object.extend(function() {
   this.def('clearIdentityMap', function() { identityMap = {}; });
 
   this.def('empty', function(id) {
-    var m;
+    var name = this.prototypeName(), m;
 
     if (retrieveFromIdentityMap(this, id)) {
-      throw new Error(Z.fmt("Z.Model.empty: an instance of `%@` with the id `%@` already exists", this.prototypeName(), id));
+      throw new Error(Z.fmt("%@.empty: an instance of `%@` with the id `%@` already exists", name, name, id));
     }
 
     m = this.create({id: id});
@@ -413,7 +414,8 @@ Z.Model = Z.Object.extend(function() {
     var self = this, sourceState = this.sourceState(), changes;
 
     if (sourceState === DESTROYED) {
-      throw new Error("Z.Model.undoChanges: attempted to undo changes on a DESTROYED model: " + this.toString());
+      throw new Error(Z.fmt("%@.undoChanges: attempted to undo changes on a DESTROYED model: %@",
+                            this.prototype().prototypeName(), this.toString()));
     }
 
     if (!this.isDirty()) { return this; }
@@ -545,7 +547,8 @@ Z.Model = Z.Object.extend(function() {
     var descriptor = this.associationDescriptorFor(associationName);
 
     if (!descriptor) {
-      throw new Error("associationName:" + associationName);
+      throw new Error(Z.fmt("%@.inverseDidAdd: unknown association `%@`: %@",
+                            this.prototype().prototypeName(), associationName, this));
     }
 
     if (descriptor.type === 'hasOne') {

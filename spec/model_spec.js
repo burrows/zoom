@@ -140,7 +140,7 @@ describe('Z.Model.empty', function() {
 
     expect(function() {
       Test.BasicModel.empty(128);
-    }).toThrow('Z.Model.empty: an instance of `Test.BasicModel` with the id `128` already exists');
+    }).toThrow('Test.BasicModel.empty: an instance of `Test.BasicModel` with the id `128` already exists');
   });
 });
 
@@ -425,7 +425,7 @@ describe('Z.Model id property', function() {
     expect(m.id()).toBe(1);
     expect(function() {
       m.id(9);
-    }).toThrow("Z.Model.id (setter): overwriting a model's identity is not allowed: " + m.toString());
+    }).toThrow("Test.BasicModel.id (setter): overwriting a model's identity is not allowed: " + m.toString());
     expect(m.id()).toBe(1);
   });
 
@@ -583,7 +583,7 @@ describe('Z.Model setting attributes', function() {
 
     expect(function() {
       m.set('foo', 'abc');
-    }).toThrow("Test.BasicModel attribute setter: can't set attributes on a model in the EMPTY state: " + m.toString());
+    }).toThrow("Test.BasicModel.foo (setter): can't set attributes on a model in the EMPTY state: " + m.toString());
   });
 
   it('should throw an exception for a model that is `BUSY`', function() {
@@ -593,7 +593,7 @@ describe('Z.Model setting attributes', function() {
     expect(m.isBusy()).toBe(true);
     expect(function() {
       m.foo('x');
-    }).toThrow("Test.BasicModel attribute setter: can't set attributes on a model in the LOADED-BUSY state: " + m.toString());
+    }).toThrow("Test.BasicModel.foo (setter): can't set attributes on a model in the LOADED-BUSY state: " + m.toString());
   });
 
   describe('for a `NEW` model', function() {
@@ -951,7 +951,7 @@ describe('Z.Model.undoChanges', function() {
 
       expect(function() {
         m.undoChanges();
-      }).toThrow("Z.Model.undoChanges: attempted to undo changes on a DESTROYED model: " + m.toString());
+      }).toThrow("Test.BasicModel.undoChanges: attempted to undo changes on a DESTROYED model: " + m.toString());
     });
   });
 
