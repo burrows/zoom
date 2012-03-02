@@ -211,6 +211,19 @@ Z.Model = Z.Object.extend(function() {
     });
   });
 
+  // Returns a list of `Z.Model` sub-prototypes that are in the reciever's
+  // inheritance chain.
+  this.def('modelAncestors', function() {
+    var ancestors = this.ancestors(), a = [], i, len;
+
+    for (i = 0, len = ancestors.length; i < len; i++) {
+      if (ancestors[i] === Z.Model) { break; }
+      if (!ancestors[i].isA(Z.Module)) { a.push(ancestors[i]); }
+    }
+
+    return a;
+  });
+
   this.def('attributeNames', function() {
     var names = [], k, match;
 

@@ -1586,4 +1586,30 @@ describe('Z.Model `hasMany` association', function() {
   });
 });
 
+describe('Z.Model.modelAncestors', function() {
+  describe('when called on a direct sub-prototype of `Z.Model`', function() {
+    it('should return an array containing the sub-prototype', function() {
+      var M = Z.Model.extend();
+      expect(M.modelAncestors()).toEq([M]);
+    });
+
+    it('should not include any modules mixed in to the prototype', function() {
+      var M = Z.Model.extend(Z.Orderable);
+      expect(M.modelAncestors()).toEq([M]);
+    });
+  });
+
+  describe('when called on a prototype that descends from a direct sub-prototype of `Z.Model`', function() {
+    it('should return an array containing the receiver and its parent prototype', function() {
+      var A = Z.Model.extend(), B = A.extend();
+      expect(B.modelAncestors()).toEq([B, A]);
+    });
+
+    it('should not include any modules mixed in at any level', function() {
+      var M1 = Z.Module.create(), M2 = Z.Module.create(), A = Z.Model.extend(M1), B = A.extend(M2);
+      expect(B.modelAncestors()).toEq([B, A]);
+    });
+  });
+});
+
 }());
