@@ -1,6 +1,36 @@
 (function(undefined) {
 
-var slice = Array.prototype.slice, NEW, EMPTY, LOADED, DESTROYED;
+var slice = Array.prototype.slice, identityMap, NEW, EMPTY, LOADED, DESTROYED;
+
+identityMap = {
+  all: {},
+  typeArrays: {},
+
+  insert: function(model) {
+    var baseTypeId = model.basePrototype().objectId(),
+        id         = model.id(),
+        key        = baseTypeId + '-' + id;
+
+    if (this.all[key]) {
+      throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
+                            model.prototypeName(), id));
+    }
+
+    this.all[key] = model;
+    (this.typeArrays[baseTypeId] = this.typeArrays[baseTypeId] || Z.A()).push(model);
+  },
+
+  retrieve: function(type, id) {
+    var key = type.basePrototype().objectId() + '-' + id;
+    return this.all[key] || null;
+  },
+
+  clear: function() {
+    var k;
+    this.all = {};
+    for (k in this.typeArrays) { this.typeArrays[k].clear(); }
+  }
+};
 
 function setState(o, state) {
   var source = false, dirty = false, invalid = false, busy = false;
@@ -37,7 +67,7 @@ function setState(o, state) {
 }
 
 Z.Model = Z.Object.extend(function() {
-  var attributeTypes = {}, identityMap = {};
+  var attributeTypes = {};
 
   this.isZModel = true;
 
@@ -48,24 +78,6 @@ Z.Model = Z.Object.extend(function() {
   this.EMPTY     = EMPTY     = 'empty';
   this.LOADED    = LOADED    = 'loaded';
   this.DESTROYED = DESTROYED = 'destroyed';
-
-  function addToIdentityMap(model) {
-    var id = model.id(), typeId = model.basePrototype().objectId();
-
-    identityMap[typeId] = identityMap[typeId] || {};
-
-    if (identityMap[typeId].hasOwnProperty(id)) {
-      throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
-                            model.prototypeName(), id));
-    }
-
-    identityMap[typeId][id] = model;
-  }
-
-  function retrieveFromIdentityMap(type, id) {
-    var typeId = type.basePrototype().objectId(), map = identityMap[typeId];
-    return (map && map[id]) ? map[id] : null;
-  }
 
   function getHasOne(model, descriptor) {
     return model[Z.fmt("__%@__", descriptor.name)] || null;
@@ -138,7 +150,7 @@ Z.Model = Z.Object.extend(function() {
       }
 
       this.__id__ = v;
-      addToIdentityMap(this);
+      identityMap.insert(this);
 
       return v;
     }
@@ -250,7 +262,7 @@ Z.Model = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('clearIdentityMap', function() { identityMap = {}; });
+  this.def('clearIdentityMap', function() { identityMap.clear(); });
 
   this.def('empty', function(id) {
     var name = this.prototypeName(), m = this.create({id: id});
@@ -271,7 +283,7 @@ Z.Model = Z.Object.extend(function() {
                             this.prototypeName()));
     }
 
-    model = retrieveFromIdentityMap(this, attributes.id) ||
+    model = identityMap.retrieve(this, attributes.id) ||
       this.create({id: attributes.id});
 
     Z.del(attributes, 'id');
@@ -297,7 +309,8 @@ Z.Model = Z.Object.extend(function() {
         other = type.load(associatedAttrs.hasOne[key]);
       }
       else {
-        other = retrieveFromIdentityMap(type, associatedAttrs.hasOne[key]) || type.empty(associatedAttrs.hasOne[key]);
+        other = identityMap.retrieve(type, associatedAttrs.hasOne[key]) ||
+          type.empty(associatedAttrs.hasOne[key]);
       }
 
       model.set(key, other);
@@ -313,7 +326,8 @@ Z.Model = Z.Object.extend(function() {
           other = type.load(associatedAttrs.hasMany[key][i]);
         }
         else {
-          other = retrieveFromIdentityMap(type, associatedAttrs.hasMany[key][i]) || type.empty(associatedAttrs.hasMany[key][i]);
+          other = identityMap.retrieve(type, associatedAttrs.hasMany[key][i]) ||
+            type.empty(associatedAttrs.hasMany[key][i]);
         }
         model.get(key).push(other);
         setState(other, {dirty: false});
@@ -326,7 +340,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetch', function(id) {
-    var model = retrieveFromIdentityMap(this, id);
+    var model = identityMap.retrieve(this, id);
 
     if (model && !model.isA(this)) {
       throw new Error(Z.fmt("%@.fetch: a model with id `%@` was found in the identity map, but its prototype is `%@`",
