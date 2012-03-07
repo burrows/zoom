@@ -336,8 +336,9 @@ Z.Object.open(function() {
     return this;
   });
 
-  this.def('stopObserving', function(path, observer, action) {
-    this.deregisterObserver(path.split('.'), path, this, observer, action);
+  this.def('stopObserving', function(path, observer, action, opts) {
+    opts = opts || {};
+    this.deregisterObserver(path.split('.'), path, this, observer, action, opts);
     return this;
   });
 
@@ -370,7 +371,7 @@ Z.Object.open(function() {
     return registration;
   });
 
-  this.def('deregisterObserver', function(rpath, opath, observee, observer, action) {
+  this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
     var head = rpath[0], tail = rpath.slice(1), registrations, i, r, val;
 
     if (!this.hasProperty(head)) {
@@ -383,14 +384,15 @@ Z.Object.open(function() {
     for (i = registrations.length - 1; i >= 0; i--) {
       r = registrations[i];
 
-      if (r.path     === opath    &&
-          r.observee === observee &&
-          r.observer === observer &&
-          r.action   === action) {
+      if (r.path         === opath    &&
+          r.observee     === observee &&
+          r.observer     === observer &&
+          r.action       === action   &&
+          r.opts.context === opts.context) {
         registrations.splice(i, 1);
 
         if (tail.length > 0 && (val = this.get(head))) {
-          val.deregisterObserver(tail, opath, observee, observer, action);
+          val.deregisterObserver(tail, opath, observee, observer, action, opts);
         }
       }
     }
@@ -418,7 +420,7 @@ Z.Object.open(function() {
       }
 
       if (r.tail.length > 0 && (val = this.get(k))) {
-        val.deregisterObserver(r.tail, r.path, r.observee, r.observer, r.action);
+        val.deregisterObserver(r.tail, r.path, r.observee, r.observer, r.action, r.opts);
       }
 
       if (r.opts.prior) {

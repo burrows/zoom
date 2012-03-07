@@ -30,7 +30,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
       for (j = 0, ilen = items.length; j < ilen; j++) {
         items[j].deregisterObserver(r.tail, r.path, r.observee, r.observer,
-                                    r.action);
+                                    r.action, r.opts);
       }
     }
   }
@@ -434,7 +434,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     return registration;
   });
 
-  this.def('deregisterObserver', function(rpath, opath, observee, observer, action) {
+  this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
     var items = this.toNative(), registrations, r, i, j, rlen, ilen;
 
     if (this.hasProperty(rpath[0])) {
@@ -453,7 +453,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
         registrations.splice(i, 1);
 
         for (j = 0, ilen = items.length; j < ilen; j++) {
-          items[j].deregisterObserver(rpath, opath, observee, observer, action);
+          items[j].deregisterObserver(rpath, opath, observee, observer, action, opts);
         }
 
         return;
