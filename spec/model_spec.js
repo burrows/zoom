@@ -1660,4 +1660,141 @@ describe('Z.Model.basePrototype', function() {
   });
 });
 
+describe('Z.Model.query', function() {
+  beforeEach(function() {
+    Test.Author.load({id: 1, first: 'Ned', last: 'Stark'});
+    Test.Author.load({id: 2, first: 'Catelyn', last: 'Stark'});
+    Test.Author.load({id: 3, first: 'Robb', last: 'Stark'});
+    Test.Author.load({id: 4, first: 'Jon', last: 'Snow'});
+  });
+
+  describe('with no matching models existing prior to creating the query', function() {
+    it('should return an empty `Z.Array`', function() {
+      var q = Test.Author.query(function(a) { return a.last() === 'Lannister'; });
+      expect(q.isA(Z.Array)).toBe(true);
+      expect(q.size()).toBe(0);
+      q.destroy();
+    });
+  });
+
+  describe('with matching models existing prior to creating the query', function() {
+    it('should return a `Z.Array` containing the the matching models', function() {
+      var q = Test.Author.query(function(a) { return a.last() === 'Stark'; });
+      expect(q.isA(Z.Array)).toBe(true);
+      expect(q.size()).toBe(3);
+      expect(q.pluck('id').toNative().sort()).toEq([1,2,3]);
+      q.destroy();
+    });
+  });
+});
+
+describe('Z.Query', function() {
+  var q;
+
+  afterEach(function() { q.destroy(); });
+
+  describe('with a match function based on attributes of the type being queried', function() {
+    beforeEach(function() {
+      q = Test.Author.query(function(a) { return a.last() === 'Stark'; }, ['last']);
+    });
+
+    it('should update when a matching model is created', function() {
+      var a;
+
+      expect(q.size()).toBe(0);
+      Test.Author.load({id: 1, first: 'Ned', last: 'Stark'});
+      expect(q.pluck('first').toNative().sort()).toEq(['Ned']);
+      Test.Author.create({id: 2, first: 'Catelyn', last: 'Stark'});
+      expect(q.pluck('first').toNative().sort()).toEq(['Catelyn', 'Ned']);
+      a = Test.Author.create({first: 'Robb', last: 'Stark'});
+      expect(q.pluck('first').toNative().sort()).toEq(['Catelyn', 'Ned']);
+      a.id(3);
+      expect(q.pluck('first').toNative().sort()).toEq(['Catelyn', 'Ned', 'Robb']);
+      Test.Author.load({id: 4, first: 'Jon', last: 'Snow'});
+      expect(q.pluck('first').toNative().sort()).toEq(['Catelyn', 'Ned', 'Robb']);
+    });
+
+    it('should update when a non-matching model that existed before the query was created is updated to make it matching', function() {
+      var a  = Test.Author.load({id: 6, first: 'Jon', last: 'Snow'}),
+          q2 = Test.Author.query(function(a) { return a.last() === 'Stark'; }, ['last']);
+
+      expect(q2.size()).toBe(0);
+
+      a.last('Stark');
+      expect(q2.pluck('first').toNative().sort()).toEq(['Jon']);
+
+      q2.destroy();
+    });
+
+    it('should update when a non-matching model is updated to make it matching', function() {
+      var a;
+
+      expect(q.size()).toBe(0);
+      a = Test.Author.load({id: 4, first: 'Jon', last: 'Snow'});
+      expect(q.size()).toBe(0);
+      a.last('Stark');
+      expect(q.pluck('first').toNative()).toEq(['Jon']);
+    });
+
+    it('should update when a matching model is updated to make it non-matching', function() {
+      var a;
+      expect(q.size()).toBe(0);
+      a = Test.Author.load({id: 9, first: 'Sansa', last: 'Stark'});
+      expect(q.pluck('first').toNative()).toEq(['Sansa']);
+      a.last('Lannister');
+      expect(q.size()).toBe(0);
+    });
+  });
+
+  describe('with a match function based on attributes of models associated with the type being queried', function() {
+    beforeEach(function() {
+      q = Test.Post.query(function(p) {
+        return p.get('author.last') === 'Stark';
+      }, ['author.last']);
+    });
+
+    it('should update when a matching model is created', function() {
+      var p;
+
+      expect(q.size()).toBe(0);
+
+      Test.Post.load({id: 100, title: 'title 100', body: 'body 100', author: {
+        id: 5, first: 'Ned', last: 'Stark'
+      }});
+
+      expect(q.pluck('id').toNative().sort()).toEq([100]);
+
+      p = Test.Post.create({id: 101, title: 'title 101', body: 'body 101'});
+      expect(q.pluck('id').toNative().sort()).toEq([100]);
+      p.author(Test.Author.fetch(5));
+      expect(q.pluck('id').toNative().sort()).toEq([100, 101]);
+
+      Test.Post.load({id: 102, title: 'title 102', body: 'body 102', author: {
+        id: 9, first: 'Tyrion', last: 'Lannister'
+      }});
+      expect(q.pluck('id').toNative().sort()).toEq([100, 101]);
+    });
+
+    it('should update when a non-matching model is updated to make it matching', function() {
+      var p = Test.Post.load({id: 102, title: 'title 102', body: 'body 102', author: {
+        id: 21, first: 'Jon', last: 'Snow'
+      }});
+
+      expect(q.pluck('id').toNative().sort()).toEq([]);
+      p.set('author.last', 'Stark');
+      expect(q.pluck('id').toNative().sort()).toEq([102]);
+    });
+
+    it('should update when a matching model is updated to make it non-matching', function() {
+      var p = Test.Post.load({id: 107, title: 'title 107', body: 'body 107', author: {
+        id: 88, first: 'Sansa', last: 'Stark'
+      }});
+
+      expect(q.pluck('id').toNative().sort()).toEq([107]);
+      p.set('author.last', 'Lannister');
+      expect(q.pluck('id').toNative().sort()).toEq([]);
+    });
+  });
+});
+
 }());

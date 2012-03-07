@@ -1,36 +1,88 @@
 (function(undefined) {
 
-var slice = Array.prototype.slice, identityMap, NEW, EMPTY, LOADED, DESTROYED;
+var slice = Array.prototype.slice, repo, NEW, EMPTY, LOADED, DESTROYED;
 
-identityMap = {
-  all: {},
-  typeArrays: {},
+repo = Z.Object.extend(function() {
+  function attachQueryObservers(model, query) {
+    var paths = query.dependentPaths, i, len;
 
-  insert: function(model) {
-    var baseTypeId = model.basePrototype().objectId(),
-        id         = model.id(),
-        key        = baseTypeId + '-' + id;
+    for (i = 0, len = paths.length; i < len; i++) {
+      model.observe(paths[i], this, 'dependentPathDidChange', {context: query});
+    }
+  }
 
-    if (this.all[key]) {
+  function detachQueryObservers(model, query) {
+    var paths = query.dependentPaths, i, len;
+
+    for (i = 0, len = paths.length; i < len; i++) {
+      model.stopObserving(paths[i], this, 'dependentPathDidChange', {context: query});
+    }
+  }
+
+  this.def('initialize', function() {
+    this.idMap   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+    this.queries = Z.Hash.create(function(h, k) { return h.at(k, Z.A()); });
+  });
+
+  this.def('insert', function(model) {
+    var self     = this,
+        baseType = model.basePrototype(),
+        map      = this.idMap.at(baseType),
+        id       = model.id();
+
+    if (map.hasKey(id)) {
       throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
                             model.prototypeName(), id));
     }
 
-    this.all[key] = model;
-    (this.typeArrays[baseTypeId] = this.typeArrays[baseTypeId] || Z.A()).push(model);
-  },
+    map.at(id, model);
 
-  retrieve: function(type, id) {
-    var key = type.basePrototype().objectId() + '-' + id;
-    return this.all[key] || null;
-  },
+    this.queries.at(baseType).each(function(query) {
+      attachQueryObservers.call(self, model, query);
+      query.check(model);
+    });
+  });
 
-  clear: function() {
-    var k;
-    this.all = {};
-    for (k in this.typeArrays) { this.typeArrays[k].clear(); }
-  }
-};
+  this.def('retrieve', function(type, id) {
+    return this.idMap.at(type.basePrototype()).at(id);
+  });
+
+  this.def('clear', function(query) {
+    this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+
+    // clear all queries
+  });
+
+  this.def('registerQuery', function(query) {
+    var self     = this,
+        baseType = query.modelType.basePrototype(),
+        map      = this.idMap.at(baseType);
+
+    this.queries.at(baseType).push(query);
+
+    map.each(function(id, model) {
+      query.check(model);
+      attachQueryObservers.call(self, model, query);
+    });
+  });
+
+  this.def('deregisterQuery', function(query) {
+    var self     = this,
+        baseType = query.modelType.basePrototype(),
+        map      = this.idMap.at(baseType);
+
+    this.queries.at(baseType).remove(query);
+
+    map.each(function(id, model) {
+      detachQueryObservers.call(self, model, query);
+    });
+  });
+
+  this.def('dependentPathDidChange', function(notification) {
+    var query = notification.context, model = notification.observee;
+    query.check(model);
+  });
+}).create();
 
 function setState(o, state) {
   var source = false, dirty = false, invalid = false, busy = false;
@@ -150,7 +202,7 @@ Z.Model = Z.Object.extend(function() {
       }
 
       this.__id__ = v;
-      identityMap.insert(this);
+      repo.insert(this);
 
       return v;
     }
@@ -262,7 +314,7 @@ Z.Model = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('clearIdentityMap', function() { identityMap.clear(); });
+  this.def('clearIdentityMap', function() { repo.clear(); });
 
   this.def('empty', function(id) {
     var name = this.prototypeName(), m = this.create({id: id});
@@ -283,7 +335,7 @@ Z.Model = Z.Object.extend(function() {
                             this.prototypeName()));
     }
 
-    model = identityMap.retrieve(this, attributes.id) ||
+    model = repo.retrieve(this, attributes.id) ||
       this.create({id: attributes.id});
 
     Z.del(attributes, 'id');
@@ -309,7 +361,7 @@ Z.Model = Z.Object.extend(function() {
         other = type.load(associatedAttrs.hasOne[key]);
       }
       else {
-        other = identityMap.retrieve(type, associatedAttrs.hasOne[key]) ||
+        other = repo.retrieve(type, associatedAttrs.hasOne[key]) ||
           type.empty(associatedAttrs.hasOne[key]);
       }
 
@@ -326,7 +378,7 @@ Z.Model = Z.Object.extend(function() {
           other = type.load(associatedAttrs.hasMany[key][i]);
         }
         else {
-          other = identityMap.retrieve(type, associatedAttrs.hasMany[key][i]) ||
+          other = repo.retrieve(type, associatedAttrs.hasMany[key][i]) ||
             type.empty(associatedAttrs.hasMany[key][i]);
         }
         model.get(key).push(other);
@@ -340,7 +392,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('fetch', function(id) {
-    var model = identityMap.retrieve(this, id);
+    var model = repo.retrieve(this, id);
 
     if (model && !model.isA(this)) {
       throw new Error(Z.fmt("%@.fetch: a model with id `%@` was found in the identity map, but its prototype is `%@`",
@@ -642,6 +694,12 @@ Z.Model = Z.Object.extend(function() {
     return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
   });
 
+  this.def('query', function(fn, paths) {
+    var q = Z.Query.create(this, fn, paths);
+    repo.registerQuery(q);
+    return q;
+  });
+
   function stringToRaw(v) { return v ? v.toString() : v; }
   function integerToRaw(v) {
     if (typeof v === 'number') { return Math.round(v); }
@@ -721,6 +779,24 @@ Z.HasManyArray = Z.Array.extend(function() {
       }
     }
   });
+});
+
+Z.Query = Z.Array.extend(function() {
+  this.def('initialize', function(type, fn, paths) {
+    this.modelType      = type;
+    this.matchFunction  = fn;
+    this.dependentPaths = paths || [];
+
+    return this.supr();
+  });
+
+  this.def('check', function(model) {
+    if (!model.isA(this.modelType)) { return; }
+    if (this.matchFunction(model)) { this.push(model); }
+    else { this.remove(model); }
+  });
+
+  this.def('destroy', function() { repo.deregisterQuery(this); });
 });
 
 }());
