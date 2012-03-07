@@ -371,7 +371,7 @@ Z.Object.open(function() {
   });
 
   this.def('deregisterObserver', function(rpath, opath, observee, observer, action) {
-    var head = rpath[0], tail = rpath.slice(1), registrations, i, len, r, val;
+    var head = rpath[0], tail = rpath.slice(1), registrations, i, r, val;
 
     if (!this.hasProperty(head)) {
       throw new Error(Z.fmt("Z.Object.deregisterObserver: undefined key `%@` for %@", head, this));
@@ -380,7 +380,7 @@ Z.Object.open(function() {
     registrations = (this.__z_registrations__ || {})[head];
     if (!registrations) { return; }
 
-    for (i = 0, len = registrations.length; i < len; i++) {
+    for (i = registrations.length - 1; i >= 0; i--) {
       r = registrations[i];
 
       if (r.path     === opath    &&
@@ -392,8 +392,6 @@ Z.Object.open(function() {
         if (tail.length > 0 && (val = this.get(head))) {
           val.deregisterObserver(tail, opath, observee, observer, action);
         }
-
-        return;
       }
     }
   });

@@ -762,6 +762,19 @@ describe('Z.Object KVO support:', function() {
       expect(observer1.called).toBe(false);
       expect(observer2.called).toBe(true);
     });
+
+    it('should remove all observers that have the given path, observer, and action', function() {
+      var observer, user;
+      user = User.create({ name: 'Joe' });
+      observer = { called: 0, action: function() { this.called++; } };
+      user.observe('name', observer, 'action');
+      user.observe('name', observer, 'action');
+      user.name('Mary');
+      expect(observer.called).toBe(2);
+      user.stopObserving('name', observer, 'action');
+      user.name('Susan');
+      expect(observer.called).toBe(2);
+    });
   });
 
   describe('#observe with a key path', function() {
