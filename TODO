@@ -1,4 +1,3 @@
-* refactor Z.Model.load
 * Z.Array.sort
 * update private methods to use `this`
 * implement named finders

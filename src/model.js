@@ -341,66 +341,46 @@ Z.Model = Z.Object.extend(function() {
     return m;
   });
 
-  this.def('load', function(attributes) {
-    var associations    = this.associationDescriptors(),
-        associatedAttrs = { hasOne: {}, hasMany: {} },
-        model, other, key, type, descriptor, data, i, len;
+  this.def('load', function(attrs) {
+    var associations = this.associationDescriptors(), associated = {},
+        model, other, key, type, data, i, len;
 
-    attributes = Z.dup(attributes);
-
-    if (typeof attributes.id === 'undefined') {
+    if (Z.isUndefined(attrs.id)) {
       throw new Error(Z.fmt("%@.load: an `id` attribute is required",
                             this.prototypeName()));
     }
 
-    model = repo.retrieve(this, attributes.id) ||
-      this.create({id: attributes.id});
+    attrs = Z.dup(attrs);
+    model = repo.retrieve(this, attrs.id) || this.create({id: attrs.id});
 
-    Z.del(attributes, 'id');
+    Z.del(attrs, 'id');
 
-    // extract association hashes
+    // extract associated attributes
     for (key in associations) {
-      descriptor = associations[key];
-
-      if (data = Z.del(attributes, descriptor.name)) {
-        associatedAttrs[descriptor.type][descriptor.name] = data;
-      }
+      associated[associations[key].name] = Z.del(attrs, associations[key].name);
     }
 
     // set raw attributes
-    model.set(attributes);
+    model.set(attrs);
 
-    // load and set each association object
-    for (key in associatedAttrs.hasOne) {
-      descriptor = associations[key];
-      type       = Z.resolve(descriptor.modelType);
+    // load and set each association
+    for (key in associated) {
+      type = Z.resolve(associations[key].modelType);
+      if (!(data = associated[key])) { continue; }
 
-      if (Z.type(associatedAttrs.hasOne[key]) === 'object') {
-        other = type.load(associatedAttrs.hasOne[key]);
-      }
-      else {
-        other = repo.retrieve(type, associatedAttrs.hasOne[key]) ||
-          type.empty(associatedAttrs.hasOne[key]);
-      }
-
-      model.set(key, other);
-      setState(other, {dirty: false});
-    }
-
-    for (key in associatedAttrs.hasMany) {
-      descriptor = associations[key];
-      type       = Z.resolve(descriptor.modelType);
-
-      for (i = 0, len = associatedAttrs.hasMany[key].length; i < len; i++) {
-        if (Z.type(associatedAttrs.hasMany[key][i]) === 'object') {
-          other = type.load(associatedAttrs.hasMany[key][i]);
-        }
-        else {
-          other = repo.retrieve(type, associatedAttrs.hasMany[key][i]) ||
-            type.empty(associatedAttrs.hasMany[key][i]);
-        }
-        model.get(key).push(other);
+      if (associations[key].type === 'hasOne') {
+        other = Z.isObject(data) ? type.load(data) :
+          repo.retrieve(type, data) || type.empty(data);
+        model.set(key, other);
         setState(other, {dirty: false});
+      }
+      else if (associations[key].type === 'hasMany') {
+        for (i = 0, len = data.length; i < len; i++) {
+          other = Z.isObject(data[i]) ? type.load(data[i]) :
+            repo.retrieve(type, data[i]) || type.empty(data[i]);
+          model.get(key).push(other);
+          setState(other, {dirty: false});
+        }
       }
     }
 
