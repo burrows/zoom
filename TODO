@@ -1,14 +1,9 @@
 * refactor Z.Model.load
-* some sort of way to access a list of all loaded models of a certain type
-  * maybe use a Z.Hash for the identity map so that it can be observed?
-  * create an IdentityMap object that inherits from Z.Hash
-  * Z.Model.destroy should remove model from identity map?
-  * how to handle multiple levels of model subclassing?
-    * implement baseType method that returns the prototype just under Z.Model?
-    * identity map indexes by baseType
 * Z.Array.sort
 * update private methods to use `this`
 * implement named finders
 * figure out model serialization
+  * something RABL-like?
+  * does this belong in the framework?
 * batched property changes
 * docs
