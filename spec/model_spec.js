@@ -944,6 +944,22 @@ describe('Z.Model.destroyModelDidSucceed', function() {
     expect(m2).not.toBe(m);
     expect(m2.sourceState()).toBe(Z.Model.EMPTY);
   });
+
+  it('should remove the model from any associations', function() {
+    var p = Test.Post.load({
+      id: 184, title: 'the title', body: 'the body',
+      author: { id: 9, first: 'Homer', last: 'Simpson' },
+      tags: [ { id: 18, name: 'the tag' } ]
+    }), a = p.author(), t = p.tags().first();
+
+    expect(a.posts()).toEq(Z.A(p));
+    expect(t.posts()).toEq(Z.A(p));
+
+    p.destroy().destroyModelDidSucceed();
+
+    expect(a.posts()).toEq(Z.A());
+    expect(t.posts()).toEq(Z.A());
+  });
 });
 
 describe('Z.Model.destroyModelDidFail', function() {
@@ -1812,6 +1828,16 @@ describe('Z.Query', function() {
       expect(q.pluck('id').toNative().sort()).toEq([107]);
       p.set('author.last', 'Lannister');
       expect(q.pluck('id').toNative().sort()).toEq([]);
+    });
+
+    it('should update when the associated model of a matching model is destroyed', function() {
+      var p = Test.Post.load({id: 107, title: 'title 107', body: 'body 107', author: {
+        id: 88, first: 'Sansa', last: 'Stark'
+      }});
+
+      expect(q.size()).toBe(1);
+      p.author().destroy().destroyModelDidSucceed();
+      expect(q.size()).toBe(0);
     });
   });
 });

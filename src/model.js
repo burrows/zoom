@@ -511,8 +511,25 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('destroyModelDidSucceed', function() {
-    setState(this, {source: DESTROYED, busy: false, invalid: false, dirty: false});
+    var associations = this.associationDescriptors(), descriptor, k, m, i;
+
     repo.remove(this);
+    setState(this, {source: DESTROYED, busy: false, invalid: false, dirty: false});
+
+    // clear any associations this model is involved in
+    for (k in associations) {
+      descriptor = associations[k];
+      if (!descriptor.inverse) { continue; }
+
+      if (descriptor.type === 'hasOne') {
+        if (m = this.get(k)) { m.inverseDidRemove(descriptor.inverse, this); }
+      }
+      else if (descriptor.type === 'hasMany') {
+        for (i = this.get(k).size() - 1; i >= 0; i--) {
+          this.get(k).at(i).inverseDidRemove(descriptor.inverse, this);
+        }
+      }
+    }
   });
 
   this.def('destroyModelDidFail', function() {
