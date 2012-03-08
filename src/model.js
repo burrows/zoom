@@ -3,11 +3,16 @@
 var slice = Array.prototype.slice, repo, NEW, EMPTY, LOADED, DESTROYED;
 
 repo = Z.Object.extend(function() {
+  function dependentPathDidChange(notification) {
+    var query = notification.context, model = notification.observee;
+    query.check(model);
+  }
+
   function attachQueryObservers(model, query) {
     var paths = query.dependentPaths, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
-      model.observe(paths[i], this, 'dependentPathDidChange', {context: query});
+      model.observe(paths[i], null, dependentPathDidChange, {context: query});
     }
   }
 
@@ -15,19 +20,20 @@ repo = Z.Object.extend(function() {
     var paths = query.dependentPaths, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
-      model.stopObserving(paths[i], this, 'dependentPathDidChange', {context: query});
+      model.stopObserving(paths[i], null, dependentPathDidChange, {context: query});
     }
   }
 
   this.def('initialize', function() {
     this.idMap   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-    this.queries = Z.Hash.create(function(h, k) { return h.at(k, Z.A()); });
+    this.queries = Z.H();
   });
 
   this.def('insert', function(model) {
     var self     = this,
         baseType = model.basePrototype(),
         map      = this.idMap.at(baseType),
+        queries  = this.queries.at(baseType),
         id       = model.id();
 
     if (map.hasKey(id)) {
@@ -37,7 +43,9 @@ repo = Z.Object.extend(function() {
 
     map.at(id, model);
 
-    this.queries.at(baseType).each(function(query) {
+    if (!queries) { return; }
+
+    queries.each(function(query) {
       attachQueryObservers.call(self, model, query);
       query.check(model);
     });
@@ -49,16 +57,18 @@ repo = Z.Object.extend(function() {
 
   this.def('clear', function(query) {
     this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-
-    // clear all queries
+    this.queries.each(function(baseType, queries) { queries.invoke('clear'); });
   });
 
   this.def('registerQuery', function(query) {
     var self     = this,
         baseType = query.modelType.basePrototype(),
-        map      = this.idMap.at(baseType);
+        map      = this.idMap.at(baseType),
+        queries  = this.queries.at(baseType);
 
-    this.queries.at(baseType).push(query);
+    if (!queries) { queries = this.queries.at(baseType, Z.A()); }
+
+    queries.push(query);
 
     map.each(function(id, model) {
       query.check(model);
@@ -76,11 +86,6 @@ repo = Z.Object.extend(function() {
     map.each(function(id, model) {
       detachQueryObservers.call(self, model, query);
     });
-  });
-
-  this.def('dependentPathDidChange', function(notification) {
-    var query = notification.context, model = notification.observee;
-    query.check(model);
   });
 }).create();
 
