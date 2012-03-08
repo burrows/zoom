@@ -69,7 +69,7 @@ repo = Z.Object.extend(function() {
     });
   });
 
-  this.def('clear', function(query) {
+  this.def('reset', function(query) {
     this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
     this.queries.each(function(baseType, queries) { queries.invoke('clear'); });
   });
@@ -332,7 +332,7 @@ Z.Model = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('clearIdentityMap', function() { repo.clear(); });
+  this.def('reset', function() { repo.reset(); });
 
   this.def('empty', function(id) {
     var name = this.prototypeName(), m = this.create({id: id});

@@ -2,7 +2,7 @@
 
 if (typeof Z === 'undefined') { require('./helper'); }
 
-beforeEach(function() { Z.Model.clearIdentityMap(); });
+beforeEach(function() { Z.Model.reset(); });
 
 Test.BasicModel = Z.Model.extend(function() {
   this.attribute('foo', 'string');
@@ -1190,12 +1190,12 @@ describe('Z.Model.validate', function() {
   });
 });
 
-describe('Z.Model.clearIdentityMap', function() {
+describe('Z.Model.reset', function() {
   it('should remove all objects from the identity map', function() {
     var m = Test.BasicModel.create({id: 1111});
 
     expect(Test.BasicModel.fetch(1111)).toBe(m);
-    Z.Model.clearIdentityMap();
+    Z.Model.reset();
     expect(Test.BasicModel.fetch(1111)).not.toBe(m);
   });
 });
