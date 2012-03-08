@@ -30,8 +30,7 @@ repo = Z.Object.extend(function() {
   });
 
   this.def('insert', function(model) {
-    var self     = this,
-        baseType = model.basePrototype(),
+    var baseType = model.basePrototype(),
         map      = this.idMap.at(baseType),
         queries  = this.queries.at(baseType),
         id       = model.id();
@@ -46,13 +45,28 @@ repo = Z.Object.extend(function() {
     if (!queries) { return; }
 
     queries.each(function(query) {
-      attachQueryObservers.call(self, model, query);
+      attachQueryObservers(model, query);
       query.check(model);
     });
   });
 
   this.def('retrieve', function(type, id) {
     return this.idMap.at(type.basePrototype()).at(id);
+  });
+
+  this.def('remove', function(model) {
+    var baseType = model.basePrototype(),
+        map      = this.idMap.at(baseType),
+        queries  = this.queries.at(baseType);
+
+    map.del(model.id());
+
+    if (!queries) { return; }
+
+    queries.each(function(query) {
+      detachQueryObservers(model, query);
+      query.remove(model);
+    });
   });
 
   this.def('clear', function(query) {
@@ -72,19 +86,18 @@ repo = Z.Object.extend(function() {
 
     map.each(function(id, model) {
       query.check(model);
-      attachQueryObservers.call(self, model, query);
+      attachQueryObservers(model, query);
     });
   });
 
   this.def('deregisterQuery', function(query) {
-    var self     = this,
-        baseType = query.modelType.basePrototype(),
+    var baseType = query.modelType.basePrototype(),
         map      = this.idMap.at(baseType);
 
     this.queries.at(baseType).remove(query);
 
     map.each(function(id, model) {
-      detachQueryObservers.call(self, model, query);
+      detachQueryObservers(model, query);
     });
   });
 }).create();
@@ -499,6 +512,7 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('destroyModelDidSucceed', function() {
     setState(this, {source: DESTROYED, busy: false, invalid: false, dirty: false});
+    repo.remove(this);
   });
 
   this.def('destroyModelDidFail', function() {

@@ -933,6 +933,17 @@ describe('Z.Model.destroyModelDidSucceed', function() {
     expect(m.isInvalid()).toBe(false);
     expect(m.isBusy()).toBe(false);
   });
+
+  it('should remove the object from the identity map', function() {
+    var m = Test.BasicModel.load({id: 888}), m2;
+
+    m.destroy();
+    expect(Test.BasicModel.fetch(888)).toBe(m);
+    m.destroyModelDidSucceed();
+    m2 = Test.BasicModel.fetch(888);
+    expect(m2).not.toBe(m);
+    expect(m2.sourceState()).toBe(Z.Model.EMPTY);
+  });
 });
 
 describe('Z.Model.destroyModelDidFail', function() {
@@ -1742,6 +1753,14 @@ describe('Z.Query', function() {
       a = Test.Author.load({id: 9, first: 'Sansa', last: 'Stark'});
       expect(q.pluck('first').toNative()).toEq(['Sansa']);
       a.last('Lannister');
+      expect(q.size()).toBe(0);
+    });
+
+    it('should update when a matching model is destroyed', function() {
+      var a = Test.Author.load({id: 9, first: 'Sansa', last: 'Stark'});
+
+      expect(q.size()).toBe(1);
+      a.destroy().destroyModelDidSucceed();
       expect(q.size()).toBe(0);
     });
   });
