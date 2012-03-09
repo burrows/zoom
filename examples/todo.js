@@ -38,7 +38,10 @@ App.LocalStorageMapper = Z.Mapper.extend(function() {
     var id = nextId(), k = 'todo:' + id;
 
     localStorage.setItem(k, JSON.stringify({
-      id: id, title: todo.title(), tags: todo.tags().pluck('id').toNative()
+      id: id,
+      title: todo.title(),
+      isDone: todo.isDone(),
+      tags: todo.tags().pluck('id').toNative()
     }));
 
     todo.id(id);
@@ -48,7 +51,10 @@ App.LocalStorageMapper = Z.Mapper.extend(function() {
     var id = todo.id(), k = 'todo:' + id;
 
     localStorage.setItem(k, JSON.stringify({
-      id: id, title: todo.title(), tags: todo.tags.pluck('id').toNative()
+      id: id,
+      title: todo.title(),
+      isDone: todo.isDone(),
+      tags: todo.tags().pluck('id').toNative()
     }));
   }
 
@@ -108,7 +114,7 @@ App.LocalStorageMapper = Z.Mapper.extend(function() {
 });
 
 App.Todo = Z.Model.extend(function() {
-  //this.attribute('isDone', 'boolean', {'default': false});
+  this.attribute('isDone', 'boolean', {'default': false});
   this.attribute('title', 'string');
   this.hasMany('tags', 'App.Tag', {owner: true, inverse: 'todos'});
 });
