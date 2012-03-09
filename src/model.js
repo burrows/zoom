@@ -690,11 +690,13 @@ Z.Model = Z.Object.extend(function() {
     }
 
     Z.detectRecursion(this, function() {
-      var descriptors = self.associationDescriptors(), descriptor, k;
+      var descriptors = self.associationDescriptors(),
+          names       = self.attributeNames(),
+          descriptor, k, i, len;
 
-      self.attributeNames().forEach(function(attrName) {
-        a.push(Z.fmt("%@: %@", attrName, Z.inspect(self.get(attrName))));
-      });
+      for (i = 0, len = names.length; i < len; i++) {
+        a.push(Z.fmt("%@: %@", names[i], Z.inspect(self.get(names[i]))));
+      }
 
       for (k in descriptors) {
         descriptor = descriptors[k];

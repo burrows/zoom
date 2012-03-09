@@ -56,7 +56,7 @@ describe('Z.Model.attribute', function() {
   describe('generated property', function() {
     it('should return the value given by the `default` option is the attribute has not previously been set', function() {
       var Model = Z.Model.extend(function() {
-        this.attribute('foo', 'integer', {default: 9});
+        this.attribute('foo', 'integer', {'default': 9});
         this.attribute('bar', 'integer');
       }), m;
 
