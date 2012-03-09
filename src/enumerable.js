@@ -54,6 +54,19 @@ Z.Enumerable = Z.Module.create(function() {
       return item.isZObject ? item.get(path) : item[path];
     });
   });
+
+  this.def('toArray', function() {
+    var a = Z.A();
+
+    this.each(function() {
+      var args = slice.call(arguments);
+      a.push(args.length === 1 ? args[0] : args);
+    });
+
+    return a;
+  });
+
+  this.def('sort', function(fn) { return this.toArray().sort(fn); });
 });
 
 }());

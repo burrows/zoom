@@ -1270,4 +1270,106 @@ describe('Z.Array.hash', function() {
   });
 });
 
+describe('Z.Array.toArray', function() {
+  describe('given a direct instance of `Z.Array`', function() {
+    it('should return the receiver', function() {
+      var a = Z.A(1,2,3);
+      expect(a.toArray()).toBe(a);
+    });
+  });
+
+  describe('given an instance of a sub-type of `Z.Array`', function() {
+    it('should create a new instance of `Z.Array` with the contents of the receiver', function() {
+      var SubArray = Z.Array.extend(), sa = SubArray.create();
+
+      sa.push(1, 2, 3, 5);
+      expect(sa.toArray()).not.toBe(sa);
+      expect(sa.toArray()).toEq(Z.A(1,2,3,5));
+    });
+  });
+});
+
+describe('Z.Array.sort', function() {
+  var Foo = Z.Object.extend(Z.Orderable, function() {
+    this.property('x');
+
+    this.def('eq', function(other) {
+      return this.x() === other.x();
+    });
+
+    this.def('cmp', function(other) {
+      return Z.cmp(this.x(), other.x());
+    });
+  });
+
+  describe('given no arguments', function() {
+    it('should return a new `Z.Array` instance with the items sorted using `Z.cmp` as the comparison function', function() {
+      var f1 = Foo.create({x: 9}), f2 = Foo.create({x: 2}), f3 = Foo.create({x: 4});
+
+      expect(Z.A(4,8,2,5,1,7,3).sort()).toEq(Z.A(1,2,3,4,5,7,8));
+      expect(Z.A('foo', 'bar', 'baz').sort()).toEq(Z.A('bar', 'baz', 'foo'));
+      expect(Z.A(f1, f2, f3).sort()).toEq(Z.A(f2, f3, f1));
+    });
+  });
+
+  describe('given a function argument', function() {
+    it('should use the given function as the comparison function', function() {
+      var f1 = Foo.create({x: 9}), f2 = Foo.create({x: 2}), f3 = Foo.create({x: 4}),
+          cmp = function(a, b) { return Z.cmp(a, b) * -1; };
+
+      expect(Z.A(4,8,2,5,1,7,3).sort(cmp)).toEq(Z.A(8,7,5,4,3,2,1));
+      expect(Z.A('foo', 'bar', 'baz').sort(cmp)).toEq(Z.A('foo', 'baz', 'bar'));
+      expect(Z.A(f1, f2, f3).sort(cmp)).toEq(Z.A(f1, f3, f2));
+    });
+  });
+
+  it('should not modify the receiver', function() {
+    var f1 = Foo.create({x: 10}), f2 = Foo.create({x: 11}), f3 = Foo.create({x: 3}),
+        a = Z.A(f1, f2, f3);
+
+    expect(a.sort()).toEq(Z.A(f3, f1, f2));
+    expect(a).toEq(Z.A(f1, f2, f3));
+  });
+
+  it('should not trigger observers', function() {
+    var a = Z.A(3,1,2), called = false, f = function() { called = true; };
+
+    a.observe('@', null, f);
+    a.sort();
+    expect(called).toBe(false);
+  });
+});
+
+describe('Z.Array.sort$', function() {
+  describe('given no arguments', function() {
+    it('should sort the array in place using `Z.cmp` as the comparison function', function() {
+      var a = Z.A(5,2,7,1,9,3);
+
+      expect(a.sort$()).toBe(a);
+      expect(a).toEq(Z.A(1,2,3,5,7,9));
+    });
+  });
+
+  describe('given a function argument', function() {
+    it('should sort the array in place using the given function as the comparison function', function() {
+      var a = Z.A(5,2,7,1,9,3), cmp = function(a, b) { return Z.cmp(a, b) * -1; };
+
+      expect(a.sort$(cmp)).toBe(a);
+      expect(a).toEq(Z.A(9,7,5,3,2,1));
+    });
+  });
+
+  it('should trigger `@` observers', function() {
+    var a             = Z.A('the', 'quick', 'brown', 'fox'),
+        notifications = [],
+        f             = function(n) { notifications.push(n); };
+
+    a.observe('@', null, f);
+    a.sort$();
+    expect(notifications.length).toBe(1);
+    expect(notifications[0].path).toBe('@');
+    expect(notifications[0].range).toEq([0, 4]);
+  });
+});
+
 }());

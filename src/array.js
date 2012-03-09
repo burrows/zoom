@@ -184,7 +184,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     if (arguments.length === 0) {
       this.__z_items__ = [];
     }
-    else if (typeof arg === 'number') {
+    else if (Z.isNumber(arg)) {
       this.__z_items__ = new Array(arg);
     }
     else if (Z.isArray(arg) || Z.isArguments(arg)) {
@@ -403,6 +403,19 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     }
 
     return Z.A(result);
+  });
+
+  this.def('toArray', function() {
+    return Z.getPrototypeOf(this) === Z.Array ? this : Z.Array.create(this);
+  });
+
+  this.def('sort', function(fn) {
+    return Z.Array.create(this.__z_items__.slice().sort(fn || Z.cmp));
+  });
+
+  this.def('sort$', function(fn) {
+    var sorted = this.sort(fn).__z_items__;
+    return this.splice.apply(this, [0, this.size()].concat(sorted));
   });
 
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {

@@ -84,4 +84,31 @@ describe('Z.Enumerable.pluck', function() {
   });
 });
 
+describe('Z.Enumerable.toArray', function() {
+  it('should return a `Z.Array` containing each item yielded to `each`', function() {
+    var X = Z.Object.extend(Z.Enumerable, function() {
+      this.def('each', function(f) { f(1, 2); f(3, 4); });
+    });
+
+    expect(f.toArray()).toEq(Z.A('foo', 'bar', 'baz', 'quux'));
+    expect(X.create().toArray()).toEq(Z.A([1, 2], [3, 4]));
+  });
+});
+
+describe('Z.Enumerable.toArray', function() {
+  describe('given no arguments', function() {
+    it('should convert the receiver to an array and sort it using `Z.cmp`', function() {
+      expect(f.sort()).toEq(Z.A('bar', 'baz', 'foo', 'quux'));
+    });
+  });
+
+  describe('given a function argument', function() {
+    it('should convert the receiver to an array and sort it using the given function', function() {
+      expect(Z.H('foo', 3, 'bar', 2, 'baz', 1).sort(function(a, b) {
+        return Z.cmp(a[1], b[1]);
+      })).toEq(Z.A(['baz', 1], ['bar', 2], ['foo', 3]));
+    });
+  });
+});
+
 }());

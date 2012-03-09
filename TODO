@@ -1,4 +1,8 @@
 * Z.Array.sort
+* Z.Array.sortBy
+* finish Z.cmp
+* make Z.Array and Z.Hash Orderable
+* remove is<Type> properties, use Z.Object.isA instead
 * implement named finders
 * figure out model serialization
   * something RABL-like?
