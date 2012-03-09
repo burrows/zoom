@@ -479,31 +479,6 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     }
   });
 
-  this.def('_get', function(path) {
-    var head = path[0], tail = path.slice(1);
-
-    switch (head) {
-      case '@count':
-        return this.size();
-      case '@max':
-        return this._get(tail).inject(function(acc, item) {
-          return Z.max(acc, item);
-        });
-      case '@min':
-        return this._get(tail).inject(function(acc, item) {
-          return Z.min(acc, item);
-        });
-      case '@sum':
-        return this._get(tail).inject(function(acc, item) {
-          return acc + item;
-        });
-      case '@avg':
-        return this._get(['@sum'].concat(tail)) / this.size();
-      default:
-        return this.supr(path);
-    }
-  });
-
   this.def('getUnknownProperty', function(k) {
     return this.pluck(k).flatten();
   });

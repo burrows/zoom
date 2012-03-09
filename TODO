@@ -1,4 +1,3 @@
-* remove Z.Array @count, @max, etc.
 * Z.Array.sortBy
 * finish Z.cmp
 * make Z.Array and Z.Hash Orderable
