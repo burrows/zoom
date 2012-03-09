@@ -5,9 +5,9 @@ var seed = Math.floor(Math.random() * 0xffffffff);
 Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.isZHash = true;
 
-  function defaultValue(h, k) {
-    var def = h.__z_default__;
-    return typeof def === 'function' ? def.call(null, h, k) : def;
+  function defaultValue(k) {
+    var def = this.__z_default__;
+    return typeof def === 'function' ? def.call(null, this, k) : def;
   }
 
   this.def('initialize', function(def) {
@@ -40,14 +40,14 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     bucket = this.__z_buckets__[hash];
 
     if (nargs === 1) {
-      if (!bucket) { return defaultValue(this, k); }
+      if (!bucket) { return defaultValue.call(this, k); }
 
       for (i = 0, len = bucket.length; i < len; i++) {
         entry = bucket[i];
         if (Z.eq(k, entry.key)) { return entry.value; }
       }
 
-      return defaultValue(this, k);
+      return defaultValue.call(this, k);
     }
     else {
       if (bucket) {

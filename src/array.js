@@ -5,8 +5,8 @@ var slice = Array.prototype.slice;
 Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.isZArray = true;
 
-  function registerItemObservers(array, items) {
-    var registrations = array.__z_itemRegistrations__, i, j, rlen, ilen, r;
+  function registerItemObservers(items) {
+    var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
 
     if (!registrations) { return; }
 
@@ -20,8 +20,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     }
   }
 
-  function deregisterItemObservers(array, items) {
-    var registrations = array.__z_itemRegistrations__, i, j, rlen, ilen, r;
+  function deregisterItemObservers(items) {
+    var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
 
     if (!registrations) { return; }
 
@@ -35,46 +35,46 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     }
   }
 
-  function willMutate(array, type, idx, n) {
-    var len       = array.size(),
-        prevItems = array.slice(idx, n),
+  function willMutate(type, idx, n) {
+    var len       = this.size(),
+        prevItems = this.slice(idx, n),
         registrations, r, i, notification;
 
     switch (type) {
       case 'insert':
-        array.willChangeProperty('size');
-        if (idx === 0)  { array.willChangeProperty('first'); }
-        if (idx >= len) { array.willChangeProperty('last'); }
-        array.willChangeProperty('@', {
+        this.willChangeProperty('size');
+        if (idx === 0)  { this.willChangeProperty('first'); }
+        if (idx >= len) { this.willChangeProperty('last'); }
+        this.willChangeProperty('@', {
           type     : 'insert',
           range    : [idx, n],
           previous : undefined
         });
         break;
       case 'remove':
-        array.willChangeProperty('size');
-        if (idx === 0)       { array.willChangeProperty('first'); }
-        if (idx + n === len) { array.willChangeProperty('last'); }
-        array.willChangeProperty('@', {
+        this.willChangeProperty('size');
+        if (idx === 0)       { this.willChangeProperty('first'); }
+        if (idx + n === len) { this.willChangeProperty('last'); }
+        this.willChangeProperty('@', {
           type     : 'remove',
           range    : [idx, n],
           previous : prevItems
         });
-        deregisterItemObservers(array, prevItems.toNative());
+        deregisterItemObservers.call(this, prevItems.toNative());
         break;
       case 'replace':
-        if (idx === 0)       { array.willChangeProperty('first'); }
-        if (idx === len - 1) { array.willChangeProperty('last'); }
-        array.willChangeProperty('@', {
+        if (idx === 0)       { this.willChangeProperty('first'); }
+        if (idx === len - 1) { this.willChangeProperty('last'); }
+        this.willChangeProperty('@', {
           type     : 'replace',
           range    : [idx, n],
           previous : prevItems
         });
-        deregisterItemObservers(array, prevItems.toNative());
+        deregisterItemObservers.call(this, prevItems.toNative());
         break;
     }
 
-    if (!(registrations = array.__z_itemRegistrations__)) { return; }
+    if (!(registrations = this.__z_itemRegistrations__)) { return; }
 
     for (i = 0, len = registrations.length; i < len; i++) {
       r = registrations[i];
@@ -97,46 +97,46 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     }
   }
 
-  function didMutate(array, type, idx, n) {
-    var len      = array.size(),
-        curItems = array.slice(idx, n),
+  function didMutate(type, idx, n) {
+    var len      = this.size(),
+        curItems = this.slice(idx, n),
         registrations, r, i, notification;
 
     switch (type) {
       case 'insert':
-        array.didChangeProperty('size');
-        if (idx === 0)       { array.didChangeProperty('first'); }
-        if (idx + n === len) { array.didChangeProperty('last'); }
-        array.didChangeProperty('@', {
+        this.didChangeProperty('size');
+        if (idx === 0)       { this.didChangeProperty('first'); }
+        if (idx + n === len) { this.didChangeProperty('last'); }
+        this.didChangeProperty('@', {
           type    : 'insert',
           range   : [idx, n],
           current : curItems
         });
-        registerItemObservers(array, curItems.toNative());
+        registerItemObservers.call(this, curItems.toNative());
         break;
       case 'remove':
-        array.didChangeProperty('size');
-        if (idx === 0)     { array.didChangeProperty('first'); }
-        if (idx + n > len) { array.didChangeProperty('last'); }
-        array.didChangeProperty('@', {
+        this.didChangeProperty('size');
+        if (idx === 0)     { this.didChangeProperty('first'); }
+        if (idx + n > len) { this.didChangeProperty('last'); }
+        this.didChangeProperty('@', {
           type    : 'remove',
           range   : [idx, n],
           current : undefined
         });
         break;
       case 'replace':
-        if (idx === 0) { array.didChangeProperty('first'); }
-        if (idx === len - 1) { array.didChangeProperty('last'); }
-        array.didChangeProperty('@', {
+        if (idx === 0) { this.didChangeProperty('first'); }
+        if (idx === len - 1) { this.didChangeProperty('last'); }
+        this.didChangeProperty('@', {
           type    : 'replace',
           range   : [idx, n],
           current : curItems
         });
-        registerItemObservers(array, curItems.toNative());
+        registerItemObservers.call(this, curItems.toNative());
         break;
     }
 
-    if (!(registrations = array.__z_itemRegistrations__)) { return; }
+    if (!(registrations = this.__z_itemRegistrations__)) { return; }
 
     for (i = 0, len = registrations.length; i < len; i++) {
       r = registrations[i];
@@ -272,17 +272,17 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     removeNum  = expand ? 0 : n - replaceNum;
     removeIdx  = idx + replaceNum;
 
-    if (replaceNum > 0) { willMutate(this, 'replace', replaceIdx, replaceNum); }
-    if (insertNum > 0)  { willMutate(this, 'insert', insertIdx, insertNum); }
-    if (removeNum > 0)  { willMutate(this, 'remove', removeIdx, removeNum); }
+    if (replaceNum > 0) { willMutate.call(this, 'replace', replaceIdx, replaceNum); }
+    if (insertNum > 0)  { willMutate.call(this, 'insert', insertIdx, insertNum); }
+    if (removeNum > 0)  { willMutate.call(this, 'remove', removeIdx, removeNum); }
 
     if (expand) { this.__z_items__.length = idx; }
 
     this.__z_items__.splice.apply(this.__z_items__, [idx, n].concat(items));
 
-    if (replaceNum > 0) { didMutate(this, 'replace', replaceIdx, replaceNum); }
-    if (insertNum > 0)  { didMutate(this, 'insert', insertIdx, insertNum); }
-    if (removeNum > 0)  { didMutate(this, 'remove', removeIdx, removeNum); }
+    if (replaceNum > 0) { didMutate.call(this, 'replace', replaceIdx, replaceNum); }
+    if (insertNum > 0)  { didMutate.call(this, 'insert', insertIdx, insertNum); }
+    if (removeNum > 0)  { didMutate.call(this, 'remove', removeIdx, removeNum); }
 
     return this;
   });

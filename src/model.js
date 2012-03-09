@@ -102,38 +102,38 @@ repo = Z.Object.extend(function() {
   });
 }).create();
 
-function setState(o, state) {
+function setState(state) {
   var source = false, dirty = false, invalid = false, busy = false;
 
-  if (state.hasOwnProperty('source') && state.source !== o.__sourceState__) {
+  if (state.hasOwnProperty('source') && state.source !== this.__sourceState__) {
     source = true;
-    o.willChangeProperty('sourceState');
+    this.willChangeProperty('sourceState');
   }
 
-  if (state.hasOwnProperty('dirty') && state.dirty !== o.__isDirty__) {
+  if (state.hasOwnProperty('dirty') && state.dirty !== this.__isDirty__) {
     dirty = true;
-    o.willChangeProperty('isDirty');
+    this.willChangeProperty('isDirty');
   }
 
-  if (state.hasOwnProperty('invalid') && state.invalid !== o.__isInvalid__) {
+  if (state.hasOwnProperty('invalid') && state.invalid !== this.__isInvalid__) {
     invalid = true;
-    o.willChangeProperty('isInvalid');
+    this.willChangeProperty('isInvalid');
   }
 
-  if (state.hasOwnProperty('busy') && state.busy !== o.__isBusy__) {
+  if (state.hasOwnProperty('busy') && state.busy !== this.__isBusy__) {
     busy = true;
-    o.willChangeProperty('isBusy');
+    this.willChangeProperty('isBusy');
   }
 
-  if (source)  { o.__sourceState__ = state.source; }
-  if (dirty)   { o.__isDirty__     = state.dirty; }
-  if (invalid) { o.__isInvalid__   = state.invalid; }
-  if (busy)    { o.__isBusy__      = state.busy; }
+  if (source)  { this.__sourceState__ = state.source; }
+  if (dirty)   { this.__isDirty__     = state.dirty; }
+  if (invalid) { this.__isInvalid__   = state.invalid; }
+  if (busy)    { this.__isBusy__      = state.busy; }
 
-  if (source)  { o.didChangeProperty('sourceState'); }
-  if (dirty)   { o.didChangeProperty('isDirty'); }
-  if (invalid) { o.didChangeProperty('isInvalid'); }
-  if (busy)    { o.didChangeProperty('isBusy'); }
+  if (source)  { this.didChangeProperty('sourceState'); }
+  if (dirty)   { this.didChangeProperty('isDirty'); }
+  if (invalid) { this.didChangeProperty('isInvalid'); }
+  if (busy)    { this.didChangeProperty('isBusy'); }
 }
 
 Z.Model = Z.Object.extend(function() {
@@ -149,59 +149,59 @@ Z.Model = Z.Object.extend(function() {
   this.LOADED    = LOADED    = 'loaded';
   this.DESTROYED = DESTROYED = 'destroyed';
 
-  function getHasOne(model, descriptor) {
-    return model[Z.fmt("__%@__", descriptor.name)] || null;
+  function getHasOne(descriptor) {
+    return this[Z.fmt("__%@__", descriptor.name)] || null;
   }
 
-  function _setHasOne(model, descriptor, val) {
+  function _setHasOne(descriptor, val) {
     var name   = descriptor.name,
         owner  = descriptor.owner,
         key    = Z.fmt("__%@__", name),
-        state  = model.sourceState();
+        state  = this.sourceState();
 
     if (owner) {
-      if ((state !== NEW && state !== LOADED) || model.isBusy()) {
+      if ((state !== NEW && state !== LOADED) || this.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the owner side is %@: %@",
-                              model.prototypeName(), name, model.stateString(), model));
+                              this.prototypeName(), name, this.stateString(), this));
       }
     }
 
-    model.willChangeProperty(name);
-    model[key] = val;
-    if (owner && state === LOADED) { setState(model, {dirty: true}); }
-    model.didChangeProperty(name);
+    this.willChangeProperty(name);
+    this[key] = val;
+    if (owner && state === LOADED) { setState.call(this, {dirty: true}); }
+    this.didChangeProperty(name);
   }
 
-  function setHasOne(model, descriptor, val) {
+  function setHasOne(descriptor, val) {
     var name    = descriptor.name,
         key     = Z.fmt("__%@__", name),
-        prev    = model[key],
+        prev    = this[key],
         type    = Z.resolve(descriptor.modelType),
         inverse = descriptor.inverse,
-        state   = model.sourceState();
+        state   = this.sourceState();
 
     if (val && (!Z.isZObject(val) || (!val.isA(type)))) {
       throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                            model.prototypeName(), name, descriptor.modelType, Z.inspect(val)));
+                            this.prototypeName(), name, descriptor.modelType, Z.inspect(val)));
     }
 
-    _setHasOne(model, descriptor, val);
+    _setHasOne.call(this, descriptor, val);
 
-    if (inverse && prev) { prev.inverseDidRemove(inverse, model); }
-    if (inverse && val) { val.inverseDidAdd(inverse, model); }
+    if (inverse && prev) { prev.inverseDidRemove(inverse, this); }
+    if (inverse && val) { val.inverseDidAdd(inverse, this); }
 
     return val;
   }
 
-  function getHasMany(model, descriptor) {
+  function getHasMany(descriptor) {
     var key = Z.fmt("__%@__", descriptor.name);
 
-    return model[key] = model[key] || Z.HasManyArray.create(model, descriptor);
+    return this[key] = this[key] || Z.HasManyArray.create(this, descriptor);
   }
 
-  function setHasMany(model, descriptor, v) {
+  function setHasMany(descriptor, v) {
     var key = Z.fmt("__%@__", descriptor.name),
-        a   = getHasMany(model, descriptor);
+        a   = getHasMany.call(this, descriptor);
 
     a.splice.apply(a, [0, a.size()].concat(v.isZArray ? v.toNative() : v));
 
@@ -261,7 +261,7 @@ Z.Model = Z.Object.extend(function() {
         var def = opts['default'];
 
         if (this.sourceState() === EMPTY) {
-          setState(this, {busy: true});
+          setState.call(this, {busy: true});
           this.mapper.fetchModel(this);
         }
 
@@ -280,7 +280,7 @@ Z.Model = Z.Object.extend(function() {
         if (state !== NEW) {
           if (!this.isDirty()) {
             changes = this.set('changes', Z.H());
-            setState(this, {dirty: true});
+            setState.call(this, {dirty: true});
           }
 
           changes = changes || this.changes();
@@ -337,7 +337,7 @@ Z.Model = Z.Object.extend(function() {
   this.def('empty', function(id) {
     var name = this.prototypeName(), m = this.create({id: id});
 
-    setState(m, {source: EMPTY});
+    setState.call(m, {source: EMPTY});
     return m;
   });
 
@@ -372,19 +372,19 @@ Z.Model = Z.Object.extend(function() {
         other = Z.isObject(data) ? type.load(data) :
           repo.retrieve(type, data) || type.empty(data);
         model.set(key, other);
-        setState(other, {dirty: false});
+        setState.call(other, {dirty: false});
       }
       else if (associations[key].type === 'hasMany') {
         for (i = 0, len = data.length; i < len; i++) {
           other = Z.isObject(data[i]) ? type.load(data[i]) :
             repo.retrieve(type, data[i]) || type.empty(data[i]);
           model.get(key).push(other);
-          setState(other, {dirty: false});
+          setState.call(other, {dirty: false});
         }
       }
     }
 
-    setState(model, {source: LOADED, dirty: false, invalid: false, busy: false});
+    setState.call(model, {source: LOADED, dirty: false, invalid: false, busy: false});
 
     return model;
   });
@@ -399,7 +399,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (!model) {
       model = this.empty(id);
-      setState(model, {busy: true});
+      setState.call(model, {busy: true});
       model.mapper.fetchModel(model);
     }
 
@@ -414,17 +414,17 @@ Z.Model = Z.Object.extend(function() {
                             this.prototypeName(), this.stateString(), this));
     }
 
-    setState(this, {busy: true});
+    setState.call(this, {busy: true});
     this.mapper.fetchModel(this);
     return this;
   });
 
   this.def('fetchModelDidSucceed', function() {
-    setState(this, {source: LOADED, busy: false});
+    setState.call(this, {source: LOADED, busy: false});
   });
 
   this.def('fetchModelDidFail', function() {
-    setState(this, {busy: false});
+    setState.call(this, {busy: false});
   });
 
   this.def('save', function() {
@@ -440,11 +440,11 @@ Z.Model = Z.Object.extend(function() {
     if (this.isInvalid()) { return this; }
 
     if (state === NEW) {
-      setState(this, {busy: true});
+      setState.call(this, {busy: true});
       this.mapper.createModel(this);
     }
     else if (this.isDirty()) {
-      setState(this, {busy: true});
+      setState.call(this, {busy: true});
       this.mapper.updateModel(this);
     }
 
@@ -452,21 +452,21 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('createModelDidSucceed', function() {
-    setState(this, {source: LOADED, busy: false});
+    setState.call(this, {source: LOADED, busy: false});
   });
 
   this.def('createModelDidFail', function() {
-    setState(this, {busy: false});
+    setState.call(this, {busy: false});
   });
 
   this.def('updateModelDidSucceed', function() {
     var changes = this.changes();
     if (changes) { changes.clear(); }
-    setState(this, {dirty: false, busy: false});
+    setState.call(this, {dirty: false, busy: false});
   });
 
   this.def('updateModelDidFail', function() {
-    setState(this, {busy: false});
+    setState.call(this, {busy: false});
   });
 
   this.def('destroy', function() {
@@ -483,7 +483,7 @@ Z.Model = Z.Object.extend(function() {
       this.destroyModelDidSucceed();
     }
     else {
-      setState(this, {busy: true});
+      setState.call(this, {busy: true});
       this.mapper.destroyModel(this);
     }
 
@@ -494,7 +494,7 @@ Z.Model = Z.Object.extend(function() {
     var associations = this.associationDescriptors(), descriptor, k, m, i;
 
     repo.remove(this);
-    setState(this, {source: DESTROYED, busy: false, invalid: false, dirty: false});
+    setState.call(this, {source: DESTROYED, busy: false, invalid: false, dirty: false});
 
     // clear any associations this model is involved in
     for (k in associations) {
@@ -513,7 +513,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('destroyModelDidFail', function() {
-    setState(this, {busy: false});
+    setState.call(this, {busy: false});
   });
 
   this.def('undoChanges', function() {
@@ -529,7 +529,7 @@ Z.Model = Z.Object.extend(function() {
     changes = this.changes();
     changes.each(function(k, v) { self.set(k, v); });
     changes.clear();
-    setState(this, {dirty: false});
+    setState.call(this, {dirty: false});
 
     return this;
   });
@@ -545,7 +545,7 @@ Z.Model = Z.Object.extend(function() {
     }
 
     this.errors().at(attr).push(message);
-    setState(this, {invalid: true});
+    setState.call(this, {invalid: true});
   });
 
   this.def('validate', function() {
@@ -574,7 +574,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
-    if (this.get('errors.size') === 0) { setState(this, {invalid: false}); }
+    if (this.get('errors.size') === 0) { setState.call(this, {invalid: false}); }
   });
 
   this.def('toJSON', function() {
@@ -598,8 +598,8 @@ Z.Model = Z.Object.extend(function() {
 
     this.property(name, {
       auto: false,
-      get: function() { return getHasOne(this, descriptor); },
-      set: function(v) { return setHasOne(this, descriptor, v); }
+      get: function() { return getHasOne.call(this, descriptor); },
+      set: function(v) { return setHasOne.call(this, descriptor, v); }
     });
   });
 
@@ -611,8 +611,8 @@ Z.Model = Z.Object.extend(function() {
     });
 
     this.property(name, {
-      get: function() { return getHasMany(this, descriptor); },
-      set: function(v) { return setHasMany(this, descriptor, v); },
+      get: function() { return getHasMany.call(this, descriptor); },
+      set: function(v) { return setHasMany.call(this, descriptor, v); },
     });
   });
 
@@ -658,7 +658,7 @@ Z.Model = Z.Object.extend(function() {
     }
 
     if (descriptor.type === 'hasOne') {
-      _setHasOne(this, descriptor, model);
+      _setHasOne.call(this, descriptor, model);
     }
     else if (descriptor.type === 'hasMany') {
       this.get(associationName)._inverseAdd(model);
@@ -669,7 +669,7 @@ Z.Model = Z.Object.extend(function() {
     var descriptor = this.associationDescriptorFor(associationName);
 
     if (descriptor.type === 'hasOne') {
-      _setHasOne(this, descriptor, null);
+      _setHasOne.call(this, descriptor, null);
     }
     else if (descriptor.type === 'hasMany') {
       this.get(associationName)._inverseRemove(model);
@@ -783,7 +783,7 @@ Z.HasManyArray = Z.Array.extend(function() {
 
     this.supr.apply(this, slice.call(arguments));
 
-    if (owner && state === LOADED) { setState(model, {dirty: true}); }
+    if (owner && state === LOADED) { setState.call(model, {dirty: true}); }
 
     if (!handlingInverse && inverse) {
       for (j = 0, len = added.length; j < len; j++) {

@@ -1,5 +1,4 @@
 * Z.Array.sort
-* update private methods to use `this`
 * implement named finders
 * figure out model serialization
   * something RABL-like?

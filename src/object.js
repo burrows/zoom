@@ -23,30 +23,30 @@ Z.Object.open(function() {
     readonly  : false
   };
 
-  function getProperty(o, k) {
-    var prop = o[Z.fmt("__z_property_%@__", k)];
-    if (!prop) { return o.getUnknownProperty(k); }
-    return prop.get ? prop.get.call(o) : o[Z.fmt("__%@__", k)];
+  function getProperty(k) {
+    var prop = this[Z.fmt("__z_property_%@__", k)];
+    if (!prop) { return this.getUnknownProperty(k); }
+    return prop.get ? prop.get.call(this) : this[Z.fmt("__%@__", k)];
   }
 
-  function setProperty(o, k, v) {
-    var prop = o[Z.fmt("__z_property_%@__", k)];
-    if (!prop) { return o.setUnknownProperty(k, v); }
+  function setProperty(k, v) {
+    var prop = this[Z.fmt("__z_property_%@__", k)];
+    if (!prop) { return this.setUnknownProperty(k, v); }
 
     if (prop.readonly) {
-      throw new Error(Z.fmt("Z.Object.set: attempted to set readonly property `%@` for %@", k, o));
+      throw new Error(Z.fmt("Z.Object.set: attempted to set readonly property `%@` for %@", k, this));
     }
 
-    if (prop.auto) { o.willChangeProperty(k); }
+    if (prop.auto) { this.willChangeProperty(k); }
 
     if (prop.set) {
-      prop.set.call(o, v);
+      prop.set.call(this, v);
     }
     else {
-      o[Z.fmt("__%@__", k)] = v;
+      this[Z.fmt("__%@__", k)] = v;
     }
 
-    if (prop.auto) { o.didChangeProperty(k); }
+    if (prop.auto) { this.didChangeProperty(k); }
   }
 
   function dependentPropertyObserver(notification) {
@@ -190,10 +190,10 @@ Z.Object.open(function() {
     if (name.match(/^[\w$]+/)) {
       this.def(name, function(v) {
         if (typeof v === 'undefined') {
-          return getProperty(this, name);
+          return getProperty.call(this, name);
         }
         else {
-          return setProperty(this, name, v);
+          return setProperty.call(this, name, v);
         }
       });
     }
@@ -279,7 +279,7 @@ Z.Object.open(function() {
   });
 
   this.def('_get', function(path) {
-    var head = path[0], tail = slice.call(path, 1), v = getProperty(this, head);
+    var head = path[0], tail = slice.call(path, 1), v = getProperty.call(this, head);
 
     if (tail.length > 0) { return v ? v._get(tail) : null; }
     else { return v; }
@@ -303,10 +303,10 @@ Z.Object.open(function() {
     last = path[path.length - 1];
 
     if (init.length > 0) {
-      if ((o = this._get(init))) { setProperty(o, last, value); }
+      if ((o = this._get(init))) { setProperty.call(o, last, value); }
     }
     else {
-      setProperty(this, last, value);
+      setProperty.call(this, last, value);
     }
 
     return null;
