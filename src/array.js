@@ -414,8 +414,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('sort$', function(fn) {
-    var sorted = this.sort(fn).__z_items__;
-    return this.splice.apply(this, [0, this.size()].concat(sorted));
+    var size = this.size();
+
+    willMutate.call(this, 'replace', 0, size);
+    this.__z_items__.sort(fn || Z.cmp);
+    didMutate.call(this, 'replace', 0, size);
+
+    return this;
   });
 
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
