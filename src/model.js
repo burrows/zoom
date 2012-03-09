@@ -724,9 +724,11 @@ Z.Model = Z.Object.extend(function() {
     else if (typeof v === 'string') { return Math.round(parseFloat(v)); }
     return v;
   }
+  function booleanToRaw(v) { return Z.isNull(v) ? v : !!v; }
 
   this.registerAttributeType('string', stringToRaw);
   this.registerAttributeType('integer', integerToRaw);
+  this.registerAttributeType('boolean', booleanToRaw);
 });
 
 Z.HasManyArray = Z.Array.extend(function() {

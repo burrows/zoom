@@ -7,6 +7,7 @@ beforeEach(function() { Z.Model.reset(); });
 Test.BasicModel = Z.Model.extend(function() {
   this.attribute('foo', 'string');
   this.attribute('bar', 'integer');
+  this.attribute('baz', 'boolean');
 });
 
 Test.ValidatedModel = Z.Model.extend(function() {
@@ -125,6 +126,33 @@ describe('Z.Model.attribute', function() {
       expect(x.get('bar')).toBe(1234);
       x.set('bar', '88.88');
       expect(x.get('bar')).toBe(89);
+    });
+  });
+
+  describe('`boolean` type', function() {
+
+    beforeEach(function() { x = Test.BasicModel.create(); });
+
+    it('should convert values to booleans', function() {
+      x.set('baz', true);
+      expect(x.get('baz')).toBe(true);
+
+      x.set('baz', false);
+      expect(x.get('baz')).toBe(false);
+
+      x.set('baz', 9);
+      expect(x.get('baz')).toBe(true);
+
+      x.set('baz', 0);
+      expect(x.get('baz')).toBe(false);
+    });
+
+    it('should allow setting `null`', function() {
+      x.set('baz', true);
+      expect(x.get('baz')).toBe(true);
+
+      x.set('baz', null);
+      expect(x.get('baz')).toBe(null);
     });
   });
 });
