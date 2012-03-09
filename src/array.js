@@ -60,7 +60,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
           range    : [idx, n],
           previous : prevItems
         });
-        deregisterItemObservers.call(this, prevItems.toNative());
+        deregisterItemObservers.call(this, prevItems.__z_items__);
         break;
       case 'replace':
         if (idx === 0)       { this.willChangeProperty('first'); }
@@ -70,7 +70,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
           range    : [idx, n],
           previous : prevItems
         });
-        deregisterItemObservers.call(this, prevItems.toNative());
+        deregisterItemObservers.call(this, prevItems.__z_items__);
         break;
     }
 
@@ -112,7 +112,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
           range   : [idx, n],
           current : curItems
         });
-        registerItemObservers.call(this, curItems.toNative());
+        registerItemObservers.call(this, curItems.__z_items__);
         break;
       case 'remove':
         this.didChangeProperty('size');
@@ -132,7 +132,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
           range   : [idx, n],
           current : curItems
         });
-        registerItemObservers.call(this, curItems.toNative());
+        registerItemObservers.call(this, curItems.__z_items__);
         break;
     }
 
@@ -191,7 +191,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
       this.__z_items__ = slice.apply(arg);
     }
     else if (arg && arg.isZArray) {
-      this.__z_items__ = arg.toNative();
+      this.__z_items__ = arg.__z_items__;
     }
     else {
       throw new Error(Z.fmt("Z.Array.initialize: invalid argument (%@), expected a number or array", Z.inspect(arg)));
@@ -202,7 +202,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     if (this.isPrototype) { return this.supr(); }
 
     return Z.fmt("#<%@:%@ %@>", this.prototypeName(), this.objectId(),
-                 Z.inspect(this.toNative()));
+                 Z.inspect(this.__z_items__));
   });
 
   this.def('toNative', function() { return this.__z_items__; });
@@ -392,10 +392,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
       item = this.at(i);
 
       if (item && item.isZArray) {
-        result = result.concat(item.flatten().toNative());
+        result = result.concat(item.flatten().__z_items__);
       }
       else if (Z.isArray(item)) {
-        result = result.concat(Z.A(item).flatten().toNative());
+        result = result.concat(Z.A(item).flatten().__z_items__);
       }
       else {
         result.push(item);
@@ -406,7 +406,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
-    var items = this.toNative(), registration, i, len;
+    var items = this.__z_items__, registration, i, len;
 
     if (this.hasProperty(rpath[0])) {
       return this.supr(rpath, opath, observee, observer, action, opts);
@@ -435,7 +435,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
-    var items = this.toNative(), registrations, r, i, j, rlen, ilen;
+    var items = this.__z_items__, registrations, r, i, j, rlen, ilen;
 
     if (this.hasProperty(rpath[0])) {
       return this.supr(rpath, opath, observee, observer, action);
