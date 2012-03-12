@@ -172,8 +172,6 @@ html {
 	line-height: 1.1em;
 
 	word-wrap: break-word;
-
-	box-shadow: 0px 0px 6px rgba(0,0,0,0.3);
 }
 
 #reveal code {
@@ -881,4 +879,31 @@ html {
 	display: block!important;
 	opacity: 1!important;
 	position: relative!important;
+}
+
+/*********************************************
+ * CODE DEMO
+ *********************************************/
+
+#reveal table.demo {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#reveal table.demo td {
+  border: 1px dotted;
+}
+
+#reveal .demo td.code, #reveal .demo td.log {
+  width: 50%;
+}
+
+#reveal .demo td pre {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#reveal .demo .demo-controls {
+  width: 100%;
 }

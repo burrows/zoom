@@ -34,13 +34,28 @@
 				<section>
 					<h2>Code</h2>
           <p>This is some code</p>
-					<pre>
-            <code>
-            var o = Z.Object.create();
+					<pre><code class="js">
+var o = Z.Object.create();
 
-            if (o.foo()) { console.log('stuff'); }
-            </code>
-					</pre>
+if (o.foo()) { console.log('stuff'); }
+					</code></pre>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+var h = Z.H('foo', 1, 'bar', 2, {x: 9}, 3);
+var a = Z.A('foo', 1, 'bar', 2, {x: 9}, 3);
+console.log(h);
+console.log(h.hash());
+console.log(a);
+            </code></pre>
+            </td>
+            <td class="log">
+            <pre></pre>
+            </td>
+            </tr>
+          </table>
 				</section>
 			</div>
 
@@ -57,9 +72,11 @@
 
 		</div>
 
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 		<script src="js/zoom.js"></script>
 		<script src="js/reveal.js"></script>
 		<script src="js/highlight.js"></script>
+		<script src="js/demo.js"></script>
 		<script>
 			// Parse the query string into a key/value object
 			var query = {};
@@ -75,7 +92,7 @@
 				progress: true,
 
 				// If true; each slide will be pushed to the browser history
-				history: false,
+				history: true,
 
 				// Flags if mouse wheel navigation should be enabled
 				mouseWheel: false,
