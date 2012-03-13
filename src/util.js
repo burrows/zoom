@@ -414,4 +414,16 @@ Z.resolve = function(path, ctx) {
   return ctx[head] ? Z.resolve(tail.join('.'), ctx[head]) : undefined;
 };
 
+Z.log = function() {
+  var a = [], i, len;
+
+  if (!console) { return; }
+
+  for (i = 0, len = arguments.length; i < len; i++) {
+    a.push(Z.inspect(arguments[i]));
+  }
+
+  console.log(a.join(' '));
+};
+
 }());

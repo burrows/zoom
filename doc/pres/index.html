@@ -8,8 +8,7 @@
 		<meta name="description" content="zoom.js">
 		<meta name="author" content="Corey Burrows">
 
-		<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Prosto+One' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
 
 		<link rel="stylesheet" href="css/reset.css">
 		<link rel="stylesheet" href="css/main.css">
@@ -32,28 +31,66 @@
 				</section>
 
 				<section>
-					<h2>Code</h2>
+					<h2>Z.Array</h2>
           <p>This is some code</p>
-					<pre><code class="js">
-var o = Z.Object.create();
-
-if (o.foo()) { console.log('stuff'); }
-					</code></pre>
 
           <table class="demo">
             <tr>
             <td class="code">
             <pre><code class="javascript">
-var h = Z.H('foo', 1, 'bar', 2, {x: 9}, 3);
-var a = Z.A('foo', 1, 'bar', 2, {x: 9}, 3);
-console.log(h);
-console.log(h.hash());
-console.log(a);
+var a = Z.A();
+a.observe('@', null, Z.log);
+
+a.push(1);
+a.push(2)
+a.unshift(3);
+a.pop();
+a.clear();
+
+
+var o = {x: {y: {z: {}}}};
+o.x.y.z = o;
+Z.log(o);
+Z.log(Z.hash(o));
+
+
+
+
+
+
             </code></pre>
             </td>
-            <td class="log">
-            <pre></pre>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+				</section>
+				<section>
+					<h2>Z.Hash</h2>
+          <p>This is some code</p>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+var h = Z.H();
+h.observe('@', null, Z.log);
+
+h.at('foo', 1);
+h.at('bar', 2);
+h.at('foo', {});
+h.del('bar');
+Z.log(h.keys());
+Z.log(h.values());
+
+
+
+
+
+
+
+            </code></pre>
             </td>
+            <td class="log"><pre></pre></td>
             </tr>
           </table>
 				</section>

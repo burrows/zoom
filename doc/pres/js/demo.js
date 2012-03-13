@@ -5,21 +5,18 @@ jQuery(function($) {
     logElem: null,
 
     log: function() {
-      var i, len;
+      var a = [], text = $(this.logElem).text(), i, len;
 
       for (i = 0, len = arguments.length; i < len; i++) {
-        var text   = $(this.logElem).text(),
-            output = Z.inspect(arguments[i]);
-
-        $(this.logElem).text(text + output + "\n");
+        a.push(arguments[i]);
       }
+
+      $(this.logElem).text(text + a.join(' ') + "\n");
     }
   }
 
   $(document).keydown(function(evt) {
-    if (!evt.ctrlKey) { return; }
-
-    if (evt.which === 82) { // ctrl-r
+    if (evt.which === 82) { // r
       var logElem = $('section.present table.demo td.log pre'),
           code    = $('section.present table.demo td.code code').text();
 
@@ -33,7 +30,7 @@ jQuery(function($) {
         window.console = realConsole;
       }
     }
-    else if (evt.which === 67) { // ctrl-c
+    else if (evt.which === 67) { // c
       $('section.present table.demo td.log pre').text('');
     }
   });
