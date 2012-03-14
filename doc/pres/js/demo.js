@@ -26,6 +26,9 @@ jQuery(function($) {
 
         eval(code);
       }
+      catch (e) {
+        console.log(e);
+      }
       finally {
         window.console = realConsole;
       }

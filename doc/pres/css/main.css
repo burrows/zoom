@@ -123,10 +123,13 @@ html {
 
 #reveal ol,
 #reveal ul {
-	display: inline-block;
-
 	text-align: left;
 	margin: 0 auto;
+}
+
+#reveal ul li ul {
+  margin-left: 2em;
+  font-size: 0.8em;
 }
 
 #reveal ol {

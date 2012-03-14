@@ -30,6 +30,258 @@
 					</script>
 				</section>
 
+        <section>
+          <h2>Object System</h2>
+          <ul>
+          <li>Most javascript frameworks implement some sort of class-based system
+            <ul>
+            <li>generally inconsistent and lacking in features</li>
+            <li>class properties are often not inherited</li>
+            <li>mixins typically clobber other properties</li>
+            </ul>
+          </li>
+          <li>GOAL: create an object system that leverages javascript's prototypal inheritance and adheres to Ruby's principle of least astonishment.
+            <ul>
+            <li>everything that you can do with class-based inheritance can also be accomplished using proptotypal inheritance </li>
+            </ul>
+          </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Object System</h2>
+
+          <ul>
+          <li>Zoom has no classes!</li>
+          <li>Instead it uses <em>prototype</em> objects to define common behavior</li> 
+          <li>Prototype objects are used similarly to how you would use a class object in other languages</li>
+          <li>Since there are no classes, we avoid the problem of making class-level inheritance work</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Creating prototypes</h2>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.MyPrototype = Z.Object.extend(function() {
+  this.def('foo', function() {
+    return 'MyPrototype.foo';
+  });
+});
+
+Z.log(Demo.MyPrototype.ancestors());
+
+var x = Demo.MyPrototype.create();
+
+Z.log(x);
+Z.log(x.foo());
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Inheritance</h2>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.Parent = Z.Object.extend(function() {
+  this.def('foo', function() { return 'Parent.foo'; });
+});
+
+Demo.Child = Demo.Parent.extend();
+
+Z.log(Demo.Parent.ancestors());
+Z.log(Demo.Child.ancestors());
+Z.log(Demo.Parent.create().foo());
+Z.log(Demo.Child.create().foo());
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Invoking super methods</h2>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.Parent = Z.Object.extend(function() {
+  this.def('foo', function() { return 'Parent.foo'; });
+});
+
+Demo.Child = Demo.Parent.extend(function() {
+  this.def('foo', function() {
+    return this.supr() + ', Child.foo';
+  });
+
+  this.def('bar', function() { this.supr(); });
+});
+
+Z.log(Demo.Parent.create().foo());
+Z.log(Demo.Child.create().foo());
+
+Demo.Child.create().bar();
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2><code>supr</code> is late binding</h2>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.A = Z.Object.extend(function() {
+  this.def('foo', function() { return 'A.foo'; });
+});
+
+Demo.B = Demo.A.extend();
+
+Demo.C = Demo.B.extend(function() {
+  this.def('foo', function() {
+    return this.supr() + ', C.foo';
+  });
+});
+
+var c = Demo.C.create();
+Z.log(c.foo());
+
+Demo.B.def('foo', function() {
+  return this.supr() + ', B.foo';
+});
+
+Z.log(c.foo());
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>methods are late binding</h2>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.A = Z.Object.extend(function() {
+  this.def('foo', function() {
+    return 'A.foo';
+  });
+});
+
+Demo.B = Demo.A.extend();
+Demo.C = Demo.B.extend();
+
+var c = Demo.C.create();
+
+Z.log(c.foo());
+
+Demo.B.def('foo', function() {
+  return 'B.foo';
+});
+
+Z.log(c.foo());
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Modules</h2>
+          <ul>
+          <li>can be mixed when prototypes are defined</li>
+          <li>can not be mixed in at any other time</li>
+          <li>are inserted into prototype's ancestor chain</li>
+          <li>are open for modification</li>
+          </ul>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.Mod = Z.Module.create(function() {
+  this.def('foo', function() {
+    return 'Mod.foo';
+  });
+});
+
+Demo.A = Z.Object.extend(Demo.Mod);
+var a = Demo.A.create();
+
+Z.log(Demo.A.ancestors());
+Z.log(a.foo());
+
+Demo.Mod.def('bar', function() {
+  return 'Mod.bar';
+});
+Z.log(a.bar());
+
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Modules</h2>
+          <ul>
+          <li>mixing in a module does not lead to clobbering</li>
+          <li>mixin order can vary between prototypes</li>
+          </ul>
+
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.ModA = Z.Module.create(function() {
+  this.def('foo', function() {
+    return 'ModA.foo';
+  });
+});
+
+Demo.ModB = Z.Module.create(function() {
+});
+
+Demo.X = Z.Object.extend(Demo.ModA, function() {
+  this.def('foo', function() {
+    return this.supr() + ', X.foo';
+  });
+});
+
+Z.log(Demo.X.create().foo());
+
+Demo.Y = Z.Object.extend(Demo.ModA, Demo.ModB);
+Demo.Z = Z.Object.extend(Demo.ModB, Demo.ModA);
+
+Z.log(Demo.Y.ancestors());
+Z.log(Demo.Z.ancestors());
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
 				<section>
 					<h2>Z.Array</h2>
           <p>This is some code</p>
@@ -143,6 +395,10 @@ Z.log(h.values());
 				// Transition style
 				transition: 'default' // default/cube/page/concave/linear(2d)
 			});
+
+      window.Demo = {};
+
+      Z.addNamespace(Demo, 'Demo');
 
 			hljs.initHighlightingOnLoad();
 		</script>
