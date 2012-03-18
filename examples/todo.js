@@ -93,4 +93,73 @@ Z.Model.mapper = App.LocalStorageMapper.create();
 
 App.allTodos = App.Todo.query(function() { return true; });
 
+App.TodoView = Z.Object.extend(function() {
+  this.property('todo');
+
+  this.def('initialize', function(props) {
+    this.supr(props);
+    this.observe('todo.title', this, 'update');
+    this.observe('todo.tags.name', this, 'update');
+  });
+
+  this.def('render', function() {
+    var todo = this.todo();
+
+    return Z.fmt('<li id="todo-%@" class="todo-item"><span class="title">%@</span> (<span class="tags">%@</span>)</li>',
+                 todo.id(), todo.title(), todo.get('tags.name').join(', '));
+  });
+
+  this.def('update', function(notification) {
+    var todo = this.todo(), elem = $('#todo-' + todo.id());
+
+    if (notification.path === 'todo.title') {
+      elem.find('.title').text(todo.title());
+    }
+    else if (notification.path === 'todo.tags.name') {
+      console.log('here:', todo.get('tags.name'));
+      elem.find('.tags').text(todo.get('tags.name').join(', '));
+    }
+  });
+
+  this.def('destroy', function() {
+    this.stopObserving('todo.title', this, 'update');
+    this.stopObserving('todo.tags.name', this, 'update');
+  });
+});
+
+App.TodoListView = Z.Object.extend(function() {
+  this.property('elem');
+  this.property('todos');
+  this.property('childViews');
+
+  this.def('initialize', function(props) {
+    this.supr(props);
+    this.childViews(Z.A());
+
+    this.observe('todos.@', this, 'render', { fire: true });
+  });
+
+  this.def('render', function() {
+    var todos = this.todos(), childViews = this.childViews(), html;
+
+    childViews.invoke('destroy');
+    childViews.clear();
+
+    html = '<ul class="todo-list">';
+
+    todos.each(function(todo) {
+      todoView = App.TodoView.create({todo: todo});
+      html += todoView.render();
+      childViews.push(todoView);
+    });
+
+    html += '</ul>';
+
+    return this.elem().html(html);
+  });
+});
+
+App.TodoListView.create({elem: $('#app'), todos: App.allTodos});
+
 }());
+
