@@ -18,6 +18,8 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     }
 
     this.supr();
+    this.__z_head__    = null;
+    this.__z_tail__    = null;
     this.__z_buckets__ = {};
     this.__z_size__    = 0;
     this.__z_default__ = nargs === 1 ? def : null;
@@ -50,38 +52,37 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
       return defaultValue.call(this, k);
     }
     else {
-      if (bucket) {
-        for (i = 0, len = bucket.length; i < len; i++) {
-          entry = bucket[i];
-          if (Z.eq(k, entry.key)) {
-            this.willChangeProperty(k);
-            this.willChangeProperty('@', {type: 'update', key: k, previous: entry.value});
-            entry.value = v;
-            this.didChangeProperty(k);
-            this.didChangeProperty('@', {type: 'update', key: k, current: v});
-            return v;
-          }
-        }
+      if (!bucket) { bucket = this.__z_buckets__[hash] = []; }
 
-        this.willChangeProperty(k);
-        this.willChangeProperty('size');
-        this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
-        bucket.push({ key: k, value: v });
-        this.__z_size__++;
-        this.didChangeProperty(k);
-        this.didChangeProperty('size');
-        this.didChangeProperty('@', {type: 'insert', key: k, current: v});
+      for (i = 0, len = bucket.length; i < len; i++) {
+        entry = bucket[i];
+        if (Z.eq(k, entry.key)) {
+          this.willChangeProperty(k);
+          this.willChangeProperty('@', {type: 'update', key: k, previous: entry.value});
+          entry.value = v;
+          this.didChangeProperty(k);
+          this.didChangeProperty('@', {type: 'update', key: k, current: v});
+          return v;
+        }
       }
-      else {
-        this.willChangeProperty(k);
-        this.willChangeProperty('size');
-        this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
-        this.__z_buckets__[hash] = [{ key: k, value: v }];
-        this.__z_size__++;
-        this.didChangeProperty(k);
-        this.didChangeProperty('size');
-        this.didChangeProperty('@', {type: 'insert', key: k, current: v});
-      }
+
+      this.willChangeProperty(k);
+      this.willChangeProperty('size');
+      this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
+
+      entry = { key: k, value: v, prev: this.__z_tail__, next: null };
+
+      if (this.__z_tail__) { this.__z_tail__.next = entry;  }
+      this.__z_tail__ = entry;
+
+      if (!this.__z_head__) { this.__z_head__ = entry; }
+
+      bucket.push(entry);
+      this.__z_size__++;
+
+      this.didChangeProperty(k);
+      this.didChangeProperty('size');
+      this.didChangeProperty('@', {type: 'insert', key: k, current: v});
 
       return v;
     }
@@ -105,6 +106,10 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
         this.willChangeProperty(k);
         this.willChangeProperty('size');
         this.willChangeProperty('@', {type: 'remove', key: k, previous: entry.value});
+        if (this.__z_head__ === entry) { this.__z_head__ = entry.next; }
+        if (this.__z_tail__ === entry) { this.__z_tail__ = entry.prev; }
+        if (entry.prev) { entry.prev.next = entry.next; }
+        if (entry.next) { entry.next.prev = entry.prev; }
         bucket.splice(i, 1);
         this.__z_size__--;
         this.didChangeProperty(k);
@@ -155,16 +160,11 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('each', function(f) {
-    var buckets = this.__z_buckets__, hash, bucket, i, len;
+    var entry = this.__z_head__;
 
-    for (hash in buckets) {
-      if (!buckets.hasOwnProperty(hash)) { continue; }
-
-      bucket = buckets[hash];
-
-      for (i = 0, len = bucket.length; i < len; i++) {
-        f(bucket[i].key, bucket[i].value);
-      }
+    while (entry) {
+      f(entry.key, entry.value);
+      entry = entry.next;
     }
 
     return this;

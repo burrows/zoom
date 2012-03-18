@@ -491,6 +491,30 @@ describe('Z.Hash.each', function() {
     expect(keys.sort()).toEq(['bar', 'baz', 'foo']);
     expect(values.sort()).toEq([1, 2, 3]);
   });
+
+  it('should maintain insertion order', function() {
+    var h = Z.H('a', 1, 'b', 2, 'c', 3, 'd', 4, 'e', 5, 'f', 6, 'g', 7, 'h', 8),
+        keys = [], values = [];
+
+    h.each(function(k, v) { keys.push(k); values.push(v); });
+
+    expect(keys).toEq(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']);
+    expect(values).toEq([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it('should maintain insertion order when key/value pairs are deleted', function() {
+    var h = Z.H('a', 1, 'b', 2, 'c', 3, 'd', 4, 'e', 5, 'f', 6, 'g', 7, 'h', 8),
+        keys = [], values = [];
+
+    h.del('c');
+    h.del('f');
+    h.del('b');
+
+    h.each(function(k, v) { keys.push(k); values.push(v); });
+
+    expect(keys).toEq(['a', 'd', 'e', 'g', 'h']);
+    expect(values).toEq([1, 4, 5, 7, 8]);
+  });
 });
 
 describe('Z.Hash.keys', function() {
