@@ -130,6 +130,7 @@ describe('Z.Model.attribute', function() {
   });
 
   describe('`boolean` type', function() {
+    var x;
 
     beforeEach(function() { x = Test.BasicModel.create(); });
 

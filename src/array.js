@@ -456,7 +456,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     var items = this.__z_items__, registrations, r, i, j, rlen, ilen;
 
     if (this.hasProperty(rpath[0])) {
-      return this.supr(rpath, opath, observee, observer, action);
+      return this.supr.apply(this, slice.call(arguments));
     }
 
     if (!(registrations = this.__z_itemRegistrations__)) { return; }
