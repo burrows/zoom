@@ -332,6 +332,15 @@ describe('Z.Object.toString', function() {
     expect(o2.toString()).toMatch(/x: 1/);
     expect(o2.toString()).toMatch(/y: 2/);
   });
+
+  it('should handle recursive objects', function() {
+    var o = X.create({x: 9});
+    o.y(o);
+
+    expect(o.toString()).toMatch(/^#<\(Unknown\):\d+ /)
+    expect(o.toString()).toMatch(/x: 9/);
+    expect(o.toString()).toMatch(/y: #<\(Unknown\):\d+ \.\.\.>/);
+  });
 });
 
 describe('Z.Object.property', function() {

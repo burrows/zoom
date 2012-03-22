@@ -164,22 +164,25 @@ Z.Object.open(function() {
   });
 
   this.def('toString', function() {
-    var prototype, descriptors, props, k;
+    var self = this, prototype, descriptors, props, recursed, a;
 
     if (this.isPrototype) { return this.prototypeName(); }
 
     prototype   = this.prototype();
     descriptors = this.propertyDescriptors();
-    props       = [];
+    a           = [];
 
-    for (k in descriptors) {
-      if (descriptors[k].get === null) {
-        props.push(k + ': ' + Z.inspect(this.get(k)));
+    recursed = Z.detectRecursion(this, function() {
+      var k;
+
+      for (k in descriptors) {
+        if (descriptors[k].get !== null) { continue; }
+        a.push(k + ': ' + Z.inspect(self.get(k)));
       }
-    }
+    });
 
     return Z.fmt("#<%@:%@%@>", prototype.prototypeName(), this.objectId(),
-                 props.length === 0 ? '' : ' ' + props.join(', '));
+                 recursed ? ' ...' : (a.length > 0 ? ' ' : '') + a.join(', '));
   });
 
   this.def('property', function(name, opts) {
