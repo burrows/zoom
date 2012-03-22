@@ -337,8 +337,7 @@ Z.Object.open(function() {
   });
 
   this.def('stopObserving', function(path, observer, action, opts) {
-    opts = opts || {};
-    this.deregisterObserver(path.split('.'), path, this, observer, action, opts);
+    this.deregisterObserver(path.split('.'), path, this, observer, action, opts || {});
     return this;
   });
 
