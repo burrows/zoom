@@ -44,132 +44,35 @@ describe('Z.SortedArray.insert', function() {
   });
 });
 
-describe('Z.SortedArray.toArray', function() {
-  it('should return a `Z.Array` object with the same contents', function() {
-    var sa = Z.SortedArray.create(), a;
-
-    sa.insert(5);
-    sa.insert(3);
-    sa.insert(12);
-
-    a = sa.toArray();
-
-    expect(a.isA(Z.Array)).toBe(true);
-    expect(a).toEq(Z.A(3,5,12));
+describe('Z.SortedArray.push', function() {
+  it('should throw an exception', function() {
+    expect(function() {
+      Z.SortedArray.create().push(9);
+    }).toThrow('Z.SortedArray.push: use `insert` to add items to a sorted array');
   });
 });
 
-describe('Z.SortedArray size property', function() {
-  it('should be observable', function() {
-    var notifications = [],
-        a             = Z.SortedArray.create(),
-        f             = function(n) { notifications.push(n); };
-
-    a.observe('size', null, f, { previous: true, current: true });
-
-    a.insert('foo');
-    expect(notifications.length).toBe(1);
-    expect(notifications[0].path).toBe('size');
-    expect(notifications[0].previous).toBe(0);
-    expect(notifications[0].current).toBe(1);
-    a.insert('bar');
-    expect(notifications.length).toBe(2);
-    expect(notifications[1].path).toBe('size');
-    expect(notifications[1].previous).toBe(1);
-    expect(notifications[1].current).toBe(2);
-    a.pop();
-    expect(notifications.length).toBe(3);
-    expect(notifications[2].path).toBe('size');
-    expect(notifications[2].previous).toBe(2);
-    expect(notifications[2].current).toBe(1);
+describe('Z.SortedArray.unshift', function() {
+  it('should throw an exception', function() {
+    expect(function() {
+      Z.SortedArray.create().unshift(9);
+    }).toThrow('Z.SortedArray.unshift: use `insert` to add items to a sorted array');
   });
 });
 
-describe('Z.SortedArray first property', function() {
-  it('should be observable', function() {
-    var notifications = [],
-        a             = Z.SortedArray.create(),
-        f             = function(n) { notifications.push(n); };
-
-    a.observe('first', null, f, { previous: true, current: true });
-
-    a.insert('foo');
-    expect(notifications.length).toBe(1);
-    expect(notifications[0].path).toBe('first');
-    expect(notifications[0].previous).toBe(null);
-    expect(notifications[0].current).toBe('foo');
-    a.insert('zebra');
-    expect(notifications.length).toBe(1);
-    a.insert('alpaca');
-    expect(notifications.length).toBe(2);
-    expect(notifications[1].path).toBe('first');
-    expect(notifications[1].previous).toBe('foo');
-    expect(notifications[1].current).toBe('alpaca');
+describe('Z.SortedArray.at', function() {
+  it('should throw an exception when given two arguments', function() {
+    expect(function() {
+      Z.SortedArray.create().at(0, 9);
+    }).toThrow('Z.SortedArray.at: use `insert` to add items to a sorted array');
   });
 });
 
-describe('Z.SortedArray last property', function() {
-  it('should be observable', function() {
-    var notifications = [],
-        a             = Z.SortedArray.create(),
-        f             = function(n) { notifications.push(n); };
-
-    a.observe('last', null, f, { previous: true, current: true });
-
-    a.insert('foo');
-    expect(notifications.length).toBe(1);
-    expect(notifications[0].path).toBe('last');
-    expect(notifications[0].previous).toBe(null);
-    expect(notifications[0].current).toBe('foo');
-    a.insert('alpaca');
-    expect(notifications.length).toBe(1);
-    a.insert('zebra');
-    expect(notifications.length).toBe(2);
-    expect(notifications[1].path).toBe('last');
-    expect(notifications[1].previous).toBe('foo');
-    expect(notifications[1].current).toBe('zebra');
-  });
-});
-
-describe('Z.SortedArray item observers', function() {
-  var Foo = Z.Object.extend(function() {
-    this.property('x');
-    this.property('y');
-  });
-
-  it('should trigger notifications when observed keys on the array elements change', function() {
-    var f1 = Foo.create({x: 1}),
-        f2 = Foo.create({x: 2}),
-        f3 = Foo.create({x: 3}),
-        sa = Z.SortedArray.create(function(a, b) { return Z.cmp(a.x(), b.x()); }),
-        notifications = [];
-
-    sa.insert(f1);
-    sa.insert(f2);
-    sa.insert(f3);
-
-    sa.observe('y', null, function(n) { notifications.push(n); }, {
-      previous: true, current: true
-    });
-
-    f2.y('a');
-    expect(notifications.length).toBe(1);
-    expect(notifications[0].type).toBe('change');
-    expect(notifications[0].path).toBe('y');
-    expect(notifications[0].previous).toEq(Z.A(null, null, null));
-    expect(notifications[0].current).toEq(Z.A(null, 'a', null));
-    f3.y('b');
-    expect(notifications.length).toBe(2);
-    expect(notifications[1].type).toBe('change');
-    expect(notifications[1].path).toBe('y');
-    expect(notifications[1].previous).toEq(Z.A(null, 'a', null));
-    expect(notifications[1].current).toEq(Z.A(null, 'a', 'b'));
-    f2.y('c');
-    expect(notifications.length).toBe(3);
-    expect(notifications[2].type).toBe('change');
-    expect(notifications[2].path).toBe('y');
-    expect(notifications[2].previous).toEq(Z.A(null, 'a', 'b'));
-    expect(notifications[2].current).toEq(Z.A(null, 'c', 'b'));
+describe('Z.SortedArray.sort$', function() {
+  it('should throw an exception', function() {
+    expect(function() {
+      Z.SortedArray.create().sort$();
+    }).toThrow("Z.SortedArray.sort$: can't sort a sorted array in place");
   });
 });
 
