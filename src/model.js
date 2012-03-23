@@ -695,8 +695,8 @@ Z.Model = Z.Object.extend(function() {
     return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
   });
 
-  this.def('query', function(fn, paths) {
-    var q = Z.Query.create(this, fn, paths);
+  this.def('query', function(opts) {
+    var q = Z.Query.create(this, opts);
     repo.registerQuery(q);
     return q;
   });
@@ -784,18 +784,23 @@ Z.HasManyArray = Z.Array.extend(function() {
   });
 });
 
-Z.Query = Z.Array.extend(function() {
-  this.def('initialize', function(type, fn, paths) {
-    this.modelType      = type;
-    this.matchFunction  = fn;
-    this.dependentPaths = paths || [];
+Z.Query = Z.SortedArray.extend(function() {
+  function idcmp(a, b) { return Z.cmp(a.id(), b.id()); }
+  function matchall() { return true; }
 
-    return this.supr();
+  this.def('initialize', function(type, opts) {
+    opts = opts || {};
+
+    this.modelType      = type;
+    this.matchFn        = opts.matchFn || matchall;
+    this.dependentPaths = opts.dependentPaths || [];
+
+    return this.supr(opts.compareFn || idcmp);
   });
 
   this.def('check', function(model) {
     if (!model.isA(this.modelType)) { return; }
-    if (this.matchFunction(model)) { this.push(model); }
+    if (this.matchFn(model)) { this.insert(model); }
     else { this.remove(model); }
   });
 
