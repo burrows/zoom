@@ -52,6 +52,8 @@ Z.Object.open(function() {
     }
 
     if (prop.auto) { this.didChangeProperty(k); }
+
+    return null;
   }
 
   function dependentPropertyObserver(notification) {
@@ -197,11 +199,11 @@ Z.Object.open(function() {
 
     if (name.match(/^[\w$]+/)) {
       this.def(name, function(v) {
-        if (typeof v === 'undefined') {
+        if (arguments.length === 0) {
           return getProperty.call(this, name);
         }
         else {
-          return setProperty.call(this, name, v);
+          return setProperty.call(this, name, arguments[0]);
         }
       });
     }

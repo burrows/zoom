@@ -357,7 +357,7 @@ describe('Z.Object.property', function() {
     it('should set a private property when passed an argument', function() {
       var p = Person.create();
       expect(p.__firstName__).toBeUndefined();
-      p.firstName('Corey');
+      expect(p.firstName('Corey')).toBeNull();
       expect(p.__firstName__).toEqual('Corey');
     });
 
