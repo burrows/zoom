@@ -387,6 +387,8 @@ Z.Object.open(function() {
       throw new Error(Z.fmt("Z.Object.deregisterObserver: undefined key `%@` for %@", head, this));
     }
 
+    opts = opts || {};
+
     registrations = (this.__z_registrations__ || {})[head];
     if (!registrations) { return; }
 
