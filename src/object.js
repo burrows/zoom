@@ -20,13 +20,18 @@ Z.Object.open(function() {
     auto      : true,
     get       : null,
     set       : null,
-    readonly  : false
+    readonly  : false,
+    def       : null
   };
 
   function getProperty(k) {
-    var prop = this[Z.fmt("__z_property_%@__", k)];
-    if (!prop) { return this.getUnknownProperty(k); }
-    return prop.get ? prop.get.call(this) : this[Z.fmt("__%@__", k)];
+    var desc = this[Z.fmt("__z_property_%@__", k)], prop = '__' + k + '__', v;
+
+    if (!desc) { return this.getUnknownProperty(k); }
+
+    v = desc.get ? desc.get.call(this) : this[prop];
+
+    return v === undefined || v === null ? desc.def : v;
   }
 
   function setProperty(k, v) {
