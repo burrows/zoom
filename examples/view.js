@@ -1,3 +1,5 @@
+(function() {
+
 //------------------------------------------------------------------------------
 // experimental view stuff
 //------------------------------------------------------------------------------
@@ -9,18 +11,14 @@ Z.View = Z.Object.extend(function() {
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
 
-  this.property('tag', {
-    get: function() { return this.__tag__ || 'div'; }
-  });
+  this.property('tag', { def: 'div' });
 
   this.property('element', {
     readonly: true,
     get: function() { return $(Z.fmt("#z-view-%@", this.objectId()))[0]; }
   });
 
-  this.property('isDisplayed', {
-    get: function() { return this.__isDisplayed__ = this.__isDisplayed__ || false; }
-  });
+  this.property('isDisplayed', { def: false });
 
   this.def('subview', function(name, type) {
     (this.__subviewTypes__ = this.__subviewTypes__ || Z.H()).at(name, type);
@@ -43,7 +41,7 @@ Z.View = Z.Object.extend(function() {
   });
 
   this.def('render', function() {
-    return Z.fmt('<%@ id="z-view-%@">%@</%@>',
+    return Z.fmt('<%@ id="z-view-%@" class="z-view">%@</%@>',
       this.tag(), this.objectId(), this.renderContent(), this.tag());
   });
 
@@ -54,6 +52,7 @@ Z.View = Z.Object.extend(function() {
   });
 
   this.def('didDisplay', function() {
+    $.data(this.element(), 'z-view', this);
     this.set('isDisplayed', true);
     this.observe('subviews.@', this, 'subviewsDidChange', {prior: true});
     this.subviews().invoke('didDisplay');
@@ -92,6 +91,14 @@ Z.View = Z.Object.extend(function() {
 
     view.superview(this);
     view.didDisplay();
+  });
+
+  this.def('dispatchEvent', function(evt) {
+    var superview = this.superview(),
+        handler   = 'handle' + evt.type[0].toUpperCase() + evt.type.slice(1) + 'Event';
+
+    if (this.respondTo(handler)) { this[handler](evt); }
+    if (superview) { superview.dispatchEvent(evt); }
   });
 });
 
@@ -138,14 +145,47 @@ Z.ListView = Z.View.extend(function() {
   });
 });
 
+var events = [
+  'blur',
+  'change',
+  'click',
+  'dblclick',
+  'focus',
+  'focusin',
+  'focusout',
+  'hover',
+  'keydown',
+  'keypress',
+  'keyup',
+  'mousedown',
+  'mouseenter',
+  'mouseleave',
+  'mousemove',
+  'mouseout',
+  'mouseup',
+  'resize',
+  'scroll',
+  'select',
+  'submit'
+];
+
 Z.RootView = Z.View.extend(function() {
   this.property('container');
 
   this.def('display', function() {
-    $(this.container()).html(this.render());
-    // add event listeners
+    var container = $(this.container());
+
+    container.html(this.render());
+
     this.didDisplay();
+
+    container.on(events.join(' '), function(evt) {
+      var view = $(evt.target).closest('.z-view').data('z-view');
+      view.dispatchEvent(evt);
+    });
+
     return this;
   });
 });
 
+}());

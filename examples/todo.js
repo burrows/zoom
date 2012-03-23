@@ -91,41 +91,91 @@ App.Tag = Z.Model.extend(function() {
 
 Z.Model.mapper = App.LocalStorageMapper.create();
 
-App.allTodos = App.Todo.query(function() { return true; });
+App.allTodos = App.Todo.query();
 
-// --
+App.controller = {
+  createTodo: function(title) {
+    App.Todo.create({ title: title }).save();
+    App.mainView.set('inputView.value', null);
+  },
+
+  updateIsDone: function(todo, isDone) {
+    todo.isDone(isDone);
+    todo.save();
+  }
+};
 
 App.TitleView = Z.View.extend(function() {
   this.tag('h1');
   this.def('renderContent', function() { return 'Todos'; });
 });
 
-App.HelloView = Z.View.extend(function() {
-  this.tag('p');
-  this.def('renderContent', function() {
-    return Z.fmt('Hello world! (%@)', this.objectId());
-  });
-});
+App.InputView = Z.View.extend(function() {
+  this.property('value');
 
-App.GoodbyeView = Z.View.extend(function() {
-  this.tag('p');
-  this.def('renderContent', function() {
-    return Z.fmt('Goodbye. (%@)', this.objectId());
+  this.def('didDisplay', function() {
+    this.supr();
+    this.observe('value', this, 'valueDidChange');
   });
-});
 
-App.GreetingView = Z.View.extend(function() {
-  this.subview('helloView', App.HelloView);
-  this.subview('goodbyeView', App.GoodbyeView);
+  this.def('didRemove', function() {
+    this.supr();
+    this.stopObserving('value', this, 'valueDidChange');
+  });
+
+  this.def('renderContent', function() {
+    return '<input type="text" placeholder="Enter a Todo" />';
+  });
+
+  this.def('handleKeyupEvent', function(evt) {
+    var input = $(this.element()).find('input');
+    this.value(input.val());
+  });
+
+  this.def('handleKeydownEvent', function(evt) {
+    var key = evt.keyCode;
+
+    if (key === 13) {
+      App.controller.createTodo(this.value());
+    }
+  });
+
+  this.def('valueDidChange', function() {
+    var input = $(this.element()).find('input');
+    input.val(this.value());
+  });
 });
 
 App.TodoView = Z.View.extend(function() {
   this.property('content');
 
+  this.def('didDisplay', function() {
+    this.supr();
+    this.observe('content.isDone', this, 'updateIsDone');
+  });
+
+  this.def('didRemove', function() {
+    this.supr();
+    this.stopObserving('content.isDone', this, 'updateIsDone');
+  });
+
   this.def('renderContent', function() {
     var todo = this.content();
-    return Z.fmt('<span class="title">%@</span> (<span class="tags">%@</span>)',
-                 todo.title(), todo.get('tags.name').join(', '));
+    return Z.fmt('<input type="checkbox" %@ /><span class="title">%@</span> (<span class="tags">%@</span>)',
+                 todo.isDone() ? 'checked' : '', todo.title(), todo.get('tags.name').join(', '));
+  });
+
+  this.def('updateIsDone', function() {
+    var input = $(this.element()).find('input');
+    input.attr('checked', this.get('content.isDone') ? 'checked' : null);
+  });
+
+  this.def('handleClickEvent', function(evt) {
+    var elem = $(evt.target);
+
+    if (elem.is('input')) {
+      App.controller.updateIsDone(this.content(), !!elem.attr('checked'));
+    }
   })
 });
 
@@ -135,6 +185,7 @@ App.TodoListView = Z.ListView.extend(function() {
 
 App.MainView = Z.RootView.extend(function() {
   this.subview('titleView', App.TitleView);
+  this.subview('inputView', App.InputView);
   this.subview('todoListView', App.TodoListView);
 });
 
