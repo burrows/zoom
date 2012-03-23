@@ -252,21 +252,16 @@ Z.Model = Z.Object.extend(function() {
       throw new Error(Z.fmt("%@.attribute: unknown type: %@", this.prototypeName(), type));
     }
 
-    opts = opts || {};
-
     this[Z.fmt("__z_attribute_%@__", name)] = opts;
 
-    this.property(name, {
+    this.property(name, Z.merge({
       get: function() {
-        var def = opts['default'];
-
         if (this.sourceState() === EMPTY) {
           setState.call(this, {busy: true});
           this.mapper.fetchModel(this);
         }
 
-        return this.hasOwnProperty(privateProp) ?
-          attributeType.fromRawFn(this[privateProp]) : def;
+        return attributeType.fromRawFn(this[privateProp]);
       },
 
       set: function(v) {
@@ -290,7 +285,7 @@ Z.Model = Z.Object.extend(function() {
 
         return this[privateProp] = attributeType.toRawFn(v);
       }
-    });
+    }, opts));
   });
 
   // Returns a list of `Z.Model` sub-prototypes that are in the reciever's
@@ -575,18 +570,6 @@ Z.Model = Z.Object.extend(function() {
     }
 
     if (this.get('errors.size') === 0) { setState.call(this, {invalid: false}); }
-  });
-
-  this.def('toJSON', function() {
-    var attrs = this.attributeNames(), o = {}, i, len;
-
-    o.id = this.id();
-
-    for (i = 0, len = attrs.length; i < len; i++) {
-      o[attrs[i]] = this.get(attrs[i]);
-    }
-
-    return o;
   });
 
   this.def('hasOne', function(name, modelType, opts) {

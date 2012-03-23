@@ -55,14 +55,14 @@ describe('Z.Model.attribute', function() {
   });
 
   describe('generated property', function() {
-    it('should return the value given by the `default` option is the attribute has not previously been set', function() {
+    it('should return the value given by the `def` option is the attribute has not previously been set', function() {
       var Model = Z.Model.extend(function() {
-        this.attribute('foo', 'integer', {'default': 9});
+        this.attribute('foo', 'integer', {def: 9});
         this.attribute('bar', 'integer');
-      }), m;
+      });
 
       expect(Model.create().foo()).toBe(9);
-      expect(Model.create().bar()).toBeUndefined()
+      expect(Model.create().bar()).toBeNull()
       expect(Model.create({foo: 8, bar: 12}).foo()).toBe(8);
       expect(Model.create({foo: 8, bar: 12}).bar()).toBe(12);
     });
@@ -675,9 +675,9 @@ describe('Z.Model setting attributes', function() {
 
     it('should not create the `changes` hash', function() {
       var m = Test.BasicModel.create();
-      expect(m.get('changes')).toBeUndefined();
+      expect(m.get('changes')).toBeNull();
       m.set('bar', 9);
-      expect(m.get('changes')).toBeUndefined();
+      expect(m.get('changes')).toBeNull();
     });
   });
 
@@ -695,9 +695,9 @@ describe('Z.Model setting attributes', function() {
     it("should create the `changes` hash containing the changed attribute's previous value", function() {
       var m = Test.BasicModel.load({id: 123, bar: 8});
 
-      expect(m.get('changes')).toBeUndefined();
+      expect(m.get('changes')).toBeNull();
       m.set('bar', 9);
-      expect(m.get('changes')).not.toBeUndefined();
+      expect(m.get('changes')).not.toBeNull();
       expect(m.get('changes').prototype()).toBe(Z.Hash);
       expect(m.get('changes.bar')).toBe(8);
     });
@@ -1085,9 +1085,9 @@ describe('Z.Model.addError', function() {
   });
 
   it("should create the `errors` hash if it doesn't exist", function() {
-    expect(m.errors()).toBeUndefined();
+    expect(m.errors()).toBeNull();
     m.addError('foo', 'blah');
-    expect(m.errors()).not.toBeUndefined();
+    expect(m.errors()).not.toBeNull();
   });
 
   it("should push the given message onto an array keyed by the given attribute name", function() {
@@ -1135,7 +1135,7 @@ describe('Z.Model.validate', function() {
   it('should set `isInvalid` if any validators add an error to the `errors` hash', function() {
     expect(m.isInvalid()).toBe(false);
     m.validate();
-    expect(m.errors()).toBeUndefined();
+    expect(m.errors()).toBeNull();
     expect(m.isInvalid()).toBe(false);
     m.foo(null);
     m.validate();
@@ -1226,25 +1226,6 @@ describe('Z.Model.reset', function() {
     expect(Test.BasicModel.fetch(1111)).toBe(m);
     Z.Model.reset();
     expect(Test.BasicModel.fetch(1111)).not.toBe(m);
-  });
-});
-
-describe('Z.Model.toJSON', function() {
-  var X = Z.Model.extend(function() {
-    this.attribute('foo', 'string');
-    this.attribute('bar', 'integer');
-  });
-
-  describe('with no associations', function() {
-    it('should return an object with all raw attribute values', function() {
-      var x = X.create({foo: 'abc', bar: 22});
-      expect(x.toJSON()).toEqual({foo: 'abc', bar: 22});
-    });
-
-    it('should include the `id` property', function() {
-      var x = X.load({id: 19, foo: 'abc', bar: 22});
-      expect(x.toJSON()).toEqual({id: 19, foo: 'abc', bar: 22});
-    });
   });
 });
 
