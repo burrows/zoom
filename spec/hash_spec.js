@@ -486,7 +486,7 @@ describe('Z.Hash.each', function() {
   it('should yield each key/value pair in the hash to the given function', function() {
     var h = Z.H('foo', 1, 'bar', 2, 'baz', 3), keys = [], values = [];
 
-    h.each(function(k, v) { keys.push(k); values.push(v); });
+    h.each(function(tuple) { keys.push(tuple[0]); values.push(tuple[1]); });
 
     expect(keys.sort()).toEq(['bar', 'baz', 'foo']);
     expect(values.sort()).toEq([1, 2, 3]);
@@ -496,7 +496,7 @@ describe('Z.Hash.each', function() {
     var h = Z.H('a', 1, 'b', 2, 'c', 3, 'd', 4, 'e', 5, 'f', 6, 'g', 7, 'h', 8),
         keys = [], values = [];
 
-    h.each(function(k, v) { keys.push(k); values.push(v); });
+    h.each(function(tuple) { keys.push(tuple[0]); values.push(tuple[1]); });
 
     expect(keys).toEq(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']);
     expect(values).toEq([1, 2, 3, 4, 5, 6, 7, 8]);
@@ -510,7 +510,7 @@ describe('Z.Hash.each', function() {
     h.del('f');
     h.del('b');
 
-    h.each(function(k, v) { keys.push(k); values.push(v); });
+    h.each(function(tuple) { keys.push(tuple[0]); values.push(tuple[1]); });
 
     expect(keys).toEq(['a', 'd', 'e', 'g', 'h']);
     expect(values).toEq([1, 4, 5, 7, 8]);
@@ -531,9 +531,9 @@ describe('Z.Hash.values', function() {
   it('should return a Z.Array containing all values in the hash', function() {
     var h = Z.H('foo', 1, 'bar', 2, 'baz', 3), values = h.values();
 
-    expect(values.isZArray).toBe(true);
+    expect(values.isA(Z.Array)).toBe(true);
     expect(values.size()).toBe(3);
-    expect(values.toNative().sort()).toEq([1, 2, 3]);
+    expect(values.sort()).toEq(Z.A(1, 2, 3));
   });
 });
 

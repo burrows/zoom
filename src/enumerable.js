@@ -1,13 +1,11 @@
 (function(undefined) {
 
-var slice = Array.prototype.slice;
-
 Z.Enumerable = Z.Module.create(function() {
   this.isEnumerable = true;
 
   this.def('map', function(f) {
-    return this.inject(Z.A(), function(acc) {
-      acc.push(f.apply(null, slice.call(arguments, 1)));
+    return this.inject(Z.A(), function(acc, item) {
+      acc.push(f(item));
       return acc;
     });
   });
@@ -16,6 +14,18 @@ Z.Enumerable = Z.Module.create(function() {
     try { this.each(function(item) { throw item; }); }
     catch (first) { return first; }
     return null;
+  });
+
+  this.def('find', function(notfound, f) {
+    if (arguments.length === 1) {
+      f = notfound;
+      notfound = null;
+    }
+
+    try { this.each(function(item) { if (f(item)) { throw item; } }); }
+    catch (item) { return item; }
+
+    return notfound;
   });
 
   this.def('inject', function(initial, f) {
@@ -29,9 +39,9 @@ Z.Enumerable = Z.Module.create(function() {
 
     acc = initial;
 
-    this.each(function() {
+    this.each(function(item) {
       if (skip) { skip = false; return; }
-      acc = f.apply(null, [acc].concat(slice.call(arguments)));
+      acc = f(acc, item);
     });
 
     return acc;
@@ -56,14 +66,7 @@ Z.Enumerable = Z.Module.create(function() {
   });
 
   this.def('toArray', function() {
-    var a = Z.A();
-
-    this.each(function() {
-      var args = slice.call(arguments);
-      a.push(args.length === 1 ? args[0] : args);
-    });
-
-    return a;
+    return this.inject(Z.A(), function(acc, item) { return acc.push(item); });
   });
 
   this.def('sort', function(fn) { return this.toArray().sort(fn); });

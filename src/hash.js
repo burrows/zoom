@@ -150,8 +150,8 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     if (this.isPrototype) { return this.supr(); }
 
     recursed = Z.detectRecursion(this, function() {
-      a = self.map(function(k, v) {
-        return Z.inspect(k) + ': ' + Z.inspect(v);
+      a = self.map(function(tuple) {
+        return Z.inspect(tuple[0]) + ': ' + Z.inspect(tuple[1]);
       });
     });
 
@@ -163,7 +163,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     var entry = this.__z_head__;
 
     while (entry) {
-      f(entry.key, entry.value);
+      f([entry.key, entry.value]);
       entry = entry.next;
     }
 
@@ -171,20 +171,20 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('keys', function() {
-    return this.map(function(k, v) { return k; });
+    return this.map(function(tuple) { return tuple[0]; });
   });
 
   this.def('values', function() {
-    return this.map(function(k, v) { return v; });
+    return this.map(function(tuple) { return tuple[1]; });
   });
 
   this.def('hash', function() {
     var self = this, val = this.__z_size__;
 
     Z.detectOutermostRecursion(this, function() {
-      self.each(function(k, v) {
-        val ^= Z.hash(k);
-        val ^= Z.hash(v);
+      self.each(function(tuple) {
+        val ^= Z.hash(tuple[0]);
+        val ^= Z.hash(tuple[1]);
       });
     });
 
