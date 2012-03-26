@@ -31,10 +31,10 @@ Z.View = Z.Object.extend(function() {
     this.supr(props);
 
     if (subviewTypes) {
-      subviewTypes.each(function(name, type) {
-        var view = type.create({superview: self});
+      subviewTypes.each(function(tuple) {
+        var view = tuple[1].create({superview: self});
 
-        self.set(name, view);
+        self.set(tuple[0], view);
         self.subviews().push(view);
       });
     }

@@ -92,11 +92,26 @@ App.Tag = Z.Model.extend(function() {
 Z.Model.mapper = App.LocalStorageMapper.create();
 
 App.allTodos = App.Todo.query();
+App.allTags  = App.Tag.query();
 
 App.controller = {
   createTodo: function(title) {
-    App.Todo.create({ title: title }).save();
+    var tags, tag, m;
+
+    if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
+      tags = Z.A(m[1].split(/\s*,\s*/)).map(function(name) {
+        tag = App.allTags.find(function(t) { return t.name() === name; });
+        return tag || App.Tag.create({name: name});
+      });
+
+      title = title.replace(/\s*\[[^\]]*\]\s*$/, '');
+    }
+    App.Todo.create({ title: title, tags: tags || Z.A() }).save();
     App.mainView.set('inputView.value', null);
+  },
+
+  deleteTodo: function(todo) {
+    todo.destroy();
   },
 
   updateIsDone: function(todo, isDone) {
@@ -152,22 +167,31 @@ App.TodoView = Z.View.extend(function() {
   this.def('didDisplay', function() {
     this.supr();
     this.observe('content.isDone', this, 'updateIsDone');
+    this.observe('content.tags.@', this, 'updateTags');
   });
 
   this.def('didRemove', function() {
     this.supr();
     this.stopObserving('content.isDone', this, 'updateIsDone');
+    this.stopObserving('content.tags.@', this, 'updateTags');
   });
 
   this.def('renderContent', function() {
-    var todo = this.content();
-    return Z.fmt('<input type="checkbox" %@ /><span class="title">%@</span> (<span class="tags">%@</span>)',
-                 todo.isDone() ? 'checked' : '', todo.title(), todo.get('tags.name').join(', '));
+    var todo = this.content(), tags = todo.tags();
+
+    return Z.fmt('<input type="checkbox" %@ /><span class="title">%@</span> %@ <a href="#" class="delete">Delete</a>',
+                 todo.isDone() ? 'checked' : '', todo.title(),
+                 '<span class="tags">' + (tags.size() > 0 ? '[' + tags.get('name').join(', ') + ']' : '') + '</span>');
   });
 
   this.def('updateIsDone', function() {
     var input = $(this.element()).find('input');
     input.attr('checked', this.get('content.isDone') ? 'checked' : null);
+  });
+
+  this.def('updateTags', function() {
+    var elem = $(this.element()).find('.tags'), tags = this.get('content.tags');
+    elem.text(tags.size() > 0 ? '[' + tags.get('name').join(', ') + ']' : '');
   });
 
   this.def('handleClickEvent', function(evt) {
@@ -176,21 +200,38 @@ App.TodoView = Z.View.extend(function() {
     if (elem.is('input')) {
       App.controller.updateIsDone(this.content(), !!elem.attr('checked'));
     }
+    else if (elem.is('a.delete')) {
+      App.controller.deleteTodo(this.content());
+    }
   })
+});
+
+App.TagView = Z.View.extend(function() {
+  this.property('content');
+
+  this.def('renderContent', function() {
+    return this.get('content.name');
+  });
 });
 
 App.TodoListView = Z.ListView.extend(function() {
   this.itemView(App.TodoView);
 });
 
+App.TagListView = Z.ListView.extend(function() {
+  this.itemView(App.TagView);
+});
+
 App.MainView = Z.RootView.extend(function() {
   this.subview('titleView', App.TitleView);
   this.subview('inputView', App.InputView);
+  this.subview('tagListView', App.TagListView);
   this.subview('todoListView', App.TodoListView);
 });
 
 App.mainView = App.MainView.create({container: $('#app')});
 
+App.mainView.set('tagListView.items', App.allTags);
 App.mainView.set('todoListView.items', App.allTodos);
 
 App.mainView.display();
