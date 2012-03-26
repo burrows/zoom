@@ -13,6 +13,7 @@ Foo = Z.Object.extend(Z.Enumerable, function() {
 
 f = Foo.create();
 a = Z.A(1,2,3,4,5,6,7,8,9,10);
+h = Z.H('foo', 1, 'bar', 2, 'baz', 3);
 
 describe('Z.Enumerable.inject', function() {
   it('should reduce the enumerable using the given initial object and function', function() {
@@ -23,11 +24,6 @@ describe('Z.Enumerable.inject', function() {
   it("should use the first item in the enumerable as the initial value if one isn't given", function() {
     expect(f.inject(function(acc, x) { return acc + x; })).toEqual('foobarbazquux');
     expect(a.inject(function(acc, x) { return acc + x; })).toBe(55);
-  });
-
-  it('should yield all values that each yields', function() {
-    expect(Z.A(1,2,3).inject(function(acc, item, i) { return i; })).toBe(2);
-    expect(Z.A(1,2,3,4).inject(function(acc, item, i) { return i; })).toBe(3);
   });
 });
 
@@ -61,13 +57,15 @@ describe('Z.Enumerable.reject', function() {
 
 describe('Z.Enumerable.invoke', function() {
   it('should call the given method on each item in the array and return a new array contain the results', function() {
-    var o1 = Z.Object.create(), o2 = Z.Object.create(), o3 = Z.Object.create();
-    a = Z.A(o1, o2, o3);
+    var o1 = Z.Object.create(), o2 = Z.Object.create(), o3 = Z.Object.create(),
+        a = Z.A(o1, o2, o3);
     expect(a.invoke('objectId')).toEq(Z.A(o1.objectId(), o2.objectId(), o3.objectId()));
   });
 });
 
 describe('Z.Enumerable.pluck', function() {
+  var a;
+
   it('should get the given property from each item in the array and return a new array containing the values', function() {
     a = Z.A(Foo.create({x: 1}), Foo.create({x: 2}), Foo.create({x: 3}));
     expect(a.pluck('x')).toEq(Z.A(1, 2, 3));
@@ -87,7 +85,7 @@ describe('Z.Enumerable.pluck', function() {
 describe('Z.Enumerable.toArray', function() {
   it('should return a `Z.Array` containing each item yielded to `each`', function() {
     var X = Z.Object.extend(Z.Enumerable, function() {
-      this.def('each', function(f) { f(1, 2); f(3, 4); });
+      this.def('each', function(f) { f([1, 2]); f([3, 4]); });
     });
 
     expect(f.toArray()).toEq(Z.A('foo', 'bar', 'baz', 'quux'));
@@ -95,7 +93,7 @@ describe('Z.Enumerable.toArray', function() {
   });
 });
 
-describe('Z.Enumerable.toArray', function() {
+describe('Z.Enumerable.sort', function() {
   describe('given no arguments', function() {
     it('should convert the receiver to an array and sort it using `Z.cmp`', function() {
       expect(f.sort()).toEq(Z.A('bar', 'baz', 'foo', 'quux'));
@@ -107,6 +105,36 @@ describe('Z.Enumerable.toArray', function() {
       expect(Z.H('foo', 3, 'bar', 2, 'baz', 1).sort(function(a, b) {
         return Z.cmp(a[1], b[1]);
       })).toEq(Z.A(['baz', 1], ['bar', 2], ['foo', 3]));
+    });
+  });
+});
+
+describe('Z.Enumerable.find', function() {
+  describe('given only a function argument', function() {
+    it('should return the first item in the enumerable for which the function returns true', function() {
+      expect(a.find(function(item) { return item % 4 === 0; })).toBe(4);
+      expect(h.find(function(tuple) { return tuple[1] === 2; })).toEq(['bar', 2]);
+      expect(f.find(function(item) { return item === 'quux'; })).toBe('quux');
+    });
+
+    it('should return null if the function does not return true for any item in the enumerable', function() {
+      expect(a.find(function(item) { return item % 12 === 0; })).toBeNull();
+      expect(h.find(function(tuple) { return tuple[1] === 9; })).toBeNull();
+      expect(f.find(function(item) { return item === 'hello'; })).toBeNull();
+    });
+  });
+
+  describe('given a value and a function argument', function() {
+    it('should return the first item in the enumerable for which the function returns true', function() {
+      expect(a.find('x', function(item) { return item % 4 === 0; })).toBe(4);
+      expect(h.find('y', function(tuple) { return tuple[1] === 2; })).toEq(['bar', 2]);
+      expect(f.find(9, function(item) { return item === 'quux'; })).toBe('quux');
+    });
+
+    it('should return the first argument if the function does not return true for any item in the enumerable', function() {
+      expect(a.find('x', function(item) { return item % 12 === 0; })).toBe('x');
+      expect(h.find('y', function(tuple) { return tuple[1] === 9; })).toBe('y');
+      expect(f.find(9, function(item) { return item === 'hello'; })).toBe(9);
     });
   });
 });

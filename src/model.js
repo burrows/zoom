@@ -71,7 +71,7 @@ repo = Z.Object.extend(function() {
 
   this.def('reset', function(query) {
     this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-    this.queries.each(function(baseType, queries) { queries.invoke('clear'); });
+    this.queries.each(function(tuple) { tuple[1].invoke('clear'); });
   });
 
   this.def('registerQuery', function(query) {
@@ -84,9 +84,9 @@ repo = Z.Object.extend(function() {
 
     queries.push(query);
 
-    map.each(function(id, model) {
-      query.check(model);
-      attachQueryObservers(model, query);
+    map.each(function(tuple) {
+      query.check(tuple[1]);
+      attachQueryObservers(tuple[1], query);
     });
   });
 
@@ -96,8 +96,8 @@ repo = Z.Object.extend(function() {
 
     this.queries.at(baseType).remove(query);
 
-    map.each(function(id, model) {
-      detachQueryObservers(model, query);
+    map.each(function(tuple) {
+      detachQueryObservers(tuple[1], query);
     });
   });
 }).create();
@@ -522,7 +522,7 @@ Z.Model = Z.Object.extend(function() {
     if (!this.isDirty()) { return this; }
 
     changes = this.changes();
-    changes.each(function(k, v) { self.set(k, v); });
+    changes.each(function(tuple) { self.set(tuple[0], tuple[1]); });
     changes.clear();
     setState.call(this, {dirty: false});
 
