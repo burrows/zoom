@@ -660,7 +660,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('toString', function() {
-    var self = this, name, stateString, a, descriptors, descriptor, recursed;
+    var self = this, names, name, stateString, a, descriptors, descriptor, k, i, len;
 
     if (this.isPrototype) { return this.supr(); }
 
@@ -672,25 +672,22 @@ Z.Model = Z.Object.extend(function() {
       return Z.fmt("#<%@ (%@) %@>", name, stateString, a);
     }
 
-    Z.detectRecursion(this, function() {
-      var descriptors = self.associationDescriptors(),
-          names       = self.attributeNames(),
-          descriptor, k, i, len;
+    descriptors = self.associationDescriptors();
+    names       = self.attributeNames();
 
-      for (i = 0, len = names.length; i < len; i++) {
-        a.push(Z.fmt("%@: %@", names[i], Z.inspect(self.get(names[i]))));
-      }
+    for (i = 0, len = names.length; i < len; i++) {
+      a.push(Z.fmt("%@: %@", names[i], Z.inspect(self.get(names[i]))));
+    }
 
-      for (k in descriptors) {
-        descriptor = descriptors[k];
-        if (descriptor.type === 'hasMany') {
-          a.push(Z.fmt("%@: %@", descriptor.name, Z.inspect(self.get(descriptor.name).toNative())));
-        }
-        else {
-          a.push(Z.fmt("%@: %@", descriptor.name, Z.inspect(self.get(descriptor.name))));
-        }
+    for (k in descriptors) {
+      descriptor = descriptors[k];
+      if (descriptor.type === 'hasMany') {
+        a.push(Z.fmt("%@: %@", descriptor.name, Z.inspect(self.get(descriptor.name).pluck('id').toNative())));
       }
-    });
+      else {
+        a.push(Z.fmt("%@: %@", descriptor.name, Z.inspect(self.get(descriptor.name + '.id'))));
+      }
+    }
 
     return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
   });
