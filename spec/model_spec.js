@@ -1238,24 +1238,26 @@ describe('Z.Model.toString', function() {
   });
 
   describe('given a `LOADED` model', function() {
-    it('should display the type name, state, id, attributes, and associated objects', function() {
-      var a = Test.Author.load({id: 3, first: 'Marge', last: 'Simpson'});
+    it('should display the type name, state, id, attributes, and associated object ids', function() {
+      var a1 = Test.Author.load({id: 3, first: 'Marge', last: 'Simpson'}),
+          a2 = Test.Author.load({
+            id: 4, first: 'Lisa', last: 'Simpson',
+            posts: [
+              {id: 9, title: 'the title', body: 'the body', tags: []},
+              {id: 10, title: 'another title', body: 'some body', tags: []}
+            ]
+          });
 
-      expect(a.toString()).toMatch(/^#<Test.Author \(LOADED\) id: 3/);
-      expect(a.toString()).toMatch(/first: 'Marge'/);
-      expect(a.toString()).toMatch(/last: 'Simpson'/);
-      expect(a.toString()).toMatch(/posts: \[\]/);
-    });
+      expect(a1.toString()).toMatch(/^#<Test.Author \(LOADED\) id: 3/);
+      expect(a1.toString()).toMatch(/first: 'Marge'/);
+      expect(a1.toString()).toMatch(/last: 'Simpson'/);
+      expect(a1.toString()).toMatch(/posts: \[\]/);
 
-    it('should only display the type, state, and id of models already seen', function() {
-      var a = Test.Author.load({
-        id: 4, first: 'Lisa', last: 'Simpson',
-        posts: [ {id: 9, title: 'the title', body: 'the body', tags: []} ]
-      });
+      expect(a2.toString()).toMatch(/^#<Test.Author \(LOADED\) id: 4[^>]/);
+      expect(a2.toString()).toMatch(/posts: \[9, 10\]/);
 
-      expect(a.toString()).toMatch(/^#<Test.Author \(LOADED\) id: 4[^>]/);
-      expect(a.toString()).toMatch(/posts: \[#<Test.Post \(LOADED\) id: 9/);
-      expect(a.toString()).toMatch(/author: #<Test.Author \(LOADED\) id: 4>/);
+      expect(a2.posts().first().toString()).toMatch(/^#<Test.Post \(LOADED\) id: 9[^>]/);
+      expect(a2.posts().first().toString()).toMatch(/author: 4/);
     });
   });
 });
