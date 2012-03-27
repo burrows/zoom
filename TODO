@@ -1,3 +1,7 @@
+* add tests for Z.Query to make sure a model doesn't get added twice
+* add tests for Z.Object.extended
+* add tests for observers getting removed during didChangeProperty
+
 * Z.Array.sortBy
 * finish Z.cmp
 * fire option doesn't work that well with array @ observers

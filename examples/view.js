@@ -12,6 +12,9 @@ Z.View = Z.Object.extend(function() {
   });
 
   this.property('tag', { def: 'div' });
+  this.property('classes', {
+    get: function() { return this.__classes__ = this.__classes__ || Z.A('z-view'); }
+  });
 
   this.property('element', {
     readonly: true,
@@ -19,6 +22,10 @@ Z.View = Z.Object.extend(function() {
   });
 
   this.property('isDisplayed', { def: false });
+
+  this.def('extended', function(proto) {
+    proto.classes(Z.Array.create(this.classes().toNative()));
+  });
 
   this.def('subview', function(name, type) {
     (this.__subviewTypes__ = this.__subviewTypes__ || Z.H()).at(name, type);
@@ -41,26 +48,29 @@ Z.View = Z.Object.extend(function() {
   });
 
   this.def('render', function() {
-    return Z.fmt('<%@ id="z-view-%@" class="z-view">%@</%@>',
-      this.tag(), this.objectId(), this.renderContent(), this.tag());
+    return Z.fmt('<%@ id="z-view-%@" class="%@">%@</%@>',
+      this.tag(), this.objectId(), this.classes().join(' '),
+      this.renderContent(), this.tag());
   });
 
   this.def('renderContent', function() {
-    return this.subviews().map(function(subview) {
+    return '<tbody>' + this.subviews().map(function(subview) {
       return subview.render();
-    }).join('');
+    }).join('') + '</tbody>';
   });
 
   this.def('didDisplay', function() {
     $.data(this.element(), 'z-view', this);
     this.set('isDisplayed', true);
     this.observe('subviews.@', this, 'subviewsDidChange', {prior: true});
+    this.observe('classes.@', this, 'classesDidChange');
     this.subviews().invoke('didDisplay');
   });
 
   this.def('didRemove', function() {
     this.set('isDisplayed', false);
     this.stopObserving('subviews.@', this, 'subviewsDidChange');
+    this.stopObserving('classes.@', this, 'classesDidChange');
     this.subviews().invoke('didRemove');
   });
 
@@ -77,6 +87,10 @@ Z.View = Z.Object.extend(function() {
     }
   });
 
+  this.def('classesDidChange', function() {
+    $(this.element()).attr('class', this.classes().join(' '));
+  });
+
   this.def('didRemoveSubview', function(view) {
     $(view.element()).remove();
     view.superview(null);
@@ -86,8 +100,12 @@ Z.View = Z.Object.extend(function() {
   this.def('didAddSubview', function(view, idx) {
     var element = $(this.element()), html = view.render();
 
+    if (element.is('table')) { element = element.find('tbody'); }
+
     if (idx === 0) { element.prepend(html); }
-    else { element.children(Z.fmt(':eq(%@)', idx - 1)).after(html); }
+    else {
+      element.children(Z.fmt(':eq(%@)', idx - 1)).after(html);
+    }
 
     view.superview(this);
     view.didDisplay();
@@ -104,6 +122,8 @@ Z.View = Z.Object.extend(function() {
 
 Z.ListView = Z.View.extend(function() {
   this.tag('ul');
+
+  this.property('itemTag', { def: 'li' });
   this.property('items');
   this.property('itemView');
 
@@ -118,14 +138,16 @@ Z.ListView = Z.View.extend(function() {
         subviews = this.subviews(),
         items    = this.items(),
         itemView = this.itemView(),
-        i, len;
+        itemTag  = this.itemTag(),
+        views, i, len;
 
     switch (n.type) {
       case 'change':
         if (items) {
-          this.subviews(items.map(function(item) {
-            return itemView.create({superview: self, content: item, tag: 'li'});
-          }));
+          views = items.map(function(item) {
+            return itemView.create({superview: self, content: item, tag: itemTag});
+          });
+          subviews.splice.apply(subviews, [0, subviews.size()].concat(views.toNative()));
         }
         else {
           this.subviews().clear();
@@ -133,7 +155,7 @@ Z.ListView = Z.View.extend(function() {
         break;
       case 'insert':
         for (i = n.range[0], len = i + n.range[1]; i < len; i++) {
-          subviews.splice(i, 0, itemView.create({superview: this, content: items.at(i), tag: 'li'}));
+          subviews.splice(i, 0, itemView.create({superview: this, content: items.at(i), tag: itemTag}));
         }
         break;
       case 'remove':

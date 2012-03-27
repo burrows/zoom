@@ -1,0 +1,23 @@
+#app { margin-top: 30px; }
+
+.todo-view.done .title {
+  text-decoration: line-through;
+}
+
+.todo-view .tags span {
+  margin: 0 2px;
+}
+
+.tag-list-view {
+  padding: 0;
+  margin: 0;
+}
+
+.tag-list-view li {
+  list-style-type: none;
+  padding: 3px;
+}
+
+.tag-view.selected {
+  font-weight: bold;
+}

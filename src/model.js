@@ -800,8 +800,12 @@ Z.Query = Z.SortedArray.extend(function() {
 
   this.def('check', function(model) {
     if (!model.isA(this.modelType)) { return; }
-    if (this.matchFn(model)) { this.insert(model); }
-    else { this.remove(model); }
+    if (this.matchFn(model)) {
+      if (this.index(model) === null) { this.insert(model); }
+    }
+    else {
+      this.remove(model);
+    }
   });
 
   this.def('destroy', function() { repo.deregisterQuery(this); });

@@ -80,6 +80,8 @@ Z.Object.open(function() {
     o.isPrototype    = true;
     o.__z_objectId__ = objectId++;
 
+    if (this.respondTo('extended')) { this.extended(o); }
+
     if (f) { f.call(o); }
 
     return o;
@@ -466,6 +468,8 @@ Z.Object.open(function() {
 
     for (i = 0, len = registrations.length; i < len; i++) {
       r = registrations[i];
+
+      if (!r) { continue; }
 
       notification = { type: type, path: r.path, observee: r.observee };
 
