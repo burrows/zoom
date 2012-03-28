@@ -891,6 +891,7 @@ html {
 #reveal table.demo {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 1em;
 }
 
 #reveal table.demo td {
@@ -920,3 +921,4 @@ html {
 #reveal .demo .demo-controls {
   width: 100%;
 }
+

@@ -11,7 +11,7 @@ jQuery(function($) {
         a.push(arguments[i]);
       }
 
-      $(this.logElem).text(text + a.join(' ') + "\n");
+      $(this.logElem).text(text + a.join(' ') + "\n\n");
     }
   }
 

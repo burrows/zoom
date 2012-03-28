@@ -16,7 +16,6 @@ Z.Object.open(function() {
   // `Z.Object.property`.
   var defaultPropertyOpts = {
     dependsOn : [],
-    cache     : true,
     auto      : true,
     get       : null,
     set       : null,
