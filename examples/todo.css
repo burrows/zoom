@@ -1,6 +1,6 @@
 #app { margin-top: 30px; }
 
-.todo-view.done .title {
+.todo-view .title.done {
   text-decoration: line-through;
 }
 

@@ -231,8 +231,10 @@ App.InputView = Z.View.extend(function() {
   });
 
   this.def('handleKeyupEvent', function(evt) {
-    var input = $(this.element()).find('input');
-    this.value(input.val());
+    var input = $(this.element()).find('input'),
+        val   = input.val();
+
+    if (val !== this.value()) { this.value(input.val()); }
   });
 
   this.def('handleKeydownEvent', function(evt) {
@@ -253,11 +255,6 @@ App.TodoView = Z.View.extend(function() {
   this.property('content');
   this.classes().push('todo-view');
 
-  this.def('render', function() {
-    if (this.get('content.isDone')) { this.classes().push('done'); }
-    return this.supr();
-  });
-
   this.def('didDisplay', function() {
     this.supr();
     this.observe('content.isDone', this, 'updateIsDone');
@@ -275,7 +272,7 @@ App.TodoView = Z.View.extend(function() {
 
     return [
       Z.fmt('<td><input type="checkbox" %@ /></td>', todo.isDone() ? 'checked' : ''),
-      Z.fmt('<td class="title">%@</td>', todo.title()),
+      Z.fmt('<td class="title%@">%@</td>', todo.isDone() ? ' done' : '', todo.title()),
       Z.fmt('<td class="tags">%@</td>', this.renderTags()),
       '<td><i class="icon-remove-sign"></i></td>'
     ].join('');
@@ -288,16 +285,18 @@ App.TodoView = Z.View.extend(function() {
   });
 
   this.def('updateIsDone', function() {
-    var input  = $(this.element()).find('input'),
+    var elem   = $(this.element()),
+        input  = elem.find('input'),
+        title  = elem.find('.title'),
         isDone = this.get('content.isDone');
 
     if (isDone) {
       input.attr('checked', 'checked');
-      this.classes().push('done');
+      title.addClass('done');
     }
     else {
       input.attr('checked', null);
-      this.classes().remove('done');
+      title.removeClass('done');
     }
   });
 
