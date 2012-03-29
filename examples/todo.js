@@ -4,6 +4,10 @@ App = {};
 
 Z.addNamespace(App, 'App');
 
+//------------------------------------------------------------------------------
+// mapper
+//------------------------------------------------------------------------------
+
 App.LocalStorageMapper = Z.Mapper.extend(function() {
   function nextId() {
     return localStorage['nextid'] ?
@@ -67,15 +71,19 @@ App.LocalStorageMapper = Z.Mapper.extend(function() {
   });
 });
 
+//------------------------------------------------------------------------------
+// models
+//------------------------------------------------------------------------------
+
 App.Todo = Z.Model.extend(function() {
-  this.attribute('isDone', 'boolean', {'default': false});
+  this.attribute('isDone', 'boolean', {def: false});
   this.attribute('title', 'string');
   this.hasMany('tags', 'App.Tag', {owner: true, inverse: 'todos'});
 
   this.registerValidator('validateTitle');
 
   this.def('validateTitle', function() {
-    var title = this.title();
+    var title = this.title().replace(/(?:^\s*)|(?:\s*$)/g, ''); ;
 
     if (!title || title.length === 0) {
       this.addError('title', 'title must be present');
@@ -94,11 +102,15 @@ Z.Model.mapper = App.LocalStorageMapper.create();
 App.allTodos = App.Todo.query();
 App.allTags  = App.Tag.query();
 
+//------------------------------------------------------------------------------
+// controller
+//------------------------------------------------------------------------------
+
 var selectedTags = Z.A();
 
 App.controller = {
   createTodo: function(title) {
-    var tags, tag, m;
+    var todo, tags, tag, m;
 
     if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
       tags = Z.A(m[1].split(/\s*,\s*/)).map(function(name) {
@@ -108,7 +120,11 @@ App.controller = {
 
       title = title.replace(/\s*\[[^\]]*\]\s*$/, '');
     }
-    App.Todo.create({ title: title, tags: tags || Z.A() }).save();
+
+    todo = App.Todo.create({ title: title, tags: tags || Z.A() }).save();
+
+    Z.log(todo, todo.errors());
+
     App.rootView.set('mainView.inputView.value', null);
   },
 

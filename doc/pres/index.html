@@ -8,8 +8,6 @@
 		<meta name="description" content="zoom.js">
 		<meta name="author" content="Corey Burrows">
 
-    <link href='http://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
-
 		<link rel="stylesheet" href="css/reset.css">
 		<link rel="stylesheet" href="css/main.css">
 		<link rel="stylesheet" href="css/zenburn.css">
@@ -31,18 +29,31 @@
 				</section>
 
         <section>
+          <h2>Why did I build this?</h2>
+          <ul>
+          <li>completely frustrated with SproutCore</li>
+          <li>backbone works great but feels lacking when building complex apps</li>
+          <li>I haven't come across a framework yet that I've been totally happy with</li>
+          <li>thought it would be fun</li>
+          </ul>
+        </section>
+
+        <section>
           <h2>Object System</h2>
           <ul>
           <li>Most javascript frameworks implement some sort of class-based system
             <ul>
             <li>generally inconsistent and lacking in features</li>
-            <li>class properties are often not inherited</li>
+            <li>class properties are often not inherited and instead copied to subclass</li>
             <li>mixins typically clobber other properties</li>
             </ul>
           </li>
-          <li>GOAL: create an object system that leverages javascript's prototypal inheritance and adheres to Ruby's principle of least astonishment.
+          <li>GOAL: create an object system that behaves as similarily to Ruby's as possible
             <ul>
-            <li>everything that you can do with class-based inheritance can also be accomplished using proptotypal inheritance </li>
+            <li>objects are open for modification</li>
+            <li>all methods are late binding</li>
+            <li>ability to invoke super methods</li>
+            <li>support multiple inheritance using mixins</li>
             </ul>
           </li>
           </ul>
@@ -78,6 +89,7 @@ var x = Demo.MyPrototype.create();
 
 Z.log(x);
 Z.log(x.foo());
+Z.log(x.ancestors());
             </code></pre>
             </td>
             <td class="log"><pre></pre></td>
@@ -259,8 +271,6 @@ Demo.ModA = Z.Module.create(function() {
   });
 });
 
-Demo.ModB = Z.Module.create();
-
 Demo.X = Z.Object.extend(Demo.ModA, function() {
   this.def('foo', function() {
     return this.supr() + ', X.foo';
@@ -268,6 +278,8 @@ Demo.X = Z.Object.extend(Demo.ModA, function() {
 });
 
 Z.log(Demo.X.create().foo());
+
+Demo.ModB = Z.Module.create();
 
 Demo.Y = Z.Object.extend(Demo.ModA, Demo.ModB);
 Demo.Z = Z.Object.extend(Demo.ModB, Demo.ModA);
@@ -369,7 +381,6 @@ Demo.X = Z.Object.extend(function() {
 
 var x = Demo.X.create();
 
-Z.log(x.get('bar'));
 Z.log(x.get('thispropertydoesntexist'));
             </code></pre>
             </td>
@@ -415,6 +426,15 @@ p.full('wontwork');
         <section>
           <h2>Key Value Observing</h2>
           <h3>KVO</h3>
+
+          <ul>
+          <li>A mechanism that allows objects to be notified of changes to specified properties of other objects.</li>
+          <li>An absolutely critical feature for developing client side apps</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Key Value Observing</h2>
           <ul>
           <li>Anything that can be accessed via <code>Z.Object.get</code> can also be observed using <code>Z.Object.observe</code></li>
           </ul>
@@ -441,6 +461,7 @@ p.observe('author.name', null, Z.log);
 
 p.title('Awesome Zoom Presentation');
 p.author().name('Corey Burrows');
+p.set('author', Demo.Author.create({name: 'Bob'}));
             </code></pre>
             </td>
             <td class="log"><pre></pre></td>
@@ -520,6 +541,40 @@ p.title('Awesome Zoom Presentation');
         </section>
 
         <section>
+          <h2>Observing computed properties</h2>
+          <ul>
+          <li>Use the <code>dependsOn</code> option when defining the property</li>
+          </ul>
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.Person = Z.Object.extend(function() {
+  this.property('first');
+  this.property('last');
+  this.property('full', {
+    readonly: true,
+    dependsOn: ['first', 'last'],
+    get: function() {
+      return this.first() + ' ' + this.last();
+    }
+  });
+});
+
+var p = Demo.Person.create();
+
+p.observe('full', null, Z.log);
+
+p.set('first', 'Corey');
+p.set('last', 'Burrows');
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
           <h2>Z.Array</h2>
           <ul>
           <li>A typical array implementation</li>
@@ -533,6 +588,7 @@ a.push(1, 2, 3);
 a.unshift(0);
 a.at(4, 4);
 Z.log(a);
+Z.log(a.at(-2));
 Z.log(a.size());
 Z.log(a.pop());
 Z.log(a);
@@ -553,7 +609,7 @@ Z.log(a2);
           <h2>Z.Array</h2>
           <ul>
           <li>Fully supports KVC</li>
-          <li>Leverages <code>getUnknownProperty</code> to access a property from all items</li>
+          <li>Leverages <code>getUnknownProperty</code> to access item properties</li>
           </ul>
           <table class="demo">
             <tr>
@@ -586,7 +642,6 @@ Z.log(txns.get('amount'));
           <h2>Z.Array</h2>
           <ul>
           <li>Fully supports KVO</li>
-          <li>Leverages <code>getUnknownProperty</code> to create individual item observers</li>
           </ul>
           <table class="demo">
             <tr>
@@ -806,7 +861,7 @@ Z.log(Z.hash(Z.A(1,2,3,'four')));
         <section>
           <h2>Z.Hash</h2>
           <ul>
-          <li>Fully supports KVC</li>
+          <li>Fully supports KVC/KVO</li>
           </ul>
           <table class="demo">
             <tr>
@@ -817,6 +872,12 @@ var h = Z.H('foo', 9, 'bar', 22);
 Z.log(h.get('size'));
 Z.log(h.get('foo'));
 Z.log(h.get('bar'));
+
+h.observe('size', null, Z.log);
+h.observe('foo', null, Z.log);
+
+h.at('baz', 1);
+h.at('foo', 10);
             </code></pre>
             </td>
             <td class="log"><pre></pre></td>
@@ -851,6 +912,113 @@ h.at('x', 'y');
             <td class="log"><pre></pre></td>
             </tr>
           </table>
+        </section>
+
+        <section>
+          <h2>Z.Enumerable</h2>
+          <ul>
+          <li>Similar to Ruby's Enumerable module</li>
+          <li>Just implement <code>each</code> method in your prototype to use.</li>
+          </ul>
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+var a = Z.A('the', 'quick', 'brown', 'fox'),
+    h = Z.H('foo', 1, 'bar', 2, 'baz', 3);
+
+Z.log(Z.Array.ancestors());
+Z.log(Z.Hash.ancestors());
+
+Z.log(a.map(function(x) { return x.toUpperCase(); }));
+
+Z.log(h.inject(Z.H(), function(acc, tuple) {
+  acc.at(tuple[1], tuple[0]);
+  return acc;
+}));
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Z.Orderable</h2>
+          <ul>
+          <li>Used to sort stuff</li>
+          <li>Implement at <code>cmp</code> method to use</li>
+          </ul>
+          <table class="demo">
+            <tr>
+            <td class="code">
+            <pre><code class="javascript">
+Demo.X = Z.Object.extend(Z.Orderable, function() {
+  this.property('rank');
+
+  this.def('cmp', function(other) {
+    return Z.cmp(this.rank(), other.rank());
+  });
+});
+
+var x9 = Demo.X.create({rank: 9}),
+    x4 = Demo.X.create({rank: 4}),
+    x7 = Demo.X.create({rank: 7});
+
+Z.log(x9.cmp(x4));
+Z.log(x4.cmp(x9));
+Z.log(x4.cmp(x4));
+
+Z.log(x9.gt(x4));
+Z.log(x9.lt(x4));
+Z.log(x9.max(x4));
+Z.log(x9.min(x4));
+
+Z.log(Z.A(x4, x9, x7).sort());
+            </code></pre>
+            </td>
+            <td class="log"><pre></pre></td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Model Layer</h2>
+          <ul>
+          <li>
+          Based on the data mapper pattern: a layer of mappers that moves data
+          between objects and a database while keeping them independent of each
+          other and the mapper itself
+            <ul>
+            <li>No persistence logic in your model objects</li>
+            <li>Switching databases is simply a matter of implementing a new mapper</li>
+            <li>Use your models on the browser as well as the server</li>
+            </ul>
+          </li>
+          <li>Attributes with type coercion</li>
+          <li>Validators</li>
+          <li>Dirty attribute tracking</li>
+          <li>State management</li>
+          <li>Associations</li>
+          <li>Auto-updating queries</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>What's left?</h2>
+          <ul>
+          <li>model/mapper finder api</li>
+          <li>bindings</li>
+          <li>basic view layer</li>
+          <li>HTML view layer (separate project)</li>
+          <li>statechart</li>
+          <li>url routing</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Demo</h2>
+          <a href="../../examples/todo.html">Example Todo App</a>
         </section>
 			</div>
 
