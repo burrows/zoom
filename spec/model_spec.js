@@ -1794,6 +1794,21 @@ describe('Z.Query', function() {
       expect(q.size()).toBe(0);
     });
 
+    it('should not re-add models when they are updated and still pass the match function', function() {
+      var a;
+
+      q = Test.Author.query({
+        matchFn: function(a) { return a.last() === 'Stark' || a.last() == 'Lannister'; },
+        dependentPaths: ['last']
+      });
+
+      expect(q.size()).toBe(0);
+      a = Test.Author.load({id: 9, first: 'Sansa', last: 'Stark'});
+      expect(q).toEq(Z.A(a));
+      a.last('Lannister');
+      expect(q).toEq(Z.A(a));
+    });
+
     it('should update when a matching model is destroyed', function() {
       var a = Test.Author.load({id: 9, first: 'Sansa', last: 'Stark'});
 
