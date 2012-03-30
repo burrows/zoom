@@ -8,6 +8,27 @@ Z.SortedArray = Z.Array.extend(function() {
     this.insert(n.observee);
   }
 
+  function binarySearch(o, imin, imax) {
+    var imid, r;
+
+    while (imax >= imin) {
+      imid = Math.floor((imin + imax) / 2);
+      r    = Z.cmp(this.at(imid), o);
+
+      if (r < 0) {
+        imin = imid + 1;
+      }
+      else if (r > 0) {
+        imax = imid - 1;
+      }
+      else {
+        return imid;
+      }
+    }
+
+    return null;
+  }
+
   this.def('initialize', function(opts) {
     this.supr();
 
@@ -66,6 +87,10 @@ Z.SortedArray = Z.Array.extend(function() {
     }
 
     return this.splice(i, 0, o);
+  });
+
+  this.def('index', function(o) {
+    return binarySearch.call(this, o, 0, this.size() - 1);
   });
 
   this.def('push', function() {

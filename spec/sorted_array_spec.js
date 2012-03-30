@@ -202,10 +202,12 @@ describe('Z.Array.index', function() {
 
   it('should return `null` if the given object is not in the array', function() {
     expect(a.index(6)).toBeNull();
-    expect(a.index('foo')).toBeNull();
-    expect(a.index(null)).toBeNull();
-    expect(a.index({})).toBeNull();
-    expect(a.index(Z.Object.create())).toBeNull();
+    expect(a.index(4)).toBeNull();
+    expect(a.index(18)).toBeNull();
+    expect(a.index(19)).toBeNull();
+    expect(a.index(110)).toBeNull();
+    expect(a.index(112)).toBeNull();
+    expect(a.index(893)).toBeNull();
   });
 
   it('should return the current index of the item in the array', function() {

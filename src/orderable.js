@@ -35,6 +35,10 @@ Z.Orderable = Z.Module.create(function() {
 Z.cmp = function(a, b) {
   if (a && a.isOrderable) { return a.cmp(b); }
 
+  if (Z.type(a) !== Z.type(b)) {
+    throw new Error(Z.fmt("Z.cmp: don't know how to compare %@ and %@", Z.inspect(a), Z.inspect(b)));
+  }
+
   if (a < b) {
     return -1;
   }
