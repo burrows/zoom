@@ -39,6 +39,22 @@ describe('Z.Object.extend', function() {
     expect(context).toBe(X);
   });
 
+  it('should invoke the `extended` method on the receiver before executing the body', function() {
+    var calls = [], X, Y;
+
+    X = Z.Object.extend(function() {
+      this.def('extended', function(proto) {
+        calls.push(this);
+      });
+    });
+
+    Y = X.extend(function() {
+      calls.push(this);
+    });
+
+    expect(calls).toEq([X, Y]);
+  });
+
   describe('when passed 1 or more Z.Module arguments', function() {
     var Mod1, Mod2;
 

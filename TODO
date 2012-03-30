@@ -1,4 +1,3 @@
-* add tests for Z.Object.extended
 * add tests for observers getting removed during didChangeProperty
 * investigate notification types on array item observers, and array and
   hash @ property
