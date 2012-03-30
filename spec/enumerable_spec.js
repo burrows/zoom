@@ -139,4 +139,20 @@ describe('Z.Enumerable.find', function() {
   });
 });
 
+describe('Z.Enumerable.all', function() {
+  it('should return `true` if the given function returns `true` for every item and false otherwise', function() {
+    expect(Z.A().all(function(x) { return false; })).toBe(true);
+    expect(f.all(function(x) { return x.length >= 3; })).toBe(true);
+    expect(f.all(function(x) { return x.length >= 4; })).toBe(false);
+  });
+});
+
+describe('Z.Enumerable.all', function() {
+  it('should return `true` if the given function returns `true` for any item and false otherwise', function() {
+    expect(Z.A().any(function(x) { return true; })).toBe(false);
+    expect(f.any(function(x) { return x === 'bar'; })).toBe(true);
+    expect(f.any(function(x) { return x === 'blarf'; })).toBe(false);
+  });
+});
+
 }());

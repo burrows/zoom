@@ -54,6 +54,18 @@ Z.Enumerable = Z.Module.create(function() {
     });
   });
 
+  this.def('all', function(f) {
+    try { this.each(function(item) { if (!f(item)) { throw null; } }); }
+    catch (e) { return false; }
+    return true;
+  });
+
+  this.def('any', function(f) {
+    try { this.each(function(item) { if (f(item)) { throw null; } }); }
+    catch (e) { return true; }
+    return false;
+  });
+
   this.def('invoke', function(name) {
     return this.map(function(item) { return item[name](); });
   });
