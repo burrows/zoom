@@ -3,8 +3,6 @@
 var seed = Math.floor(Math.random() * 0xffffffff);
 
 Z.Hash = Z.Object.extend(Z.Enumerable, function() {
-  this.isZHash = true;
-
   function defaultValue(k) {
     var def = this.__z_default__;
     return typeof def === 'function' ? def.call(null, this, k) : def;
@@ -194,7 +192,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.def('eq', function(other) {
     var self = this, size = this.__z_size__, r = true, keys;
 
-    if (Z.type(other) !== 'zobject' || !other.isZHash) { return false; }
+    if (Z.type(other) !== 'zobject' || !other.isA(Z.Hash)) { return false; }
     if (size !== other.__z_size__) { return false; }
 
     keys = this.keys();

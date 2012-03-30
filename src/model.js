@@ -139,8 +139,6 @@ function setState(state) {
 Z.Model = Z.Object.extend(function() {
   var attributeTypes = {};
 
-  this.isZModel = true;
-
   this.mapper = Z.Mapper.create();
 
   // source state
@@ -203,7 +201,7 @@ Z.Model = Z.Object.extend(function() {
     var key = Z.fmt("__%@__", descriptor.name),
         a   = getHasMany.call(this, descriptor);
 
-    a.splice.apply(a, [0, a.size()].concat(v.isZArray ? v.toNative() : v));
+    a.splice.apply(a, [0, a.size()].concat(Z.isZArray(v) ? v.toNative() : v));
 
     return v;
   }

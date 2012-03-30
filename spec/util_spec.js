@@ -173,6 +173,16 @@ describe('Z.inspect', function() {
   });
 });
 
+describe('Z.isZArray', function() {
+  it('should return `true` when passed a Z.Array and false otherwise', function() {
+    expect(Z.isZArray(Z.A())).toBe(true);
+    expect(Z.isZArray(Z.SortedArray.create())).toBe(true);
+    expect(Z.isZArray([])).toBe(false);
+    expect(Z.isZArray(null)).toBe(false);
+    expect(Z.isZArray({})).toBe(false);
+  });
+});
+
 describe('Z.eq', function() {
   describe('given a Z.Object as the first argument', function() {
     it('should invoke `eq` if the first object is a Z.Object', function() {

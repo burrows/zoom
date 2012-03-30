@@ -1,8 +1,6 @@
 (function(undefined) {
 
 Z.Enumerable = Z.Module.create(function() {
-  this.isEnumerable = true;
-
   this.def('map', function(f) {
     return this.inject(Z.A(), function(acc, item) {
       acc.push(f(item));

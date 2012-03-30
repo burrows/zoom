@@ -5,7 +5,6 @@
 * finish Z.cmp
 * fire option doesn't work that well with array @ observers
 * make Z.Array and Z.Hash Orderable
-* remove is<Type> properties, use Z.Object.isA instead
 * implement named finders
 * figure out model serialization
   * something RABL-like?

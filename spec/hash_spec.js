@@ -521,7 +521,7 @@ describe('Z.Hash.keys', function() {
   it('should return a Z.Array containing all keys in the hash', function() {
     var h = Z.H('foo', 1, 'bar', 2, 'baz', 3), keys = h.keys();
 
-    expect(keys.isZArray).toBe(true);
+    expect(keys.isA(Z.Array)).toBe(true);
     expect(keys.size()).toBe(3);
     expect(keys.toNative().sort()).toEq(['bar', 'baz', 'foo']);
   });

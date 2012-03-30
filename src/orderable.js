@@ -1,8 +1,6 @@
 (function(undefined) {
 
 Z.Orderable = Z.Module.create(function() {
-  this.isOrderable = true;
-
   this.def('cmp', function(other) {
     throw new Error('Z.Orderable.cmp: not implemented');
   });
@@ -33,7 +31,7 @@ Z.Orderable = Z.Module.create(function() {
 });
 
 Z.cmp = function(a, b) {
-  if (a && a.isOrderable) { return a.cmp(b); }
+  if (Z.isZObject(a) && a.isA(Z.Orderable)) { return a.cmp(b); }
 
   if (Z.type(a) !== Z.type(b)) {
     throw new Error(Z.fmt("Z.cmp: don't know how to compare %@ and %@", Z.inspect(a), Z.inspect(b)));

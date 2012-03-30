@@ -264,7 +264,7 @@ Z.Object.open(function() {
       if (Z.isArray(arguments[0])) {
         paths = arguments[0];
       }
-      else if (arguments[0].isZArray) {
+      else if (Z.isZArray(arguments[0])) {
         paths = arguments[0].toNative();
       }
       else {

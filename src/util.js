@@ -329,6 +329,7 @@ Z.isDate      = function(o) { return Z.type(o) === 'date'; };
 Z.isRegExp    = function(o) { return Z.type(o) === 'regexp'; };
 Z.isObject    = function(o) { return Z.type(o) === 'object'; };
 Z.isZObject   = function(o) { return Z.type(o) === 'zobject'; };
+Z.isZArray    = function(o) { return Z.type(o) === 'zobject' && o.isA(Z.Array); };
 Z.isNaN       = function(o) { return o !== o; };
 
 // Used to detect cases of recursion on the same pair of objects. Returns `true`
