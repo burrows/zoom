@@ -9,7 +9,7 @@ repo = Z.Object.extend(function() {
   }
 
   function attachQueryObservers(model, query) {
-    var paths = query.dependsOn, i, len;
+    var paths = query.matchDependsOn, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
       model.observe(paths[i], null, dependentPathDidChange, {context: query});
@@ -17,7 +17,7 @@ repo = Z.Object.extend(function() {
   }
 
   function detachQueryObservers(model, query) {
-    var paths = query.dependsOn, i, len;
+    var paths = query.matchDependsOn, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
       model.stopObserving(paths[i], null, dependentPathDidChange, {context: query});
@@ -778,27 +778,40 @@ Z.HasManyArray = Z.Array.extend(function() {
         removed[j].inverseDidRemove(inverse, model);
       }
     }
+
+    return this;
   });
 });
 
 Z.Query = Z.SortedArray.extend(function() {
-  function idcmp(a, b) { return Z.cmp(a.id(), b.id()); }
-  function matchall() { return true; }
+  var defaultOpts = {
+    matchFn: function() { return true; },
+    matchDependsOn: []
+  };
 
   this.def('initialize', function(type, opts) {
-    opts = opts || {};
+    var sortOpts = {};
 
-    this.modelType = type;
-    this.matchFn   = opts.matchFn || matchall;
-    this.dependsOn = opts.dependsOn || [];
+    opts = Z.defaults(Z.dup(opts), defaultOpts);
 
-    return this.supr(opts.compareFn || idcmp);
+    this.modelType      = type;
+    this.matchFn        = opts.matchFn;
+    this.matchDependsOn = opts.matchDependsOn;
+
+    if (opts.orderBy) { sortOpts.path = opts.orderBy; }
+    if (opts.isDescending) { sortOpts.isDescending = true; }
+    if (opts.compareFn) { sortOpts.compareFn = opts.compareFn; }
+    if (opts.compareDependsOn) { sortOpts.dependsOn = opts.compareDependsOn; }
+
+    if (!sortOpts.path && !sortOpts.compareFn) { sortOpts.path = 'id';  }
+
+    this.supr(sortOpts);
   });
 
   this.def('check', function(model) {
     if (!model.isA(this.modelType)) { return; }
     if (this.matchFn(model)) {
-      if (this.index(model) === null) { this.insert(model); }
+      if (!this.contains(model)) { this.insert(model); }
     }
     else {
       this.remove(model);
