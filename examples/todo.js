@@ -100,7 +100,7 @@ App.Tag = Z.Model.extend(function() {
 Z.Model.mapper = App.LocalStorageMapper.create();
 
 App.allTodos = App.Todo.query();
-App.allTags  = App.Tag.query();
+App.allTags  = App.Tag.query({orderBy: 'todos.size', isDescending: true});
 
 //------------------------------------------------------------------------------
 // controller
@@ -152,13 +152,11 @@ App.controller = {
 
     newQuery = selectedTags.size() === 0 ? App.allTodos : App.Todo.query({
       matchFn: function(todo) {
-        var tags = todo.tags(), i, len;
+        if (todo.get('tags.size') === 0) { return false; }
 
-        for (i = 0, len = selectedTags.size(); i < len; i++) {
-          if (tags.index(selectedTags.at(i)) !== null) { return true; }
-        }
-
-        return false;
+        return selectedTags.all(function(tag) {
+          return todo.tags().contains(tag);
+        });
       }
     });
 

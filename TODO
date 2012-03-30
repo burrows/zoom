@@ -1,5 +1,3 @@
-* add tests for Z.Query to make sure a model doesn't get added twice
-* Z.Query does not resort itself when the property that determines sort order changes
 * add tests for Z.Object.extended
 * add tests for observers getting removed during didChangeProperty
 * investigate notification types on array item observers, and array and
