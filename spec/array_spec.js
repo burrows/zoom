@@ -231,6 +231,17 @@ describe('Z.Array.index', function() {
   });
 });
 
+describe('Z.Array.contains', function() {
+  it('should return `true` if the given object exists in the array and false otherwise', function() {
+    expect(Z.A(0,1,2,3).contains(0)).toBe(true);
+    expect(Z.A(0,1,2,3).contains(2)).toBe(true);
+    expect(Z.A(0,1,2,3).contains(3)).toBe(true);
+    expect(Z.A(0,1,2,3).contains(4)).toBe(false);
+    expect(Z.A(Z.A(1,2), Z.A(3,4)).contains(Z.A(3,4))).toBe(true);
+    expect(Z.A(Z.A(1,2), Z.A(3,4)).contains(Z.A(1,3))).toBe(false);
+  });
+});
+
 describe('Z.Array.splice', function() {
   it('should return the receiver', function() {
     var a = Z.A(1, 2, 3);

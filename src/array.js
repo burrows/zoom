@@ -241,6 +241,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     return null;
   });
 
+  this.def('contains', function(o) { return this.index(o) !== null; });
+
   this.def('remove', function(o) {
     var items = this.__z_items__, i, len;
 
