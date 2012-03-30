@@ -9,7 +9,7 @@ repo = Z.Object.extend(function() {
   }
 
   function attachQueryObservers(model, query) {
-    var paths = query.dependentPaths, i, len;
+    var paths = query.dependsOn, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
       model.observe(paths[i], null, dependentPathDidChange, {context: query});
@@ -17,7 +17,7 @@ repo = Z.Object.extend(function() {
   }
 
   function detachQueryObservers(model, query) {
-    var paths = query.dependentPaths, i, len;
+    var paths = query.dependsOn, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
       model.stopObserving(paths[i], null, dependentPathDidChange, {context: query});
@@ -788,9 +788,9 @@ Z.Query = Z.SortedArray.extend(function() {
   this.def('initialize', function(type, opts) {
     opts = opts || {};
 
-    this.modelType      = type;
-    this.matchFn        = opts.matchFn || matchall;
-    this.dependentPaths = opts.dependentPaths || [];
+    this.modelType = type;
+    this.matchFn   = opts.matchFn || matchall;
+    this.dependsOn = opts.dependsOn || [];
 
     return this.supr(opts.compareFn || idcmp);
   });

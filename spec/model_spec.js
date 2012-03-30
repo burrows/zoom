@@ -1740,7 +1740,7 @@ describe('Z.Query', function() {
     beforeEach(function() {
       q = Test.Author.query({
         matchFn: function(a) { return a.last() === 'Stark'; },
-        dependentPaths: ['last']
+        dependsOn: ['last']
       });
     });
 
@@ -1764,7 +1764,7 @@ describe('Z.Query', function() {
       var a  = Test.Author.load({id: 6, first: 'Jon', last: 'Snow'}),
           q2 = Test.Author.query({
             matchFn: function(a) { return a.last() === 'Stark'; },
-            dependentPaths: ['last']
+            dependsOn: ['last']
           });
 
       expect(q2.size()).toBe(0);
@@ -1799,7 +1799,7 @@ describe('Z.Query', function() {
 
       q = Test.Author.query({
         matchFn: function(a) { return a.last() === 'Stark' || a.last() == 'Lannister'; },
-        dependentPaths: ['last']
+        dependsOn: ['last']
       });
 
       expect(q.size()).toBe(0);
@@ -1822,7 +1822,7 @@ describe('Z.Query', function() {
     beforeEach(function() {
       q = Test.Post.query({
         matchFn: function(p) { return p.get('author.last') === 'Stark'; },
-        dependentPaths: ['author.last']
+        dependsOn: ['author.last']
       });
     });
 
@@ -1884,7 +1884,7 @@ describe('Z.Query', function() {
       q = Test.Author.query({
         matchFn: function(a) { return a.last() === 'Stark'; },
         compareFn: function(a, b) { return Z.cmp(a.first(), b.first()); },
-        dependentPaths: ['last']
+        dependsOn: ['last']
       });
     });
 
