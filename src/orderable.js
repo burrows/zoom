@@ -31,7 +31,7 @@ Z.Orderable = Z.Module.create(function() {
 });
 
 Z.cmp = function(a, b) {
-  if (Z.isZObject(a) && a.isA(Z.Orderable)) { return a.cmp(b); }
+  if (Z.isA(a, Z.Orderable)) { return a.cmp(b); }
 
   if (Z.type(a) !== Z.type(b)) {
     throw new Error(Z.fmt("Z.cmp: don't know how to compare %@ and %@", Z.inspect(a), Z.inspect(b)));

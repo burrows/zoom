@@ -201,7 +201,7 @@ Z.Model = Z.Object.extend(function() {
     var key = Z.fmt("__%@__", descriptor.name),
         a   = getHasMany.call(this, descriptor);
 
-    a.splice.apply(a, [0, a.size()].concat(Z.isZArray(v) ? v.toNative() : v));
+    a.splice.apply(a, [0, a.size()].concat(Z.isA(v, Z.Array) ? v.toNative() : v));
 
     return v;
   }

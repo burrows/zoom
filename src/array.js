@@ -188,7 +188,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     else if (Z.isArray(arg) || Z.isArguments(arg)) {
       this.__z_items__ = slice.apply(arg);
     }
-    else if (Z.isZArray(arg)) {
+    else if (Z.isA(arg, Z.Array)) {
       this.__z_items__ = arg.__z_items__;
     }
     else {
@@ -316,7 +316,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   this.def('eq', function(other) {
     var len = this.size(), i;
 
-    if (!other || !Z.isZArray(other)) { return false; }
+    if (!other || !Z.isA(other, Z.Array)) { return false; }
     if (len !== other.size()) { return false; }
 
     for (i = 0; i < len; i++) {
@@ -338,7 +338,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 
     for (i = 0, len = items.length; i < len; i++) {
       item = items[i];
-      a.push((item && Z.isZArray(item)) ? item.__z_items__ : item);
+      a.push((item && Z.isA(item, Z.Array)) ? item.__z_items__ : item);
     }
 
     return Z.A(this.__z_items__.concat.apply(this.__z_items__, a));
@@ -391,7 +391,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
     for (i = 0, len = this.size(); i < len; i++) {
       item = this.at(i);
 
-      if (item && Z.isZArray(item)) {
+      if (Z.isA(item, Z.Array)) {
         result = result.concat(item.flatten().__z_items__);
       }
       else if (Z.isArray(item)) {
@@ -488,7 +488,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 Z.A = function() {
   var args = slice.call(arguments), len = args.length, first = args[0];
 
-  if (len === 1 && (Z.isArray(first) || Z.isArguments(first) || (Z.isZArray(first)))) {
+  if (len === 1 && (Z.isArray(first) || Z.isArguments(first) || (Z.isA(first, Z.Array)))) {
     return Z.Array.create(first);
   }
 

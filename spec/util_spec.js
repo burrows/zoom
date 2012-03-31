@@ -93,6 +93,25 @@ describe('Z.type', function() {
   });
 });
 
+describe('Z.isA', function() {
+  it('should return `true` if the first argument is a descendent of the second and `false` otherwise', function() {
+    var o = Z.Object.create();
+
+    expect(Z.isA(Z.A(), Z.Object)).toBe(true);
+    expect(Z.isA(Z.A(), Z.Array)).toBe(true);
+    expect(Z.isA(Z.SortedArray.create(), Z.Array)).toBe(true);
+    expect(Z.isA(o, Z.Object)).toBe(true);
+    expect(Z.isA(o.create(), o)).toBe(true);
+
+    expect(Z.isA(Z.A(), Z.Hash)).toBe(false);
+    expect(Z.isA(o, Z.Object.create())).toBe(false);
+    expect(Z.isA(null, Z.Object)).toBe(false);
+    expect(Z.isA(undefined, Z.Object)).toBe(false);
+    expect(Z.isA({}, Z.Object)).toBe(false);
+    expect(Z.isA([], Z.Object)).toBe(false);
+  });
+});
+
 describe('Z.isNaN', function() {
   it('should return `true` when passed `NaN` and false otherwise', function() {
     expect(Z.isNaN(NaN)).toBe(true);
@@ -170,16 +189,6 @@ describe('Z.inspect', function() {
       Z.inspect(o);
       expect(o.toString).toHaveBeenCalled();
     });
-  });
-});
-
-describe('Z.isZArray', function() {
-  it('should return `true` when passed a Z.Array and false otherwise', function() {
-    expect(Z.isZArray(Z.A())).toBe(true);
-    expect(Z.isZArray(Z.SortedArray.create())).toBe(true);
-    expect(Z.isZArray([])).toBe(false);
-    expect(Z.isZArray(null)).toBe(false);
-    expect(Z.isZArray({})).toBe(false);
   });
 });
 
