@@ -2,7 +2,7 @@
 
 var slice = Array.prototype.slice;
 
-Z.Array = Z.Object.extend(Z.Enumerable, function() {
+Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   function registerItemObservers(items) {
     var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
 
@@ -331,6 +331,29 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
       var i;
       for (i = 0; i < size; i++) {
         if (!Z.eq(self.at(i), other.at(i))) { r = false; return; }
+      }
+    });
+
+    return r;
+  });
+
+  this.def('cmp', function(other) {
+    var self = this, size = this.size(), r;
+
+    if (!Z.isZObject(other)) { return null; }
+    if (!other.isA(Z.Array)) {
+      if (!other.respondTo('toArray')) { return null; }
+      other = other.toArray();
+    }
+
+    if ((r = Z.cmp(size, other.size())) !== 0) { return r; }
+
+    Z.detectRecursion(this, other, function() {
+      var i, cmp;
+
+      for (i = 0; i < size; i++) {
+        cmp = Z.cmp(self.at(i), other.at(i));
+        if (cmp !== 0) { r = cmp; return; }
       }
     });
 

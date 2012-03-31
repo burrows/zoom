@@ -428,6 +428,63 @@ describe('Z.Array.eq', function() {
   });
 });
 
+describe('Z.Array.cmp', function() {
+  it('should return 0 when the arrays are equal', function() {
+    expect(Z.A().cmp(Z.A())).toBe(0);
+    expect(Z.A(1,2,3,4,5).cmp(Z.A(1,2,3,4,5))).toBe(0);
+  });
+
+  it('should return -1 if the receiver is shorter than the other array', function() {
+    expect(Z.A().cmp(Z.A(1))).toBe(-1);
+    expect(Z.A(1,1).cmp(Z.A(1,1,1))).toBe(-1);
+  });
+
+  it('should return 1 if the receiver is longer than the other array', function() {
+    expect(Z.A(1).cmp(Z.A())).toBe(1);
+    expect(Z.A(1,1,1).cmp(Z.A(1,1))).toBe(1);
+  });
+
+  it('should return -1 if the arrays are the same length and a pair is encountered where the item in the receiver is less than the item in the other array', function() {
+    expect(Z.A(10,20,30).cmp(Z.A(10,21,30))).toBe(-1);
+  });
+
+  it('should return 1 if the arrays are the same length and a pair is encountered where the item in the receiver is greater than the item in the other array', function() {
+    expect(Z.A(10,20,30).cmp(Z.A(10,19,30))).toBe(1);
+  });
+
+  it('should handle recursive arrays', function() {
+    var empty = Z.A(), rec = Z.A(1,2,3);
+
+    empty.push(empty);
+    rec.push(rec, rec, rec);
+
+    expect(empty.cmp(empty)).toBe(0);
+    expect(empty.cmp(Z.A())).toBe(1);
+    expect(Z.A().cmp(empty)).toBe(-1);
+
+    expect(rec.cmp(Z.A())).toBe(1);
+    expect(Z.A().cmp(rec)).toBe(-1);
+
+    expect(rec.cmp(rec)).toBe(0);
+  });
+
+  it('should try to convert the argument to an array using `toArray` if its not already an array', function() {
+    var X = Z.Object.extend(function() {
+      this.def('toArray', function() { return Z.A(1,2,3); });
+    });
+
+    expect(Z.A(1,2,3).cmp(X.create())).toBe(0);
+    expect(Z.A(1,2).cmp(X.create())).toBe(-1);
+    expect(Z.A(1,2,3,4).cmp(X.create())).toBe(1);
+  });
+
+  it("should return `null` when the argument is not an array and can't be converted to an array", function() {
+    expect(Z.A().cmp(Z.Object.create())).toBeNull();
+    expect(Z.A().cmp(null)).toBeNull();
+    expect(Z.A().cmp(false)).toBeNull();
+  });
+});
+
 describe('Z.Array `first` property', function() {
   it('should return the first object in the array', function() {
     expect(Z.A([5, 6, 7]).first()).toBe(5);
