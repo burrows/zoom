@@ -314,50 +314,23 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 
   this.def('eq', function(other) {
-    var self = this, r = true, size;
-
     if (!Z.isZObject(other)) { return false; }
-
     if (!other.isA(Z.Array)) {
       if (!other.respondTo('toArray')) { return false; }
       other = other.toArray();
     }
 
-    size = this.size();
-
-    if (size !== other.size()) { return false; }
-
-    Z.detectRecursion(this, other, function() {
-      var i;
-      for (i = 0; i < size; i++) {
-        if (!Z.eq(self.at(i), other.at(i))) { r = false; return; }
-      }
-    });
-
-    return r;
+    return Z.eq(this.__z_items__, other.__z_items__);
   });
 
   this.def('cmp', function(other) {
-    var self = this, size = this.size(), r;
-
     if (!Z.isZObject(other)) { return null; }
     if (!other.isA(Z.Array)) {
       if (!other.respondTo('toArray')) { return null; }
       other = other.toArray();
     }
 
-    if ((r = Z.cmp(size, other.size())) !== 0) { return r; }
-
-    Z.detectRecursion(this, other, function() {
-      var i, cmp;
-
-      for (i = 0; i < size; i++) {
-        cmp = Z.cmp(self.at(i), other.at(i));
-        if (cmp !== 0) { r = cmp; return; }
-      }
-    });
-
-    return r;
+    return Z.cmp(this.__z_items__, other.__z_items__);
   });
 
   this.def('hash', function() { return Z.hash(this.__z_items__); });

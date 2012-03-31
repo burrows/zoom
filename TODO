@@ -3,7 +3,6 @@
 * Z.Array.sortBy
 * finish Z.cmp
 * fire option doesn't work that well with array @ observers
-* make Z.Array and Z.Hash Orderable
 * implement named finders
 * figure out model serialization
   * something RABL-like?
