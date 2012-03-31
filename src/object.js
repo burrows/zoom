@@ -468,8 +468,6 @@ Z.Object.open(function() {
     for (i = 0, len = registrations.length; i < len; i++) {
       r = registrations[i];
 
-      if (!r) { continue; }
-
       notification = { type: type, path: r.path, observee: r.observee };
 
       if (r.opts.previous) { notification.previous = Z.del(r.previous, type); }
