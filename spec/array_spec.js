@@ -75,11 +75,6 @@ describe('Z.A', function() {
     expect(Z.A(args)).toEq(Z.Array.create(['a', 'b']));
   });
 
-  it('should return a Z.Array with the given contents when given a single Z.Array', function() {
-    var za = Z.Array.create(['a', 'b']);
-    expect(Z.A(za)).toEq(za);
-  });
-
   it('should return an empty Z.Array when given no arguments', function() {
     expect(Z.A()).toEq(Z.Array.create());
   });
@@ -395,28 +390,41 @@ describe('Z.Array.clear', function() {
 });
 
 describe('Z.Array.eq', function() {
-  it('should return `true` when the arrays are identical', function() {
-    var a = Z.Array.create();
-    expect(a.eq(a)).toBe(true);
+  it('should return `false` if any corresponding items are not equal', function() {
+    expect(Z.A('a', 'b', 'c').eq(Z.A('a', 'b', 'd'))).toBe(false);
+    expect(Z.A(NaN).eq(Z.A(NaN))).toBe(false);
   });
 
-  it('should return `true` when the arrays have the same contents', function() {
-    var a1 = Z.A(1, 2, 3), a2 = Z.A(1, 2, 3);
+  it('should return `true` if all corresponding items are equal', function() {
+    expect(Z.A().eq(Z.A())).toBe(true);
+    expect(Z.A(1,2,3).eq(Z.A(1,2,3))).toBe(true);
+  });
+
+  it('should handle recursive arrays', function() {
+    var a1 = Z.A(Z.A(1)), a2 = Z.A(Z.A(1));
+
+    a1.push(a1);
+    a2.push(a2);
+
     expect(a1.eq(a2)).toBe(true);
+    expect(a2.eq(a1)).toBe(true);
   });
 
-  it('should return `false` when given something other than an array', function() {
-    expect((Z.Array.create()).eq("foo")).toBe(false);
-    expect((Z.Array.create()).eq([])).toBe(false);
-    expect((Z.Array.create()).eq({})).toBe(false);
-    expect((Z.Array.create()).eq(Z.Object.create())).toBe(false);
+  it('should try to convert the argument to an array using `toArray` if its not already an array', function() {
+    var X = Z.Object.extend(function() {
+      this.def('toArray', function() { return Z.A(1); });
+    });
+
+    expect(Z.A(1).eq(X.create())).toBe(true);
+    expect(Z.A(Z.A(1)).eq(Z.A(X.create()))).toBe(true);
+    expect(Z.A(Z.A(1), 2, 3).eq(Z.A(X.create(), 2, 3))).toBe(true);
   });
 
-  it('should return `false` when the array contents differ', function() {
-    var a1 = Z.A(1, 2, 3),
-        a2 = Z.A(1, 2, 4);
-
-    expect(a1.eq(a2)).toBe(false);
+  it("should return `false` when given an argument that is not an array and can't be converted to an array", function() {
+    expect((Z.A()).eq("foo")).toBe(false);
+    expect((Z.A()).eq([])).toBe(false);
+    expect((Z.A()).eq({})).toBe(false);
+    expect((Z.A()).eq(Z.Object.create())).toBe(false);
   });
 });
 

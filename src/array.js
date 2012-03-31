@@ -314,16 +314,27 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('eq', function(other) {
-    var len = this.size(), i;
+    var self = this, r = true, size;
 
-    if (!other || !Z.isA(other, Z.Array)) { return false; }
-    if (len !== other.size()) { return false; }
+    if (!Z.isZObject(other)) { return false; }
 
-    for (i = 0; i < len; i++) {
-      if (!Z.eq(this.at(i), other.at(i))) { return false; }
+    if (!other.isA(Z.Array)) {
+      if (!other.respondTo('toArray')) { return false; }
+      other = other.toArray();
     }
 
-    return true;
+    size = this.size();
+
+    if (size !== other.size()) { return false; }
+
+    Z.detectRecursion(this, other, function() {
+      var i;
+      for (i = 0; i < size; i++) {
+        if (!Z.eq(self.at(i), other.at(i))) { r = false; return; }
+      }
+    });
+
+    return r;
   });
 
   this.def('hash', function() { return Z.hash(this.__z_items__); });
@@ -488,7 +499,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, function() {
 Z.A = function() {
   var args = slice.call(arguments), len = args.length, first = args[0];
 
-  if (len === 1 && (Z.isArray(first) || Z.isArguments(first) || (Z.isA(first, Z.Array)))) {
+  if (len === 1 && (Z.isArray(first) || Z.isArguments(first))) {
     return Z.Array.create(first);
   }
 
