@@ -202,8 +202,10 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
 
       for (i = 0; i < size; i++) {
         key = keys.at(i);
-        if (!other.hasKey(key)) { r = false; break; }
-        if (!Z.eq(self.at(key), other.at(key))) { r = false; break; }
+        if (!other.hasKey(key) || !Z.eq(self.at(key), other.at(key))) {
+          r = false;
+          return;
+        }
       }
     });
 
