@@ -1,6 +1,9 @@
 (function(undefined) {
 
 Z.Enumerable = Z.Module.create(function() {
+  // An exception used to short circuit out of an `each` iteration.
+  function EarlyExit(value) { this.value = value; }
+
   this.def('map', function(f) {
     return this.inject(Z.A(), function(acc, item) {
       acc.push(f(item));
@@ -9,8 +12,12 @@ Z.Enumerable = Z.Module.create(function() {
   });
 
   this.def('first', function() {
-    try { this.each(function(item) { throw item; }); }
-    catch (first) { return first; }
+    try {
+      this.each(function(item) { throw new EarlyExit(item); });
+    }
+    catch (e) {
+      if (e instanceof EarlyExit) { return e.value; } else { throw e; }
+    }
     return null;
   });
 
@@ -20,8 +27,12 @@ Z.Enumerable = Z.Module.create(function() {
       notfound = null;
     }
 
-    try { this.each(function(item) { if (f(item)) { throw item; } }); }
-    catch (item) { return item; }
+    try {
+      this.each(function(item) { if (f(item)) { throw new EarlyExit(item); } });
+    }
+    catch (e) {
+      if (e instanceof EarlyExit) { return e.value; } else { throw e; }
+    }
 
     return notfound;
   });
@@ -53,14 +64,24 @@ Z.Enumerable = Z.Module.create(function() {
   });
 
   this.def('all', function(f) {
-    try { this.each(function(item) { if (!f(item)) { throw null; } }); }
-    catch (e) { return false; }
+    try {
+      this.each(function(item) { if (!f(item)) { throw new EarlyExit(); } });
+    }
+    catch (e) {
+      if (e instanceof EarlyExit) { return false; } else { throw e; }
+    }
+
     return true;
   });
 
   this.def('any', function(f) {
-    try { this.each(function(item) { if (f(item)) { throw null; } }); }
-    catch (e) { return true; }
+    try {
+      this.each(function(item) { if (f(item)) { throw new EarlyExit(); } });
+    }
+    catch (e) {
+      if (e instanceof EarlyExit) { return true; } else { throw e; }
+    }
+
     return false;
   });
 
