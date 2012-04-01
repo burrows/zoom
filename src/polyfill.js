@@ -1,5 +1,21 @@
 /*jshint onevar: false, newcap: false */
 
+if (!Object.create) {
+  Object.create = function(o) {
+    var f = function() {}, o2;
+    f.prototype = o;
+    o2 = new f();
+    o2.constructor = f;
+    return o2;
+  };
+}
+
+if (!Object.getPrototypeOf) {
+  Object.getPrototypeOf = function(o) {
+    return o.constructor ? o.constructor.prototype : null;
+  };
+}
+
 if (!Array.prototype.indexOf) {
   Array.prototype.indexOf = function(searchElement /*, fromIndex */ ) {
     if (this === null) {

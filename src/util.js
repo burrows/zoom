@@ -33,26 +33,7 @@ function unmark(o1, o2) {
   }
 }
 
-// Polyfill for Object.create. Creates a new object with the given object as the
-// prototype.
-//
-// * `o` - The prototype object.
-//
-// Returns a new Object instance with `o` as the prototype.
-Z.create = Object.create || function(o) {
-  var f = function() {}, o2;
-  f.prototype = o;
-  o2 = new f();
-  o2.__z_proto__ = o;
-  return o2;
-};
-
-Z.getPrototypeOf = Object.getPrototypeOf || function(o) {
-  if (o === Z.Object) { return Object.prototype; }
-  return o.__z_proto__ || null;
-};
-
-// The identity function - simply returns its argument.
+// The identity function - simply returns its first argument.
 Z.identity = function(x) { return x; };
 
 // Copies all of the properties in the source objects over to the destination

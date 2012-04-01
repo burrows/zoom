@@ -413,7 +413,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 
   this.def('toArray', function() {
-    return Z.getPrototypeOf(this) === Z.Array ? this : Z.Array.create(this);
+    return Object.getPrototypeOf(this) === Z.Array ? this : Z.Array.create(this);
   });
 
   this.def('sort', function(fn) {
