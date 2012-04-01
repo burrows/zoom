@@ -1383,4 +1383,45 @@ describe('Z.Array.sort$', function() {
   });
 });
 
+describe('Z.Array.sortBy', function() {
+  var n = 0, X = Z.Object.extend(function() {
+    this.property('foo', {
+      get: function() { n++; return this.__foo__;}
+    });
+  }), x1, x2, x3, x5, x7;
+
+  x3 = X.create({foo: 3});
+  x7 = X.create({foo: 7});
+  x2 = X.create({foo: 2});
+  x5 = X.create({foo: 5});
+  x1 = X.create({foo: 1});
+
+  beforeEach(function() { n = 0; });
+
+  describe('given a string argument', function() {
+    it('should sort the array by the value returned by getting the given string from each item', function() {
+      expect(Z.A(x3, x7, x2, x5, x1).sortBy('foo')).toEq(Z.A(x1, x2, x3, x5, x7));
+    });
+
+    it("should get each item's value only once", function() {
+      Z.A(x3, x7, x2, x5, x1).sortBy('foo');
+      expect(n).toBe(5);
+    });
+  });
+
+  describe('given a function argument', function() {
+    it('should sort the array by the value returned the given function when passed each item', function() {
+      var a = Z.A(x3, x7, x2, x5, x1).sortBy(function(x) { return x.foo() * -1; });
+      expect(a).toEq(Z.A(x7, x5, x3, x2, x1));
+    });
+
+    it('should only invoke the function once per item', function() {
+      var n = 0, f = function(x) { n++; return x.foo() * -1; };
+
+      Z.A(x3, x7, x2, x5, x1).sortBy(f);
+      expect(n).toBe(5);
+    });
+  });
+});
+
 }());

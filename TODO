@@ -1,7 +1,5 @@
 * investigate notification types on array item observers, and array and
   hash @ property
-* Z.Array.sortBy
-* finish Z.cmp
 * fire option doesn't work that well with array @ observers
 * implement named finders
 * figure out model serialization

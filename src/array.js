@@ -430,6 +430,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return this;
   });
 
+  this.def('sortBy', function(by) {
+    var f = typeof by === 'function' ? by : function(x) { return x.get(by); };
+
+    return this.map(function(x) { return [x, f(x)]; })
+      .sort(function(a, b) { return Z.cmp(a[1], b[1]); })
+      .map(function(x) { return x[0]; });
+  });
+
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
     var items = this.__z_items__, registration, i, len;
 
