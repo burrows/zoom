@@ -6,6 +6,13 @@ var slice                    = Array.prototype.slice,
     InnerRecursionDetected   = {},
     detectOutermostRecursion = false;
 
+// Private: Used by `detectRecursion` to check to see if the given pair of
+// objects has been encountered yet on a previous recursive call.
+//
+// * `o1` - The first object to check for recursion.
+// * `o2` - The paired object to check for recursion.
+//
+// Returns `true` if the pair has been seen previously and `false` otherwise.
 function seen(o1, o2) {
   var i, len;
 
@@ -18,10 +25,22 @@ function seen(o1, o2) {
   return false;
 }
 
-function mark(o1, o2) {
-  seenObjects.push([o1, o2]);
-}
+// Private: Used by `detectRecursion` to mark the given pair of objects as seen
+// before recursing.
+//
+// * `o1` - The first object to mark.
+// * `o2` - The paired object to mark.
+//
+// Returns nothing.
+function mark(o1, o2) { seenObjects.push([o1, o2]); }
 
+// Private: Used by `detectRecursion` to unmark the given pair of objects after
+// a recursive call has completed.
+//
+// * `o1` - The first object to unmark.
+// * `o2` - The paired object to unmark.
+//
+// Returns nothing.
 function unmark(o1, o2) {
   var i, len;
 
@@ -34,6 +53,10 @@ function unmark(o1, o2) {
 }
 
 // The identity function - simply returns its first argument.
+//
+// * `x` - Any value.
+//
+// Returns `x`.
 Z.identity = function(x) { return x; };
 
 // Copies all of the properties in the source objects over to the destination
@@ -75,15 +98,15 @@ Z.defaults = function(o) {
 
 // Creates a shallow copy of the given object.
 //
-// `o` - Any object.
+// * `o` - Any object.
 //
 // Returns a new object with all of the keys copied from `o`.
 Z.dup = function(o) { return Z.merge({}, o); };
 
 // Deletes a property from an object and returns its value.
 //
-// `o`    - Any object.
-// `prop` - The property to delete.
+// * `o`    - Any object.
+// * `prop` - The property to delete.
 //
 // Returns the value of the given property name.
 Z.del = function(o, prop) {
@@ -92,6 +115,20 @@ Z.del = function(o, prop) {
   return val;
 };
 
+// Formats the given string by replacing instances of "%@" with the
+// corresponding item from `vals` converted to a string using the item's
+// `toString` method.
+//
+// ```javascript
+// Z.fmt("the array size is %@", Z.A(1,2).size()) // => "the array size is 3"
+// ```
+//
+// * `s`    - The string to format.
+// * `*vals - Zero or more values to insert into the string. The number of
+//            values given should be equal to the number of occurences of the
+//            string "%@" in `s`.
+//
+// Returns the formatted string.
 Z.fmt = function(s) {
   var vals = slice.call(arguments, 1), i = 0;
 
@@ -147,12 +184,12 @@ Z.inspect = function(o) {
   }
 };
 
-// Performs an object equality test. If the first argument is an instance of
-// `Z.Object` then it is sent the `eq` method, otherwise custom equality code is
-// run based on the object type.
+// Performs an object equality test. If the first argument is a `Z.Object` then
+// it is sent the `eq` method, otherwise custom equality code is run based on
+// the object type.
 //
-// `a` - Any object.
-// `b` - Any object.
+// * `a` - Any object.
+// * `b` - Any object.
 //
 // Returns `true` if the objects are equal and `false` otherwise.
 Z.eq = function(a, b) {
@@ -220,7 +257,16 @@ Z.eq = function(a, b) {
   }
 };
 
-// Borrowed from https://github.com/garycourt/murmurhash-js.
+// Calculates a [murmur hash](https://sites.google.com/site/murmurhash/) of the
+// given string. This function is used by `Z.hash` to generate hash values for
+// any type of javascript object.
+//
+// This code is borrowed from https://github.com/garycourt/murmurhash-js.
+//
+// * `key`  - A string to calculate the hash of.
+// * `seed` - An integer to seed the hash with.
+//
+// Returns a non-cryptographic 32-bit hash of `key`.
 Z.murmur = function(key, seed) {
   var remainder = key.length & 3, // key.length % 4
       bytes     = key.length - remainder,
@@ -276,6 +322,21 @@ Z.murmur = function(key, seed) {
   return h1 >>> 0;
 };
 
+// Returns a string indicating the type of the given object. This can be
+// considered an enhanced version of the javascript `typeof` operator.
+//
+// ```javascript
+// Z.type([])                // => 'array'
+// Z.type({})                // => 'object'
+// Z.type(9)                 // => 'number'
+// Z.type(/fo*/)             // => 'regexp'
+// Z.type(new Date)          // => 'date'
+// Z.type(Z.Object.create()) // => 'zobject'
+// ```
+//
+// * `o1 - The object to get the type of.
+//
+// Returns a string indicating the object's type.
 Z.type = function(o) {
   if (o === null)      { return 'null'; }
   if (o === undefined) { return 'undefined'; }
@@ -312,6 +373,18 @@ Z.isObject    = function(o) { return Z.type(o) === 'object'; };
 Z.isZObject   = function(o) { return Z.type(o) === 'zobject'; };
 Z.isNaN       = function(o) { return o !== o; };
 
+// Indicates whether the first argument is a descendant of the second. This
+// simply calls the `isA` method on the first argument if it is a `Z.Object`.
+// This is useful in cases where the object you are checking may be null or
+// some object outside of the `Z.Object` hierarchy.
+//
+// * `o`    - The object to check.
+// * `type` - The type to check the first argument against. This doesn't have
+//            to be a prototype object (though that is likey the most common
+//            case), it can be a concrete instance as well.
+//
+// Returns `true` if the object is a descendant of the type and `false`
+// otherwise.
 Z.isA = function(o, type) { return !!(o && o.isZObject && o.isA(type)); };
 
 // Used to detect cases of recursion on the same pair of objects. Returns `true`
@@ -397,6 +470,12 @@ Z.resolve = function(path, ctx) {
   return ctx[head] ? Z.resolve(tail.join('.'), ctx[head]) : undefined;
 };
 
+// Converts each argument to a string using `Z.inspect` and logs it to the
+// console.
+//
+// * `*args` - The values to log.
+//
+// Returns nothing.
 Z.log = function() {
   var a = [], i, len;
 
