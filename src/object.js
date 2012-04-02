@@ -2,6 +2,15 @@
 
 var objectId = 1, slice = Array.prototype.slice;
 
+// `Z.Object` is the top level object of the Zoom object hierarchy. All other
+// Zoom objects descend from it. It implements some basic object methods and
+// properties as well as the core of the key-value coding (KVC) and key-value
+// observing (KVO) system.
+//
+// The KVC/KVO implementation is highly influenced by Cocoa:
+//
+// * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/KeyValueCoding/Articles/KeyValueCoding.html)
+// * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/Reference/Reference.html#//apple_ref/occ/cat/NSKeyValueObserving)
 Z.Object = { __z_objectId__: objectId++, isZObject: true, isPrototype: true };
 Z.Object.open = function(f) { f.call(this); return this; };
 Z.Object.open.__z_name__ = 'open';
@@ -193,6 +202,92 @@ Z.Object.open(function() {
                  recursed ? ' ...' : (a.length > 0 ? ' ' : '') + a.join(', '));
   });
 
+
+  // Defines a property on the prototype. In order to use Zoom's KVC and KVO
+  // systems, you must this method to define your properties.
+  //
+  // Defining a property does the following:
+  //
+  // 1. Registers a property descriptor (see `propertyDescriptors` method). This
+  //    allows the `get` and `set` methods to access the property.
+  // 2. Defines an accessor method with the given name that can be used to get
+  //    and set the property in a KVO compliant way. Calling this method with no
+  //    arguments is equivalent to getting the property with `get` and calling
+  //    it with one argument is equivalent to setting the property with `set`.
+  //
+  // Consider the following example:
+  //
+  // ```javascript
+  // App.Person = Z.Object.extend(function() {
+  //   this.property('first');
+  //   this.property('last');
+  //   this.property('full', {
+  //     get: function() { return this.first() + ' ' + this.last(); },
+  //     set: function(name) {
+  //       var names = name.split(' ');
+  //       this.first(names[0]);
+  //       this.last(names[1]);
+  //     }
+  //   });
+  // });
+  // ```
+  //
+  // New `Person` objects can be created by using the `create` method, passing
+  // in any properties you wish to set:
+  //
+  // ```javascript
+  // p = App.Person.create({first: 'Michael', last: 'Jordan'});
+  // ```
+  //
+  // You can then use the generated accessor methods or `get` and `set` to
+  // modify the properties:
+  //
+  // ```javascript
+  // p.first()      // => 'Michael'
+  // p.get('first') // => 'Michael'
+  // p.last()       // => 'Jordan'
+  // p.get('last')  // => 'Jordan'
+  // p.full()       // => 'Michael Jordan'
+  // p.get('full')  // => 'Michael Jordan'
+  // p.toString()   // => '#<App.Person:18 first: 'Michael', last: 'Jordan'>'
+  //
+  // p.first('Scottie')
+  // p.set('last', 'Pippen')
+  // p.toString()   // => '#<App.Person:18 first: 'Scottie', last: 'Pippen'>'
+  //
+  // p.full('Dennis Rodman')
+  // p.toString()   // => '#<App.Person:18 first: 'Dennis', last: 'Rodman'>'
+  // ```
+  //
+  // * `name` - A string containing the name of the property.
+  // * `opts` - A native js object containing one or more of the following:
+  //   * `dependsOn` - Pass a list of keys or key paths that the property depends
+  //                   on. This should be used for computed properties to allow
+  //                   them to be observed.
+  //   * `auto`      - The key-value observing system will automatically notifiy
+  //                   observers of the property when it changes when this option
+  //                   is set. If set to `false`, you should use the
+  //                   `propertyWillChange` and `propertyDidChange` methods when
+  //                   your setter actually changes the property. Setting this to
+  //                   `false` only make sense when you have defined a custom
+  //                   setter using the `set` option.
+  //   * `get`       - By default, when properties are retrieved via `get` or
+  //                   the generated accessor method the actual value is read
+  //                   from a raw property with the name `__<name>__`. You can
+  //                   use this option to override that behavior by setting it
+  //                   to a function that calculates the property value. Be sure
+  //                   to specify the dependant properties with the `dependsOn`
+  //                   option.
+  //   * `set`       - By default, when properties are set via `set` or the
+  //                   generated accessor method the value is stored on a raw
+  //                   property with the name `__<name>__`. You can use this
+  //                   option to override that behavior by setting it to a
+  //                   function that stores the given value.
+  //   * `readonly`  - Prevents setting of the property. Any attempts to set the
+  //                   property will throw an exception.
+  //   * `def`       - Specify a default value for the property.
+  //
+  // Returns nothing.
   this.def('property', function(name, opts) {
     opts = Z.defaults(opts || {}, defaultPropertyOpts);
 
