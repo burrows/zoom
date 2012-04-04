@@ -11,6 +11,66 @@ var objectId = 1, slice = Array.prototype.slice;
 //
 // * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/KeyValueCoding/Articles/KeyValueCoding.html)
 // * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/Reference/Reference.html#//apple_ref/occ/cat/NSKeyValueObserving)
+//
+// Zoom uses a custom object system that leverages the prototypal nature of
+// javascript. There are no classes in Zoom, only prototype objects and concrete
+// instances of those prototypes. The prototype objects are often used in a
+// manner similar to how class objects are used in other languages.
+//
+// Even though javascript supports prototypal inheritance at the language level,
+// it still leaves a bit to be desired. The language provides no easy way to
+// invoke super methods, nor a robust approach for mixing in properties from
+// other objects. Zoom solves both of these problems by providing a `supr`
+// method and a module system that allows you to mix modules in to your
+// prototypes in a safe way (properties will never be clobbered).
+//
+// New prototype objects are created by invoking the `extend` method on
+// `Z.Object` or some other prototype that descends from `Z.Object`. An optional
+// function can be passed to `extend` that will be executed in the context of
+// the new prototype object. This is the "prototype body", so to speak, where
+// you can define methods and properties on your prototype.
+//
+// ```javascript
+// App.Animal = Z.Object.extend(function() {
+//   this.def('speak', function(s) {
+//     return s;
+//   });
+// });
+//
+// a = App.Animal.create(); // => #<App.Animal:18>
+// App.Animal.ancestors();  // => [App.Animal, Z.Object]
+// a.speak('hello');        // => 'hello'
+//
+// App.Dog = App.Animal.extend(function() {
+//   this.def('speak', function(s) {
+//     return 'WOOF! ' + this.supr(s) + ' WOOF!';
+//   });
+// });
+//
+// d = App.Dog.create(); // => #<App.Dog:20>
+// App.Dog.ancestors();  // => [App.Dog, App.Animal, Z.Object]
+// d.speak('hello');     // => 'WOOF! hello WOOF!'
+// ```
+//
+// Zoom also provides a module system that is similar to Ruby's. Modules are
+// essentially just a container where you can define methods and properties that
+// can be mixed in to prototype objects. Module are non-destructive, meaning
+// that they will never clobber methods or properties defined in the prototype.
+// Due to the fact that the ECMAScript standard does not define a way to modify
+// an object's prototype, modules can only be mixed in to a prototype when the
+// prototype is defined. You can mixin a module by simply passing it to the
+// `extend` method.
+//
+// ```javascript
+// App.Flyable = Z.Module.create(function() {
+//   this.def('fly', function() { return 'flying'; });
+// });
+//
+// App.Bird = App.Animal.extend(App.Flyable);
+//
+// App.Bird.ancestors();    // => [App.Bird, App.Flyable, App.Animal, Z.Object]
+// App.Bird.create().fly(); // => 'flying'
+// ```
 Z.Object = { __z_objectId__: objectId++, isZObject: true, isPrototype: true };
 Z.Object.open = function(f) { f.call(this); return this; };
 Z.Object.open.__z_name__ = 'open';
