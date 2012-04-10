@@ -72,8 +72,23 @@ var objectId = 1, slice = Array.prototype.slice;
 // App.Bird.create().fly(); // => 'flying'
 // ```
 Z.Object = { __z_objectId__: objectId++, isZObject: true, isPrototype: true };
+
+// Opens a prototype or concrete instance for modification. It simply executes
+// the given function in the context of the receiver.
+//
+// * `f` - A function to execute. `this` will point to the receiver in the body
+//         of the function.
+//
+// Returns the receiver.
 Z.Object.open = function(f) { f.call(this); return this; };
 Z.Object.open.__z_name__ = 'open';
+
+// Defines a method on the receiver.
+//
+// * `name` - A string representing the name of the method.
+// * `f`    - A function containing the body of the method.
+//
+// Returns the receiver.
 Z.Object.def = function(name, f) {
   f.__z_name__ = name; this[name] = f;
   return this;
@@ -92,6 +107,14 @@ Z.Object.open(function() {
     def       : null
   };
 
+  // Private: Returns the current value of the property indicated by the given
+  // key. If a property with the given name does not exist, the
+  // `getUnknownProperty` method is invoked on the receiver. If the property has
+  // yet to be set, then the default value for the property is returned.
+  //
+  // * `k` - The name of the key to get.
+  //
+  // Returns the current value of the property.
   function getProperty(k) {
     var desc = this[Z.fmt("__z_property_%@__", k)], prop = '__' + k + '__', v;
 
@@ -102,6 +125,17 @@ Z.Object.open(function() {
     return v === undefined || v === null ? desc.def : v;
   }
 
+  // Private: Sets the value for a property. If a property with the given name
+  // does not exist, the `setUnknownProperty` method is invoked on the reciever.
+  // If the property has automatic notifications turned on (the default) then
+  // observers are also notified by invoking the `willChangeProperty` and
+  // `didChangeProperty` methods.
+  //
+  // * `k` - The name of the key to set.
+  // * `v` - The value to set.
+  //
+  // Returns `null`.
+  // Throws `Error` if the property is marked as readonly.
   function setProperty(k, v) {
     var prop = this[Z.fmt("__z_property_%@__", k)];
     if (!prop) { return this.setUnknownProperty(k, v); }
@@ -124,6 +158,12 @@ Z.Object.open(function() {
     return null;
   }
 
+  // Private: Observer function that gets invoked when a dependent property path
+  // changes. Notifies observers of changes to the dependent property.
+  //
+  // * `notification` - A notification object sent by the observer system.
+  //
+  // Returns nothing.
   function dependentPropertyObserver(notification) {
     if (notification.isPrior) {
       this.willChangeProperty(notification.context);
@@ -133,6 +173,31 @@ Z.Object.open(function() {
     }
   }
 
+  // Extends the receiver by creating a new object with the receiver set as the
+  // new object's prototype. This is typically called on prototype objects to
+  // further extend their behavior. If the receiver responds to the `extended`
+  // method, that method will be invoked with the newly created object passed as
+  // an argument.
+  //
+  // References to `Z.Module` objects may be passed to mix them in to the new
+  // objects prototype chain. Note that `extend` is the only way to mix in a
+  // module, it is not allowed after the object has been created (this is due to
+  // the fact that the ECMAScript standard does not define a way to modify an
+  // object's prototype after its been created).
+  //
+  // ```javascript
+  // Person = Z.Object.extend(function() {
+  //   this.property('first');
+  //   this.property('last');
+  // });
+  // ```
+  //
+  // * `*mods` - Zero or more `Z.Module` objects to mix in to the prototype
+  //             chain.
+  // * `f`     - A function to execute in the context of the new object
+  //             (optional).
+  //
+  // Returns the new object.
   this.def('extend', function() {
     var args  = slice.call(arguments),
         f     = typeof args[args.length - 1] === 'function' ? args.pop() : null,
@@ -155,18 +220,34 @@ Z.Object.open(function() {
     return o;
   });
 
+  // Creates a "concrete instance" of the receiver and invokes the `initialize`
+  // method. A concrete instance is simply an object created from a prototype
+  // object or another concrete instance.
+  //
+  // `*args` - An arbitrary list of arguments, they are forwarded on to the
+  //           `initialize` method. `Z.Object.initialize` expects a native
+  //           object containing key/value pairs of properties to set.
+  //
+  // Returns the newly created and initialized object.
   this.def('create', function() {
     var o = this.extend();
 
     o.isPrototype = false;
 
-    if (typeof o.initialize === 'function') {
+    if (o.respondTo('initialize')) {
       o.initialize.apply(o, slice.call(arguments));
     }
 
     return o;
   });
 
+  // Returns the prototype of a concrete object. This is not necessarily the
+  // object's actual prototype (`__proto__` in some javascript runtimes), but
+  // the first object in the prototype chain that was created with
+  // `Z.Object.extend`.
+  //
+  // Returns the prototype of the receiver.
+  // Throws `Error` if called on a prototype object.
   this.def('prototype', function() {
     var p;
 
@@ -336,7 +417,7 @@ Z.Object.open(function() {
   //                   from a raw property with the name `__<name>__`. You can
   //                   use this option to override that behavior by setting it
   //                   to a function that calculates the property value. Be sure
-  //                   to specify the dependant properties with the `dependsOn`
+  //                   to specify the dependent properties with the `dependsOn`
   //                   option.
   //   * `set`       - By default, when properties are set via `set` or the
   //                   generated accessor method the value is stored on a raw
