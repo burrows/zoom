@@ -13,22 +13,29 @@ var objectId = 1, slice = Array.prototype.slice;
 // * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/Reference/Reference.html#//apple_ref/occ/cat/NSKeyValueObserving)
 //
 // Zoom uses a custom object system that leverages the prototypal nature of
-// javascript. There are no classes in Zoom, only prototype objects and concrete
-// instances of those prototypes. The prototype objects are often used in a
-// manner similar to how class objects are used in other languages.
+// javascript. There are no classes in Zoom, only type objects and concrete
+// instances of those types. The type objects are often used in a manner similar
+// to how class objects are used in other languages, however its important to
+// note that they are not classes, they are Zoom objects like any other. This
+// means that they respond to all methods defined on `Z.Object`. The main
+// difference between type objects and concrete instances is that type objects
+// are created by `Z.Object.extend` and concrete instances are created by
+// `Z.Object.create` and have their `initialize` method invoked if present.
 //
 // Even though javascript supports prototypal inheritance at the language level,
 // it still leaves a bit to be desired. The language provides no easy way to
 // invoke super methods, nor a robust approach for mixing in properties from
 // other objects. Zoom solves both of these problems by providing a `supr`
-// method and a module system that allows you to mix modules in to your
-// prototypes in a safe way (properties will never be clobbered).
+// method and a module system that allows you to mix modules in to your types in
+// a safe way (properties will never be clobbered).
 //
-// New prototype objects are created by invoking the `extend` method on
-// `Z.Object` or some other prototype that descends from `Z.Object`. An optional
-// function can be passed to `extend` that will be executed in the context of
-// the new prototype object. This is the "prototype body", so to speak, where
-// you can define methods and properties on your prototype.
+// New type objects are created by invoking the `extend` method on `Z.Object` or
+// some other type that descends from `Z.Object`. An optional function can be
+// passed to `extend` that will be executed in the context of the new type
+// object. This is the "type body", so to speak, where you can define methods
+// and properties on your type. The "type body" is optional, methods and
+// properties can be defined by calling `def` or `property` directly on the
+// type object.
 //
 // ```javascript
 // App.Animal = Z.Object.extend(function() {
@@ -54,27 +61,26 @@ var objectId = 1, slice = Array.prototype.slice;
 //
 // Zoom also provides a module system that is similar to Ruby's. Modules are
 // essentially just a container where you can define methods and properties that
-// can be mixed in to prototype objects. Module are non-destructive, meaning
-// that they will never clobber methods or properties defined in the prototype.
-// Due to the fact that the ECMAScript standard does not define a way to modify
-// an object's prototype, modules can only be mixed in to a prototype when the
-// prototype is defined. You can mixin a module by simply passing it to the
-// `extend` method.
+// can be mixed in to type objects. Module are non-destructive, meaning that
+// they will never clobber methods or properties defined on the type. Due to the
+// fact that the ECMAScript standard does not define a way to modify an object's
+// prototype, modules can only be mixed in to a type when the type is defined.
+// You can mixin a module by simply passing it to the `extend` method.
 //
 // ```javascript
 // App.Flyable = Z.Module.create(function() {
 //   this.def('fly', function() { return 'flying'; });
 // });
 //
-// App.Bird = App.Animal.extend(App.Flyable);
+// App.Bird = App.Animal.extend(App.Flyable); // no type body
 //
 // App.Bird.ancestors();    // => [App.Bird, App.Flyable, App.Animal, Z.Object]
 // App.Bird.create().fly(); // => 'flying'
 // ```
-Z.Object = { __z_objectId__: objectId++, isZObject: true, isPrototype: true };
+Z.Object = { __z_objectId__: objectId++, isZObject: true, isType: true };
 
-// Opens a prototype or concrete instance for modification. It simply executes
-// the given function in the context of the receiver.
+// Opens a zoom object for modification. It simply executes the given function
+// in the context of the receiver.
 //
 // * `f` - A function to execute. `this` will point to the receiver in the body
 //         of the function.
@@ -173,9 +179,9 @@ Z.Object.open(function() {
     }
   }
 
-  // Extends the receiver by creating a new object with the receiver set as the
-  // new object's prototype. This is typically called on prototype objects to
-  // further extend their behavior. If the receiver responds to the `extended`
+  // Extends the receiver by creating a new type object with the receiver set as
+  // the new type object's prototype. This is typically called on type objects
+  // to further extend their behavior. If the receiver responds to the `extended`
   // method, that method will be invoked with the newly created object passed as
   // an argument.
   //
@@ -210,7 +216,7 @@ Z.Object.open(function() {
 
     o = Object.create(proto);
 
-    o.isPrototype    = true;
+    o.isType         = true;
     o.__z_objectId__ = objectId++;
 
     if (this.respondTo('extended')) { this.extended(o); }
@@ -221,8 +227,8 @@ Z.Object.open(function() {
   });
 
   // Creates a "concrete instance" of the receiver and invokes the `initialize`
-  // method. A concrete instance is simply an object created from a prototype
-  // object or another concrete instance.
+  // method. A concrete instance is simply an object created from a type
+  // object or another concrete instance using the `create` method.
   //
   // `*args` - An arbitrary list of arguments, they are forwarded on to the
   //           `initialize` method. `Z.Object.initialize` expects a native
@@ -232,7 +238,7 @@ Z.Object.open(function() {
   this.def('create', function() {
     var o = this.extend();
 
-    o.isPrototype = false;
+    o.isType = false;
 
     if (o.respondTo('initialize')) {
       o.initialize.apply(o, slice.call(arguments));
@@ -241,23 +247,23 @@ Z.Object.open(function() {
     return o;
   });
 
-  // Returns the prototype of a concrete object. This is not necessarily the
-  // object's actual prototype (`__proto__` in some javascript runtimes), but
-  // the first object in the prototype chain that was created with
-  // `Z.Object.extend`.
+  // Returns the type of a concrete object. This is not necessarily the object's
+  // prototype (`__proto__` in some javascript runtimes), but the first object
+  // in the prototype chain that was created with `Z.Object.extend` (otherwise
+  // known as a type object).
   //
-  // Returns the prototype of the receiver.
-  // Throws `Error` if called on a prototype object.
-  this.def('prototype', function() {
+  // Returns the type object of the receiver.
+  // Throws `Error` if called on a type object.
+  this.def('type', function() {
     var p;
 
-    if (this.isPrototype) {
-      throw new Error('Z.Object.prototype: must be called on a concrete object');
+    if (this.isType) {
+      throw new Error('Z.Object.type: must be called on a concrete object');
     }
 
     p = Object.getPrototypeOf(this);
 
-    while (p && !p.isPrototype) { p = Object.getPrototypeOf(p); }
+    while (p && !p.isType) { p = Object.getPrototypeOf(p); }
 
     return p;
   });
@@ -339,8 +345,8 @@ Z.Object.open(function() {
     return this.ancestors().indexOf(o) !== -1;
   });
 
-  this.def('prototypeName', function() {
-    var o          = this.isPrototype ? this : this.prototype(),
+  this.def('typeName', function() {
+    var o          = this.isType ? this : this.type(),
         namespaces = Z.namespaces(),
         namespace, i, len, k;
 
@@ -358,11 +364,11 @@ Z.Object.open(function() {
   });
 
   this.def('toString', function() {
-    var self = this, prototype, descriptors, props, recursed, a;
+    var self = this, type, descriptors, props, recursed, a;
 
-    if (this.isPrototype) { return this.prototypeName(); }
+    if (this.isType) { return this.typeName(); }
 
-    prototype   = this.prototype();
+    type        = this.type();
     descriptors = this.propertyDescriptors();
     a           = [];
 
@@ -375,12 +381,12 @@ Z.Object.open(function() {
       }
     });
 
-    return Z.fmt("#<%@:%@%@>", prototype.prototypeName(), this.objectId(),
+    return Z.fmt("#<%@:%@%@>", type.typeName(), this.objectId(),
                  recursed ? ' ...' : (a.length > 0 ? ' ' : '') + a.join(', '));
   });
 
 
-  // Defines a property on the prototype. In order to use Zoom's KVC and KVO
+  // Defines a property on the object. In order to use Zoom's KVC and KVO
   // systems, you must this method to define your properties.
   //
   // Defining a property does the following:

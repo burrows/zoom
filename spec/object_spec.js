@@ -20,8 +20,8 @@ describe('Z.Object.extend', function() {
     expect(X2.objectId() < X3.objectId()).toBe(true);
   });
 
-  it('should set the isPrototype raw property to `true`', function() {
-    expect(Z.Object.extend().isPrototype).toBe(true);
+  it('should set the isType raw property to `true`', function() {
+    expect(Z.Object.extend().isType).toBe(true);
   });
 
   it('should not invoke the `initialize` method', function() {
@@ -94,8 +94,8 @@ describe('Z.Object.create', function() {
     expect(o2.objectId() < o3.objectId()).toBe(true);
   });
 
-  it('should set the isPrototype raw property to `false`', function() {
-    expect(Z.Object.create().isPrototype).toBe(false);
+  it('should set the `isType` raw property to `false`', function() {
+    expect(Z.Object.create().isType).toBe(false);
   });
 
   it('should invoke the `initialize` method', function() {
@@ -121,30 +121,30 @@ describe('Z.Object.create', function() {
   });
 });
 
-describe('Z.Object.prototype', function() {
-  it('should throw an exception when called on a prototype object', function() {
+describe('Z.Object.type', function() {
+  it('should throw an exception when called on a type object', function() {
     expect(function() {
-      Z.Object.prototype();
-    }).toThrow('Z.Object.prototype: must be called on a concrete object');
+      Z.Object.type();
+    }).toThrow('Z.Object.type: must be called on a concrete object');
 
     expect(function() {
-      Z.Object.extend().prototype();
-    }).toThrow('Z.Object.prototype: must be called on a concrete object');
+      Z.Object.extend().type();
+    }).toThrow('Z.Object.type: must be called on a concrete object');
   });
 
-  it('should return the prototype object when called on objects created with `Z.Object.create`', function() {
+  it('should return the type object when called on objects created with `Z.Object.create`', function() {
     var Parent = Z.Object.extend(), Child = Parent.extend();
 
-    expect(Parent.create().prototype()).toBe(Parent);
-    expect(Child.create().prototype()).toBe(Child);
+    expect(Parent.create().type()).toBe(Parent);
+    expect(Child.create().type()).toBe(Child);
   });
 
-  it('should return the first object in the prototype chain that has `isPrototype` set to `true`', function() {
+  it('should return the first object in the prototype chain that has `isType` set to `true`', function() {
     var X = Z.Object.extend();
 
-    expect(X.create().prototype()).toBe(X);
-    expect(X.create().create().prototype()).toBe(X);
-    expect(X.create().create().create().prototype()).toBe(X);
+    expect(X.create().type()).toBe(X);
+    expect(X.create().create().type()).toBe(X);
+    expect(X.create().create().create().type()).toBe(X);
   });
 });
 
@@ -287,7 +287,7 @@ describe('Z.Object.isA', function() {
   });
 });
 
-describe('Z.Object.prototypeName', function() {
+describe('Z.Object.typeName', function() {
   beforeEach(function() {
     Z.Stuff = Z.Object.extend();
     Z.root.MyNamespace = {};
@@ -300,29 +300,29 @@ describe('Z.Object.prototypeName', function() {
   });
 
   it('should return the name of the object for objects in the Z namespace', function() {
-    expect(Z.Object.prototypeName()).toBe('Z.Object');
-    expect(Z.Stuff.prototypeName()).toBe('Z.Stuff');
+    expect(Z.Object.typeName()).toBe('Z.Object');
+    expect(Z.Stuff.typeName()).toBe('Z.Stuff');
   });
 
   it('should return "(Unknown)" for objects not defined in a namespace', function() {
     var Something = Z.Object.extend();
-    expect(Something.prototypeName()).toBe('(Unknown)');
+    expect(Something.typeName()).toBe('(Unknown)');
   });
 
   it('should return "(Unknown)" for objects defined in a namespace other than Z but not registered', function() {
-    expect(Z.root.MyNamespace.Thing.prototypeName()).toBe('(Unknown)');
+    expect(Z.root.MyNamespace.Thing.typeName()).toBe('(Unknown)');
   });
 
   it('should return the name of the object for objects defined in a namespace other than Z that is registered', function() {
     Z.addNamespace(Z.root.MyNamespace, 'MyNamespace');
-    expect(Z.root.MyNamespace.Thing.prototypeName()).toBe('MyNamespace.Thing');
+    expect(Z.root.MyNamespace.Thing.typeName()).toBe('MyNamespace.Thing');
     Z.removeNamespace(Z.root.MyNamespace);
   });
 
-  it("should return the name of the object's prototype when called on a concrete object", function() {
-    expect(Z.Object.create().prototypeName()).toBe('Z.Object');
-    expect(Z.A().prototypeName()).toBe('Z.Array');
-    expect(Z.H().prototypeName()).toBe('Z.Hash');
+  it("should return the name of the object's type when called on a concrete object", function() {
+    expect(Z.Object.create().typeName()).toBe('Z.Object');
+    expect(Z.A().typeName()).toBe('Z.Array');
+    expect(Z.H().typeName()).toBe('Z.Hash');
   });
 });
 
@@ -333,7 +333,7 @@ describe('Z.Object.toString', function() {
     this.property('z', {get: function() {}});
   });
 
-  it('should return the prototype name when called on a prototype object', function() {
+  it('should return the type name when called on a type object', function() {
     expect(Z.Object.toString()).toBe('Z.Object');
     expect(Z.Array.toString()).toBe('Z.Array');
     expect(Z.Hash.toString()).toBe('Z.Hash');
@@ -341,7 +341,7 @@ describe('Z.Object.toString', function() {
     expect(X.toString()).toBe('(Unknown)');
   });
 
-  it('should return a string containing the prototype name, object id and current non-computed property values', function() {
+  it('should return a string containing the type name, object id and current non-computed property values', function() {
     var o1 = Z.Object.create(), o2 = X.create({x: 1, y: 2});
 
     expect(o1.toString()).toEqual("#<Z.Object:" + (o1.objectId()) + '>');
@@ -397,16 +397,16 @@ describe('Z.Object.hasProperty', function() {
     this.property('bar');
   });
 
-  it('should return `true` if a property with the given name exists on the prototype', function() {
+  it('should return `true` if a property with the given name exists on the object', function() {
     expect(A.hasProperty('foo')).toBe(true);
     expect(B.hasProperty('bar')).toBe(true);
   });
 
-  it('should return `true` if a property with the given name exists on a super prototype', function() {
+  it('should return `true` if a property with the given name exists on a super object', function() {
     expect(B.hasProperty('foo')).toBe(true);
   });
 
-  it('should return `false` if a property with the given name does not exist on the prototype', function() {
+  it('should return `false` if a property with the given name does not exist on the object', function() {
     expect(A.hasProperty('idontexist')).toBe(false);
     expect(A.hasProperty('bar')).toBe(false);
   });

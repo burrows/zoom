@@ -30,14 +30,14 @@ repo = Z.Object.extend(function() {
   });
 
   this.def('insert', function(model) {
-    var baseType = model.basePrototype(),
+    var baseType = model.baseType(),
         map      = this.idMap.at(baseType),
         queries  = this.queries.at(baseType),
         id       = model.id();
 
     if (map.hasKey(id)) {
       throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
-                            model.prototypeName(), id));
+                            model.typeName(), id));
     }
 
     map.at(id, model);
@@ -51,11 +51,11 @@ repo = Z.Object.extend(function() {
   });
 
   this.def('retrieve', function(type, id) {
-    return this.idMap.at(type.basePrototype()).at(id);
+    return this.idMap.at(type.baseType()).at(id);
   });
 
   this.def('remove', function(model) {
-    var baseType = model.basePrototype(),
+    var baseType = model.baseType(),
         map      = this.idMap.at(baseType),
         queries  = this.queries.at(baseType);
 
@@ -76,7 +76,7 @@ repo = Z.Object.extend(function() {
 
   this.def('registerQuery', function(query) {
     var self     = this,
-        baseType = query.modelType.basePrototype(),
+        baseType = query.modelType.baseType(),
         map      = this.idMap.at(baseType),
         queries  = this.queries.at(baseType);
 
@@ -91,7 +91,7 @@ repo = Z.Object.extend(function() {
   });
 
   this.def('deregisterQuery', function(query) {
-    var baseType = query.modelType.basePrototype(),
+    var baseType = query.modelType.baseType(),
         map      = this.idMap.at(baseType);
 
     this.queries.at(baseType).remove(query);
@@ -160,7 +160,7 @@ Z.Model = Z.Object.extend(function() {
     if (owner) {
       if ((state !== NEW && state !== LOADED) || this.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the owner side is %@: %@",
-                              this.prototypeName(), name, this.stateString(), this));
+                              this.typeName(), name, this.stateString(), this));
       }
     }
 
@@ -180,7 +180,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (val && (!Z.isZObject(val) || (!val.isA(type)))) {
       throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                            this.prototypeName(), name, descriptor.modelType, Z.inspect(val)));
+                            this.typeName(), name, descriptor.modelType, Z.inspect(val)));
     }
 
     _setHasOne.call(this, descriptor, val);
@@ -214,7 +214,7 @@ Z.Model = Z.Object.extend(function() {
     set: function(v) {
       if (this.hasOwnProperty('__id__')) {
         throw new Error(Z.fmt("%@.id (setter): overwriting a model's identity is not allowed: %@",
-                              this.prototypeName(), this));
+                              this.typeName(), this));
       }
 
       this.__id__ = v;
@@ -247,7 +247,7 @@ Z.Model = Z.Object.extend(function() {
         attributeType = attributeTypes[type];
 
     if (!attributeType) {
-      throw new Error(Z.fmt("%@.attribute: unknown type: %@", this.prototypeName(), type));
+      throw new Error(Z.fmt("%@.attribute: unknown type: %@", this.typeName(), type));
     }
 
     this[Z.fmt("__z_attribute_%@__", name)] = opts;
@@ -267,7 +267,7 @@ Z.Model = Z.Object.extend(function() {
 
         if (state === EMPTY || this.isBusy()) {
           throw new Error(Z.fmt("%@.%@ (setter): can't set attributes on a model in the %@ state: %@",
-                                this.prototypeName(), name, this.stateString(), this));
+                                this.typeName(), name, this.stateString(), this));
         }
 
         if (state !== NEW) {
@@ -299,7 +299,7 @@ Z.Model = Z.Object.extend(function() {
     return a;
   });
 
-  this.def('basePrototype', function() {
+  this.def('baseType', function() {
     var a = this.modelAncestors();
     return a[a.length - 1];
   });
@@ -328,7 +328,7 @@ Z.Model = Z.Object.extend(function() {
   this.def('reset', function() { repo.reset(); });
 
   this.def('empty', function(id) {
-    var name = this.prototypeName(), m = this.create({id: id});
+    var name = this.typeName(), m = this.create({id: id});
 
     setState.call(m, {source: EMPTY});
     return m;
@@ -340,7 +340,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (Z.isUndefined(attrs.id)) {
       throw new Error(Z.fmt("%@.load: an `id` attribute is required",
-                            this.prototypeName()));
+                            this.typeName()));
     }
 
     attrs = Z.dup(attrs);
@@ -387,7 +387,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (model && !model.isA(this)) {
       throw new Error(Z.fmt("%@.fetch: a model with id `%@` was found in the identity map, but its prototype is `%@`",
-                            this.prototypeName(), id, model.prototypeName()));
+                            this.typeName(), id, model.typeName()));
     }
 
     if (!model) {
@@ -404,7 +404,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (state !== LOADED || this.isBusy()) {
       throw new Error(Z.fmt("%@.refresh: can't refresh a model in the %@ state: %@",
-                            this.prototypeName(), this.stateString(), this));
+                            this.typeName(), this.stateString(), this));
     }
 
     setState.call(this, {busy: true});
@@ -425,7 +425,7 @@ Z.Model = Z.Object.extend(function() {
 
     if ((state !== NEW && state !== LOADED) || this.isBusy()) {
       throw new Error(Z.fmt("%@.save: can't save a model in the %@ state: %@",
-                           this.prototypeName(), this.stateString(), this));
+                           this.typeName(), this.stateString(), this));
     }
 
     this.validate();
@@ -469,7 +469,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (this.isBusy()) {
       throw new Error(Z.fmt("%@.destroy: can't destroy a model in the %@ state: %@",
-                            this.prototypeName(), this.stateString(), this));
+                            this.typeName(), this.stateString(), this));
     }
 
     if (state === NEW) {
@@ -514,7 +514,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (sourceState === DESTROYED) {
       throw new Error(Z.fmt("%@.undoChanges: attempted to undo changes on a DESTROYED model: %@",
-                            this.prototypeName(), this.toString()));
+                            this.typeName(), this.toString()));
     }
 
     if (!this.isDirty()) { return this; }
@@ -635,7 +635,7 @@ Z.Model = Z.Object.extend(function() {
 
     if (!descriptor) {
       throw new Error(Z.fmt("%@.inverseDidAdd: unknown association `%@`: %@",
-                            this.prototypeName(), associationName, this));
+                            this.typeName(), associationName, this));
     }
 
     if (descriptor.type === 'hasOne') {
@@ -660,9 +660,9 @@ Z.Model = Z.Object.extend(function() {
   this.def('toString', function() {
     var self = this, names, name, stateString, a, descriptors, descriptor, k, i, len;
 
-    if (this.isPrototype) { return this.supr(); }
+    if (this.isType) { return this.supr(); }
 
-    name        = this.prototypeName();
+    name        = this.typeName();
     stateString = this.stateString();
     a           = ['id: ' + Z.inspect(this.id())];
 
@@ -751,7 +751,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     if (owner) {
       if ((state !== NEW && state !== LOADED) || model.isBusy()) {
         throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the owner side is %@: %@",
-                              model.prototypeName(), descriptor.name, model.stateString(), model));
+                              model.typeName(), descriptor.name, model.stateString(), model));
 
       }
     }
@@ -759,7 +759,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     for (j = 0, len = added.length; j < len; j++) {
       if (!added[j].isA(type)) {
         throw new Error(Z.fmt("%@.%@: expected an object of type `%@` but received %@ instead",
-                              model.prototypeName(), descriptor.name, descriptor.modelType, added[j]));
+                              model.typeName(), descriptor.name, descriptor.modelType, added[j]));
       }
     }
 

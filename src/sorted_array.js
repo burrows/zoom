@@ -95,23 +95,23 @@ Z.SortedArray = Z.Array.extend(function() {
 
   this.def('push', function() {
     throw new Error(Z.fmt("%@.push: use `insert` to add items to a sorted array",
-                          this.prototypeName()));
+                          this.typeName()));
   });
 
   this.def('unshift', function() {
     throw new Error(Z.fmt("%@.unshift: use `insert` to add items to a sorted array",
-                          this.prototypeName()));
+                          this.typeName()));
   });
 
   this.def('at', function(i, v) {
     if (arguments.length === 1) { return this.supr(i); }
     throw new Error(Z.fmt("%@.at: use `insert` to add items to a sorted array",
-                          this.prototypeName()));
+                          this.typeName()));
   });
 
   this.def('sort$', function() {
     throw new Error(Z.fmt("%@.sort$: can't sort a sorted array in place",
-                          this.prototypeName()));
+                          this.typeName()));
   });
 });
 

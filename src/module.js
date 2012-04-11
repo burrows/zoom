@@ -6,7 +6,7 @@ Z.Module = Z.Object.extend(function() {
   this.def('initialize', function(f) {
     this.supr();
 
-    this.isPrototype      = true;
+    this.isType           = true;
     this.__z_mixins__     = [];
     this.__z_defs__       = [];
     this.__z_properties__ = [];

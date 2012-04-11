@@ -197,9 +197,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 
   this.def('toString', function() {
-    if (this.isPrototype) { return this.supr(); }
+    if (this.isType) { return this.supr(); }
 
-    return Z.fmt("#<%@:%@ %@>", this.prototypeName(), this.objectId(),
+    return Z.fmt("#<%@:%@ %@>", this.typeName(), this.objectId(),
                  Z.inspect(this.__z_items__));
   });
 

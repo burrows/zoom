@@ -145,7 +145,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.def('toString', function() {
     var self = this, a, recursed;
 
-    if (this.isPrototype) { return this.supr(); }
+    if (this.isType) { return this.supr(); }
 
     recursed = Z.detectRecursion(this, function() {
       a = self.map(function(tuple) {
@@ -153,7 +153,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
       });
     });
 
-    return Z.fmt("#<%@:%@ {%@}>", this.prototypeName(), this.objectId(),
+    return Z.fmt("#<%@:%@ {%@}>", this.typeName(), this.objectId(),
                  recursed ? '...' : a.join(', '));
   });
 

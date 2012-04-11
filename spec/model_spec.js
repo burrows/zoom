@@ -173,7 +173,7 @@ describe('Z.Model.load', function() {
     it('should return a new model instance with the given attributes', function() {
       var m = Test.BasicModel.load({ id: 126, foo: 's', bar: 1 });
 
-      expect(m.prototype()).toBe(Test.BasicModel);
+      expect(m.type()).toBe(Test.BasicModel);
       expect(m.id()).toBe(126);
       expect(m.foo()).toBe('s');
       expect(m.bar()).toBe(1);
@@ -491,7 +491,7 @@ describe('Z.Model.fetch', function() {
     it('should return an instance of the model with `sourceState` set to `EMPTY` and `isBusy` set to `true`', function() {
       var m = Test.BasicModel.fetch(19);
 
-      expect(m.prototype()).toBe(Test.BasicModel);
+      expect(m.type()).toBe(Test.BasicModel);
       expect(m.id()).toBe(19);
 
       expect(m.sourceState()).toBe(Z.Model.EMPTY);
@@ -698,7 +698,7 @@ describe('Z.Model setting attributes', function() {
       expect(m.get('changes')).toBeNull();
       m.set('bar', 9);
       expect(m.get('changes')).not.toBeNull();
-      expect(m.get('changes').prototype()).toBe(Z.Hash);
+      expect(m.get('changes').type()).toBe(Z.Hash);
       expect(m.get('changes.bar')).toBe(8);
     });
 
@@ -1688,14 +1688,14 @@ describe('Z.Model.modelAncestors', function() {
   });
 });
 
-describe('Z.Model.basePrototype', function() {
+describe('Z.Model.baseType', function() {
   it("should return the direct sub-prototype of `Z.Model` from the given object's inheritance chain", function() {
     var A = Z.Model.extend(), B = A.extend(Z.Orderable), C = B.extend();
 
-    expect(A.basePrototype()).toBe(A);
-    expect(B.basePrototype()).toBe(A);
-    expect(C.basePrototype()).toBe(A);
-    expect(C.create().basePrototype()).toBe(A);
+    expect(A.baseType()).toBe(A);
+    expect(B.baseType()).toBe(A);
+    expect(C.baseType()).toBe(A);
+    expect(C.create().baseType()).toBe(A);
   });
 });
 
