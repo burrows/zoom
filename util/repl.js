@@ -1,10 +1,8 @@
-var util = require('util'), inspect = util.inspect;
+var util = require('util');
 
 global.Z = require('../build/zoom');
 
-util.inspect = function(o) {
-  return Z.type(o) === 'zobject' ? o.toString() : inspect(o);
-}
+util.inspect = Z.inspect;
 
 require('repl').start('zoom> ', undefined, undefined, true, false);
 
