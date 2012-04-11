@@ -262,7 +262,22 @@ Z.Object.open(function() {
     return p;
   });
 
-  this.def('supr', function () {
+  // Invokes a super method. The super method is found by searching up the
+  // prototype chain starting from the object that holds the currently
+  // executing function. From there each prototype object is traversed until a
+  // method with the same name as the currently executing method is found.
+  //
+  // Arguments passed to the currently executing function are not automatically
+  // forwarded on to the super method as they are in other languages.
+  //
+  // NOTE: This method uses `arguments.callee` which is deprecated. A better
+  // approach would be to use a named function expression instead, but that
+  // causes issues in IE.
+  //
+  // Returns the return value of the super method.
+  // Raises `Error` when called from outside of a method body.
+  // Raises `Error` when a super method cannot be found.
+  this.def('supr', function() {
     var caller = arguments.callee.caller,
         name   = caller.__z_name__,
         o      = this,
@@ -285,10 +300,25 @@ Z.Object.open(function() {
     return method.apply(this, args);
   });
 
+  // Returns `true` if the receiver responds to a method of the given name and
+  // `false` otherwise.
+  //
+  // * `name` - The name of the method to check for.
+  //
+  // Returns a Boolean.
   this.def('respondTo', function(name) {
     return typeof this[name] === 'function';
   });
 
+  // Returns a native array containing all ancestor objects of the receiver. An
+  // object's ancestors includes itself as well as all objects along its
+  // prototype chain, including modules that were mixed in.
+  //
+  // ```javascript
+  // Z.Array.ancestors() // # => [Z.Array, Z.Orderable, Z.Enumerable, Z.Object]
+  // ```
+  //
+  // Returns a native array.
   this.def('ancestors', function() {
     var p = this, a = [this];
 
@@ -299,6 +329,12 @@ Z.Object.open(function() {
     return a;
   });
 
+  // Returns `true` if the given object exists in the receiver's prototype chain
+  // and `false` otherwise.
+  //
+  // * `o` - Any object.
+  //
+  // Returns a Boolean.
   this.def('isA', function(o) {
     return this.ancestors().indexOf(o) !== -1;
   });
