@@ -345,6 +345,16 @@ Z.Object.open(function() {
     return this.ancestors().indexOf(o) !== -1;
   });
 
+  // Returns the name of a type object. When invoked on a concrete instance, the
+  // name of the object's type (as determined by the `Z.Object.type` method) is
+  // returned.
+  //
+  // A type's name is found by introspecting all of the registered namespaces
+  // known to Zoom (using `Z.addNamespace`), looking for a property that is
+  // identical to the receiver. Type objects that are not attached to a
+  // registered namespace will return the string `'(Unknown)'`.
+  //
+  // Returns a string containing the name of the type.
   this.def('typeName', function() {
     var o          = this.isType ? this : this.type(),
         namespaces = Z.namespaces(),
@@ -363,6 +373,12 @@ Z.Object.open(function() {
     return '(Unknown)';
   });
 
+  // Generates a string representation of the object. When called on a type
+  // object, this method simply delegates to the `Z.Object.typeName` method,
+  // otherwise it generates a string containing the name of the object's type,
+  // its object id, and any properties defined on the object.
+  //
+  // Returns a string.
   this.def('toString', function() {
     var self = this, type, descriptors, props, recursed, a;
 
@@ -387,7 +403,7 @@ Z.Object.open(function() {
 
 
   // Defines a property on the object. In order to use Zoom's KVC and KVO
-  // systems, you must this method to define your properties.
+  // systems, you must use this method to define properties.
   //
   // Defining a property does the following:
   //
@@ -415,8 +431,8 @@ Z.Object.open(function() {
   // });
   // ```
   //
-  // New `Person` objects can be created by using the `create` method, passing
-  // in any properties you wish to set:
+  // Concrete `App.Person` instances can be created by using the `create`
+  // method, passing in any properties you wish to set:
   //
   // ```javascript
   // p = App.Person.create({first: 'Michael', last: 'Jordan'});
@@ -443,7 +459,7 @@ Z.Object.open(function() {
   // ```
   //
   // * `name` - A string containing the name of the property.
-  // * `opts` - A native js object containing one or more of the following:
+  // * `opts` - A native object containing one or more of the following:
   //   * `dependsOn` - Pass a list of keys or key paths that the property depends
   //                   on. This should be used for computed properties to allow
   //                   them to be observed.
@@ -490,6 +506,10 @@ Z.Object.open(function() {
     return null;
   });
 
+  // Returns a native object mapping the names of all the properties defined
+  // on the receiver to the options they were created with.
+  //
+  // Returns a native object.
   this.def('propertyDescriptors', function() {
     var props = {}, k, match;
 
@@ -502,10 +522,18 @@ Z.Object.open(function() {
     return props;
   });
 
+  // Returns a boolean indicating whether or not the object has a property of
+  // the given name.
+  //
+  // * `name` - A string containing the name of the property to check for.
+  //
+  // Returns `true` if the object has a property of the given name and `false`
+  // otherwise.
   this.def('hasProperty', function(name) {
     return typeof this[Z.fmt("__z_property_%@__", name)] === 'object';
   });
 
+  // FIXME: try to eliminate the need for this
   this.def('initialize', function(properties) {
     var descriptors = this.propertyDescriptors(), k, descriptor, path, i, len;
 
@@ -523,16 +551,41 @@ Z.Object.open(function() {
     return this;
   });
 
+  // Returns the reciever's object id. All Zoom objects are assigned a unique
+  // id when they are created.
+  //
+  // Returns a number that is the receiver's unique id.
   this.property('objectId', {
     readonly: true,
     get: function() { return this.__z_objectId__; }
   });
 
+  // Returns a hash value for the receiver. This method is used by the `Z.Hash`
+  // type to generate hash codes for objects used as keys. The default
+  // implementation uses the object's id to generate a hash code. You'll likely
+  // want to override this in the sub-types if you want to use them as hash
+  // keys.
+  //
+  // Returns a number.
   this.def('hash', function() {
     return Z.murmur(this.objectId().toString(), Z.hashSeed());
   });
 
+  // Indicates whether the receiver is equal to the given object. The default
+  // implementation simply does an identity comparison using the `===` operator.
+  // You'll likely want to override this method in your sub-types in order to
+  // perform a more meaningful comparison.
+  //
+  // * `o` - An object to compare against the receiver.
+  //
+  // Returns a boolean.
   this.def('eq', function(o) { return this === o; });
+
+  // Indicates whether the receiver is not equal to the given object.
+  //
+  // * `o` - An object to compare against the receiver.
+  //
+  // Returns a boolean.
   this.def('neq', function(o) { return !this.eq(o); });
 
   this.def('get', function() {
@@ -774,11 +827,28 @@ Z.Object.open(function() {
     return this;
   });
 
+  // This method is invoked by the KVC system when an attempt is made to get an
+  // unknown property name. The default implementation of this method throws an
+  // exception, but you may want to override this in sub-types in order to
+  // implement special handling for unknown properties.
+  //
+  // * `k` - The name of the unknown property.
+  //
+  // Raises `Error`.
   this.def('getUnknownProperty', function(k) {
     throw new Error(Z.fmt("Z.Object.get: undefined key `%@` for %@", k, this));
   });
 
-  this.def('setUnknownProperty', function(k) {
+  // This method is invoked by the KVC system when an attempt is make to set an
+  // unknown property name. The default implementation of this method throws an
+  // exeception, but you may want to override this in sub-types in order to
+  // implement special handling for unknown properties.
+  //
+  // * `k` - The name of the unknown property.
+  // * `v` - The value being set.
+  //
+  // Raises `Error`.
+  this.def('setUnknownProperty', function(k, v) {
     throw new Error(Z.fmt("Z.Object.set: undefined key `%@` for %@", k, this));
   });
 });
