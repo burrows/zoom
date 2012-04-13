@@ -179,6 +179,23 @@ Z.Object.open(function() {
     }
   }
 
+  // Private: Registers observers for all properties defined with the
+  // `dependsOn` option.
+  //
+  // Returns nothing.
+  function setupDependsOnObservers() {
+    var descs = this.propertyDescriptors(), desc, k, path, i, len;
+
+    for (k in descs) {
+      desc = descs[k];
+      for (i = 0, len = desc.dependsOn.length; i < len; i++) {
+        this.observe(desc.dependsOn[i], this, dependentPropertyObserver, {
+          prior: true, context: k
+        });
+      }
+    }
+  }
+
   // Extends the receiver by creating a new type object with the receiver set as
   // the new type object's prototype. This is typically called on type objects
   // to further extend their behavior. If the receiver responds to the `extended`
@@ -243,6 +260,8 @@ Z.Object.open(function() {
     if (o.respondTo('initialize')) {
       o.initialize.apply(o, slice.call(arguments));
     }
+
+    setupDependsOnObservers.call(o);
 
     return o;
   });
@@ -533,21 +552,14 @@ Z.Object.open(function() {
     return typeof this[Z.fmt("__z_property_%@__", name)] === 'object';
   });
 
-  // FIXME: try to eliminate the need for this
-  this.def('initialize', function(properties) {
-    var descriptors = this.propertyDescriptors(), k, descriptor, path, i, len;
-
-    this.set(properties || {});
-
-    for (k in descriptors) {
-      descriptor = descriptors[k];
-      for (i = 0, len = descriptor.dependsOn.length; i < len; i++) {
-        this.observe(descriptor.dependsOn[i], this, dependentPropertyObserver, {
-          prior: true, context: k
-        });
-      }
-    }
-
+  // The default `Z.Object` initializer. Takes a native object mapping property
+  // names to values and sets each on the object.
+  //
+  // * `props` - A native object containing property/value pairs (optional).
+  //
+  // Returns the receiver.
+  this.def('initialize', function(props) {
+    if (props) { this.set(props); }
     return this;
   });
 
