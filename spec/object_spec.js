@@ -328,9 +328,9 @@ describe('Z.Object.typeName', function() {
 
 describe('Z.Object.toString', function() {
   var X = Z.Object.extend(function() {
-    this.property('x');
-    this.property('y');
-    this.property('z', {get: function() {}});
+    this.prop('x');
+    this.prop('y');
+    this.prop('z', {get: function() {}});
   });
 
   it('should return the type name when called on a type object', function() {
@@ -361,7 +361,7 @@ describe('Z.Object.toString', function() {
 
 describe('Z.Object.property', function() {
   var Person = Z.Object.extend(function() {
-    this.property('firstName');
+    this.prop('firstName');
   });
 
   it('should define an instance method with the given name', function() {
@@ -390,11 +390,11 @@ describe('Z.Object.hasProperty', function() {
   var A, B;
 
   A = Z.Object.extend(function() {
-    this.property('foo');
+    this.prop('foo');
   });
 
   B = A.extend(function() {
-    this.property('bar');
+    this.prop('bar');
   });
 
   it('should return `true` if a property with the given name exists on the object', function() {
@@ -414,8 +414,8 @@ describe('Z.Object.hasProperty', function() {
 
 describe('Z.Object KVC support:', function() {
   var Person = Z.Object.extend(function() {
-    this.property('firstName');
-    this.property('points', {
+    this.prop('firstName');
+    this.prop('points', {
       get: function() { return this._POINTS_; },
       set: function(v) { return this._POINTS_ = v; }
     });
@@ -485,8 +485,8 @@ describe('Z.Object KVC support:', function() {
     describe("for a property that hasn't been set and was created with the `def` option", function() {
       it('should return the value of the `def` option', function() {
         var X = Z.Model.extend(function() {
-          this.property('foo', {def: 9});
-          this.property('bar');
+          this.prop('foo', {def: 9});
+          this.prop('bar');
         });
 
         expect(X.create().foo()).toBe(9);
@@ -553,13 +553,13 @@ describe('Z.Object KVC support:', function() {
     var A, B, C, a, b, c;
 
     A = Z.Object.extend(function() {
-      this.property('b');
+      this.prop('b');
     });
     B = Z.Object.extend(function() {
-      this.property('c');
+      this.prop('c');
     });
     C = Z.Object.extend(function() {
-      this.property('num');
+      this.prop('num');
     });
 
     a = b = c = null;
@@ -613,12 +613,12 @@ describe('Z.Object KVO support:', function() {
   var Address, User, user = null;
 
   User = Z.Object.extend(function() {
-    this.property('name');
-    this.property('address');
+    this.prop('name');
+    this.prop('address');
   });
 
   Address = Z.Object.extend(function() {
-    this.property('street');
+    this.prop('street');
   });
 
   describe('#observe with a simple key', function() {
@@ -1054,14 +1054,14 @@ describe('Z.Object dependent properties:', function() {
   var Person, Occupation;
 
   Person = Z.Object.extend(function() {
-    this.property('first');
-    this.property('last');
-    this.property('occupation');
-    this.property('full', {
+    this.prop('first');
+    this.prop('last');
+    this.prop('occupation');
+    this.prop('full', {
       dependsOn: ['first', 'last'],
       get: function() { return this.first() + ' ' + this.last(); }
     });
-    this.property('displayName', {
+    this.prop('displayName', {
       dependsOn: ['full', 'occupation.name'],
       get: function() {
         return Z.fmt("%@ (%@)", this.full(), this.get('occupation.name'));
@@ -1070,7 +1070,7 @@ describe('Z.Object dependent properties:', function() {
   });
 
   Occupation = Z.Object.extend(function() {
-    this.property('name');
+    this.prop('name');
   });
 
   it('should notify observers when any of the dependent keys change', function() {

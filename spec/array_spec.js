@@ -740,7 +740,7 @@ describe('Z.Array.flatten', function() {
 
 describe('Z.Array.join', function() {
   var Foo = Z.Object.extend(function() {
-    this.property('x');
+    this.prop('x');
 
     this.def('toString', function() {
       return Z.fmt("foo-%@", this.x());
@@ -778,11 +778,11 @@ describe('Z.Array.getUnknownProperty', function() {
   var Foo, Bar;
 
   Foo = Z.Object.extend(function() {
-    this.property('bar');
+    this.prop('bar');
   });
 
   Bar = Z.Object.extend(function() {
-    this.property('x');
+    this.prop('x');
   });
 
   it('should get the given property path from each item in the array and return a new array with the values', function() {
@@ -957,7 +957,7 @@ describe('Z.Array.observe with an unknown property', function() {
   var Foo, a, observer;
 
   Foo = Z.Object.extend(function() {
-    this.property('x');
+    this.prop('x');
   });
 
   observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
@@ -1056,7 +1056,7 @@ describe('Z.Array.stopObservering with an unknown property', function() {
   var Foo, a, observer;
 
   Foo = Z.Object.extend(function() {
-    this.property('x');
+    this.prop('x');
   });
 
   observer = {
@@ -1091,15 +1091,15 @@ describe('Observing paths that contain multiple arrays with item observers', fun
   var Foo, Bar, Baz, f, observer;
 
   Foo = Z.Object.extend(function() {
-    this.property('bars');
+    this.prop('bars');
   });
 
   Bar = Z.Object.extend(function() {
-    this.property('bazs');
+    this.prop('bazs');
   });
 
   Baz = Z.Object.extend(function() {
-    this.property('x');
+    this.prop('x');
   });
 
   observer = {
@@ -1302,7 +1302,7 @@ describe('Z.Array.toArray', function() {
 
 describe('Z.Array.sort', function() {
   var Foo = Z.Object.extend(Z.Orderable, function() {
-    this.property('x');
+    this.prop('x');
 
     this.def('eq', function(other) {
       return this.x() === other.x();
@@ -1385,7 +1385,7 @@ describe('Z.Array.sort$', function() {
 
 describe('Z.Array.sortBy', function() {
   var n = 0, X = Z.Object.extend(function() {
-    this.property('foo', {
+    this.prop('foo', {
       get: function() { n++; return this.__foo__;}
     });
   }), x1, x2, x3, x5, x7;

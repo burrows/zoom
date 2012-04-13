@@ -193,8 +193,8 @@ Z.Object.open(function() {
   //
   // ```javascript
   // Person = Z.Object.extend(function() {
-  //   this.property('first');
-  //   this.property('last');
+  //   this.prop('first');
+  //   this.prop('last');
   // });
   // ```
   //
@@ -418,9 +418,9 @@ Z.Object.open(function() {
   //
   // ```javascript
   // App.Person = Z.Object.extend(function() {
-  //   this.property('first');
-  //   this.property('last');
-  //   this.property('full', {
+  //   this.prop('first');
+  //   this.prop('last');
+  //   this.prop('full', {
   //     get: function() { return this.first() + ' ' + this.last(); },
   //     set: function(name) {
   //       var names = name.split(' ');
@@ -487,7 +487,7 @@ Z.Object.open(function() {
   //   * `def`       - Specify a default value for the property.
   //
   // Returns nothing.
-  this.def('property', function(name, opts) {
+  this.def('prop', function(name, opts) {
     opts = Z.defaults(opts || {}, defaultPropertyOpts);
 
     this[Z.fmt("__z_property_%@__", name)] = opts;
@@ -555,7 +555,7 @@ Z.Object.open(function() {
   // id when they are created.
   //
   // Returns a number that is the receiver's unique id.
-  this.property('objectId', {
+  this.prop('objectId', {
     readonly: true,
     get: function() { return this.__z_objectId__; }
   });

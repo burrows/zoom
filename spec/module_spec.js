@@ -5,7 +5,7 @@ var Z = this.Z || require('zoom'), TestMod;
 TestMod = Z.Module.create(function() {
   this.def('foo', function() {});
   this.def('bar', function() {});
-  this.property('baz');
+  this.prop('baz');
 });
 
 describe('Z.Module.createMixin', function() {
@@ -43,7 +43,7 @@ describe('Z.Module.def', function() {
   });
 });
 
-describe('Z.Module.property', function() {
+describe('Z.Module.prop', function() {
   it('should define the property on all of its mixin objects', function() {
     var mixin1 = TestMod.createMixin(Z.Object),
         mixin2 = TestMod.createMixin(Z.Object);
@@ -52,7 +52,7 @@ describe('Z.Module.property', function() {
     expect(mixin2.hasProperty('quux')).toBe(false);
 
     TestMod.open(function() {
-      this.property('quux');
+      this.prop('quux');
     });
 
     expect(mixin1.hasProperty('quux')).toBe(true);

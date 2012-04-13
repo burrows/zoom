@@ -3,7 +3,7 @@
 var Z = this.Z || require('zoom'), Foo, fa, fb, fc;
 
 Foo = Z.Object.extend(Z.Orderable, function() {
-  this.property('x');
+  this.prop('x');
 
   this.def('cmp', function(other) {
     if (!other || !other.isZObject || !other.isA(Foo)) { return false; }

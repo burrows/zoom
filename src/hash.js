@@ -23,11 +23,11 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     this.__z_default__ = nargs === 1 ? def : null;
   });
 
-  this.property('size', {
+  this.prop('size', {
     readonly: true, get: function() { return this.__z_size__; }
   });
 
-  this.property('@', { readonly: true, get: function() { return this; } });
+  this.prop('@', { readonly: true, get: function() { return this; } });
 
   this.def('at', function(k, v) {
     var nargs = arguments.length, hash, bucket, entry, i, len;

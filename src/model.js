@@ -210,7 +210,7 @@ Z.Model = Z.Object.extend(function() {
     return typeof fn === 'function' ? fn.call(context) : context[fn]();
   }
 
-  this.property('id', {
+  this.prop('id', {
     set: function(v) {
       if (this.hasOwnProperty('__id__')) {
         throw new Error(Z.fmt("%@.id (setter): overwriting a model's identity is not allowed: %@",
@@ -224,13 +224,13 @@ Z.Model = Z.Object.extend(function() {
     }
   });
 
-  this.property('sourceState', { readonly: true });
-  this.property('isDirty', { readonly: true });
-  this.property('isInvalid', { readonly: true });
-  this.property('isBusy', { readonly: true });
+  this.prop('sourceState', { readonly: true });
+  this.prop('isDirty', { readonly: true });
+  this.prop('isInvalid', { readonly: true });
+  this.prop('isBusy', { readonly: true });
 
-  this.property('changes');
-  this.property('errors');
+  this.prop('changes');
+  this.prop('errors');
 
   this.def('stateString', function() {
     var a = [this.sourceState().toUpperCase()];
@@ -252,7 +252,7 @@ Z.Model = Z.Object.extend(function() {
 
     this[Z.fmt("__z_attribute_%@__", name)] = opts;
 
-    this.property(name, Z.merge({
+    this.prop(name, Z.merge({
       get: function() {
         if (this.sourceState() === EMPTY) {
           setState.call(this, {busy: true});
@@ -577,7 +577,7 @@ Z.Model = Z.Object.extend(function() {
       type: 'hasOne', name: name, modelType: modelType
     });
 
-    this.property(name, {
+    this.prop(name, {
       auto: false,
       get: function() { return getHasOne.call(this, descriptor); },
       set: function(v) { return setHasOne.call(this, descriptor, v); }
@@ -591,7 +591,7 @@ Z.Model = Z.Object.extend(function() {
       type: 'hasMany', name: name, modelType: modelType
     });
 
-    this.property(name, {
+    this.prop(name, {
       get: function() { return getHasMany.call(this, descriptor); },
       set: function(v) { return setHasMany.call(this, descriptor, v); },
     });

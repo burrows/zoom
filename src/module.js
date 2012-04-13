@@ -23,14 +23,14 @@ Z.Module = Z.Object.extend(function() {
     o.__z_module__ = this;
 
     for (i = 0, len = defs.length; i < len; i++) { o.def.apply(o, defs[i]); }
-    for (i = 0, len = props.length; i < len; i++) { o.property.apply(o, props[i]); }
+    for (i = 0, len = props.length; i < len; i++) { o.prop.apply(o, props[i]); }
 
     this.__z_mixins__.push(o);
 
     return o;
   });
 
-  this.def('property', function() {
+  this.def('prop', function() {
     var args   = slice.call(arguments),
         r      = this.supr.apply(this, args),
         mixins = this.__z_mixins__,
@@ -39,7 +39,7 @@ Z.Module = Z.Object.extend(function() {
 
     this.__z_properties__.push(args);
 
-    for (i = 0; i < len; i++) { mixins[i].property.apply(mixins[i], args); }
+    for (i = 0; i < len; i++) { mixins[i].prop.apply(mixins[i], args); }
 
     return r;
   });

@@ -415,7 +415,7 @@ describe('Z.Model.initialize', function() {
   });
 
   it('should allow setting non-attribute, non-association properties', function() {
-    var Foo = Z.Model.extend(function() { this.property('x'); });
+    var Foo = Z.Model.extend(function() { this.prop('x'); });
 
     expect(Foo.create({x: 9}).x()).toBe(9);
   });
@@ -1169,8 +1169,8 @@ describe('Z.Model.validate', function() {
         return this.shouldntValidate();
       }});
 
-      this.property('shouldValidate');
-      this.property('shouldntValidate');
+      this.prop('shouldValidate');
+      this.prop('shouldntValidate');
       this.attribute('foo', 'integer');
 
       this.def('validatorA', function() {});

@@ -153,22 +153,22 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   }
 
-  this.property('size', {
+  this.prop('size', {
     get: function() { return this.__z_items__.length; },
     set: function(v) { return this.__z_items__.length = v; }
   });
 
-  this.property('first', {
+  this.prop('first', {
     get: function() { return this.at(0); },
     set: function(v) { return this.at(0, v); }
   });
 
-  this.property('last', {
+  this.prop('last', {
     get: function() { return this.at(-1); },
     set: function(v) { return this.at(-1, v); }
   });
 
-  this.property('@', { readonly: true, get: function() { return this; } });
+  this.prop('@', { readonly: true, get: function() { return this; } });
 
   this.def('initialize', function() {
     var arg = arguments[0];

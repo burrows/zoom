@@ -4,8 +4,8 @@ if (typeof Z === 'undefined') { require('./helper'); }
 
 var Foo, Bar;
 
-Foo = Z.Object.extend(function() { this.property('bar'); });
-Bar = Z.Object.extend(function() { this.property('x'); });
+Foo = Z.Object.extend(function() { this.prop('bar'); });
+Bar = Z.Object.extend(function() { this.prop('x'); });
 
 describe('Z.SortedArray constructor with default options', function() {
   it('should insert items in sorted order as determined by `Z.cmp`', function() {
