@@ -37,28 +37,6 @@ var objectId = 1, slice = Array.prototype.slice;
 // properties can be defined by calling `def` or `property` directly on the
 // type object.
 //
-// ```javascript
-// App.Animal = Z.Object.extend(function() {
-//   this.def('speak', function(s) {
-//     return s;
-//   });
-// });
-//
-// a = App.Animal.create(); // => #<App.Animal:18>
-// App.Animal.ancestors();  // => [App.Animal, Z.Object]
-// a.speak('hello');        // => 'hello'
-//
-// App.Dog = App.Animal.extend(function() {
-//   this.def('speak', function(s) {
-//     return 'WOOF! ' + this.supr(s) + ' WOOF!';
-//   });
-// });
-//
-// d = App.Dog.create(); // => #<App.Dog:20>
-// App.Dog.ancestors();  // => [App.Dog, App.Animal, Z.Object]
-// d.speak('hello');     // => 'WOOF! hello WOOF!'
-// ```
-//
 // Zoom also provides a module system that is similar to Ruby's. Modules are
 // essentially just a container where you can define methods and properties that
 // can be mixed in to type objects. Module are non-destructive, meaning that
@@ -67,32 +45,52 @@ var objectId = 1, slice = Array.prototype.slice;
 // prototype, modules can only be mixed in to a type when the type is defined.
 // You can mixin a module by simply passing it to the `extend` method.
 //
-// ```javascript
-// App.Flyable = Z.Module.create(function() {
-//   this.def('fly', function() { return 'flying'; });
-// });
+// Examples
 //
-// App.Bird = App.Animal.extend(App.Flyable); // no type body
+//   App.Animal = Z.Object.extend(function() {
+//     this.def('speak', function(s) {
+//       return s;
+//     });
+//   });
 //
-// App.Bird.ancestors();    // => [App.Bird, App.Flyable, App.Animal, Z.Object]
-// App.Bird.create().fly(); // => 'flying'
-// ```
+//   a = App.Animal.create(); // => #<App.Animal:18>
+//   App.Animal.ancestors();  // => [App.Animal, Z.Object]
+//   a.speak('hello');        // => 'hello'
+//
+//   App.Dog = App.Animal.extend(function() {
+//     this.def('speak', function(s) {
+//       return 'WOOF! ' + this.supr(s) + ' WOOF!';
+//     });
+//   });
+//
+//   d = App.Dog.create(); // => #<App.Dog:20>
+//   App.Dog.ancestors();  // => [App.Dog, App.Animal, Z.Object]
+//   d.speak('hello');     // => 'WOOF! hello WOOF!'
+//
+//   App.Flyable = Z.Module.create(function() {
+//     this.def('fly', function() { return 'flying'; });
+//   });
+//
+//   App.Bird = App.Animal.extend(App.Flyable); // no type body
+//
+//   App.Bird.ancestors();    // => [App.Bird, App.Flyable, App.Animal, Z.Object]
+//   App.Bird.create().fly(); // => 'flying'
 Z.Object = { __z_objectId__: objectId++, isZObject: true, isType: true };
 
-// Opens a zoom object for modification. It simply executes the given function
-// in the context of the receiver.
+// Public: Opens a zoom object for modification. It simply executes the given
+// function in the context of the receiver.
 //
-// * `f` - A function to execute. `this` will point to the receiver in the body
-//         of the function.
+// f - A function to execute. `this` will point to the receiver in the body of
+//     the function.
 //
 // Returns the receiver.
 Z.Object.open = function(f) { f.call(this); return this; };
 Z.Object.open.__z_name__ = 'open';
 
-// Defines a method on the receiver.
+// Public: Defines a method on the receiver.
 //
-// * `name` - A string representing the name of the method.
-// * `f`    - A function containing the body of the method.
+// name - A string representing the name of the method.
+// f    - A function containing the body of the method.
 //
 // Returns the receiver.
 Z.Object.def = function(name, f) {
@@ -102,7 +100,7 @@ Z.Object.def = function(name, f) {
 Z.Object.def.__z_name__ = 'def';
 
 Z.Object.open(function() {
-  // Private: A hash containing the default values for properties defined using
+  // A hash containing the default values for properties defined using
   // `Z.Object.property`.
   var defaultPropertyOpts = {
     dependsOn : [],
@@ -113,12 +111,12 @@ Z.Object.open(function() {
     def       : null
   };
 
-  // Private: Returns the current value of the property indicated by the given
+  // Internal: Returns the current value of the property indicated by the given
   // key. If a property with the given name does not exist, the
   // `getUnknownProperty` method is invoked on the receiver. If the property has
   // yet to be set, then the default value for the property is returned.
   //
-  // * `k` - The name of the key to get.
+  // k - The name of the key to get.
   //
   // Returns the current value of the property.
   function getProperty(k) {
@@ -131,14 +129,14 @@ Z.Object.open(function() {
     return v === undefined || v === null ? desc.def : v;
   }
 
-  // Private: Sets the value for a property. If a property with the given name
+  // Internal: Sets the value for a property. If a property with the given name
   // does not exist, the `setUnknownProperty` method is invoked on the reciever.
   // If the property has automatic notifications turned on (the default) then
   // observers are also notified by invoking the `willChangeProperty` and
   // `didChangeProperty` methods.
   //
-  // * `k` - The name of the key to set.
-  // * `v` - The value to set.
+  // k - The name of the key to set.
+  // v - The value to set.
   //
   // Returns `null`.
   // Throws `Error` if the property is marked as readonly.
@@ -164,10 +162,10 @@ Z.Object.open(function() {
     return null;
   }
 
-  // Private: Observer function that gets invoked when a dependent property path
-  // changes. Notifies observers of changes to the dependent property.
+  // Internal: Observer function that gets invoked when a dependent property
+  // path changes. Notifies observers of changes to the dependent property.
   //
-  // * `notification` - A notification object sent by the observer system.
+  // notification - A notification object sent by the observer system.
   //
   // Returns nothing.
   function dependentPropertyObserver(notification) {
@@ -179,7 +177,7 @@ Z.Object.open(function() {
     }
   }
 
-  // Private: Registers observers for all properties defined with the
+  // Internal: Registers observers for all properties defined with the
   // `dependsOn` option.
   //
   // Returns nothing.
@@ -196,11 +194,11 @@ Z.Object.open(function() {
     }
   }
 
-  // Extends the receiver by creating a new type object with the receiver set as
-  // the new type object's prototype. This is typically called on type objects
-  // to further extend their behavior. If the receiver responds to the `extended`
-  // method, that method will be invoked with the newly created object passed as
-  // an argument.
+  // Public: Extends the receiver by creating a new type object with the
+  // receiver set as the new type object's prototype. This is typically called
+  // on type objects to further extend their behavior. If the receiver responds
+  // to the `extended` method, that method will be invoked with the newly
+  // created object passed as an argument.
   //
   // References to `Z.Module` objects may be passed to mix them in to the new
   // objects prototype chain. Note that `extend` is the only way to mix in a
@@ -208,17 +206,16 @@ Z.Object.open(function() {
   // the fact that the ECMAScript standard does not define a way to modify an
   // object's prototype after its been created).
   //
-  // ```javascript
-  // Person = Z.Object.extend(function() {
-  //   this.prop('first');
-  //   this.prop('last');
-  // });
-  // ```
+  // *mods - Zero or more `Z.Module` objects to mix in to the prototype chain.
+  // f     - A function to execute in the context of the new object (default:
+  //         `null`).
   //
-  // * `*mods` - Zero or more `Z.Module` objects to mix in to the prototype
-  //             chain.
-  // * `f`     - A function to execute in the context of the new object
-  //             (optional).
+  // Examples
+  //
+  //   Person = Z.Object.extend(function() {
+  //     this.prop('first');
+  //     this.prop('last');
+  //   });
   //
   // Returns the new object.
   this.def('extend', function() {
@@ -243,13 +240,13 @@ Z.Object.open(function() {
     return o;
   });
 
-  // Creates a "concrete instance" of the receiver and invokes the `initialize`
-  // method. A concrete instance is simply an object created from a type
-  // object or another concrete instance using the `create` method.
+  // Public: Creates a "concrete instance" of the receiver and invokes the
+  // `initialize` method. A concrete instance is simply an object created from a
+  // type object or another concrete instance using the `create` method.
   //
-  // `*args` - An arbitrary list of arguments, they are forwarded on to the
-  //           `initialize` method. `Z.Object.initialize` expects a native
-  //           object containing key/value pairs of properties to set.
+  // *args - An arbitrary list of arguments, they are forwarded on to the
+  //         `initialize` method. `Z.Object.initialize` expects a native object
+  //         containing key/value pairs of properties to set.
   //
   // Returns the newly created and initialized object.
   this.def('create', function() {
@@ -266,10 +263,10 @@ Z.Object.open(function() {
     return o;
   });
 
-  // Returns the type of a concrete object. This is not necessarily the object's
-  // prototype (`__proto__` in some javascript runtimes), but the first object
-  // in the prototype chain that was created with `Z.Object.extend` (otherwise
-  // known as a type object).
+  // Public: Returns the type of a concrete object. This is not necessarily the
+  // object's prototype (`__proto__` in some javascript runtimes), but the first
+  // object in the prototype chain that was created with `Z.Object.extend`
+  // (otherwise known as a type object).
   //
   // Returns the type object of the receiver.
   // Throws `Error` if called on a type object.
@@ -287,8 +284,8 @@ Z.Object.open(function() {
     return p;
   });
 
-  // Invokes a super method. The super method is found by searching up the
-  // prototype chain starting from the object that holds the currently
+  // Public: Invokes a super method. The super method is found by searching up
+  // the prototype chain starting from the object that holds the currently
   // executing function. From there each prototype object is traversed until a
   // method with the same name as the currently executing method is found.
   //
@@ -300,8 +297,8 @@ Z.Object.open(function() {
   // causes issues in IE.
   //
   // Returns the return value of the super method.
-  // Raises `Error` when called from outside of a method body.
-  // Raises `Error` when a super method cannot be found.
+  // Throws `Error` when called from outside of a method body.
+  // Throws `Error` when a super method cannot be found.
   this.def('supr', function() {
     var caller = arguments.callee.caller,
         name   = caller.__z_name__,
@@ -325,23 +322,21 @@ Z.Object.open(function() {
     return method.apply(this, args);
   });
 
-  // Returns `true` if the receiver responds to a method of the given name and
-  // `false` otherwise.
+  // Public: Returns `true` if the receiver responds to a method of the given
+  // name and `false` otherwise.
   //
-  // * `name` - The name of the method to check for.
-  //
-  // Returns a Boolean.
+  // name - The name of the method to check for.
   this.def('respondTo', function(name) {
     return typeof this[name] === 'function';
   });
 
-  // Returns a native array containing all ancestor objects of the receiver. An
-  // object's ancestors includes itself as well as all objects along its
-  // prototype chain, including modules that were mixed in.
+  // Public: Returns a native array containing all ancestor objects of the
+  // receiver. An object's ancestors includes itself as well as all objects
+  // along its prototype chain, including modules that were mixed in.
   //
-  // ```javascript
-  // Z.Array.ancestors() // # => [Z.Array, Z.Orderable, Z.Enumerable, Z.Object]
-  // ```
+  // Examples
+  //
+  //   Z.Array.ancestors() // # => [Z.Array, Z.Orderable, Z.Enumerable, Z.Object]
   //
   // Returns a native array.
   this.def('ancestors', function() {
@@ -354,19 +349,17 @@ Z.Object.open(function() {
     return a;
   });
 
-  // Returns `true` if the given object exists in the receiver's prototype chain
-  // and `false` otherwise.
+  // Public: Returns `true` if the given object exists in the receiver's
+  // prototype chain and `false` otherwise.
   //
-  // * `o` - Any object.
-  //
-  // Returns a Boolean.
+  // o - Any object.
   this.def('isA', function(o) {
     return this.ancestors().indexOf(o) !== -1;
   });
 
-  // Returns the name of a type object. When invoked on a concrete instance, the
-  // name of the object's type (as determined by the `Z.Object.type` method) is
-  // returned.
+  // Public: Returns the name of a type object. When invoked on a concrete
+  // instance, the name of the object's type (as determined by the
+  // `Z.Object.type` method) is returned.
   //
   // A type's name is found by introspecting all of the registered namespaces
   // known to Zoom (using `Z.addNamespace`), looking for a property that is
@@ -392,10 +385,10 @@ Z.Object.open(function() {
     return '(Unknown)';
   });
 
-  // Generates a string representation of the object. When called on a type
-  // object, this method simply delegates to the `Z.Object.typeName` method,
-  // otherwise it generates a string containing the name of the object's type,
-  // its object id, and any properties defined on the object.
+  // Public: Generates a string representation of the object. When called on a
+  // type object, this method simply delegates to the `Z.Object.typeName`
+  // method, otherwise it generates a string containing the name of the object's
+  // type, its object id, and any properties defined on the object.
   //
   // Returns a string.
   this.def('toString', function() {
@@ -420,9 +413,8 @@ Z.Object.open(function() {
                  recursed ? ' ...' : (a.length > 0 ? ' ' : '') + a.join(', '));
   });
 
-
-  // Defines a property on the object. In order to use Zoom's KVC and KVO
-  // systems, you must use this method to define properties.
+  // Public: Defines a property on the object. In order to use Zoom's KVC and
+  // KVO systems, you must use this method to define properties.
   //
   // Defining a property does the following:
   //
@@ -433,77 +425,70 @@ Z.Object.open(function() {
   //    arguments is equivalent to getting the property with `get` and calling
   //    it with one argument is equivalent to setting the property with `set`.
   //
-  // Consider the following example:
+  // Examples
   //
-  // ```javascript
-  // App.Person = Z.Object.extend(function() {
-  //   this.prop('first');
-  //   this.prop('last');
-  //   this.prop('full', {
-  //     get: function() { return this.first() + ' ' + this.last(); },
-  //     set: function(name) {
-  //       var names = name.split(' ');
-  //       this.first(names[0]);
-  //       this.last(names[1]);
-  //     }
+  //   App.Person = Z.Object.extend(function() {
+  //     this.prop('first');
+  //     this.prop('last');
+  //     this.prop('full', {
+  //       get: function() { return this.first() + ' ' + this.last(); },
+  //       set: function(name) {
+  //         var names = name.split(' ');
+  //         this.first(names[0]);
+  //         this.last(names[1]);
+  //       }
+  //     });
   //   });
-  // });
-  // ```
   //
-  // Concrete `App.Person` instances can be created by using the `create`
-  // method, passing in any properties you wish to set:
+  //   // Concrete `App.Person` instances can be created by using the `create`
+  //   // method, passing in any properties you wish to set:
   //
-  // ```javascript
-  // p = App.Person.create({first: 'Michael', last: 'Jordan'});
-  // ```
+  //   p = App.Person.create({first: 'Michael', last: 'Jordan'});
   //
-  // You can then use the generated accessor methods or `get` and `set` to
-  // modify the properties:
+  //   // You can then use the generated accessor methods or `get` and `set` to
+  //   // modify the properties:
   //
-  // ```javascript
-  // p.first()      // => 'Michael'
-  // p.get('first') // => 'Michael'
-  // p.last()       // => 'Jordan'
-  // p.get('last')  // => 'Jordan'
-  // p.full()       // => 'Michael Jordan'
-  // p.get('full')  // => 'Michael Jordan'
-  // p.toString()   // => '#<App.Person:18 first: 'Michael', last: 'Jordan'>'
+  //   p.first()      // => 'Michael'
+  //   p.get('first') // => 'Michael'
+  //   p.last()       // => 'Jordan'
+  //   p.get('last')  // => 'Jordan'
+  //   p.full()       // => 'Michael Jordan'
+  //   p.get('full')  // => 'Michael Jordan'
+  //   p.toString()   // => '#<App.Person:18 first: 'Michael', last: 'Jordan'>'
   //
-  // p.first('Scottie')
-  // p.set('last', 'Pippen')
-  // p.toString()   // => '#<App.Person:18 first: 'Scottie', last: 'Pippen'>'
+  //   p.first('Scottie')
+  //   p.set('last', 'Pippen')
+  //   p.toString()   // => '#<App.Person:18 first: 'Scottie', last: 'Pippen'>'
   //
-  // p.full('Dennis Rodman')
-  // p.toString()   // => '#<App.Person:18 first: 'Dennis', last: 'Rodman'>'
-  // ```
+  //   p.full('Dennis Rodman')
+  //   p.toString()   // => '#<App.Person:18 first: 'Dennis', last: 'Rodman'>'
   //
-  // * `name` - A string containing the name of the property.
-  // * `opts` - A native object containing zero or more of the following:
-  //   * `dependsOn` - Pass a list of keys or key paths that the property depends
-  //                   on. This should be used for computed properties to allow
-  //                   them to be observed.
-  //   * `auto`      - The key-value observing system will automatically notifiy
-  //                   observers of the property when it changes when this option
-  //                   is set. If set to `false`, you should use the
-  //                   `willChangeProperty` and `didChangeProperty` methods when
-  //                   your setter actually changes the property. Setting this to
-  //                   `false` only make sense when you have defined a custom
-  //                   setter using the `set` option.
-  //   * `get`       - By default, when properties are retrieved via `get` or
-  //                   the generated accessor method the actual value is read
-  //                   from a raw property with the name `__<name>__`. You can
-  //                   use this option to override that behavior by setting it
-  //                   to a function that calculates the property value. Be sure
-  //                   to specify the dependent properties with the `dependsOn`
-  //                   option.
-  //   * `set`       - By default, when properties are set via `set` or the
-  //                   generated accessor method the value is stored on a raw
-  //                   property with the name `__<name>__`. You can use this
-  //                   option to override that behavior by setting it to a
-  //                   function that stores the given value.
-  //   * `readonly`  - Prevents setting of the property. Any attempts to set the
-  //                   property will throw an exception.
-  //   * `def`       - Specify a default value for the property.
+  // name - A string containing the name of the property.
+  // opts - A native object containing zero or more of the following:
+  //   dependsOn - Pass a list of keys or key paths that the property depends
+  //               on. This should be used for computed properties to allow them
+  //               to be observed.
+  //   auto      - The key-value observing system will automatically notify
+  //               observers of the property when it changes when this option is
+  //               set. If set to `false`, you should use the
+  //               `willChangeProperty` and `didChangeProperty` methods when
+  //               your setter actually changes the property. Setting this to
+  //               `false` only make sense when you have defined a custom setter
+  //               using the `set` option.
+  //   get       - By default, when properties are retrieved via `get` or the
+  //               generated accessor method the actual value is read from a raw
+  //               property with the name `__<name>__`. You can use this option
+  //               to override that behavior by setting it to a function that
+  //               calculates the property value. Be sure to specify the
+  //               dependent properties with the `dependsOn` option.
+  //   set       - By default, when properties are set via `set` or the
+  //               generated accessor method the value is stored on a raw
+  //               property with the name `__<name>__`. You can use this option
+  //               to override that behavior by setting it to a function that
+  //               stores the given value.
+  //   readonly  - Prevents setting of the property. Any attempts to set the
+  //               property will throw an exception.
+  //   def       - Specify a default value for the property.
   //
   // Returns nothing.
   this.def('prop', function(name, opts) {
@@ -525,8 +510,8 @@ Z.Object.open(function() {
     return null;
   });
 
-  // Returns a native object mapping the names of all the properties defined
-  // on the receiver to the options they were created with.
+  // Public: Returns a native object mapping the names of all the properties
+  // defined on the receiver to the options they were created with.
   //
   // Returns a native object.
   this.def('propertyDescriptors', function() {
@@ -541,21 +526,21 @@ Z.Object.open(function() {
     return props;
   });
 
-  // Returns a boolean indicating whether or not the object has a property of
-  // the given name.
+  // Public: Returns a boolean indicating whether or not the object has a
+  // property of the given name.
   //
-  // * `name` - A string containing the name of the property to check for.
+  // name - A string containing the name of the property to check for.
   //
   // Returns `true` if the object has a property of the given name and `false`
-  // otherwise.
+  //   otherwise.
   this.def('hasProperty', function(name) {
     return typeof this[Z.fmt("__z_property_%@__", name)] === 'object';
   });
 
-  // The default `Z.Object` initializer. Takes a native object mapping property
-  // names to values and sets each on the object.
+  // Public: The default `Z.Object` initializer. Takes a native object mapping
+  // property names to values and sets each on the object.
   //
-  // * `props` - A native object containing property/value pairs (optional).
+  // props - A native object containing property/value pairs (default: null).
   //
   // Returns the receiver.
   this.def('initialize', function(props) {
@@ -563,17 +548,15 @@ Z.Object.open(function() {
     return this;
   });
 
-  // Returns the reciever's object id. All Zoom objects are assigned a unique
-  // id when they are created.
-  //
-  // Returns a number that is the receiver's unique id.
+  // Public: Returns the reciever's object id. All Zoom objects are assigned a
+  // unique id when they are created.
   this.prop('objectId', {
     readonly: true,
     get: function() { return this.__z_objectId__; }
   });
 
-  // Returns a hash value for the receiver. This method is used by the `Z.Hash`
-  // type to generate hash codes for objects used as keys. The default
+  // Public: Returns a hash value for the receiver. This method is used by the
+  // `Z.Hash` type to generate hash codes for objects used as keys. The default
   // implementation uses the object's id to generate a hash code. You'll likely
   // want to override this in the sub-types if you want to use them as hash
   // keys.
@@ -583,32 +566,32 @@ Z.Object.open(function() {
     return Z.murmur(this.objectId().toString(), Z.hashSeed());
   });
 
-  // Indicates whether the receiver is equal to the given object. The default
-  // implementation simply does an identity comparison using the `===` operator.
-  // You'll likely want to override this method in your sub-types in order to
-  // perform a more meaningful comparison.
+  // Public: Indicates whether the receiver is equal to the given object. The
+  // default implementation simply does an identity comparison using the `===`
+  // operator. You'll likely want to override this method in your sub-types in
+  // order to perform a more meaningful comparison.
   //
-  // * `o` - An object to compare against the receiver.
+  // o - An object to compare against the receiver.
   //
-  // Returns a boolean.
+  // Returns a `true` if the objects are equal and `false` otherwise.
   this.def('eq', function(o) { return this === o; });
 
-  // Indicates whether the receiver is not equal to the given object.
+  // Public: Indicates whether the receiver is not equal to the given object.
   //
-  // * `o` - An object to compare against the receiver.
+  // o - An object to compare against the receiver.
   //
-  // Returns a boolean.
+  // Returns a `true` if the objects are not equal and `false` otherwise.
   this.def('neq', function(o) { return !this.eq(o); });
 
-  // Get the value of a key path or a list of key paths. When given a single
-  // string argument, this method returns the value of the property at the end
-  // of the path represented by the string. When given multiple arguments or a
-  // single argument that is a native array, a native array is returned
-  // containing the values of all the given paths.
+  // Public: Get the value of a key path or a list of key paths. When given a
+  // single string argument, this method returns the value of the property at
+  // the end of the path represented by the string. When given multiple
+  // arguments or a single argument that is a native array, a native array is
+  // returned containing the values of all the given paths.
   //
-  // * `*paths` - The list of key paths to get. At least one path must be given,
-  //              but multiple paths can be given as multiple arguments or a
-  //              single native array argument.
+  // *paths - The list of key paths to get. At least one path must be given, but
+  //          multiple paths can be given as multiple arguments or a single
+  //          native array argument.
   //
   // Returns the value of the given key path when given a single string
   //   argument.
@@ -646,11 +629,11 @@ Z.Object.open(function() {
     return result;
   });
 
-  // Returns the value of the property at the end of the given parsed path. A
-  // parsed path is simply an array containing string representing each segment
-  // of the path.
+  // Internal: Returns the value of the property at the end of the given parsed
+  // path. A parsed path is simply an array containing string representing each
+  // segment of the path.
   //
-  // * `path` - An array containing strings for each segment in the path.
+  // path - An array containing strings for each segment in the path.
   //
   // Returns the value of the property at the end of the path.
   this.def('getParsedPath', function(path) {
@@ -660,21 +643,22 @@ Z.Object.open(function() {
     else { return v; }
   });
 
-  // Sets the value of a key path or paths. When given two arguments, the second
-  // argument is set as the value for the property indicated by the first. When
-  // given a native object, each key/value pair in the object is set.
+  // Public: Sets the value of a key path or paths. When given two arguments,
+  // the second argument is set as the value for the property indicated by the
+  // first. When given a native object, each key/value pair in the object is
+  // set.
   //
-  // * `path`  - A string containing a key path or a native object containing
-  //             paths as the keys and property values as the values.
-  // * `value` - The value to set the key path to.
+  // path  - A string containing a key path or a native object containing paths
+  //         as the keys and property values as the values.
+  // value - The value to set the key path to.
   //
-  // ```javascript
-  // var p = App.Person.create();
+  // Examples
   //
-  // p.set('first', 'Michael');
-  // p.set('last', 'Jordan');
-  // p.set({first: 'Scottie', last: 'Pippen'});
-  // ```
+  //   var p = App.Person.create();
+  //
+  //   p.set('first', 'Michael');
+  //   p.set('last', 'Jordan');
+  //   p.set({first: 'Scottie', last: 'Pippen'});
   //
   // Returns `null`.
   this.def('set', function(path, value) {
@@ -704,42 +688,39 @@ Z.Object.open(function() {
     return null;
   });
 
-  // Registers an observer on the given path. Whenever some segment in the path
-  // changes, the observer is notified by invoking the given action with a
-  // notification object passed as an argument. The notification object will
-  // contain the type of change that occured (usually `'change'`, but container
-  // objects support other types of notifications), the object being observed,
-  // and the path being observed.
+  // Public: Registers an observer on the given path. Whenever some segment in
+  // the path changes, the observer is notified by invoking the given action
+  // with a notification object passed as an argument. The notification object
+  // will contain the type of change that occured (usually `'change'`, but
+  // container objects support other types of notifications), the object being
+  // observed, and the path being observed.
   //
-  // * `path`     - A string containing the path to observe.
-  // * `observer` - The object to be notified when the path changes. This may be
-  //                `null` if the action given in the third argument is a
-  //                function.
-  // * `action`   - Either a string containing the name of a method to invoke on
-  //                the observer or a function. If given a string and `observer`
-  //                is set, the function will be invoked in the context of the
-  //                observer.
-  // * `opts`     - A native object containing zero or more of the following:
-  //   * `fire`     - Fires off a notification immediately before returning.
-  //                  This may be useful in some cases where you want to trigger
-  //                  an observer during object initialization and then every
-  //                  time some path changes.
-  //   * `previous` - When set, the previous value of the key path is sent along
-  //                  in the notification as the `previous` key.
-  //   * `current`  - When set, the current value of the key path is sent along
-  //                  in the notification as the `current` key.
-  //   * `context`  - An arbitrary object that will be sent along in
-  //                  notifications.
+  // path     - A string containing the path to observe.
+  // observer - The object to be notified when the path changes. This may be
+  //            `null` if the action given in the third argument is a function.
+  // action   - Either a string containing the name of a method to invoke on the
+  //            observer or a function. If given a string and `observer` is set,
+  //            the function will be invoked in the context of the observer.
+  // opts     - A native object containing zero or more of the following:
+  //   fire     - Fires off a notification immediately before returning.
+  //              This may be useful in some cases where you want to trigger
+  //              an observer during object initialization and then every
+  //              time some path changes.
+  //   previous - When set, the previous value of the key path is sent along in
+  //              the notification as the `previous` key.
+  //   current  - When set, the current value of the key path is sent along in
+  //              the notification as the `current` key.
+  //   context  - An arbitrary object that will be sent along in notifications.
   //
-  // ```javascript
-  // var p = App.Person.create();
+  // Examples
   //
-  // p.def('firstDidChange', function(n) { Z.log(n); });
-  // p.observe('first', p, 'firstDidChange', {previous: true, current: true});
-  // p.set('first', 'Bob');
+  //   var p = App.Person.create();
   //
-  // // => {type: 'change', path: 'first', observee: #<App.Person:18 first: 'Bob', last: null>, previous: null, current: 'Bob'}
-  // ```
+  //   p.def('firstDidChange', function(n) { Z.log(n); });
+  //   p.observe('first', p, 'firstDidChange', {previous: true, current: true});
+  //   p.set('first', 'Bob');
+  //
+  //   // => {type: 'change', path: 'first', observee: #<App.Person:18 first: 'Bob', last: null>, previous: null, current: 'Bob'}
   //
   // Returns the receiver.
   this.def('observe', function(path, observer, action, opts) {
@@ -766,16 +747,16 @@ Z.Object.open(function() {
     return this;
   });
 
-  // Removes a previously registered observer. Subsequent changes to the
+  // Public: Removes a previously registered observer. Subsequent changes to the
   // observed key path will no longer trigger notifications on the particular
   // observer indicated.
   //
-  // * `path`     - The key path to stop observing. This must be the exact same
-  //                path passed to `observe`.
-  // * `observer` - The observer object passed to `observe`.
-  // * `action`   - The action passed to `observe.
-  // * `opts`     - If a `context` option was passed to `observe`, then the same
-  //                object should be given here.
+  // path     - The key path to stop observing. This must be the exact same path
+  //            passed to `observe`.
+  // observer - The observer object passed to `observe`.
+  // action   - The action passed to `observe.
+  // opts     - If a `context` option was passed to `observe`, then the same
+  //            object should be given here.
   //
   // Returns the receiver.
   this.def('stopObserving', function(path, observer, action, opts) {
@@ -787,21 +768,21 @@ Z.Object.open(function() {
   // path is being observed, this method takes care to attach observers at each
   // segment in the path.
   //
-  // * `rpath`    - The parsed path relative to the receiver. When paths are
-  //                observed, the KVO system actually registers simple key
-  //                observers at each segment of the path. This argument is the
-  //                portion of the path relative to the receiver, which may be
-  //                some object in the middle of the path.
-  // * `opath`    - The path originally passed to `observe`. This is the value
-  //                sent as the `path` key in notification objects.
-  // * `observee` - The original object being observed. This is the receiver of
-  //                the `observe` method.
-  // * `observer` - The observer originally passed to `observe`.
-  // * `action`   - The action originally passed to `observe`.
-  // * `opts`     - The options originally passed to `observe`.
+  // rpath    - The parsed path relative to the receiver. When paths are
+  //            observed, the KVO system actually registers simple key observers
+  //            at each segment of the path. This argument is the portion of the
+  //            path relative to the receiver, which may be some object in the
+  //            middle of the path.
+  // opath    - The path originally passed to `observe`. This is the value sent
+  //            as the `path` key in notification objects.
+  // observee - The original object being observed. This is the receiver of the
+  //            `observe` method.
+  // observer - The observer originally passed to `observe`.
+  // action   - The action originally passed to `observe`.
+  // opts     - The options originally passed to `observe`.
   //
   // Returns the registration object created.
-  // Raises `Error` if the first segment of `rpath` is an unknown property.
+  // Throws `Error` if the first segment of `rpath` is an unknown property.
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
     var head = rpath[0], tail = rpath.slice(1), registration, regs, val;
 
@@ -835,20 +816,20 @@ Z.Object.open(function() {
   // path is being observed, this method takes care to deattach observers at
   // each segment in the path.
   //
-  // * `rpath`    - The parsed path relative to the receiver. When paths are
-  //                observed, the KVO system actually registers simple key
-  //                observers at each segment of the path. This argument is the
-  //                portion of the path relative to the receiver, which may be
-  //                some object in the middle of the path.
-  // * `opath`    - The path originally passed to `stopObserving`.
-  // * `observee` - The original object to stop observing. This is the receiver
-  //                of the `stopObserving` method.
-  // * `observer` - The observer originally passed to `stopObserving`.
-  // * `action`   - The action originally passed to `stopObserving`.
-  // * `opts`     - The options originally passed to `stopObserving`.
+  // rpath    - The parsed path relative to the receiver. When paths are
+  //            observed, the KVO system actually registers simple key observers
+  //            at each segment of the path. This argument is the portion of the
+  //            path relative to the receiver, which may be some object in the
+  //            middle of the path.
+  // opath    - The path originally passed to `stopObserving`.
+  // observee - The original object to stop observing. This is the receiver of
+  //            the `stopObserving` method.
+  // observer - The observer originally passed to `stopObserving`.
+  // action   - The action originally passed to `stopObserving`.
+  // opts     - The options originally passed to `stopObserving`.
   //
   // Returns nothing.
-  // Raises `Error` if the first segment of `rpath` is an unknown property.
+  // Throws `Error` if the first segment of `rpath` is an unknown property.
   this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
     var head = rpath[0], tail = rpath.slice(1), registrations, i, r, val;
 
@@ -878,11 +859,11 @@ Z.Object.open(function() {
     }
   });
 
-  // Notifies the receiver that one of its properties is about to change. This
-  // method processes all observer registrations for the key being changed and
-  // prepares notification objects to be sent after the property has actually
-  // changed (see `didChangeProperty`). If any observer registrations have the
-  // `prior` optoin set, then notifications are sent to those observers
+  // Public: Notifies the receiver that one of its properties is about to
+  // change. This method processes all observer registrations for the key being
+  // changed and prepares notification objects to be sent after the property has
+  // actually changed (see `didChangeProperty`). If any observer registrations
+  // have the `prior` option set, then notifications are sent to those observers
   // immediately.
   //
   // Additionally, this method does the appropriate bookkeeping for path
@@ -896,19 +877,17 @@ Z.Object.open(function() {
   // have a custom setter function (`set` option) that calls
   // `willChangeProperty` and `didChangeProperty`.
   //
-  // * `k`    - The name of the property that will change.
-  // * `opts` - A native object containing zero or more of the following.
-  //   * `type`     - A string containing the type of notification to send. The
-  //                  default is 'change'.
-  //   * `previous` - The value to send as the `previous` key in the
-  //                  notification. The KVO system will simply `get` the path
-  //                  being observed when observers are registered with the
-  //                  `previous` key, so this should only be used in special
-  //                  circumstances (see the `@` property of `Z.Array` and
-  //                  `Z.Hash` to see where its used.
-  //   * `*`        - Any other properties present in the options hash will be
-  //                  merged into the notification object that is sent to
-  //                  observers.
+  // k    - The name of the property that will change.
+  // opts - A native object containing zero or more of the following.
+  //   type     - A string containing the type of notification to send. The
+  //              default is 'change'.
+  //   previous - The value to send as the `previous` key in the notification.
+  //              The KVO system will simply `get` the path being observed when
+  //              observers are registered with the `previous` key, so this
+  //              should only be used in special circumstances (see the `@`
+  //              property of `Z.Array` and `Z.Hash` to see where its used.
+  //   *        - Any other properties present in the options hash will be
+  //              merged into the notification object that is sent to observers.
   //
   // Returns the receiver.
   this.def('willChangeProperty', function(k, opts) {
@@ -957,9 +936,9 @@ Z.Object.open(function() {
     return this;
   });
 
-  // Notifies the receiver that one of its properties has just changed. This
-  // method processes all observer registrations for the key being changed and
-  // sends the notification objects that were initially prepared by
+  // Public: Notifies the receiver that one of its properties has just changed.
+  // This method processes all observer registrations for the key being changed
+  // and sends the notification objects that were initially prepared by
   // `willChangeProperty`.
   //
   // Additionally, this method does the appropriate bookkeeping for path
@@ -967,19 +946,17 @@ Z.Object.open(function() {
   // path observer is recursively attached starting from that object and any
   // other objects currently attached to it along the path.
   //
-  // * `k`    - The name of the property that did change.
-  // * `opts` - A native object containing zero or more of the following.
-  //   * `type`    - A string containing the type of notification to send. The
-  //                 default is 'change'.
-  //   * `current` - The value to send as the `current` key in the
-  //                 notification. The KVO system will simply `get` the path
-  //                 being observed when observers are registered with the
-  //                 `current` key, so this should only be used in special
-  //                 circumstances (see the `@` property of `Z.Array` and
-  //                 `Z.Hash` to see where its used.
-  //   * `*`       - Any other properties present in the options hash will be
-  //                 merged into the notification object that is sent to
-  //                 observers.
+  // k    - The name of the property that did change.
+  // opts - A native object containing zero or more of the following.
+  //   type    - A string containing the type of notification to send. The
+  //             default is 'change'.
+  //   current - The value to send as the `current` key in the notification. The
+  //             KVO system will simply `get` the path being observed when
+  //             observers are registered with the `current` key, so this should
+  //             only be used in special circumstances (see the `@` property of
+  //             `Z.Array` and `Z.Hash` to see where its used.
+  //   *       - Any other properties present in the options hash will be merged
+  //             into the notification object that is sent to observers.
   //
   // Returns the receiver.
   this.def('didChangeProperty', function(k, opts) {
@@ -1022,27 +999,27 @@ Z.Object.open(function() {
     return this;
   });
 
-  // This method is invoked by the KVC system when an attempt is made to get an
-  // unknown property name. The default implementation of this method throws an
-  // exception, but you may want to override this in sub-types in order to
-  // implement special handling for unknown properties.
+  // Public: This method is invoked by the KVC system when an attempt is made to
+  // get an unknown property name. The default implementation of this method
+  // throws an exception, but you may want to override this in sub-types in
+  // order to implement special handling for unknown properties.
   //
-  // * `k` - The name of the unknown property.
+  // k - The name of the unknown property.
   //
-  // Raises `Error`.
+  // Throws `Error`.
   this.def('getUnknownProperty', function(k) {
     throw new Error(Z.fmt("Z.Object.get: undefined key `%@` for %@", k, this));
   });
 
-  // This method is invoked by the KVC system when an attempt is make to set an
-  // unknown property name. The default implementation of this method throws an
-  // exeception, but you may want to override this in sub-types in order to
-  // implement special handling for unknown properties.
+  // Public: This method is invoked by the KVC system when an attempt is make to
+  // set an unknown property name. The default implementation of this method
+  // throws an exeception, but you may want to override this in sub-types in
+  // order to implement special handling for unknown properties.
   //
-  // * `k` - The name of the unknown property.
-  // * `v` - The value being set.
+  // k - The name of the unknown property.
+  // v - The value being set.
   //
-  // Raises `Error`.
+  // Throws `Error`.
   this.def('setUnknownProperty', function(k, v) {
     throw new Error(Z.fmt("Z.Object.set: undefined key `%@` for %@", k, this));
   });
