@@ -421,7 +421,7 @@ describe('Z.Object KVC support:', function() {
     });
   });
 
-  describe('#set when given a key', function() {
+  describe('.set when given a key', function() {
     describe('for a property using the default setter', function() {
       it('should set a private property name on the receiver', function() {
         var p = Person.create();
@@ -463,7 +463,7 @@ describe('Z.Object KVC support:', function() {
     });
   });
 
-  describe('#get when given a key', function() {
+  describe('.get when given a key', function() {
     describe('for a property using the default getter', function() {
       it('should get a private property name on the receiver', function() {
         var p = Person.create();
@@ -522,7 +522,7 @@ describe('Z.Object KVC support:', function() {
     });
   });
 
-  describe('#getUnknownProperty', function() {
+  describe('.getUnknownProperty', function() {
     it('should throw an undefined key exception', function() {
       var o = Z.Object.create();
       expect(function() {
@@ -531,7 +531,7 @@ describe('Z.Object KVC support:', function() {
     });
   });
 
-  describe('#setUnknownProperty', function() {
+  describe('.setUnknownProperty', function() {
     it('should throw an undefined key exception', function() {
       var o = Z.Object.create();
       expect(function() {
@@ -540,7 +540,7 @@ describe('Z.Object KVC support:', function() {
     });
   });
 
-  describe('#set on a readonly property', function() {
+  describe('.set on a readonly property', function() {
     it('should throw an exception', function() {
       var o = Z.Object.create();
       expect(function() {
@@ -572,7 +572,7 @@ describe('Z.Object KVC support:', function() {
       b.c(c);
     });
 
-    describe('#set', function() {
+    describe('.set', function() {
       it('should set the value for the property identified by the given key path', function() {
         expect(c.num()).toBeNull();
         expect(c.get('num')).toBeNull();
@@ -593,7 +593,7 @@ describe('Z.Object KVC support:', function() {
       });
     });
 
-    describe('#get', function() {
+    describe('.get', function() {
       it('should return the value for the derived property identified by the given key path', function() {
         c.set('num', 21);
         expect(a.get('b.c.num')).toBe(21);
