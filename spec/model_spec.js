@@ -5,14 +5,14 @@ if (typeof Z === 'undefined') { require('./helper'); }
 beforeEach(function() { Z.Model.reset(); });
 
 Test.BasicModel = Z.Model.extend(function() {
-  this.attribute('foo', 'string');
-  this.attribute('bar', 'integer');
-  this.attribute('baz', 'boolean');
+  this.attr('foo', 'string');
+  this.attr('bar', 'integer');
+  this.attr('baz', 'boolean');
 });
 
 Test.ValidatedModel = Z.Model.extend(function() {
-  this.attribute('foo', 'string');
-  this.attribute('bar', 'integer');
+  this.attr('foo', 'string');
+  this.attr('bar', 'integer');
   this.registerValidator('validatePresenceOfFoo');
   this.registerValidator('validateBarIsOver20');
 
@@ -27,27 +27,27 @@ Test.ValidatedModel = Z.Model.extend(function() {
 });
 
 Test.Author = Z.Model.extend(function() {
-  this.attribute('first', 'string');
-  this.attribute('last', 'string');
+  this.attr('first', 'string');
+  this.attr('last', 'string');
   this.hasMany('posts', 'Test.Post', {inverse: 'author'});
 });
 
 Test.Post = Z.Model.extend(function() {
-  this.attribute('title', 'string');
-  this.attribute('body', 'string');
+  this.attr('title', 'string');
+  this.attr('body', 'string');
   this.hasOne('author', 'Test.Author', {inverse: 'posts', owner: true});
   this.hasMany('tags', 'Test.Tag', {inverse: 'posts', owner: true});
 });
 
 Test.Tag = Z.Model.extend(function() {
-  this.attribute('name', 'string');
+  this.attr('name', 'string');
   this.hasMany('posts', 'Test.Post', {inverse: 'tags'});
 });
 
 Test.Parent = Z.Model.extend();
 Test.Child  = Test.Parent.extend();
 
-describe('Z.Model.attribute', function() {
+describe('Z.Model.attr', function() {
   it('should define a property with the given name', function() {
     expect(Test.BasicModel.hasProperty('foo')).toBe(true);
     expect(Test.BasicModel.create({foo: 'hello'}).foo()).toBe('hello');
@@ -57,8 +57,8 @@ describe('Z.Model.attribute', function() {
   describe('generated property', function() {
     it('should return the value given by the `def` option is the attribute has not previously been set', function() {
       var Model = Z.Model.extend(function() {
-        this.attribute('foo', 'integer', {def: 9});
-        this.attribute('bar', 'integer');
+        this.attr('foo', 'integer', {def: 9});
+        this.attr('bar', 'integer');
       });
 
       expect(Model.create().foo()).toBe(9);
@@ -1171,7 +1171,7 @@ describe('Z.Model.validate', function() {
 
       this.prop('shouldValidate');
       this.prop('shouldntValidate');
-      this.attribute('foo', 'integer');
+      this.attr('foo', 'integer');
 
       this.def('validatorA', function() {});
       this.def('validatorB', function() {});

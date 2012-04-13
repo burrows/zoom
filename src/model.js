@@ -242,12 +242,12 @@ Z.Model = Z.Object.extend(function() {
     return a.join('-');
   });
 
-  this.def('attribute', function(name, type, opts) {
+  this.def('attr', function(name, type, opts) {
     var privateProp   = Z.fmt("__z_%@__", name),
         attributeType = attributeTypes[type];
 
     if (!attributeType) {
-      throw new Error(Z.fmt("%@.attribute: unknown type: %@", this.typeName(), type));
+      throw new Error(Z.fmt("%@.attr: unknown type: %@", this.typeName(), type));
     }
 
     this[Z.fmt("__z_attribute_%@__", name)] = opts;
@@ -304,7 +304,7 @@ Z.Model = Z.Object.extend(function() {
     return a[a.length - 1];
   });
 
-  this.def('attributeNames', function() {
+  this.def('attrNames', function() {
     var names = [], k, match;
 
     for (k in this) {
@@ -671,7 +671,7 @@ Z.Model = Z.Object.extend(function() {
     }
 
     descriptors = self.associationDescriptors();
-    names       = self.attributeNames();
+    names       = self.attrNames();
 
     for (i = 0, len = names.length; i < len; i++) {
       a.push(Z.fmt("%@: %@", names[i], Z.inspect(self.get(names[i]))));
