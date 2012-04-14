@@ -461,7 +461,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
       a.push((item && Z.isA(item, Z.Array)) ? item.__z_items__ : item);
     }
 
-    return Z.A(this.__z_items__.concat.apply(this.__z_items__, a));
+    return Z.Array.create(this.__z_items__.concat.apply(this.__z_items__, a));
   });
 
   this.def('unshift', function() {
@@ -515,14 +515,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
         result = result.concat(item.flatten().__z_items__);
       }
       else if (Z.isArray(item)) {
-        result = result.concat(Z.A(item).flatten().__z_items__);
+        result = result.concat(Z.Array.create(item).flatten().__z_items__);
       }
       else {
         result.push(item);
       }
     }
 
-    return Z.A(result);
+    return Z.Array.create(result);
   });
 
   this.def('toArray', function() {
@@ -612,15 +612,12 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 });
 
-// shortcut for instantiating a new array
-Z.A = function() {
-  var args = slice.call(arguments), len = args.length, first = args[0];
-
-  if (len === 1 && (Z.isArray(first) || Z.isArguments(first))) {
-    return Z.Array.create(first);
-  }
-
-  return Z.Array.create(args);
-};
+// Public: A shortcut for constructing `Z.Array` concrete instances from a list
+// of arguments.
+//
+// *args - Zero or more objects to add to the new array.
+//
+// Returns a new `Z.Array` concrete instance.
+Z.A = function() { return Z.Array.create(slice.call(arguments)); };
 
 }());

@@ -29,7 +29,7 @@ describe('Z.Enumerable.inject', function() {
 
 describe('Z.Enumerable.map', function() {
   it('should return a Z.Array containing the result of applying the given function to each item in the enumerable', function() {
-    expect(f.map(function(x) { return x.toUpperCase(); })).toEq(Z.A(['FOO', 'BAR', 'BAZ', 'QUUX']));
+    expect(f.map(function(x) { return x.toUpperCase(); })).toEq(Z.A('FOO', 'BAR', 'BAZ', 'QUUX'));
     expect(a.map(function(x) { return x * 10; })).toEq(Z.A(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
   });
 });

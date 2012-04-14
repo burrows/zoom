@@ -66,15 +66,6 @@ describe('Z.A', function() {
     expect(a2).toEq(Z.Array.create(['a']));
   });
 
-  it('should return a Z.Array with the given contents when given a single native array', function() {
-    expect(Z.A([1,2,3])).toEq(Z.Array.create([1,2,3]));
-  });
-
-  it('should return a Z.Array with the given contents when given a single Arguments object', function() {
-    var args = (function() { return arguments; }('a', 'b'));
-    expect(Z.A(args)).toEq(Z.Array.create(['a', 'b']));
-  });
-
   it('should return an empty Z.Array when given no arguments', function() {
     expect(Z.A()).toEq(Z.Array.create());
   });
@@ -99,7 +90,7 @@ describe('Z.Array.toString', function() {
 
 describe('Z.Array.toNative', function() {
   it('should return a native array with the contents of the Z.Array', function() {
-    var za = Z.A(['x', 'y']), a = za.toNative();
+    var za = Z.A('x', 'y'), a = za.toNative();
 
     expect(a instanceof Array).toBe(true);
     expect(a).toEqual(['x', 'y']);
@@ -110,7 +101,7 @@ describe('Z.Array `size` property', function() {
   it('should return the current size of the array', function() {
     expect((Z.Array.create(8)).size()).toBe(8);
     expect((Z.Array.create([1, 2, 3])).get('size')).toBe(3);
-    expect(Z.A([1, 2, 3, 4]).size()).toBe(4);
+    expect(Z.A(1, 2, 3, 4).size()).toBe(4);
   });
 
   it('should update when the array changes', function() {
@@ -136,7 +127,7 @@ describe('Z.Array `size` property', function() {
   });
 
   it('should notify observers when the size changes', function() {
-    var a        = Z.A([1, 2, 3, 4, 5]),
+    var a        = Z.A(1, 2, 3, 4, 5),
         observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
 
     a.observe('size', observer, 'action', { previous: true, current: true });
@@ -245,50 +236,50 @@ describe('Z.Array.splice', function() {
 
   describe('with 1 argument', function() {
     it('should remove all remaining items starting at the given index', function() {
-      expect(Z.A([0, 1, 2]).splice(0)).toEq(Z.A());
-      expect(Z.A([0, 1, 2]).splice(1)).toEq(Z.A([0]));
-      expect(Z.A([0, 1, 2]).splice(2)).toEq(Z.A([0, 1]));
-      expect(Z.A([0, 1, 2]).splice(3)).toEq(Z.A([0, 1, 2]));
+      expect(Z.A(0, 1, 2).splice(0)).toEq(Z.A());
+      expect(Z.A(0, 1, 2).splice(1)).toEq(Z.A(0));
+      expect(Z.A(0, 1, 2).splice(2)).toEq(Z.A(0, 1));
+      expect(Z.A(0, 1, 2).splice(3)).toEq(Z.A(0, 1, 2));
     });
   });
 
   describe('with a positive index in range', function() {
     it('should replace the given number of items starting at the given index with the given objects', function() {
-      expect(Z.A([0, 1, 2]).splice(0, 0)).toEq(Z.A([0, 1, 2]));
-      expect(Z.A([0, 1, 2]).splice(0, 1)).toEq(Z.A([1, 2]));
-      expect(Z.A([0, 1, 2]).splice(1, 1)).toEq(Z.A([0, 2]));
-      expect(Z.A([0, 1, 2]).splice(1, 2)).toEq(Z.A([0]));
-      expect(Z.A([0, 1, 2]).splice(1, 20)).toEq(Z.A([0]));
-      expect(Z.A([0, 1, 2]).splice(0, 1, 100)).toEq(Z.A([100, 1, 2]));
-      expect(Z.A([0, 1, 2]).splice(1, 2, 'a', 'b')).toEq(Z.A([0, 'a', 'b']));
-      expect(Z.A([0, 1, 2]).splice(1, 2, 'a', 'b', 'c', 'd')).toEq(Z.A([0, 'a', 'b', 'c', 'd']));
+      expect(Z.A(0, 1, 2).splice(0, 0)).toEq(Z.A(0, 1, 2));
+      expect(Z.A(0, 1, 2).splice(0, 1)).toEq(Z.A(1, 2));
+      expect(Z.A(0, 1, 2).splice(1, 1)).toEq(Z.A(0, 2));
+      expect(Z.A(0, 1, 2).splice(1, 2)).toEq(Z.A(0));
+      expect(Z.A(0, 1, 2).splice(1, 20)).toEq(Z.A(0));
+      expect(Z.A(0, 1, 2).splice(0, 1, 100)).toEq(Z.A(100, 1, 2));
+      expect(Z.A(0, 1, 2).splice(1, 2, 'a', 'b')).toEq(Z.A(0, 'a', 'b'));
+      expect(Z.A(0, 1, 2).splice(1, 2, 'a', 'b', 'c', 'd')).toEq(Z.A(0, 'a', 'b', 'c', 'd'));
     });
   });
 
   describe('with a positive index out of range', function() {
     it('should grow the length of the array', function() {
-      expect(Z.A([0, 1, 2]).splice(4, 0, 'x')).toEq(Z.A([0, 1, 2, void 0, 'x']));
-      expect(Z.A([0, 1, 2]).splice(4, 0, 'x', 'y', 'z')).toEq(Z.A([0, 1, 2, void 0, 'x', 'y', 'z']));
-      expect(Z.A([0, 1, 2]).splice(4, 2, 'x', 'y', 'z')).toEq(Z.A([0, 1, 2, void 0, 'x', 'y', 'z']));
+      expect(Z.A(0, 1, 2).splice(4, 0, 'x')).toEq(Z.A(0, 1, 2, void 0, 'x'));
+      expect(Z.A(0, 1, 2).splice(4, 0, 'x', 'y', 'z')).toEq(Z.A(0, 1, 2, void 0, 'x', 'y', 'z'));
+      expect(Z.A(0, 1, 2).splice(4, 2, 'x', 'y', 'z')).toEq(Z.A(0, 1, 2, void 0, 'x', 'y', 'z'));
     });
   });
 
   describe('with a negative index in range', function() {
     it('should replace the given number of items starting at the index from the right with the given objects', function() {
-      expect(Z.A([0, 1, 2]).splice(-3, 0)).toEq(Z.A([0, 1, 2]));
-      expect(Z.A([0, 1, 2]).splice(-3, 1)).toEq(Z.A([1, 2]));
-      expect(Z.A([0, 1, 2]).splice(-2, 1)).toEq(Z.A([0, 2]));
-      expect(Z.A([0, 1, 2]).splice(-2, 2)).toEq(Z.A([0]));
-      expect(Z.A([0, 1, 2]).splice(-2, 20)).toEq(Z.A([0]));
-      expect(Z.A([0, 1, 2]).splice(-3, 1, 100)).toEq(Z.A([100, 1, 2]));
-      expect(Z.A([0, 1, 2]).splice(-2, 2, 'a', 'b')).toEq(Z.A([0, 'a', 'b']));
-      expect(Z.A([0, 1, 2]).splice(-2, 2, 'a', 'b', 'c', 'd')).toEq(Z.A([0, 'a', 'b', 'c', 'd']));
+      expect(Z.A(0, 1, 2).splice(-3, 0)).toEq(Z.A(0, 1, 2));
+      expect(Z.A(0, 1, 2).splice(-3, 1)).toEq(Z.A(1, 2));
+      expect(Z.A(0, 1, 2).splice(-2, 1)).toEq(Z.A(0, 2));
+      expect(Z.A(0, 1, 2).splice(-2, 2)).toEq(Z.A(0));
+      expect(Z.A(0, 1, 2).splice(-2, 20)).toEq(Z.A(0));
+      expect(Z.A(0, 1, 2).splice(-3, 1, 100)).toEq(Z.A(100, 1, 2));
+      expect(Z.A(0, 1, 2).splice(-2, 2, 'a', 'b')).toEq(Z.A(0, 'a', 'b'));
+      expect(Z.A(0, 1, 2).splice(-2, 2, 'a', 'b', 'c', 'd')).toEq(Z.A(0, 'a', 'b', 'c', 'd'));
     });
   });
 
   describe('with a negative index out of range', function() {
     it('should throw an exception', function() {
-      var a = Z.A([0, 1, 2]);
+      var a = Z.A(0, 1, 2);
 
       expect(function() {
         a.splice(-12);
@@ -316,12 +307,12 @@ describe('Z.Array.slice', function() {
 
   describe('given just an index', function() {
     it('should return a new Z.Array with only the items at the given index and after', function() {
-      expect(a.slice(0)).toEq(Z.A([0, 1, 2, 3, 4, 5]));
-      expect(a.slice(1)).toEq(Z.A([1, 2, 3, 4, 5]));
-      expect(a.slice(2)).toEq(Z.A([2, 3, 4, 5]));
-      expect(a.slice(-1)).toEq(Z.A([5]));
-      expect(a.slice(-2)).toEq(Z.A([4, 5]));
-      expect(a.slice(-3)).toEq(Z.A([3, 4, 5]));
+      expect(a.slice(0)).toEq(Z.A(0, 1, 2, 3, 4, 5));
+      expect(a.slice(1)).toEq(Z.A(1, 2, 3, 4, 5));
+      expect(a.slice(2)).toEq(Z.A(2, 3, 4, 5));
+      expect(a.slice(-1)).toEq(Z.A(5));
+      expect(a.slice(-2)).toEq(Z.A(4, 5));
+      expect(a.slice(-3)).toEq(Z.A(3, 4, 5));
     });
 
     it('should return `null` when given an out of bounds index', function() {
@@ -332,18 +323,18 @@ describe('Z.Array.slice', function() {
 
   describe('given an index and a length', function() {
     it('should return a new Z.Array containing the item at the given index and continuing for n items', function() {
-      expect(a.slice(0, 0)).toEq(Z.A([]));
-      expect(a.slice(0, 1)).toEq(Z.A([0]));
-      expect(a.slice(0, 3)).toEq(Z.A([0, 1, 2]));
-      expect(a.slice(2, 2)).toEq(Z.A([2, 3]));
-      expect(a.slice(2, 4)).toEq(Z.A([2, 3, 4, 5]));
-      expect(a.slice(2, 8)).toEq(Z.A([2, 3, 4, 5]));
-      expect(a.slice(-6, 0)).toEq(Z.A([]));
-      expect(a.slice(-6, 1)).toEq(Z.A([0]));
-      expect(a.slice(-6, 3)).toEq(Z.A([0, 1, 2]));
-      expect(a.slice(-4, 2)).toEq(Z.A([2, 3]));
-      expect(a.slice(-4, 4)).toEq(Z.A([2, 3, 4, 5]));
-      expect(a.slice(-4, 8)).toEq(Z.A([2, 3, 4, 5]));
+      expect(a.slice(0, 0)).toEq(Z.A());
+      expect(a.slice(0, 1)).toEq(Z.A(0));
+      expect(a.slice(0, 3)).toEq(Z.A(0, 1, 2));
+      expect(a.slice(2, 2)).toEq(Z.A(2, 3));
+      expect(a.slice(2, 4)).toEq(Z.A(2, 3, 4, 5));
+      expect(a.slice(2, 8)).toEq(Z.A(2, 3, 4, 5));
+      expect(a.slice(-6, 0)).toEq(Z.A());
+      expect(a.slice(-6, 1)).toEq(Z.A(0));
+      expect(a.slice(-6, 3)).toEq(Z.A(0, 1, 2));
+      expect(a.slice(-4, 2)).toEq(Z.A(2, 3));
+      expect(a.slice(-4, 4)).toEq(Z.A(2, 3, 4, 5));
+      expect(a.slice(-4, 8)).toEq(Z.A(2, 3, 4, 5));
     });
 
     it('should return `null` when given an out of bounds index', function() {
@@ -358,22 +349,22 @@ describe('Z.Array.slice$', function() {
     var a = Z.A(0, 1, 2, 3, 4, 5);
 
     expect(a.slice$(20)).toBeNull();
-    expect(a).toEq(Z.A([0, 1, 2, 3, 4, 5]));
+    expect(a).toEq(Z.A(0, 1, 2, 3, 4, 5));
     expect(a.slice$(-20)).toBeNull();
-    expect(a).toEq(Z.A([0, 1, 2, 3, 4, 5]));
+    expect(a).toEq(Z.A(0, 1, 2, 3, 4, 5));
   });
 
   it('should return the same thing as slice, but mutate the receiver in the process', function() {
     var a = Z.A(0, 1, 2, 3, 4, 5);
 
-    expect(a.slice$(0)).toEq(Z.A([0, 1, 2, 3, 4, 5]));
-    expect(a).toEq(Z.A([]));
+    expect(a.slice$(0)).toEq(Z.A(0, 1, 2, 3, 4, 5));
+    expect(a).toEq(Z.A());
     a = Z.A(0, 1, 2, 3, 4, 5);
-    expect(a.slice$(4)).toEq(Z.A([4, 5]));
-    expect(a).toEq(Z.A([0, 1, 2, 3]));
+    expect(a.slice$(4)).toEq(Z.A(4, 5));
+    expect(a).toEq(Z.A(0, 1, 2, 3));
     a = Z.A(0, 1, 2, 3, 4, 5);
-    expect(a.slice$(2, 2)).toEq(Z.A([2, 3]));
-    expect(a).toEq(Z.A([0, 1, 4, 5]));
+    expect(a.slice$(2, 2)).toEq(Z.A(2, 3));
+    expect(a).toEq(Z.A(0, 1, 4, 5));
   });
 });
 
@@ -487,11 +478,11 @@ describe('Z.Array.cmp', function() {
 
 describe('Z.Array `first` property', function() {
   it('should return the first object in the array', function() {
-    expect(Z.A([5, 6, 7]).first()).toBe(5);
+    expect(Z.A(5, 6, 7).first()).toBe(5);
   });
 
   it('should return `null` when the array is empty', function() {
-    expect(Z.A([]).first()).toBe(null);
+    expect(Z.A().first()).toBe(null);
   });
 
   it('should notify observers when changed', function() {
@@ -520,11 +511,11 @@ describe('Z.Array `first` property', function() {
 
 describe('Z.Array `last` property', function() {
   it('should return the last object in the array', function() {
-    expect(Z.A([5, 6, 7]).last()).toBe(7);
+    expect(Z.A(5, 6, 7).last()).toBe(7);
   });
 
   it('should return `null` when the array is empty', function() {
-    expect(Z.A([]).last()).toBe(null);
+    expect(Z.A().last()).toBe(null);
   });
 
   it('should notify observers when changed', function() {
@@ -558,7 +549,7 @@ describe('Z.Array `last` property', function() {
 describe('Z.Array.push', function() {
   var a = null;
 
-  beforeEach(function() { a = Z.A([1, 2, 3]); });
+  beforeEach(function() { a = Z.A(1, 2, 3); });
 
   it('should return the receiver', function() {
     expect(a.push(4)).toBe(a);
@@ -566,16 +557,16 @@ describe('Z.Array.push', function() {
 
   it('should append the given object(s) to the end of the array', function() {
     a.push(4);
-    expect(a).toEq(Z.A([1, 2, 3, 4]));
+    expect(a).toEq(Z.A(1, 2, 3, 4));
     a.push(10, 11, 12);
-    expect(a).toEq(Z.A([1, 2, 3, 4, 10, 11, 12]));
+    expect(a).toEq(Z.A(1, 2, 3, 4, 10, 11, 12));
   });
 });
 
 describe('Z.Array.unshift', function() {
   var a = null;
 
-  beforeEach(function() { a = Z.A([1, 2, 3]); });
+  beforeEach(function() { a = Z.A(1, 2, 3); });
 
   it('should return the receiver', function() {
     expect(a.unshift(4)).toBe(a);
@@ -583,16 +574,16 @@ describe('Z.Array.unshift', function() {
 
   it('should prepend the given object(s) to the beginning of the array', function() {
     a.unshift(4);
-    expect(a).toEq(Z.A([4, 1, 2, 3]));
+    expect(a).toEq(Z.A(4, 1, 2, 3));
     a.unshift(10, 11, 12);
-    expect(a).toEq(Z.A([10, 11, 12, 4, 1, 2, 3]));
+    expect(a).toEq(Z.A(10, 11, 12, 4, 1, 2, 3));
   });
 });
 
 describe('Z.Array.pop', function() {
   var a;
 
-  beforeEach(function() { a = Z.A([1, 2, 3]); });
+  beforeEach(function() { a = Z.A(1, 2, 3); });
 
   describe('with no arguments', function() {
     it('should return the last item in the array', function() {
@@ -600,40 +591,40 @@ describe('Z.Array.pop', function() {
     });
 
     it('should return `null` when the array is empty', function() {
-      expect(Z.A([]).pop()).toBe(null);
+      expect(Z.A().pop()).toBe(null);
     });
 
     it('should remove the last item from the array', function() {
       a.pop();
-      expect(a).toEq(Z.A([1, 2]));
+      expect(a).toEq(Z.A(1, 2));
       a.pop();
-      expect(a).toEq(Z.A([1]));
+      expect(a).toEq(Z.A(1));
       a.pop();
-      expect(a).toEq(Z.A([]));
+      expect(a).toEq(Z.A());
       a.pop();
-      expect(a).toEq(Z.A([]));
+      expect(a).toEq(Z.A());
     });
   });
 
   describe('with an integer argument', function() {
     it('should return the last n items in a Z.Array', function() {
-      expect(Z.A([1, 2, 3]).pop(0)).toEq(Z.A([]));
-      expect(Z.A([1, 2, 3]).pop(1)).toEq(Z.A([3]));
-      expect(Z.A([1, 2, 3]).pop(2)).toEq(Z.A([2, 3]));
-      expect(Z.A([1, 2, 3]).pop(3)).toEq(Z.A([1, 2, 3]));
-      expect(Z.A([1, 2, 3]).pop(4)).toEq(Z.A([1, 2, 3]));
+      expect(Z.A(1, 2, 3).pop(0)).toEq(Z.A());
+      expect(Z.A(1, 2, 3).pop(1)).toEq(Z.A(3));
+      expect(Z.A(1, 2, 3).pop(2)).toEq(Z.A(2, 3));
+      expect(Z.A(1, 2, 3).pop(3)).toEq(Z.A(1, 2, 3));
+      expect(Z.A(1, 2, 3).pop(4)).toEq(Z.A(1, 2, 3));
     });
 
     it('should remove the last n items from the array', function() {
       a = Z.A(1, 2, 3, 4, 5, 6, 7);
       a.pop(0);
-      expect(a).toEq(Z.A([1, 2, 3, 4, 5, 6, 7]));
+      expect(a).toEq(Z.A(1, 2, 3, 4, 5, 6, 7));
       a.pop(1);
-      expect(a).toEq(Z.A([1, 2, 3, 4, 5, 6]));
+      expect(a).toEq(Z.A(1, 2, 3, 4, 5, 6));
       a.pop(2);
-      expect(a).toEq(Z.A([1, 2, 3, 4]));
+      expect(a).toEq(Z.A(1, 2, 3, 4));
       a.pop(5);
-      expect(a).toEq(Z.A([]));
+      expect(a).toEq(Z.A());
     });
 
     it('should throw an exception if given a negative number', function() {
@@ -657,40 +648,40 @@ describe('Z.Array.shift', function() {
     });
 
     it('should return `null` when the array is empty', function() {
-      expect(Z.A([]).shift()).toBe(null);
+      expect(Z.A().shift()).toBe(null);
     });
 
     it('should remove the first item from the array', function() {
       a.shift();
-      expect(a).toEq(Z.A([2, 3]));
+      expect(a).toEq(Z.A(2, 3));
       a.shift();
-      expect(a).toEq(Z.A([3]));
+      expect(a).toEq(Z.A(3));
       a.shift();
-      expect(a).toEq(Z.A([]));
+      expect(a).toEq(Z.A());
       a.shift();
-      expect(a).toEq(Z.A([]));
+      expect(a).toEq(Z.A());
     });
   });
 
   describe('with an integer arugment', function() {
     it('should return the first n items in a Z.Array', function() {
-      expect(Z.A([1, 2, 3]).shift(0)).toEq(Z.A([]));
-      expect(Z.A([1, 2, 3]).shift(1)).toEq(Z.A([1]));
-      expect(Z.A([1, 2, 3]).shift(2)).toEq(Z.A([1, 2]));
-      expect(Z.A([1, 2, 3]).shift(3)).toEq(Z.A([1, 2, 3]));
-      expect(Z.A([1, 2, 3]).shift(4)).toEq(Z.A([1, 2, 3]));
+      expect(Z.A(1, 2, 3).shift(0)).toEq(Z.A());
+      expect(Z.A(1, 2, 3).shift(1)).toEq(Z.A(1));
+      expect(Z.A(1, 2, 3).shift(2)).toEq(Z.A(1, 2));
+      expect(Z.A(1, 2, 3).shift(3)).toEq(Z.A(1, 2, 3));
+      expect(Z.A(1, 2, 3).shift(4)).toEq(Z.A(1, 2, 3));
     });
 
     it('should remove the first n items from the array', function() {
       a = Z.A(1, 2, 3, 4, 5, 6, 7);
       a.shift(0);
-      expect(a).toEq(Z.A([1, 2, 3, 4, 5, 6, 7]));
+      expect(a).toEq(Z.A(1, 2, 3, 4, 5, 6, 7));
       a.shift(1);
-      expect(a).toEq(Z.A([2, 3, 4, 5, 6, 7]));
+      expect(a).toEq(Z.A(2, 3, 4, 5, 6, 7));
       a.shift(2);
-      expect(a).toEq(Z.A([4, 5, 6, 7]));
+      expect(a).toEq(Z.A(4, 5, 6, 7));
       a.shift(5);
-      expect(a).toEq(Z.A([]));
+      expect(a).toEq(Z.A());
     });
 
     it('should throw an exception if given a negative number', function() {
@@ -706,35 +697,35 @@ describe('Z.Array.shift', function() {
 describe('Z.Array.concat', function() {
   var a = null;
 
-  beforeEach(function() { a = Z.A([1, 2, 3]); });
+  beforeEach(function() { a = Z.A(1, 2, 3); });
 
   it('should return a new array containing the contents of the receiver concatenated with the contents of the given array', function() {
-    var b = a.concat(Z.A([4, 5, 6]));
+    var b = a.concat(Z.A(4, 5, 6));
 
-    expect(a).toEq(Z.A([1, 2, 3]));
-    expect(b).toEq(Z.A([1, 2, 3, 4, 5, 6]));
+    expect(a).toEq(Z.A(1, 2, 3));
+    expect(b).toEq(Z.A(1, 2, 3, 4, 5, 6));
   });
 
   it('should append the argument when given a single non-array argument', function() {
-    expect(a.concat(4)).toEq(Z.A([1, 2, 3, 4]));
+    expect(a.concat(4)).toEq(Z.A(1, 2, 3, 4));
   });
 
   it('should append the contents of the given native array', function() {
-    expect(a.concat([10, 11, 12])).toEq(Z.A([1, 2, 3, 10, 11, 12]));
+    expect(a.concat([10, 11, 12])).toEq(Z.A(1, 2, 3, 10, 11, 12));
   });
 
   it('should handle multiple arguments', function() {
     var r = a.concat(4, [5, 6], Z.A(7, 8, 9), 10, 11);
 
-    expect(r).toEq(Z.A([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]));
+    expect(r).toEq(Z.A(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
   });
 });
 
 describe('Z.Array.flatten', function() {
   it('should return a new array that removes all levels of nested arrays', function() {
-    var a = Z.A([1, 2, [3, 4], Z.A([5, 6, 7]), 8, [9], [[10, 11], 12], [[[[13]]]]]);
+    var a = Z.A(1, 2, [3, 4], Z.A([5, 6, 7]), 8, [9], [[10, 11], 12], [[[[13]]]]);
 
-    expect(a.flatten()).toEq(Z.A([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]));
+    expect(a.flatten()).toEq(Z.A(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13));
   });
 });
 
@@ -794,10 +785,10 @@ describe('Z.Array.getUnknownProperty', function() {
         f3 = Foo.create({bar: b3}),
         a  = Z.A(f1, f2, f3);
 
-    expect(a.getUnknownProperty('bar')).toEq(Z.A([b1, b2, b3]));
-    expect(a.get('bar')).toEq(Z.A([b1, b2, b3]));
-    expect(a.getUnknownProperty('bar.x')).toEq(Z.A([1, 2, 3]));
-    expect(a.get('bar.x')).toEq(Z.A([1, 2, 3]));
+    expect(a.getUnknownProperty('bar')).toEq(Z.A(b1, b2, b3));
+    expect(a.get('bar')).toEq(Z.A(b1, b2, b3));
+    expect(a.getUnknownProperty('bar.x')).toEq(Z.A(1, 2, 3));
+    expect(a.get('bar.x')).toEq(Z.A(1, 2, 3));
   });
 
   it('should flatten the results', function() {
@@ -809,8 +800,8 @@ describe('Z.Array.getUnknownProperty', function() {
         f3 = Foo.create({bar: b3}),
         a  = Z.A(f1, f2, f3);
 
-    expect(a.getUnknownProperty('bar.x')).toEq(Z.A([1, 2, 3, 4, 5, 6, 7, 8]));
-    expect(a.get('bar.x')).toEq(Z.A([1, 2, 3, 4, 5, 6, 7, 8]));
+    expect(a.getUnknownProperty('bar.x')).toEq(Z.A(1, 2, 3, 4, 5, 6, 7, 8));
+    expect(a.get('bar.x')).toEq(Z.A(1, 2, 3, 4, 5, 6, 7, 8));
   });
 });
 
@@ -819,7 +810,7 @@ describe('Z.Array `@` property', function() {
 
   beforeEach(function() {
     observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
-    a = Z.A([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    a = Z.A(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     a.observe('@', observer, 'action', { previous: true, current: true });
   });
 
@@ -833,13 +824,13 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications[0].type).toEqual('insert');
     expect(observer.notifications[0].range).toEqual([10, 1]);
     expect(observer.notifications[0].previous).toBeUndefined();
-    expect(observer.notifications[0].current).toEq(Z.A([10]));
+    expect(observer.notifications[0].current).toEq(Z.A(10));
     a.push(11, 12, 13);
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[1].type).toEqual('insert');
     expect(observer.notifications[1].range).toEqual([11, 3]);
     expect(observer.notifications[1].previous).toBeUndefined();
-    expect(observer.notifications[1].current).toEq(Z.A([11, 12, 13]));
+    expect(observer.notifications[1].current).toEq(Z.A(11, 12, 13));
   });
 
   it('should notify observers when items are prepended to the beginning of the array', function() {
@@ -848,13 +839,13 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications[0].type).toEqual('insert');
     expect(observer.notifications[0].range).toEqual([0, 1]);
     expect(observer.notifications[0].previous).toBeUndefined();
-    expect(observer.notifications[0].current).toEq(Z.A([21]));
+    expect(observer.notifications[0].current).toEq(Z.A(21));
     a.unshift(22, 23);
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[1].type).toEqual('insert');
     expect(observer.notifications[1].range).toEqual([0, 2]);
     expect(observer.notifications[1].previous).toBeUndefined();
-    expect(observer.notifications[1].current).toEq(Z.A([22, 23]));
+    expect(observer.notifications[1].current).toEq(Z.A(22, 23));
   });
 
   it('should notify observers when items are inserted into the middle of the array', function() {
@@ -863,7 +854,7 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications[0].type).toEqual('insert');
     expect(observer.notifications[0].range).toEqual([3, 3]);
     expect(observer.notifications[0].previous).toBeUndefined();
-    expect(observer.notifications[0].current).toEq(Z.A([10, 11, 12]));
+    expect(observer.notifications[0].current).toEq(Z.A(10, 11, 12));
   });
 
   it('should notify observers when items are removed from the end of the array', function() {
@@ -871,7 +862,7 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEqual('remove');
     expect(observer.notifications[0].range).toEqual([8, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A([8, 9]));
+    expect(observer.notifications[0].previous).toEq(Z.A(8, 9));
     expect(observer.notifications[0].current).toBeUndefined();
   });
 
@@ -880,7 +871,7 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEqual('remove');
     expect(observer.notifications[0].range).toEqual([0, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A([0, 1]));
+    expect(observer.notifications[0].previous).toEq(Z.A(0, 1));
     expect(observer.notifications[0].current).toBeUndefined();
   });
 
@@ -889,7 +880,7 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEqual('remove');
     expect(observer.notifications[0].range).toEqual([4, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A([4, 5]));
+    expect(observer.notifications[0].previous).toEq(Z.A(4, 5));
     expect(observer.notifications[0].current).toBeUndefined();
   });
 
@@ -898,14 +889,14 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEqual('replace');
     expect(observer.notifications[0].range).toEqual([0, 1]);
-    expect(observer.notifications[0].previous).toEq(Z.A([0]));
-    expect(observer.notifications[0].current).toEq(Z.A([19]));
+    expect(observer.notifications[0].previous).toEq(Z.A(0));
+    expect(observer.notifications[0].current).toEq(Z.A(19));
     a.splice(2, 4, 20, 30, 40, 50);
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[1].type).toEqual('replace');
     expect(observer.notifications[1].range).toEqual([2, 4]);
-    expect(observer.notifications[1].previous).toEq(Z.A([2, 3, 4, 5]));
-    expect(observer.notifications[1].current).toEq(Z.A([20, 30, 40, 50]));
+    expect(observer.notifications[1].previous).toEq(Z.A(2, 3, 4, 5));
+    expect(observer.notifications[1].current).toEq(Z.A(20, 30, 40, 50));
   });
 
   it('should notify observers when items are both replaced and inserted', function() {
@@ -913,12 +904,12 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[0].type).toEqual('replace');
     expect(observer.notifications[0].range).toEqual([2, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A([2, 3]));
-    expect(observer.notifications[0].current).toEq(Z.A([20, 30]));
+    expect(observer.notifications[0].previous).toEq(Z.A(2, 3));
+    expect(observer.notifications[0].current).toEq(Z.A(20, 30));
     expect(observer.notifications[1].type).toEqual('insert');
     expect(observer.notifications[1].range).toEqual([4, 2]);
     expect(observer.notifications[1].previous).toBeUndefined();
-    expect(observer.notifications[1].current).toEq(Z.A([40, 50]));
+    expect(observer.notifications[1].current).toEq(Z.A(40, 50));
   });
 
   it('should notify observers when items are both replaced and removed', function() {
@@ -926,11 +917,11 @@ describe('Z.Array `@` property', function() {
     expect(observer.notifications.length).toBe(2);
     expect(observer.notifications[0].type).toEqual('replace');
     expect(observer.notifications[0].range).toEqual([2, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A([2, 3]));
-    expect(observer.notifications[0].current).toEq(Z.A([20, 30]));
+    expect(observer.notifications[0].previous).toEq(Z.A(2, 3));
+    expect(observer.notifications[0].current).toEq(Z.A(20, 30));
     expect(observer.notifications[1].type).toEqual('remove');
     expect(observer.notifications[1].range).toEqual([4, 2]);
-    expect(observer.notifications[1].previous).toEq(Z.A([4, 5]));
+    expect(observer.notifications[1].previous).toEq(Z.A(4, 5));
     expect(observer.notifications[1].current).toBeUndefined();
   });
 
@@ -1111,10 +1102,10 @@ describe('Observing paths that contain multiple arrays with item observers', fun
     observer.notifications = [];
 
     f = Foo.create({
-      bars: Z.A([
-        Bar.create({ bazs: Z.A([Baz.create({x: 1}), Baz.create({x: 2}), Baz.create({x: 3})]) }),
-        Bar.create({ bazs: Z.A([Baz.create({x: 4}), Baz.create({x: 5})]) })
-      ])
+      bars: Z.A(
+        Bar.create({ bazs: Z.A(Baz.create({x: 1}), Baz.create({x: 2}), Baz.create({x: 3})) }),
+        Bar.create({ bazs: Z.A(Baz.create({x: 4}), Baz.create({x: 5})) })
+      )
     });
 
     f.observe('bars.bazs.x', observer, 'action', { previous: true, current: true });
@@ -1129,7 +1120,7 @@ describe('Observing paths that contain multiple arrays with item observers', fun
   });
 
   it('should trigger notifications when items are added to the first level array', function() {
-    f.bars().push(Bar.create({ bazs: Z.A([ Baz.create({x: 6}) ]) }));
+    f.bars().push(Bar.create({ bazs: Z.A( Baz.create({x: 6}) ) }));
 
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEq('change');
@@ -1146,7 +1137,7 @@ describe('Observing paths that contain multiple arrays with item observers', fun
   });
 
   it('should trigger notifications when items are replaced from the first level array', function() {
-    f.bars().at(0, Bar.create({ bazs: Z.A([ Baz.create({x: 6}) ]) }));
+    f.bars().at(0, Bar.create({ bazs: Z.A( Baz.create({x: 6}) ) }));
 
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEq('change');
@@ -1155,7 +1146,7 @@ describe('Observing paths that contain multiple arrays with item observers', fun
   });
 
   it('should trigger notifications when a second level array is replaced', function() {
-    f.set('bars.first.bazs', Z.A([ Baz.create({x: 9}) ]));
+    f.set('bars.first.bazs', Z.A( Baz.create({x: 9}) ));
     expect(observer.notifications.length).toBe(1);
     expect(observer.notifications[0].type).toEq('change');
     expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
