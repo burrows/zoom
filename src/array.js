@@ -2,7 +2,54 @@
 
 var slice = Array.prototype.slice;
 
+// The `Z.Array` type provides a fully KVC and KVO compliant array
+// implementation. In addition to supporting regular properties like `size`,
+// `first`, and `last`, `Z.Array` concrete instances also support observing
+// mutations made to them and the ability to observe properties on items inside
+// the array.
+//
+// Examples
+//
+//   // Creating an manipulating arrays
+//   var a = Z.Array.create();
+//   a.push(1, 2, 3);          // => #<Z.Array:17 [1, 2, 3]>
+//   a.unshift(0);             // => #<Z.Array:17 [0, 1, 2, 3]>
+//   a.at(4, 4);               // => #<Z.Array:17 [0, 1, 2, 3, 4]>
+//   a.at(-2);                 // => 3
+//   a.size();                 // => 5
+//   a.pop();                  // => 4
+//
+//   // KVC Support
+//   App.Transaction = Z.Object.extend(function() {
+//     this.prop('payee'); this.prop('amount');
+//   });
+//
+//   var txns = Z.A(
+//     Demo.Transaction.create({payee: 'Power Co', amount: 120}),
+//     Demo.Transaction.create({payee: 'Car Loan', amount: 250}),
+//     Demo.Transaction.create({payee: 'Cable Co', amount: 50})
+//   );
+//
+//   txns.get('size');  // => 3
+//   txns.get('first'); // => #<App.Transaction:48 payee: 'Power Co', amount: 120>
+//   txns.get('payee'); // => #<Z.Array:56 ['Power Co', 'Car Loan', 'Cable Co']>
+//
+//   // KVO Support
+//   txns.observe('amount', null, Z.log, {previous: true, current: true});
+//   txns.last().amount(60);
+//   // {type: 'change', path: 'amount', observee: #<Z.Array:58 [...]>, previous: #<Z.Array:63 [120, 250, 50]>, current: #<Z.Array:68 [120, 250, 60]>}
+//
+//   // Observing mutations with @ property
+//   txns.observe('@', null, Z.log);
+//   txns.pop();
+//   // {type: 'remove', path: '@', observee: #<Z.Array:95 [...]>, range: [2, 1]}
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
+  // Internal: Registers item observers on the given items. Item observers are
+  // created when an unknown property is observed on an array
+  //
+  // items - The items to add observers to.
+  //
+  // Returns nothing.
   function registerItemObservers(items) {
     var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
 
@@ -18,6 +65,12 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   }
 
+  // Internal: Deregisters item observers on the given items. This method is
+  // called when items are removed from an array that has item observers.
+  //
+  // items - The items to remove observers from.
+  //
+  // Returns nothing.
   function deregisterItemObservers(items) {
     var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
 
@@ -33,6 +86,21 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   }
 
+  // Internal: Called just before a mutation to the array is made, it does the
+  // following:
+  //
+  // * Calls `Z.Object.willChangeProperty` for array properties that will be
+  //   affected by the mutation.
+  // * Deregisters item observers from items that are about to be removed from
+  //   the array.
+  // * Prepares notification objects for item observers.
+  //
+  // type - The type of mutation that will occur (insert, remove, or replace).
+  // idx  - The index in the array where the mutation will start.
+  // n    - The number of items, starting from `idx` that are affected by the
+  //        mutation.
+  //
+  // Returns nothing.
   function willMutate(type, idx, n) {
     var len       = this.size(),
         prevItems = this.slice(idx, n),
@@ -95,6 +163,21 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   }
 
+  // Internal: Called just after a mutation to the array is made, it does the
+  // following:
+  //
+  // * Calls `Z.Object.didChangeProperty` for array properties that were
+  //   affected by the mutation.
+  // * Registers item observers on items that were added to the array.
+  // * Sends notification objects for item observers.
+  //
+  // type - The type of mutation that just occurred (insert, remove, or
+  //        replace).
+  // idx  - The index in the array where the mutation started.
+  // n    - The number of items, starting from `idx` that were affected by the
+  //        mutation.
+  //
+  // Returns nothing.
   function didMutate(type, idx, n) {
     var len      = this.size(),
         curItems = this.slice(idx, n),
@@ -153,31 +236,47 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   }
 
+  // Public: A property that returns the current size of the array. The size
+  // property can also be set, which simply adjusts the `length` property of the
+  // underlying native array.
   this.prop('size', {
     get: function() { return this.__z_items__.length; },
     set: function(v) { return this.__z_items__.length = v; }
   });
 
+  // Public: A property that returns the first item in the array.
   this.prop('first', {
     get: function() { return this.at(0); },
     set: function(v) { return this.at(0, v); }
   });
 
+  // Public: A property that returns the last item in the array.
   this.prop('last', {
     get: function() { return this.at(-1); },
     set: function(v) { return this.at(-1, v); }
   });
 
+  // Public: A special readonly property that only exists for observing array
+  // mutations. Observing this property will cause notifications to be sent
+  // every time a mutation is made to the array. The `type` key in the
+  // notification objects will be set to one of the following: `insert`,
+  // `remove`, `replace`. Additionaly, a `range` key will be present that is a
+  // tuple containing the starting index of the mutation as well as the number
+  // of items that are affected, starting from that index.
   this.prop('@', { readonly: true, get: function() { return this; } });
 
+  // Public: The `Z.Array` constructor. Arrays can be created with zero or one
+  // arguments. With zero arguments, an empty array is created. When given an
+  // array like object (native array, `Arguments` object, or `Z.Array` instance)
+  // the items from the given array are added to the newly created array. If a
+  // number is given, an array is created with space allocated for the number of
+  // items specified.
   this.def('initialize', function() {
     var arg = arguments[0];
 
     if (arguments.length > 1) {
       throw new Error(Z.fmt("Z.Array.initialize: wrong number of arguments (%@ for 0 or 1)", arguments.length));
     }
-
-    this.supr();
 
     if (arguments.length === 0) {
       this.__z_items__ = [];
@@ -196,6 +295,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   });
 
+  // Public: Returns a string representation of the array.
   this.def('toString', function() {
     if (this.isType) { return this.supr(); }
 
@@ -203,21 +303,34 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
                  Z.inspect(this.__z_items__));
   });
 
+  // Public: Returns a native array containing the same items in the receiver.
   this.def('toNative', function() { return this.__z_items__; });
 
+  // Public: The `Z.Array` iterator, invokes the given function once for each
+  // item in the array.
+  //
+  // f - A function object, it will be invoked once for each item in the array.
+  //     The first argument will be the the item and the second argument will
+  //     be the item's index in the array.
+  //
+  // Returns the receiver.
   this.def('each', function(f) {
     var items = this.__z_items__, i, len;
     for (i = 0, len = items.length; i < len; i++) { f(items[i], i); }
     return this;
   });
 
-  this.def('join', function(s) {
-    return this.__z_items__.join(s);
-  });
+  // Public: Returns a string containing the `toString`'d version of each item
+  // in the array separated by the given separator string.
+  //
+  // s - The separator string (default: `','`).
+  //
+  // Returns a string.
+  this.def('join', function(s) { return this.__z_items__.join(s); });
 
   this.def('at', function(i, v) {
     var len = this.size();
-    
+
     if (i < 0) { i = len + i; }
 
     if (arguments.length === 1) {

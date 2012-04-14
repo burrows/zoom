@@ -627,7 +627,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
-    this.supr(props);
+    this.set(props);
   });
 
   this.def('inverseDidAdd', function(associationName, model) {

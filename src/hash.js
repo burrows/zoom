@@ -15,7 +15,6 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
       throw new Error(Z.fmt("Z.Hash.initialize: given %@ arguments, expected 0 or 1", nargs));
     }
 
-    this.supr();
     this.__z_head__    = null;
     this.__z_tail__    = null;
     this.__z_buckets__ = {};
