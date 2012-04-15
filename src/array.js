@@ -328,6 +328,19 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   // Returns a string.
   this.def('join', function(s) { return this.__z_items__.join(s); });
 
+  // Public: Item reference and assignment method. When given one argument,
+  // returns the item at the specified index. When passed, two arguments, the
+  // second argument is set as the item at the index indicated by the first.
+  //
+  // Negative indices can be passed to reference items from the end of the array
+  // (-1 is the last item in the array).
+  //
+  // i - A number representing an index in the array.
+  // v - A value to set at the given index (optional).
+  //
+  // Returns the value at the given index when passed one argument. Returns
+  //   `null` if the index is out of range.
+  // Returns `v` when given two arguments.
   this.def('at', function(i, v) {
     var len = this.size();
 
@@ -342,6 +355,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   });
 
+  // Public: Returns the index of the given object in the array and `null` if
+  // its not present. The presence of the item in the array is determined by
+  // comparing each item with the given object using the `Z.eq` method.
+  //
+  // o - The object to find the index of.
+  //
+  // Returns the index of the object or `null` if its not present.
   this.def('index', function(o) {
     var items = this.__z_items__, i, len;
 
@@ -352,6 +372,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return null;
   });
 
+  // Public: Indicates whether the given object is present in the array.
+  //
+  // o - The object to check for.
+  //
+  // Returns `true` if the object is present and `false` otherwise.
   this.def('contains', function(o) { return this.index(o) !== null; });
 
   this.def('remove', function(o) {
@@ -364,6 +389,18 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return this;
   });
 
+  // Public: Array mutator. All mutations made to an array (pushing, popping,
+  // assignment, etc.) are made through this method. In addition to making the
+  // mutation, this method also calls `willMutate` and `didMutate` as
+  // appropriate.
+  //
+  // i      - The index to start the mutation, may be negative.
+  // n      - The number of items to remove, starting from `i`. If not
+  //          given, the all items starting from `i` are removed.
+  // *items - Zero or more items to add to the array, starting at index `i`.
+  //
+  // Returns the receiver.
+  // Throws `Error` when given an index that is out of range.
   this.def('splice', function(i, n) {
     var items = slice.call(arguments, 2),
         len   = this.size(),
@@ -400,8 +437,19 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return this;
   });
 
+  // Public: Reduces the size of the array to 0 by removing all items.
+  //
+  // Returns the receiver.
   this.def('clear', function() { return this.splice(0, this.size()); });
 
+  // Public: Builds a new array containing the number of items specified
+  // starting from the given index.
+  //
+  // i - The index to start building the new array from.
+  // n - The number of items to copy, starting from `i`. If not specified, all
+  //     items until the end of the array are copied.
+  //
+  // Returns the new array.
   this.def('slice', function(i, n) {
     var len = this.size(), a;
 
@@ -409,7 +457,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
 
     if (i < 0 || i >= len) { return null; }
 
-    if (typeof n === 'undefined') {
+    if (n === undefined) {
       a = this.__z_items__.slice(i);
     }
     else {
@@ -419,6 +467,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return Z.Array.create(a);
   });
 
+  // Public: Similar to `Z.Array.slice`, but deletes the items added to the new
+  // array from the receiver.
+  //
+  // i - The index to start building the new array from.
+  // n - The number of items to copy, starting from `i`. If not specified, all
+  //     items until the end of the array are copied.
+  //
+  // Returns the new array.
   this.def('slice$', function(i, n) {
     var a = this.slice(i, n);
     if (a === null) { return a; }
@@ -426,6 +482,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return a;
   });
 
+  // Public: Array equality test, performs an item-wise comparison between the
+  // receiver and the given array. If the given object is not a `Z.Array`, then
+  // this method attempts to convert it to a `Z.Array` by invoking its `toArray`
+  // method if it exists.
+  //
+  // other - A `Z.Array` to compare to the receiver.
+  //
+  // Returns `true` if the arrays are equal and `false` otherwise.
   this.def('eq', function(other) {
     if (!Z.isZObject(other)) { return false; }
     if (!other.isA(Z.Array)) {
@@ -436,6 +500,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return Z.eq(this.__z_items__, other.__z_items__);
   });
 
+  // Public: Array comparison. Returns `-1` if the receiver is less than the
+  // argument, `0` if they are equal, and `1` if the receiver is greater than
+  // the argument. If the given object is not a `Z.Array`, then this method
+  // attempts to convert to one by invoking its `toArray` method if it exists.
+  //
+  // other - A `Z.Array` to compare to the receiver.
+  //
+  // Returns `null` if `other` is not a `Z.Array` and can't be converted to one.
   this.def('cmp', function(other) {
     if (!Z.isZObject(other)) { return null; }
     if (!other.isA(Z.Array)) {
@@ -446,13 +518,27 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return Z.cmp(this.__z_items__, other.__z_items__);
   });
 
+  // Public: Generates a hash value for the array.
   this.def('hash', function() { return Z.hash(this.__z_items__); });
 
+  // Public: Pushes one ore more items on to the end of the array.
+  //
+  // *items - One or more objects to add to the end of the array.
+  //
+  // Returns the receiver.
   this.def('push', function() {
     var args = slice.call(arguments);
     return this.splice.apply(this, [this.size(), 0].concat(args));
   });
 
+  // Public: Returns a new array comprised of the items in the receiver and the
+  // items in the given arrays.
+  //
+  // *items - One or more objects to add to the new array. If a `Z.Array` object
+  //          is given, its items are copied to the new array. If an item is not
+  //          a `Z.Array`, is copied directly into the new array.
+  //
+  // Returns a new `Z.Array` instance.
   this.def('concat', function() {
     var items = slice.call(arguments), a = [], item, i, len;
 
@@ -464,21 +550,34 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return Z.Array.create(this.__z_items__.concat.apply(this.__z_items__, a));
   });
 
+  // Public: Unshifts the given items to the beginning of the array.
+  //
+  // *items - One or more objects to add to the beginning of the array.
+  //
+  // Returns the receiver.
   this.def('unshift', function() {
     var items = slice.call(arguments);
     return this.splice.apply(this, [0, 0].concat(items));
   });
 
+  // Public: Pops one or more items off the end of the array and returns them.
+  //
+  // n - The number of items to pop off the array (default: `1`).
+  //
+  // Returns the last item in the array when `n` is `1`.
+  // Returns a `Z.Array` containing all items popped when `n` is greater than
+  //   `1`.
+  // Throws `Error` if `n` is negative.
   this.def('pop', function(n) {
     var len = this.size();
 
-    if (typeof n !== 'undefined' && n < 0) {
+    if (n !== undefined && n < 0) {
       throw new Error('Z.Array.pop: array size must be positive');
     }
 
     if (len === 0) { return null; }
 
-    if (typeof n !== 'undefined') {
+    if (n !== undefined) {
       if (n > len) { n = len; }
       return this.slice$(-n, n);
     }
@@ -487,16 +586,25 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   });
 
+  // Public: Shifts one ore more items off the beginning of the array and
+  // returns them.
+  //
+  // n - The number of items to unshift off the array (default: `1`).
+  //
+  // Returns the first item in the array when `n` is `1`.
+  // Returns a `Z.Array` containing all items unshifted when `n` is greater than
+  //   `1`.
+  // Throws `Error` if `n` is negative.
   this.def('shift', function(n) {
     var len = this.size();
 
-    if (typeof n !== 'undefined' && n < 0) {
+    if (n !== undefined && n < 0) {
       throw new Error('Z.Array.shift: array size must be positive');
     }
 
     if (len === 0) { return null; }
 
-    if (typeof n !== 'undefined') {
+    if (n !== undefined) {
       if (n > len) { n = len; }
       return this.slice$(0, n);
     }
@@ -505,6 +613,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   });
 
+  // Public: Builds a new array that is the one-dimensional flattening of the
+  // receiver. In other words, for every item that is itself an array, its items
+  // are added to the new array.
+  //
+  // Returns a new `Z.Array` instance.
   this.def('flatten', function() {
     var result = [], item, i, len;
 
@@ -525,24 +638,54 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return Z.Array.create(result);
   });
 
+  // Public: Returns the receiver if it is a direct instance of `Z.Array`. If
+  // the receiver is an instance of a sub-type of `Z.Array` it is converted to
+  // a `Z.Array` instance.
+  //
+  // Returns a `Z.Array`.
   this.def('toArray', function() {
     return Object.getPrototypeOf(this) === Z.Array ? this : Z.Array.create(this);
   });
 
+  // Public: Returns a new `Z.Array` containing the sorted items of the
+  // receiver, as determined by the given comparison function.
+  //
+  // If the comparison function used to perform the sort is non-trivial, it may
+  // be more performant to use the `sortBy` method, which performs a
+  // [Schwartzian transform](http://en.wikipedia.org/wiki/Schwartzian_transform).
+  //
+  // fn - The comparison function to use (default: `Z.cmp`).
+  //
+  // Returns a `Z.Array`.
   this.def('sort', function(fn) {
     return Z.Array.create(this.__z_items__.slice().sort(fn || Z.cmp));
   });
 
+  // Public: Sorts the receiver in place.
+  //
+  // fn - The comparison function to use (default: `Z.cmp`).
+  //
+  // Returns the receiver.
   this.def('sort$', function(fn) {
     var size = this.size();
 
     willMutate.call(this, 'replace', 0, size);
-    this.__z_items__.sort(fn || Z.cmp);
+    this.__z_items__.sort(fn);
     didMutate.call(this, 'replace', 0, size);
 
     return this;
   });
 
+  // Public: Sorts the receiver by the given property path or comparison
+  // function. This method uses a [Schwartzian transform](http://en.wikipedia.org/wiki/Schwartzian_transform)
+  // in order to avoid calculating the sort property of each item more than
+  // once. The `sort` method does not use a Schwartzian transform, so use this
+  // method when sorting by a complex or expensive to calculate property and
+  // `sort` when sorting by a simple property.
+  //
+  // by - Either a string containing a property path or a comparison function.
+  //
+  // Returns a `Z.Array`.
   this.def('sortBy', function(by) {
     var f = typeof by === 'function' ? by : function(x) { return x.get(by); };
 
@@ -551,6 +694,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
       .map(function(x) { return x[0]; });
   });
 
+  // Internal: Overrides the default `registerObserver` implemention in
+  // `Z.Object` in order to proxy observers on unknown properties to each item
+  // in the array.
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
     var items = this.__z_items__, registration, i, len;
 
@@ -580,6 +726,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return registration;
   });
 
+  // Internal: Overrides the default `deregisterObserver` implemention in
+  // `Z.Object` in order to remove item observers.
   this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
     var items = this.__z_items__, registrations, r, i, j, rlen, ilen;
 
@@ -607,6 +755,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     }
   });
 
+  // Internal: Proxies gets for unknown properties out to all items and returns
+  // a new array containing each value. The resulting array is flattened.
+  //
+  // k - The name of the property to get from each item.
+  //
+  // Returns a `Z.Array` containing the values obtained by getting the given
+  //   property from each item in the array.
   this.def('getUnknownProperty', function(k) {
     return this.pluck(k).flatten();
   });
