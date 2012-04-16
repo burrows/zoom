@@ -2,12 +2,41 @@
 
 var slice = Array.prototype.slice;
 
+// The `Z.SortedArray` type is a sub-type of `Z.Array` that maintains its items
+// in sorted order according to a given comparison function. Adding items to a
+// sorted array is accomplished through the `insert` method and other array
+// mutator methods have been overridden to throw exceptions when invoked.
+//
+// Examples
+//
+//   var a = Z.SortedArray.create();
+//
+//   a.insert(9); // => #<Z.SortedArray:17 [9]>
+//   a.insert(7); // => #<Z.SortedArray:17 [7, 9]>
+//   a.insert(2); // => #<Z.SortedArray:17 [2, 7, 9]>
+//   a.insert(8); // => #<Z.SortedArray:17 [2, 7, 8, 9]>
+//   a.push(12);  // => Error: Z.SortedArray.push: use `insert` to add items to a sorted array
 Z.SortedArray = Z.Array.extend(function() {
+  // Internal: Observer method that gets triggered when a dependent path on an
+  // item changes. Since the dependent path determins the sort order of the
+  // items, this method simply removes the item from the array and then
+  // re-inserts it at the correct position.
   function dependentPathDidChange(n) {
     this.remove(n.observee);
     this.insert(n.observee);
   }
 
+  // Internal: Performs a binary search on the items in the array for the given
+  // object. Since the array is always maintained in sorted order we can perform
+  // a binary search for an object instead of a linear search as is done in the
+  // parent `Z.Array` type.
+  //
+  // o    - The object to search for.
+  // imin - The minimum index to consider.
+  // imax - The maximum index to consider.
+  //
+  // Returns the index of `o` when its present in the array and `null`
+  //   otherwise.
   function binarySearch(o, imin, imax) {
     var imid, r;
 
@@ -29,6 +58,29 @@ Z.SortedArray = Z.Array.extend(function() {
     return null;
   }
 
+  // Public: The `Z.SortedArray` constructor. The sorting behavior can be
+  // specified several ways. By default, `Z.cmp` is used to sort the items in
+  // ascending order, but the `isDescending` option can be set to reverse this
+  // order. If the `path` option is given, sorting is performed using the values
+  // obtained by getting the path from each item. Finally, a comparison function
+  // can be given to implement custom ordering.
+  //
+  // `Z.SortedArray` is of course fully KVC and KVO compliant. When constructed
+  // with the `path` option, the path is observed on each item and when changes
+  // happen the corresponding item is moved to its new position in the array.
+  // Similarily, when constructed with the `compareFn` option, you can also
+  // specify the paths the function depends on using the `dependsOn` option.
+  //
+  // opts - A native object containing zero or more of the following:
+  //   path         - A property path that determines sort order.
+  //   compareFn    - A function implementing custom comparison logic. Be sure
+  //                  to also specify any property paths it depends on using
+  //                  the `dependsOn` option.
+  //   dependsOn    - A native array containing dependent property paths. This
+  //                  option should be used in conjunction with the `compareFn`
+  //                  option.
+  //   isDescending - Set this option to `true` to sort items in descending
+  //                  order.
   this.def('initialize', function(opts) {
     this.supr();
 
@@ -55,6 +107,9 @@ Z.SortedArray = Z.Array.extend(function() {
     }
   });
 
+  // Internal: Overrides `Z.Array.splice` in order to add dependent path
+  // observers. This method should not be used by client code, instead use the
+  // `insert` and `remove` methods to mutate the array.
   this.def('splice', function(i, n) {
     var size    = this.size(),
         idx     = i < 0 ? size + i : i,
@@ -79,6 +134,13 @@ Z.SortedArray = Z.Array.extend(function() {
     return this.supr.apply(this, slice.call(arguments));
   });
 
+  // Public: Insert a new object into the array. This method will ensure that
+  // the object is inserted in the correct location in order to maintain sorted
+  // order.
+  //
+  // o - The object to insert.
+  //
+  // Returns the receiver.
   this.def('insert', function(o) {
     var cmp = this.__z_cmp__, i, len;
 
@@ -89,26 +151,37 @@ Z.SortedArray = Z.Array.extend(function() {
     return this.splice(i, 0, o);
   });
 
+  // Public: Returns the index of the given object in the array and `null` if
+  // its not present. This overrides `Z.Array.index` since it performs a linear
+  // search and instead performs a binary search.
+  //
+  // o - The object to find the index of.
+  //
+  // Returns the index of the object or `null` if its not present.
   this.def('index', function(o) {
     return binarySearch.call(this, o, 0, this.size() - 1);
   });
 
+  // Internal: General array manipulations are not allowed in a sorted array.
   this.def('push', function() {
     throw new Error(Z.fmt("%@.push: use `insert` to add items to a sorted array",
                           this.typeName()));
   });
 
+  // Internal: General array manipulations are not allowed in a sorted array.
   this.def('unshift', function() {
     throw new Error(Z.fmt("%@.unshift: use `insert` to add items to a sorted array",
                           this.typeName()));
   });
 
+  // Internal: General array manipulations are not allowed in a sorted array.
   this.def('at', function(i, v) {
     if (arguments.length === 1) { return this.supr(i); }
     throw new Error(Z.fmt("%@.at: use `insert` to add items to a sorted array",
                           this.typeName()));
   });
 
+  // Internal: General array manipulations are not allowed in a sorted array.
   this.def('sort$', function() {
     throw new Error(Z.fmt("%@.sort$: can't sort a sorted array in place",
                           this.typeName()));
