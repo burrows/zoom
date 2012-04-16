@@ -10,7 +10,7 @@ var slice = Array.prototype.slice;
 //
 // Examples
 //
-//   // Creating an manipulating arrays
+//   // Creating and manipulating arrays
 //   var a = Z.Array.create();
 //   a.push(1, 2, 3);          // => #<Z.Array:17 [1, 2, 3]>
 //   a.unshift(0);             // => #<Z.Array:17 [0, 1, 2, 3]>
@@ -39,7 +39,7 @@ var slice = Array.prototype.slice;
 //   txns.last().amount(60);
 //   // {type: 'change', path: 'amount', observee: #<Z.Array:58 [...]>, previous: #<Z.Array:63 [120, 250, 50]>, current: #<Z.Array:68 [120, 250, 60]>}
 //
-//   // Observing mutations with @ property
+//   // Observing mutations with the @ property
 //   txns.observe('@', null, Z.log);
 //   txns.pop();
 //   // {type: 'remove', path: '@', observee: #<Z.Array:95 [...]>, range: [2, 1]}

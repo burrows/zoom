@@ -2,12 +2,96 @@
 
 var seed = Math.floor(Math.random() * 0xffffffff);
 
+// The `Z.Hash` type provides a full blown hash table implementation that is KVC
+// and KVO compliant. Any objects (those inheriting from `Z.Object` as well as
+// native objects) can be used as keys in the hash. `Z.Hash` overrides the
+// `getUnknownProperty` and `setUnknownProperty` methods to support getting and
+// setting arbitrarily named properties. This means that you can work with
+// properties on a hash without defining them first. Finally, `Z.Hash` also
+// supports an `@` property similar to `Z.Array.@` that allows for observing
+// mutations made to the hash.
+//
+// Examples
+//
+//   // Creating and manipulating hashes
+//   var h = Z.Hash.create();
+//
+//   h.at('foo', 'string key');               // => 'string key'
+//   h.at({x: 1}, 'object key');              // => 'object key'
+//   h.at(/xy+z$/, 'regex key');              // => 'regex key'
+//   h.at(Z.Object.create(), 'Z object key'); // => 'Z object key'
+//   h                                        // => #<Z.Hash:17 {'foo': 'string key', {x: 1}: 'object key', /xy+z$/: 'regex key', #<Z.Object:19>: 'Z object key'}>
+//   h.at('foo');                             // => 'string key'
+//   h.at({x: 1});                            // => 'object key'
+//   h.at(new RegExp('xy+z$'));               // => 'regex key'
+//
+//   // Default key values
+//   var h = Z.Hash.create(9);
+//
+//   h.at('foo');     // => 9
+//   h.at('foo', 10); // => 10
+//   h.at('foo');     // => 10
+//
+//   var h = Z.Hash.create(function(h, k) { return h.at(k, []); });
+//
+//   h.at('foo').push('hello');
+//   h.at('bar').push('goodbye');
+//   h                            // => #<Z.Hash:29 {'foo': ['hello'], 'bar': ['goodbye']}>
+//
+//   // KVC/KVO support
+//   var h = Z.H('foo', 9, 'bar', 22);
+//
+//   h.get('size'); // => 2
+//   h.get('foo');  // => 9
+//   h.get('bar');  // => 22
+//
+//   h.observe('size', null, Z.log);
+//   h.observe('foo', null, Z.log);
+//
+//   h.at('baz', 1);
+//   // {type: 'change', path: 'size', observee: #<Z.Hash:40 {'foo': 9, 'bar': 22, 'baz': 1}>}
+//
+//   h.at('foo', 10);
+//   // {type: 'change', path: 'foo', observee: #<Z.Hash:40 {'foo': 10, 'bar': 22, 'baz': 1}>}
+//
+//   // Observing mutations with the @ property
+//   var h = Z.H('foo', 9, 'bar', 22);
+//
+//   h.observe('@', null, Z.log, { previous: true, current: true });
+//
+//   h.at('foo', 10);
+//   // {type: 'update', path: '@', observee: #<Z.Hash:58 {'foo': 10, 'bar': 22}>, previous: 9, current: 10, key: 'foo'}
+//
+//   h.set('bar', 23);
+//   // {type: 'update', path: '@', observee: #<Z.Hash:58 {'foo': 10, 'bar': 23}>, previous: 22, current: 23, key: 'bar'}
+//
+//   h.del('foo');
+//   // {type: 'remove', path: '@', observee: #<Z.Hash:58 {'bar': 23}>, previous: 10, current: null, key: 'foo'}
+//
+//   h.at('x', 'y');
+//   // {type: 'insert', path: '@', observee: #<Z.Hash:58 {'bar': 23, 'x': 'y'}>, previous: null, current: 'y', key: 'x'}
 Z.Hash = Z.Object.extend(Z.Enumerable, function() {
+  // Internal: Returns the default value for a key that is not present in the
+  // hash.
+  //
+  // k - The key to retrieve the default value for.
+  //
+  // Returns the default value for the key.
   function defaultValue(k) {
     var def = this.__z_default__;
     return typeof def === 'function' ? def.call(null, this, k) : def;
   }
 
+  // Public: The `Z.Hash` constructor. Hashes support returning a default value
+  // when a key is accessed that is not currently present in the hash. By
+  // default, `null` is returned for unknown keys, but that can be customized
+  // by passing a default value to the constructor or a function to be invoked
+  // when an unknown key is accessed.
+  //
+  // def - The default value to return for unknown keys (default: `null`). This
+  //       can be any object or a function. When given a function, that function
+  //       is invoked each time an unknown key is accessed and is passed a
+  //       reference to the hash itself as well as the key.
   this.def('initialize', function(def) {
     var nargs = arguments.length;
 
@@ -22,12 +106,33 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     this.__z_default__ = nargs === 1 ? def : null;
   });
 
+  // Public: A property that returns the current size of the hash. This property
+  // is readonly.
   this.prop('size', {
     readonly: true, get: function() { return this.__z_size__; }
   });
 
+  // Public: A special readonly property that only exists for observing hash
+  // mutations. Observing this property will cause notifications to be sent
+  // every time a mutation is made to the hash. The `type` key in the
+  // notification objects will be set to one of the following: `insert`,
+  // `remove`, or `update`.
   this.prop('@', { readonly: true, get: function() { return this; } });
 
+  // Public: Hash reference and assignment method. When given just a key
+  // argument, it returns the current value for the key. When given a key and
+  // value arguments, it sets the value for the given key.
+  //
+  // This method will trigger the appropriate property notifications to be sent
+  // when setting keys.
+  //
+  // k - The key to get or set.
+  // v - The value to set for the given key. When not given, the current value
+  //     for `k` is returned.
+  //
+  // Returns the current value for `k` when given one argument, and returns `v`
+  //   when given two arguments.
+  // Throws `Error` when given the wrong number of arguments.
   this.def('at', function(k, v) {
     var nargs = arguments.length, hash, bucket, entry, i, len;
 
@@ -85,6 +190,14 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     }
   });
 
+  // Public: Deletes a key/value pair from the hash.
+  //
+  // This method will trigger the appropriate property notifications to be sent.
+  //
+  // k - The key to delete from the hash.
+  //
+  // Returns `null`.
+  // Throws `Error` when given the wrong number of arguments.
   this.def('del', function(k) {
     var hash, bucket, entry, i, len;
 
@@ -119,12 +232,22 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return null;
   });
 
+  // Public: Deletes all key/value pairs from the hash.
+  //
+  // Returns the receiver.
   this.def('clear', function() {
     var self = this;
     this.keys().each(function(k) { self.del(k); });
     return this;
   });
 
+  // Public: Indicates whether or not the given key is currently present in the
+  // hash.
+  //
+  // k - The key object to check for.
+  //
+  // Returns `true` if the key is in the hash and `false` otherwise.
+  // Throws `Error` if given the wrong number of arguments.
   this.def('hasKey', function(k) {
     var bucket, i, len;
 
