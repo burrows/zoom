@@ -482,10 +482,10 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return a;
   });
 
-  // Public: Array equality test, performs an item-wise comparison between the
-  // receiver and the given array. If the given object is not a `Z.Array`, then
-  // this method attempts to convert it to a `Z.Array` by invoking its `toArray`
-  // method if it exists.
+  // Public: `Z.Array` equality test, performs an item-wise comparison between
+  // the receiver and the given array. If the given object is not a `Z.Array`,
+  // then this method attempts to convert it to a `Z.Array` by invoking its
+  // `toArray` method if it exists.
   //
   // other - A `Z.Array` to compare to the receiver.
   //
@@ -519,7 +519,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 
   // Public: Generates a hash value for the array.
-  this.def('hash', function() { return Z.hash(this.__z_items__); });
+  this.def('hash', function() {
+    return this.isType ? this.supr() : Z.hash(this.__z_items__);
+  });
 
   // Public: Pushes one ore more items on to the end of the array.
   //
