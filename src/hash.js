@@ -264,6 +264,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return false;
   });
 
+  // Public: Returns a string representation of the hash.
   this.def('toString', function() {
     var self = this, a, recursed;
 
@@ -279,6 +280,18 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
                  recursed ? '...' : a.join(', '));
   });
 
+  // Public: The `Z.Hash` iterator, invokes the given function once for each
+  // key/value pair in the hash.
+  //
+  // `Z.Hash` objects keep track of their insertion order, so iterating over a
+  // hash using this method will always visit the key/value pairs in the order
+  // in which they were inserted into the hash.
+  //
+  // f - A function object, it will be invoked once for each key/value pair in
+  //     the hash. It will be passed a two element array containing the key at
+  //     index 0 and the value at index 1.
+  //
+  // Returns the receiver.
   this.def('each', function(f) {
     var entry = this.__z_head__;
 
@@ -290,14 +303,17 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
+  // Public: Returns a `Z.Array` containing all of the keys in the hash.
   this.def('keys', function() {
     return this.map(function(tuple) { return tuple[0]; });
   });
 
+  // Public: Returns a `Z.Array` containing all of the values in the hash.
   this.def('values', function() {
     return this.map(function(tuple) { return tuple[1]; });
   });
 
+  // Public: Generates a hash value for the hash.
   this.def('hash', function() {
     var self = this, val = this.__z_size__;
 
@@ -311,11 +327,17 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return val;
   });
 
+  // Public: `Z.Hash` equality test. Hashes are equal if they contain the same
+  // number of keys and if each key/value pair is equal (according to `Z.eq`) to
+  // the corresponding elements in the other hash.
+  //
+  // other - A `Z.Hash` to compare to the receiver.
+  //
+  // Returns `true` if the hashes are equal and `false` otherwise.
   this.def('eq', function(other) {
     var self = this, size = this.__z_size__, r = true, keys;
 
-    if (Z.type(other) !== 'zobject' || !other.isA(Z.Hash)) { return false; }
-    if (size !== other.__z_size__) { return false; }
+    if (!Z.isA(other, Z.Hash) || size !== other.__z_size__) { return false; }
 
     keys = this.keys();
 
@@ -334,19 +356,41 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return r;
   });
 
+  // Internal: Overrides the default `getUnknownProperty` implementation to
+  // convert gets of unknown keys to simple hash references.
+  //
+  // k - The name of the unknown property.
+  //
+  // Returns the current value for the given key.
   this.def('getUnknownProperty', function(k) {
     return this.at(k);
   });
 
+  // Internal: Overrides the default `setUnknownProperty` implementation to
+  // convert sets of unknown keys to simple hash assignments.
+  //
+  // k - The name of the unknown property.
+  // v - The value being set.
+  //
+  // Returns `v`.
   this.def('setUnknownProperty', function(k, v) {
     return this.at(k, v);
   });
 
+  // Internal: Overrides the default `hasProperty` to unconditionally return
+  // `true`. This allows observers to be attached to any arbitrary key on the
+  // hash.
   this.def('hasProperty', function() { return true; });
 });
 
-Z.hashSeed = function() { return seed; };
-
+// Public: Generates a hash value for any object, including native objects.
+// This function is used by `Z.Hash.at` to hash key values for inserting and
+// looking up keys. Objects that are equal according to `Z.eq` are guaranteed to
+// return identical hash values.
+//
+// o - The object to generate a hash value for.
+//
+// Returns a number.
 Z.hash = function(o) {
   var v;
 
@@ -405,6 +449,21 @@ Z.hash = function(o) {
   }
 };
 
+// Public: A shortcut for constructing `Z.Hash` concrete instances from a list
+// of key/value pairs or a native object. When given an even number of
+// arguments, each odd argument is treated as a key and each odd argument the
+// corresponding value. If given a single native object argument, each key/value
+// pair in the native object are inserted into the hash.
+//
+// *args - Either a single native object or an even number of objects.
+//
+// Examples
+//
+//   Z.H({foo: 1, bar: 2});          // => #<Z.Hash:17 {'foo': 1, 'bar': 2}>
+//   Z.H('foo', 1, {x: 'hello'}, 2); // => #<Z.Hash:21 {'foo': 1, {x: 'hello'}: 2}>
+//
+// Returns the new `Z.Hash` object.
+// Throws `Error` when given an incorrect number of arguments
 Z.H = function() {
   var len = arguments.length, h, k, i;
 
@@ -433,3 +492,4 @@ Z.H = function() {
 };
 
 }());
+

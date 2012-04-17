@@ -562,9 +562,7 @@ Z.Object.open(function() {
   // keys.
   //
   // Returns a number.
-  this.def('hash', function() {
-    return Z.murmur(this.objectId().toString(), Z.hashSeed());
-  });
+  this.def('hash', function() { return Z.hash(this.__z_objectId__); });
 
   // Public: Indicates whether the receiver is equal to the given object. The
   // default implementation simply does an identity comparison using the `===`
