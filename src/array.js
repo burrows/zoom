@@ -519,7 +519,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 
   // Public: Generates a hash value for the array.
-  this.def('hash', function() { return Z.hash(this.__z_items__); });
+  this.def('hash', function() {
+    return this.isType ? this.supr() : Z.hash(this.__z_items__);
+  });
 
   // Public: Pushes one ore more items on to the end of the array.
   //

@@ -317,6 +317,8 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.def('hash', function() {
     var self = this, val = this.__z_size__;
 
+    if (this.isType) { return this.supr(); }
+
     Z.detectOutermostRecursion(this, function() {
       self.each(function(tuple) {
         val ^= Z.hash(tuple[0]);
