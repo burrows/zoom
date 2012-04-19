@@ -2,9 +2,45 @@
 
 var slice                    = Array.prototype.slice,
     toString                 = Object.prototype.toString,
+    namespaces               = [ [Z, 'Z'] ],
     seenObjects              = [],
     InnerRecursionDetected   = {},
     detectOutermostRecursion = false;
+
+// Public: Registers a namespace for `Z.Object.typeName` to search through to
+// determine the name of a type object. All of your application objects should
+// be created under a namespace object instead of in the global scope.
+// Registering those namespace objects will result in better debugging output.
+//
+// o    - The namespace object.
+// name - A string containing the name of the namespace object (default: '').
+//
+// Examples
+//
+//   MyApp = {};
+//   MyApp.MyModel = Z.Object.extend();
+//   MyApp.MyModel.create();            // => #<(Unknown):18>
+//   Z.addNamespace(MyApp, 'MyApp');
+//   MyApp.MyModel.create();            // => #<MyApp.MyModel:19>
+//
+// Returns nothing.
+Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
+
+// Public: Deregisters a namespace object. Deregistered namespace objects will
+// no longer be searched for type objects.
+//
+// o - The namespace object to remove.
+//
+// Returns nothing.
+Z.removeNamespace = function(o) {
+  namespaces = namespaces.filter(function(namespace) {
+    return namespace[0] !== o;
+  });
+};
+
+// Internal: Returns a native array of all currently registered namespace
+// objects.
+Z.namespaces = function() { return slice.call(namespaces); };
 
 // Internal: Used by `detectRecursion` to check to see if the given pair of
 // objects has been encountered yet on a previous recursive call.
