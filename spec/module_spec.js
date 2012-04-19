@@ -11,7 +11,7 @@ TestMod = Z.Module.create(function() {
 describe('Z.Module.createMixin', function() {
   it('should return an object with the given object as its prototype', function() {
     var o = Z.Object.create();
-    expect(Object.getPrototypeOf(TestMod.createMixin(o))).toBe(o);
+    expect(Z.getPrototypeOf(TestMod.createMixin(o))).toBe(o);
   });
 
   it('should copy all methods to the mixin object', function() {

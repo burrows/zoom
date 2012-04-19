@@ -45,7 +45,7 @@ Z.Module = Z.Object.extend(function() {
   //
   // Returns the new mixin object.
   this.def('createMixin', function(prototype) {
-    var o     = Object.create(prototype),
+    var o     = Z.create(prototype),
         defs  = this.__z_defs__,
         props = this.__z_properties__,
         i, len;

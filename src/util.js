@@ -7,6 +7,23 @@ var slice                    = Array.prototype.slice,
     InnerRecursionDetected   = {},
     detectOutermostRecursion = false;
 
+// Internal: A simple test to see if a function is provided by the runtime.
+function isNative(f) { return !!String(f).match(/\[native code\]/); }
+
+// Internal: Polyfill for `Object.create`.
+Z.create = isNative(Object.create) ? Object.create : function(o) {
+  var F = function() {}, o2;
+  F.prototype = o;
+  o2 = new F();
+  o2.constructor = F;
+  return o2;
+};
+
+// Internal: Polyfill for `Object.getPrototypeOf`.
+Z.getPrototypeOf = isNative(Object.getPrototypeOf) ? Object.getPrototypeOf : function(o) {
+  return o.constructor ? o.constructor.prototype : null;
+};
+
 // Public: Registers a namespace for `Z.Object.typeName` to search through to
 // determine the name of a type object. All of your application objects should
 // be created under a namespace object instead of in the global scope.
@@ -33,9 +50,7 @@ Z.addNamespace = function(o, name) { namespaces.push([o, name || '']); };
 //
 // Returns nothing.
 Z.removeNamespace = function(o) {
-  namespaces = namespaces.filter(function(namespace) {
-    return namespace[0] !== o;
-  });
+  namespaces = Z.Array.create(namespaces).remove(o).toNative();
 };
 
 // Internal: Returns a native array of all currently registered namespace
@@ -270,8 +285,8 @@ Z.eq = function(a, b) {
 
       return r;
     case 'object':
-      akeys = Object.keys(a);
-      bkeys = Object.keys(b);
+      akeys = Z.H(a).keys().toNative();
+      bkeys = Z.H(b).keys().toNative();
 
       if (akeys.length !== bkeys.length) { return false; }
 

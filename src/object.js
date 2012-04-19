@@ -9,8 +9,8 @@ var objectId = 1, slice = Array.prototype.slice;
 //
 // The KVC/KVO implementation is highly influenced by Cocoa:
 //
-// * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/KeyValueCoding/Articles/KeyValueCoding.html)
-// * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#documentation/Cocoa/Reference/Foundation/Protocols/NSKeyValueObserving_Protocol/Reference/Reference.html#//apple_ref/occ/cat/NSKeyValueObserving)
+// * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentati
+// * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#document
 //
 // Zoom uses a custom object system that leverages the prototypal nature of
 // javascript. There are no classes in Zoom, only type objects and concrete
@@ -228,7 +228,7 @@ Z.Object.open(function() {
       proto = args[i].createMixin(proto);
     }
 
-    o = Object.create(proto);
+    o = Z.create(proto);
 
     o.isType         = true;
     o.__z_objectId__ = objectId++;
@@ -277,9 +277,9 @@ Z.Object.open(function() {
       throw new Error('Z.Object.type: must be called on a concrete object');
     }
 
-    p = Object.getPrototypeOf(this);
+    p = Z.getPrototypeOf(this);
 
-    while (p && !p.isType) { p = Object.getPrototypeOf(p); }
+    while (p && !p.isType) { p = Z.getPrototypeOf(p); }
 
     return p;
   });
@@ -312,10 +312,10 @@ Z.Object.open(function() {
 
     while (o) {
       if (o.hasOwnProperty(name) && o[name] === caller) { break; }
-      o = Object.getPrototypeOf(o);
+      o = Z.getPrototypeOf(o);
     }
 
-    if (!(method = Object.getPrototypeOf(o)[name])) {
+    if (!(method = Z.getPrototypeOf(o)[name])) {
       throw new Error(Z.fmt('Z.Object.supr: no super method `%@` found for %@', name, this));
     }
 
@@ -342,7 +342,7 @@ Z.Object.open(function() {
   this.def('ancestors', function() {
     var p = this, a = [this];
 
-    while ((p = Object.getPrototypeOf(p)) !== Object.prototype) {
+    while ((p = Z.getPrototypeOf(p)) !== Object.prototype) {
       a.push(p.hasOwnProperty('__z_module__') ? p.__z_module__ : p);
     }
 
@@ -354,7 +354,13 @@ Z.Object.open(function() {
   //
   // o - Any object.
   this.def('isA', function(o) {
-    return this.ancestors().indexOf(o) !== -1;
+    var ancestors = this.ancestors(), i, len;
+
+    for (i = 0, len = ancestors.length; i < len; i++) {
+      if (ancestors[i] === o) { return true; }
+    }
+
+    return false;
   });
 
   // Public: Returns the name of a type object. When invoked on a concrete

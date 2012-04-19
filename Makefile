@@ -1,7 +1,6 @@
 NODE_PATH := build
 
-SRCS := polyfill.js     \
-        main.js         \
+SRCS := main.js         \
         util.js         \
         object.js       \
         module.js       \

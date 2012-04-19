@@ -379,6 +379,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   // Returns `true` if the object is present and `false` otherwise.
   this.def('contains', function(o) { return this.index(o) !== null; });
 
+  // Public: Removes all occurences of the given object from the array.
+  //
+  // o - The object to remove.
+  //
+  // Returns the receiver.
   this.def('remove', function(o) {
     var items = this.__z_items__, i, len;
 
@@ -646,7 +651,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   //
   // Returns a `Z.Array`.
   this.def('toArray', function() {
-    return Object.getPrototypeOf(this) === Z.Array ? this : Z.Array.create(this);
+    return Z.getPrototypeOf(this) === Z.Array ? this : Z.Array.create(this);
   });
 
   // Public: Returns a new `Z.Array` containing the sorted items of the
@@ -672,7 +677,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     var size = this.size();
 
     willMutate.call(this, 'replace', 0, size);
-    this.__z_items__.sort(fn);
+    this.__z_items__.sort(fn || Z.cmp);
     didMutate.call(this, 'replace', 0, size);
 
     return this;
