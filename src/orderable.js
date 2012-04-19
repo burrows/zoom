@@ -11,7 +11,7 @@
 //
 //    App.X = Z.Object.extend(Z.Orderable, function() {
 //      this.prop('rank');
-//      this.def('cmp', function() {
+//      this.def('cmp', function(other) {
 //        return Z.cmp(this.rank(), other.rank());
 //      });
 //    });
