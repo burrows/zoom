@@ -1,6 +1,6 @@
 (function() {
 
-var Foo, f, a;
+var Foo, f, a, h;
 
 if (typeof Z === 'undefined') { require('./helper'); }
 

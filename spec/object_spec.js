@@ -353,7 +353,7 @@ describe('Z.Object.toString', function() {
     var o = X.create({x: 9});
     o.y(o);
 
-    expect(o.toString()).toMatch(/^#<\(Unknown\):\d+ /)
+    expect(o.toString()).toMatch(/^#<\(Unknown\):\d+ /);
     expect(o.toString()).toMatch(/x: 9/);
     expect(o.toString()).toMatch(/y: #<\(Unknown\):\d+ \.\.\.>/);
   });
@@ -490,7 +490,7 @@ describe('Z.Object KVC support:', function() {
         });
 
         expect(X.create().foo()).toBe(9);
-        expect(X.create().bar()).toBeNull()
+        expect(X.create().bar()).toBeNull();
         expect(X.create({foo: 8, bar: 12}).foo()).toBe(8);
         expect(X.create({foo: 8, bar: 12}).bar()).toBe(12);
       });

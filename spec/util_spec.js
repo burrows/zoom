@@ -279,9 +279,9 @@ describe('Z.eq', function() {
     expect(Z.eq(false, new Boolean(false))).toBe(true);
     expect(Z.eq(new Boolean(false), false)).toBe(true);
     expect(Z.eq(new Boolean(false), new Boolean(false))).toBe(true);
-    expect(Z.eq(new Boolean, new Boolean)).toBe(true);
-    expect(Z.eq(new Boolean(false), new Boolean)).toBe(true);
-    expect(Z.eq(new Boolean, new Boolean(false))).toBe(true);
+    expect(Z.eq(new Boolean(), new Boolean())).toBe(true);
+    expect(Z.eq(new Boolean(false), new Boolean())).toBe(true);
+    expect(Z.eq(new Boolean(), new Boolean(false))).toBe(true);
   });
 
   it('should return `false` for boolean objects with different primitive objects', function() {
@@ -291,7 +291,7 @@ describe('Z.eq', function() {
     expect(Z.eq(new Boolean(true), new Boolean(false))).toBe(false);
     expect(Z.eq(false, new Boolean(true))).toBe(false);
     expect(Z.eq(new Boolean(true), false)).toBe(false);
-    expect(Z.eq(new Boolean(true), new Boolean)).toBe(false);
+    expect(Z.eq(new Boolean(true), new Boolean())).toBe(false);
   });
 
   it('should return `true` for date objects containing identical times and `false` otherwise', function() {

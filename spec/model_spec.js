@@ -62,7 +62,7 @@ describe('Z.Model.attr', function() {
       });
 
       expect(Model.create().foo()).toBe(9);
-      expect(Model.create().bar()).toBeNull()
+      expect(Model.create().bar()).toBeNull();
       expect(Model.create({foo: 8, bar: 12}).foo()).toBe(8);
       expect(Model.create({foo: 8, bar: 12}).bar()).toBe(12);
     });
@@ -507,7 +507,8 @@ describe('Z.Model.fetch', function() {
   });
 
   describe('when called on a parent model type', function() {
-    var p, c
+    var p, c;
+
     beforeEach(function() {
       p = Test.Parent.load({id: 101});
       c = Test.Child.load({id: 201});
@@ -523,7 +524,8 @@ describe('Z.Model.fetch', function() {
   });
 
   describe('when called on a child model type', function() {
-    var p, c
+    var p, c;
+
     beforeEach(function() {
       p = Test.Parent.load({id: 101});
       c = Test.Child.load({id: 201});
@@ -1798,7 +1800,7 @@ describe('Z.Query', function() {
       var a;
 
       q = Test.Author.query({
-        matchFn: function(a) { return a.last() === 'Stark' || a.last() == 'Lannister'; },
+        matchFn: function(a) { return a.last() === 'Stark' || a.last() === 'Lannister'; },
         matchDependsOn: ['last']
       });
 
