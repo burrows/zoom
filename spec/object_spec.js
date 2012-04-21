@@ -1,6 +1,6 @@
 (function() {
 
-var Z = this.Z || require('zoom');
+if (!this.Z) { require('./helper'); }
 
 describe('Z.Object.extend', function() {
   it('should return an object whose prototype is the receiver', function() {
@@ -290,13 +290,13 @@ describe('Z.Object.isA', function() {
 describe('Z.Object.typeName', function() {
   beforeEach(function() {
     Z.Stuff = Z.Object.extend();
-    Z.root.MyNamespace = {};
-    Z.root.MyNamespace.Thing = Z.Object.extend();
+    Z.global.MyNamespace = {};
+    Z.global.MyNamespace.Thing = Z.Object.extend();
   });
 
   afterEach(function() {
     Z.del(Z, 'Stuff');
-    Z.del(Z.root, 'MyNamespace');
+    Z.del(Z.global, 'MyNamespace');
   });
 
   it('should return the name of the object for objects in the Z namespace', function() {
@@ -310,13 +310,13 @@ describe('Z.Object.typeName', function() {
   });
 
   it('should return "(Unknown)" for objects defined in a namespace other than Z but not registered', function() {
-    expect(Z.root.MyNamespace.Thing.typeName()).toBe('(Unknown)');
+    expect(Z.global.MyNamespace.Thing.typeName()).toBe('(Unknown)');
   });
 
   it('should return the name of the object for objects defined in a namespace other than Z that is registered', function() {
-    Z.addNamespace(Z.root.MyNamespace, 'MyNamespace');
-    expect(Z.root.MyNamespace.Thing.typeName()).toBe('MyNamespace.Thing');
-    Z.removeNamespace(Z.root.MyNamespace);
+    Z.addNamespace(Z.global.MyNamespace, 'MyNamespace');
+    expect(Z.global.MyNamespace.Thing.typeName()).toBe('MyNamespace.Thing');
+    Z.removeNamespace(Z.global.MyNamespace);
   });
 
   it("should return the name of the object's type when called on a concrete object", function() {

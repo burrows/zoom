@@ -1,6 +1,6 @@
 (function() {
 
-var Z = this.Z || require('zoom');
+if (!this.Z) { require('./helper'); }
 
 describe('Z.hash', function() {
   describe('with `null` or `undefined`', function() {

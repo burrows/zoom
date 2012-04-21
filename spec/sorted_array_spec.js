@@ -1,6 +1,6 @@
 (function() {
 
-if (typeof Z === 'undefined') { require('./helper'); }
+if (!this.Z) { require('./helper'); }
 
 var Foo, Bar;
 

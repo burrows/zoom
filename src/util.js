@@ -532,7 +532,7 @@ Z.detectOutermostRecursion = function(o1, o2, f) {
 Z.resolve = function(path, ctx) {
   var head, tail;
 
-  ctx  = ctx || Z.root;
+  ctx  = ctx || Z.global;
 
   if (ctx.isZObject) { return ctx.get(path); }
 

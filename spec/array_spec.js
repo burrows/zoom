@@ -1,6 +1,6 @@
 (function() {
 
-if (typeof Z === 'undefined') { require('./helper'); }
+if (!this.Z) { require('./helper'); }
 
 describe('Z.Array constructor', function() {
   it('should create an array of the given size when passed a single number', function() {

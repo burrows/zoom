@@ -1,8 +1,7 @@
 (function() {
-  var root = typeof exports !== 'undefined' ? global : window;
+  this.Z = this.Z || require('zoom');
 
-  root.Z = root.Z || require('zoom');
-  root.Test = root.Test || {};
+  Test = {};
 
   Z.addNamespace(Test, 'Test');
 

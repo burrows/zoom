@@ -1,6 +1,8 @@
 (function() {
 
-var Z = this.Z || require('zoom'), Foo, fa, fb, fc;
+if (!this.Z) { require('./helper'); }
+
+var Foo, fa, fb, fc;
 
 Foo = Z.Object.extend(Z.Orderable, function() {
   this.prop('x');

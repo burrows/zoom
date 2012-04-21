@@ -1,8 +1,8 @@
 (function() {
 
-var Foo, f, a, h;
+if (!this.Z) { require('./helper'); }
 
-if (typeof Z === 'undefined') { require('./helper'); }
+var Foo, f, a, h;
 
 Foo = Z.Object.extend(Z.Enumerable, function() {
   this.prop('x');

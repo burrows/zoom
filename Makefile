@@ -1,7 +1,6 @@
 NODE_PATH := build
 
-SRCS := main.js         \
-        util.js         \
+SRCS := util.js         \
         object.js       \
         module.js       \
         orderable.js    \
@@ -18,7 +17,9 @@ zoom: build/zoom.js
 
 build/zoom.js: $(addprefix src/,$(SRCS))
 	@mkdir -p build
-	cat $^ > $@
+	echo "(function() {\nvar Z; if (typeof exports !== 'undefined') { Z = exports; Z.platform = 'node'; } else { this.Z = Z = {platform: 'browser'}; }; Z.global = this;" > $@
+	cat $^ >> $@
+	echo "}());" >> $@
 
 lint: zoom
 	./node_modules/.bin/jshint src/*.js --config ./jshint.json

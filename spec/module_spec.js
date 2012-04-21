@@ -1,6 +1,6 @@
 (function() {
 
-var Z = this.Z || require('zoom'), TestMod;
+if (!this.Z) { require('./helper'); }
 
 TestMod = Z.Module.create(function() {
   this.def('foo', function() {});

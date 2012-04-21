@@ -1,6 +1,6 @@
 (function(undefined) {
 
-var Z = this.Z || require('zoom');
+if (!this.Z) { require('./helper'); }
 
 describe('Z.merge', function() {
   it('should merge values from sources objects into the given destination object', function() {
@@ -494,25 +494,25 @@ describe('Z.eq', function() {
 describe('Z.resolve', function() {
   describe('given the name of a global variable', function() {
     it('should return the value of the global variable', function() {
-      Z.root.Something = 9;
+      Z.global.Something = 9;
       expect(Z.resolve('Something')).toBe(9);
-      Z.del(Z.root, 'Something');
+      Z.del(Z.global, 'Something');
     });
   });
 
   describe('given a path containing native objects', function() {
     it('should return the value at the end of the path', function() {
-      Z.root.A = { b: { c: 'blah' } };
+      Z.global.A = { b: { c: 'blah' } };
       expect(Z.resolve('A.b.c')).toBe('blah');
-      Z.del(Z.root, 'A');
+      Z.del(Z.global, 'A');
     });
   });
 
   describe('given a path zobjects', function() {
     it('should return the value at the end of the path', function() {
-      Z.root.A = Z.H('b', Z.H('c', 'foo'));
+      Z.global.A = Z.H('b', Z.H('c', 'foo'));
       expect(Z.resolve('A.b.c')).toBe('foo');
-      Z.del(Z.root, 'A');
+      Z.del(Z.global, 'A');
     });
   });
 
