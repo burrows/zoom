@@ -1,5 +1,5 @@
 (function() {
-  this.Z = this.Z || require('zoom');
+  this.Z = this.Z || require('zoom-core');
 
   Test = {};
 

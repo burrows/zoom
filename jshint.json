@@ -18,6 +18,7 @@
 
   "predef"        : [
     "Z",
+    "$",
     "expect",
     "describe",
     "it",

@@ -115,7 +115,7 @@ Z.identity = function(x) { return x; };
 // will override properties of the same name in previous sources.
 //
 // o       - The destination object.
-// sources - One ore more source objects.
+// sources - One or more source objects.
 //
 // Returns `o`.
 Z.merge = function(o) {
