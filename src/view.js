@@ -2,7 +2,7 @@
 //
 // * superview
 // * subviews
-// * context
+// * node
 //
 // methods:
 //

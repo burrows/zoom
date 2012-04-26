@@ -12,11 +12,17 @@ Z.App = Z.Object.extend(function() {
   this.prop('keyWindow');
 
   this.def('start', function() {
-    var window = this.createMainWindow();
+    var window = this.windowType.create({
+      app: this,
+      view: this.mainView().create(),
+      isMain: true,
+      isKey: true
+    });
 
     this.set('mainWindow', window);
     this.set('keyWindow', window);
     this.listen();
+    window.draw();
 
     return this;
   });
@@ -41,15 +47,6 @@ Z.App = Z.Object.extend(function() {
     return this.windowType.create(Z.merge(opts || {}, {
       app: this, isMain: false
     }));
-  });
-
-  this.def('createMainWindow', function() {
-    return this.windowType.create({
-      app: this,
-      view: this.mainView().create(),
-      isMain: true,
-      isKey: true
-    });
   });
 
   this.def('destroyWindow', function(window) {

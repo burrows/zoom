@@ -14,15 +14,15 @@ CORE_SRCS := util.js         \
 						 window.js       \
 						 app.js
 
-BROWSER_SRCS := dom/view.js dom/window.js dom/app.js
+DOM_SRCS := dom/app.js dom/view.js dom/window.js
 
 default: spec
 
-all: build/zoom-core.js build/zoom-browser.js
+all: build/zoom-core.js build/zoom-dom.js
 
 core: build/zoom-core.js
 
-browser: build/zoom-browser.js
+dom: build/zoom-dom.js
 
 build/zoom-core.js: $(addprefix src/,$(CORE_SRCS))
 	@mkdir -p build
@@ -30,13 +30,13 @@ build/zoom-core.js: $(addprefix src/,$(CORE_SRCS))
 	cat $^ >> $@
 	echo "}());" >> $@
 
-build/zoom-browser.js: $(addprefix src/,$(CORE_SRCS)) $(addprefix src/,$(BROWSER_SRCS))
+build/zoom-dom.js: $(addprefix src/,$(CORE_SRCS)) $(addprefix src/,$(DOM_SRCS))
 	@mkdir -p build
 	echo "(function() {\nvar Z; if (typeof exports !== 'undefined') { Z = exports; Z.platform = 'node'; } else { this.Z = Z = {platform: 'browser'}; }; Z.global = this;" > $@
 	cat $^ >> $@
 	echo "}());" >> $@
 
-lint: core browser
+lint: core dom
 	./node_modules/.bin/jshint src/*.js --config ./jshint.json
 
 lintspec:
@@ -57,5 +57,5 @@ fixme:
 autobuild:
 	node ./util/autobuild.js
 
-.PHONY: default core browser clean lint spec repl fixme
+.PHONY: default core dom clean lint spec repl fixme
 

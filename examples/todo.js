@@ -361,13 +361,14 @@ Z.addNamespace(Todo, 'Todo');
 Todo.MainView = Z.DOMView.extend(function() {
   this.tag('h1');
   this.def('draw', function() {
-    this.context().text('Hello world!');
+    var node = this.node(), text = document.createTextNode('Hello world!');
+    node.appendChild(text);
   });
 });
 
-$(function() {
+document.addEventListener('DOMContentLoaded', function() {
   Todo.app = Z.DOMApp.create({
-    container: $('#app'), mainView: Todo.MainView
+    mainView: Todo.MainView, container: document.getElementById('app')
   }).start();
 });
 
