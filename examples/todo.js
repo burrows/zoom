@@ -358,18 +358,36 @@ Z.addNamespace(Todo, 'Todo');
 //
 //App.rootView.display();
 
-Todo.MainView = Z.DOMView.extend(function() {
+Todo.HeaderView = Z.DOMView.extend(function() {
   this.tag('h1');
   this.def('draw', function() {
     var node = this.node(), text = document.createTextNode('Hello world!');
+    while (node.firstChild) { node.removeChild(node.firstChild); }
     node.appendChild(text);
   });
 });
 
+Todo.SubHeaderView = Z.DOMView.extend(function() {
+  this.tag('h2');
+  this.def('draw', function() {
+    var node = this.node(), text = document.createTextNode('The time is: ' + (new Date));
+    while (node.firstChild) { node.removeChild(node.firstChild); }
+    node.appendChild(text);
+  });
+});
+
+Todo.MainView = Z.DOMView.extend(function() {
+  this.def('initialize', function(props) {
+    this.supr(props);
+    this.subviews().push(Todo.HeaderView.create(), Todo.SubHeaderView.create());
+  });
+});
+
+Todo.app = Z.DOMApp.create(Todo.MainView);
+
 document.addEventListener('DOMContentLoaded', function() {
-  Todo.app = Z.DOMApp.create({
-    mainView: Todo.MainView, container: document.getElementById('app')
-  }).start();
+  Todo.app.set('container', document.getElementById('app'));
+  Todo.app.start();
 });
 
 }());

@@ -20,8 +20,16 @@ Z.DOMWindow = Z.DOMView.extend(function() {
   });
 
   this.def('attach', function() {
+    var container = this.get('app.container'), node = this.node();
     this.draw();
-    this.get('app.container').appendChild(this.node());
+    if (node.parentNode !== container) { container.appendChild(node); }
+    return this;
+  });
+
+  this.def('detach', function() {
+    var container = this.get('app.container'), node = this.node();
+    if (node.parentNode === container) { container.removeChild(node); }
+    return this;
   });
 });
 

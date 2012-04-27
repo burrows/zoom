@@ -21,6 +21,8 @@
 (function(undefined) {
 
 Z.DOMView = Z.Object.extend(function() {
+  var viewClassRe = /(^|\s)z-view(\s|$)/, views = {};
+
   this.prop('tag', { def: 'div' });
 
   this.prop('node');
@@ -31,15 +33,40 @@ Z.DOMView = Z.Object.extend(function() {
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
 
+  this.def('viewForNode', function(node) {
+    while (node && !viewClassRe.test(node.className)) {
+      node = node.parentNode;
+    }
+
+    return node ? (views[node.id.replace('z-view-', '')] || null) : null;
+  });
+
   this.def('initialize', function(props) {
     this.supr(props);
+    views[this.objectId()] = this;
     this.set('node', this.buildNode());
   });
 
+  this.def('destroy', function() {
+    var node = this.node();
+    if (node.parentNode) { node.parentNode.removeChild(node); }
+    this._destroy();
+  });
+
+  this.def('_destroy', function() {
+    this.subviews().invoke('_destroy');
+    delete views[this.objectId()];
+    this.set('node', null);
+  });
+
   this.def('buildNode', function() {
-    var node = document.createElement(this.tag());
-    node.id = 'z-view-' + this.objectId();
+    var id   = 'z-view-' + this.objectId(),
+        node = document.createElement(this.tag());
+
+    node.id = id;
     node.classList.add('z-view');
+    views[id] = this;
+
     return node;
   });
 
