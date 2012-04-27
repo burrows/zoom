@@ -11,25 +11,13 @@ Z.DOMWindow = Z.DOMView.extend(function() {
   this.prop('keyView');
 
   this.def('buildNode', function() {
-    var node = this.supr();
+    var node = this.supr(), classes = ['z-window'];
 
-    node.classList.add('z-window');
-    if (this.isMain()) { node.classList.add('z-main-window'); }
+    if (this.isMain()) { classes.push('z-main-window'); }
+
+    node.className = node.className + ' ' + classes.join(' '); 
 
     return node;
-  });
-
-  this.def('attach', function() {
-    var container = this.get('app.container'), node = this.node();
-    this.draw();
-    if (node.parentNode !== container) { container.appendChild(node); }
-    return this;
-  });
-
-  this.def('detach', function() {
-    var container = this.get('app.container'), node = this.node();
-    if (node.parentNode === container) { container.removeChild(node); }
-    return this;
   });
 });
 

@@ -1,51 +1,39 @@
 NODE_PATH := build
 
-CORE_SRCS := util.js         \
-             object.js       \
-             module.js       \
-             orderable.js    \
-             enumerable.js   \
-             array.js        \
-             sorted_array.js \
-             hash.js         \
-             mapper.js       \
-             model.js        \
-             view.js         \
-						 window.js       \
-						 app.js
-
-DOM_SRCS := dom/app.js dom/view.js dom/window.js
+SRCS := util.js         \
+        object.js       \
+        module.js       \
+        orderable.js    \
+        enumerable.js   \
+        array.js        \
+        sorted_array.js \
+        hash.js         \
+        mapper.js       \
+        model.js        \
+        dom/view.js     \
+        dom/window.js   \
+        dom/app.js
 
 default: spec
 
-all: build/zoom-core.js build/zoom-dom.js
+zoom: build/zoom.js
 
-core: build/zoom-core.js
-
-dom: build/zoom-dom.js
-
-build/zoom-core.js: $(addprefix src/,$(CORE_SRCS))
+build/zoom.js: $(addprefix src/,$(SRCS))
 	@mkdir -p build
 	echo "(function() {\nvar Z; if (typeof exports !== 'undefined') { Z = exports; Z.platform = 'node'; } else { this.Z = Z = {platform: 'browser'}; }; Z.global = this;" > $@
 	cat $^ >> $@
 	echo "}());" >> $@
 
-build/zoom-dom.js: $(addprefix src/,$(CORE_SRCS)) $(addprefix src/,$(DOM_SRCS))
-	@mkdir -p build
-	echo "(function() {\nvar Z; if (typeof exports !== 'undefined') { Z = exports; Z.platform = 'node'; } else { this.Z = Z = {platform: 'browser'}; }; Z.global = this;" > $@
-	cat $^ >> $@
-	echo "}());" >> $@
-
-lint: core dom
+lint: zoom
 	./node_modules/.bin/jshint src/*.js --config ./jshint.json
 
 lintspec:
 	./node_modules/.bin/jshint spec/*.js --config ./jshint.json
 
-spec: core lint
+spec: zoom lint
 	NODE_PATH=$(NODE_PATH) ./node_modules/.bin/jasmine-node ./spec
 
-repl: core
+repl: zoom
 	NODE_NO_READLINE=1 rlwrap node ./util/repl.js
 
 clean:
@@ -57,5 +45,5 @@ fixme:
 autobuild:
 	node ./util/autobuild.js
 
-.PHONY: default core dom clean lint spec repl fixme
+.PHONY: default zoom clean lint spec repl fixme
 

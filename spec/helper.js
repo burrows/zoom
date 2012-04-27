@@ -1,5 +1,10 @@
 (function() {
-  this.Z = this.Z || require('zoom-core');
+  if (!this.window) {
+    this.window   = require('domino').createWindow();
+    this.document = window.document;
+  }
+
+  this.Z = this.Z || require('zoom');
 
   Test = {};
 

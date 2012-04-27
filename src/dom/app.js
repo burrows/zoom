@@ -1,4 +1,3 @@
-(function() {
 
 Z.DOMApp = Z.Object.extend(function() {
   var events = [
@@ -27,11 +26,23 @@ Z.DOMApp = Z.Object.extend(function() {
 
   function processEvent(event) {
     var node = event.target, view = Z.DOMView.viewForNode(node);
-
-    console.log(event.type, view.toString());
   }
 
-  this.prop('container', { def: document.body });
+  function attachWindow(window) {
+    var container = this.container(), node = window.node();
+    window.draw();
+    container.appendChild(node);
+  }
+
+  function detachWindow(window) {
+    this.container().removeChild(window.node());
+  }
+
+  this.prop('container', {
+    get: function() {
+      return this.__container__ = this.__container__ || document.body;
+    }
+  });
 
   this.prop('windows', {
     readonly: true,
@@ -43,10 +54,12 @@ Z.DOMApp = Z.Object.extend(function() {
     get: function() { return this.get('windows.first'); }
   });
 
+  this.prop('isStarted', { def: false });
+
   this.prop('keyWindow');
 
   this.def('initialize', function(mainView, container) {
-    if (!Z.isA(mainView, Z.DOMView)) {
+    if (!(Z.isA(mainView, Z.DOMView) && mainView.isType)) {
       throw new Error(Z.fmt("%@.initialize: must provide a sub-type of `Z.DOMView` as the main view type",
                             this.typeName()));
     }
@@ -63,26 +76,34 @@ Z.DOMApp = Z.Object.extend(function() {
   });
 
   this.def('start', function() {
-    this.container().classList.add('z-app');
-    this.set('keyWindow', this.mainWindow());
+    var self = this;
+
+    if (this.isStarted()) { return this; }
+
+    this.keyWindow(this.mainWindow());
     this.listen();
-    this.windows().invoke('attach');
+    this.windows().each(function(window) { attachWindow.call(self, window); });
+    this.isStarted(true);
     return this;
   });
 
   this.def('stop', function() {
-    this.container().classList.remove('z-app');
+    var self = this;
+
+    if (!this.isStarted()) { return this; }
+
     this.set('keyWindow', null);
-    this.windows().invoke('detach');
+    this.windows().each(function(window) { detachWindow.call(self, window); });
     this.stopListening();
+    this.isStarted(false);
     return this;
   });
 
   this.def('destroy', function() {
-    var windows = this.windows();
+    var self = this, windows = this.windows(), mainWindow = windows.shift();
     this.stop();
     windows.invoke('destroy');
-    windows.clear();
+    mainWindow.destroy();
     return this;
   });
 
@@ -97,20 +118,28 @@ Z.DOMApp = Z.Object.extend(function() {
   this.def('stopListening', function() {
   });
 
-  this.def('createWindow', function(opts) {
-    return Z.DOMWindow.create(Z.merge(opts || {}, {
-      app: this, isMain: false
+  this.def('createWindow', function(viewType, opts) {
+    var window = Z.DOMWindow.create(Z.merge(opts || {}, {
+      app: this, isMain: false, contentView: viewType.create()
     }));
+
+    this.windows().push(window);
+
+    if (this.isStarted()) { attachWindow.call(this, window) }
+
+    return window;
   });
 
   this.def('destroyWindow', function(window) {
+    if (window === this.mainWindow()) {
+      throw new Error(Z.fmt("%@.destroyWindow: can't destroy the main window",
+                            this.typeName()));
+    }
+
     window.destroy();
     this.windows().remove(window);
-  });
 
-  this.def('moveWindowToTop', function(window) {
-    this.windows().remove(window).push(window);
-    this.windowStackOrderDidChange();
+    return window;
   });
 
   this.def('dispatchMouseEvent', function(event) {
@@ -119,6 +148,4 @@ Z.DOMApp = Z.Object.extend(function() {
   this.def('dispatchKeyEvent', function(event) {
   });
 });
-
-}());
 

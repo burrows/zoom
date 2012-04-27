@@ -64,7 +64,7 @@ Z.DOMView = Z.Object.extend(function() {
         node = document.createElement(this.tag());
 
     node.id = id;
-    node.classList.add('z-view');
+    node.className = 'z-view';
     views[id] = this;
 
     return node;
