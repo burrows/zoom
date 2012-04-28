@@ -109,6 +109,12 @@ describe('Z.DOMWindow', function() {
       }).toThrow("Z.DOMApp.destroyWindow: can't destroy the main window");
     });
 
+    it('should throw an exception if passed a window object thats not in its `windows` array', function() {
+      expect(function() {
+        app.destroyWindow(Z.DOMWindow.create());
+      }).toThrow("Z.DOMApp.destroyWindow: attempted to destroy a window that doesn't belong to the application");
+    });
+
     it('should remove the given window from the `windows` array', function() {
       var window = app.createWindow(TestView2);
 
