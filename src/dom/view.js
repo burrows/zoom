@@ -1,27 +1,17 @@
-// properties:
-//
-// * superview
-// * subviews
-// * node
-//
-// methods:
-//
-// * draw
-// * remove
-// * isDescendantOf(view)
-// * isAncestorOf(view)
-// * removeSubview(view)
-// * addSubview(view, idx)
-// * addSubviewBefore(curView, newView)
-// * addSubviewAfter(curView, newView)
-// * replaceSubview(oldView, newView)
-//
-// * didRemoveSubview(view)
-// * didAddSubview(view)
 (function(undefined) {
 
 Z.DOMView = Z.Object.extend(function() {
-  var viewClassRe = /(^|\s)z-view(\s|$)/, views = {};
+  var viewClassRe, views;
+
+  // Internal: A regular expression for matching against a DOM element's
+  // `className` property to determine if the element is a view's node.
+  viewClassRe = /(^|\s)z-view(\s|$)/;
+  
+  // Internal: A cache of concrete view instances. Every `Z.DOMView` object that
+  // gets created is added to this object keyed by its `objectId`. This cache is
+  // used by the `viewForNode` method to look up a view instance based on a DOM
+  // node. When views are destroyed, they are removed from this cache.
+  views = {};
 
   this.prop('tag', { def: 'div' });
 
@@ -33,6 +23,12 @@ Z.DOMView = Z.Object.extend(function() {
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
 
+  // Public: Returns the `Z.DOMView` instance that owns the given node.
+  //
+  // node - A DOM element reference.
+  //
+  // Returns a `Z.DOMView` instance or `null` if the node doesn't belong to a
+  //   view.
   this.def('viewForNode', function(node) {
     while (node && !viewClassRe.test(node.className)) {
       node = node.parentNode;
@@ -80,6 +76,10 @@ Z.DOMView = Z.Object.extend(function() {
     });
 
     return this;
+  });
+
+  this.def('handleEvent', function(event) {
+    return false;
   });
 
   this.def('isDescendantOf', function(view) {

@@ -2,8 +2,6 @@
   hash @ property
 * fire option doesn't work that well with array @ observers
 * implement named finders
-* figure out model serialization
-  * something RABL-like?
-  * does this belong in the framework?
 * batched property changes
-* docs
+* model docs
+* limit Z.inspect recursion

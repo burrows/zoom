@@ -2,38 +2,44 @@
 
 if (!this.Z) { require('./helper'); }
 
-var TestView1, TestView2, container;
+var container, Parent, Child1, Child2, Child3;
 
-TestView1 = Z.DOMView.extend(function() {
+Child1 = Z.DOMView.extend(function() {
   this.def('draw', function() {
-    var node = this.node(), child;
-    if (!node.firstChild) {
-      child = document.createElement('p');
-      child.className = 'test-view-1';
-      node.appendChild(child);
-    }
+    this.node().innerHTML = '<p class="child1"></p>';
   });
 });
 
-TestView2 = Z.DOMView.extend(function() {
+Child2 = Z.DOMView.extend(function() {
   this.def('draw', function() {
-    var node = this.node(), child;
-    if (!node.firstChild) {
-      child = document.createElement('p');
-      child.className = 'test-view-2';
-      node.appendChild(child);
-    }
+    this.node().innerHTML = '<p class="child2"></p>';
   });
 });
 
-describe('Z.DOMWindow', function() {
+Child3 = Z.DOMView.extend(function() {
+  this.def('draw', function() {
+    this.node().innerHTML = '<p class="child3"></p>';
+  });
+});
+
+Parent = Z.DOMView.extend(function() {
+  this.def('initialize', function(props) {
+    this.supr(props);
+    this.subviews().push(
+      Child1.create({superview: this}),
+      Child2.create({superview: this})
+    );
+  });
+});
+
+describe('Z.DOMApp', function() {
   var container = document.createElement('div'), app;
 
   container.id = 'test-container';
 
   beforeEach(function() {
     document.body.appendChild(container);
-    app = Z.DOMApp.create(TestView1, container);
+    app = Z.DOMApp.create(Parent, container);
   });
 
   afterEach(function() {
@@ -41,14 +47,14 @@ describe('Z.DOMWindow', function() {
     document.body.removeChild(container);
   });
 
-  describe('Z.DOMApp `container` property', function() {
+  describe('`container` property', function() {
     it('should default to `document.body`', function() {
       var app = Z.DOMApp.create(Z.DOMView);
       expect(app.container()).toBe(document.body);
     });
   });
 
-  describe('Z.DOMApp.initialize', function() {
+  describe('.initialize', function() {
     it('should throw an exception if not given a main window type', function() {
       expect(function() {
         Z.DOMApp.create();
@@ -60,34 +66,32 @@ describe('Z.DOMWindow', function() {
     });
 
     it('should create the `mainWindow` property', function() {
-      var app = Z.DOMApp.create(TestView1);
-
       expect(app.mainWindow()).not.toBeNull();
       expect(app.get('mainWindow.app')).toBe(app);
-      expect(app.get('mainWindow.contentView').isA(TestView1)).toBe(true);
+      expect(app.get('mainWindow.contentView').isA(Parent)).toBe(true);
       expect(app.get('mainWindow.isMain')).toBe(true);
       expect(app.get('mainWindow.isKey')).toBe(true);
     });
 
     it('should set the second argument as the container property', function() {
-      var app = Z.DOMApp.create(TestView1, container);
+      var app = Z.DOMApp.create(Parent, container);
       expect(app.container()).toBe(container);
     });
   });
 
-  describe('Z.DOMApp.createWindow', function() {
+  describe('.createWindow', function() {
     it('should create a new `Z.DOMWindow` object and add it to the `windows` property', function() {
-      var window = app.createWindow(TestView2);
+      var window = app.createWindow(Child3);
 
       expect(app.windows().at(1)).toBe(window);
       expect(window.app()).toBe(app);
       expect(window.isMain()).toBe(false);
-      expect(window.contentView().isA(TestView2)).toBe(true);
+      expect(window.contentView().isA(Child3)).toBe(true);
     });
 
     it('should not draw or attach the window to the container when the app is not started', function() {
-      var window = app.createWindow(TestView2);
-      expect(window.node().querySelector('.test-view-2')).toEqual(null);
+      var window = app.createWindow(Child3);
+      expect(window.node().querySelector('.child3')).toEqual(null);
       expect(container.querySelector('#z-view-' + window.objectId())).toEqual(null);
     });
 
@@ -96,13 +100,13 @@ describe('Z.DOMWindow', function() {
       
       app.start();
       
-      window = app.createWindow(TestView2);
-      expect(window.node().querySelector('.test-view-2')).not.toEqual(null);
+      window = app.createWindow(Child3);
+      expect(window.node().querySelector('.child3')).not.toEqual(null);
       expect(container.querySelector('#z-view-' + window.objectId())).not.toEqual(null);
     });
   });
 
-  describe('Z.DOMApp.destroyWindow', function() {
+  describe('.destroyWindow', function() {
     it('should throw an exception if passed `mainWindow`', function() {
       expect(function() {
         app.destroyWindow(app.mainWindow());
@@ -111,12 +115,12 @@ describe('Z.DOMWindow', function() {
 
     it('should throw an exception if passed a window object thats not in its `windows` array', function() {
       expect(function() {
-        app.destroyWindow(Z.DOMWindow.create());
+        app.destroyWindow(Z.DOMWindow.create(Child3));
       }).toThrow("Z.DOMApp.destroyWindow: attempted to destroy a window that doesn't belong to the application");
     });
 
     it('should remove the given window from the `windows` array', function() {
-      var window = app.createWindow(TestView2);
+      var window = app.createWindow(Child3);
 
       expect(app.windows().contains(window)).toBe(true);
       app.destroyWindow(window);
@@ -124,15 +128,15 @@ describe('Z.DOMWindow', function() {
     });
 
     it("should detach the window's node from `container` when the app is started", function() {
-      var window = app.start().createWindow(TestView2);
+      var window = app.start().createWindow(Child3);
 
-      expect(container.querySelector('.test-view-2')).not.toEqual(null);
+      expect(container.querySelector('.child3')).not.toEqual(null);
       app.destroyWindow(window);
-      expect(container.querySelector('.test-view-2')).toEqual(null);
+      expect(container.querySelector('.child3')).toEqual(null);
     });
   });
 
-  describe('Z.DOMApp.start', function() {
+  describe('.start', function() {
     it('should set `isStarted` to `true`', function() {
       expect(app.isStarted()).toBe(false);
       app.start();
@@ -152,17 +156,19 @@ describe('Z.DOMWindow', function() {
     });
 
     it('should attach all `windows` to `container`', function() {
-      var window = app.createWindow(TestView2);
+      var window = app.createWindow(Child3);
 
-      expect(container.querySelector('.test-view-1')).toEqual(null);
-      expect(container.querySelector('.test-view-2')).toEqual(null);
+      expect(container.querySelector('.child1')).toEqual(null);
+      expect(container.querySelector('.child2')).toEqual(null);
+      expect(container.querySelector('.child3')).toEqual(null);
       app.start();
-      expect(container.querySelector('.test-view-1')).not.toEqual(null);
-      expect(container.querySelector('.test-view-2')).not.toEqual(null);
+      expect(container.querySelector('.child1')).not.toEqual(null);
+      expect(container.querySelector('.child2')).not.toEqual(null);
+      expect(container.querySelector('.child3')).not.toEqual(null);
     });
   });
 
-  describe('Z.DOMApp.stop', function() {
+  describe('.stop', function() {
     it('should set `isStarted` to `false`', function() {
       app.start();
       expect(app.isStarted()).toBe(true);
@@ -185,15 +191,116 @@ describe('Z.DOMWindow', function() {
     });
 
     it('should detach all `windows` from `container`', function() {
-      var window = app.createWindow(TestView2);
+      var window = app.createWindow(Child3);
 
       app.start();
-      expect(container.querySelector('.test-view-1')).not.toEqual(null);
-      expect(container.querySelector('.test-view-2')).not.toEqual(null);
+      expect(container.querySelector('.child1')).not.toEqual(null);
+      expect(container.querySelector('.child2')).not.toEqual(null);
+      expect(container.querySelector('.child3')).not.toEqual(null);
       app.stop();
-      expect(container.querySelector('.test-view-1')).toEqual(null);
-      expect(container.querySelector('.test-view-2')).toEqual(null);
+      expect(container.querySelector('.child1')).toEqual(null);
+      expect(container.querySelector('.child2')).toEqual(null);
+      expect(container.querySelector('.child3')).toEqual(null);
     });
+  });
+
+  describe('key window management', function() {
+    var mainWindow, window1;
+
+    beforeEach(function() {
+      mainWindow = app.mainWindow();
+      window1    = app.createWindow(Child3);
+      app.start();
+    });
+
+    it('should set the main window to key window upon starting', function() {
+      expect(app.keyWindow()).toBe(mainWindow);
+      expect(mainWindow.isKey()).toBe(true);
+      expect(window1.isKey()).toBe(false);
+    });
+
+    describe('.makeKeyWindow', function() {
+      it('should throw an exception if the window is not owned by the application', function() {
+        expect(function() {
+          app.makeKeyWindow(Z.DOMWindow.create(Child3));
+        }).toThrow("Z.DOMApp.makeKeyWindow: attempted to make a window that doesn't belong to the application the key window");
+      });
+
+      it('should set the key window to the given window', function() {
+        app.makeKeyWindow(window1);
+
+        expect(app.keyWindow()).toBe(window1);
+        expect(mainWindow.isKey()).toBe(false);
+        expect(window1.isKey()).toBe(true);
+      });
+
+      it('should invoke `willResignKeyWindow` on the current key window', function() {
+        var invoked = false;
+
+        mainWindow.def('willResignKeyWindow', function() { invoked = true; });
+
+        app.makeKeyWindow(window1);
+        expect(invoked).toBe(true);
+      });
+
+      it('should invoke `didBecomeKeyWindow` on the new key window', function() {
+        var invoked = false;
+
+        window1.def('didBecomeKeyWindow', function() { invoked = true; });
+
+        app.makeKeyWindow(window1);
+        expect(invoked).toBe(true);
+      });
+    });
+  });
+
+  describe('application event handling', function() {
+    var mainWin, parent, child1, child2;
+
+    beforeEach(function() {
+      app.start();
+      mainWin = app.get('mainWindow');
+      parent  = app.get('mainWindow.contentView');
+      child1  = app.get('mainWindow.contentView.subviews').at(0);
+      child2  = app.get('mainWindow.contentView.subviews').at(1);
+    });
+
+    it('should deliver events to the view where the event originated', function() {
+      var elem = child1.node().querySelector('.child1'), event;
+
+      child1.def('handleEvent', function(e) { event = e; });
+
+      simulateMouseEvent('mousedown', elem);
+
+      expect(event).not.toBeUndefined();
+      expect(event.target).toBe(elem);
+      expect(event.type).toBe('mousedown');
+    });
+
+    it('should bubble events along the superview chain', function() {
+      var elem = child2.node().querySelector('.child2'), invocations = [];
+
+      child2.def('handleEvent', function() { invocations.push(this); });
+      parent.def('handleEvent', function() { invocations.push(this); });
+      mainWin.def('handleEvent', function() { invocations.push(this); });
+
+      simulateMouseEvent('mousedown', elem);
+      expect(invocations).toEq([child2, parent, mainWin]);
+    });
+
+    it('should stop bubbling events when any handler returns `true`', function() {
+      var elem = child2.node().querySelector('.child2'), invocations = [];
+
+      child2.def('handleEvent', function() { invocations.push(this); });
+      parent.def('handleEvent', function() { invocations.push(this); return true; });
+      mainWin.def('handleEvent', function() { invocations.push(this); });
+
+      simulateMouseEvent('mousedown', elem);
+      expect(invocations).toEq([child2, parent]);
+    });
+  });
+
+  describe('body event handling', function() {
   });
 });
 

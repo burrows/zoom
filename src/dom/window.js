@@ -10,6 +10,12 @@ Z.DOMWindow = Z.DOMView.extend(function() {
   });
   this.prop('keyView');
 
+  this.def('initialize', function(viewType, opts) {
+    this.supr(Z.merge(opts || {}, {
+      contentView: viewType.create({superview: this})
+    }));
+  });
+
   this.def('buildNode', function() {
     var node = this.supr(), classes = ['z-window'];
 
@@ -19,6 +25,10 @@ Z.DOMWindow = Z.DOMView.extend(function() {
 
     return node;
   });
+
+  this.def('willResignKeyWindow', function() {});
+
+  this.def('didBecomeKeyWindow', function() {});
 });
 
 }());

@@ -5,7 +5,7 @@ if (!this.Z) { require('./helper'); }
 describe('Z.merge', function() {
   it('should merge values from sources objects into the given destination object', function() {
     var r;
-    
+
     r = Z.merge({ foo: 1, bar: 2 }, { bar: 9, baz: 3 });
     expect(r).toEqual({ foo: 1, bar: 9, baz: 3 });
 
@@ -74,6 +74,11 @@ describe('Z.type', function() {
   it("should return the string 'regexp' when passed a RegExp instance", function() {
     expect(Z.type(/foo/)).toBe('regexp');
     expect(Z.type(new RegExp())).toBe('regexp');
+  });
+
+  it("should return the string 'domelem' when passed a DOM element", function() {
+    expect(Z.type(document.body)).toBe('domelem');
+    expect(Z.type(document.createElement('p'))).toBe('domelem');
   });
 
   it("should return the string 'object' when passed an Object instance", function() {

@@ -1,4 +1,3 @@
-
 // The `Z.DOMApp` type is the root of the Zoom window/view hierarchy. Instances
 // are responsible for setting up and initially drawing all of an application's
 // windows and view. In order to create an instance of `Z.DOMApp` it must be
@@ -8,6 +7,46 @@
 // and dispatches them to the appropriate view. Only mouse events that occur
 // withing the container are processed.
 Z.DOMApp = Z.Object.extend(function() {
+  var appEvents, bodyEvents;
+
+  // Internal: This list of events to observe on the application's `container`
+  // node.
+  appEvents = [
+    'click',
+    'dblclick',
+    'mousedown',
+    'mouseup',
+    'mouseover',
+    'mousemove',
+    'mouseout',
+    'keydown',
+    'keypress',
+    'keyup',
+    'select',
+    'change',
+    'submit',
+    'reset',
+    'focus',
+    'blur'
+  ];
+
+  // Internal: This list of events to observe on the documents's `body` node.
+  // When there is more than one application on a page, these events will be
+  // delivered to all of them.
+  bodyEvents = ['keydown', 'keypress', 'keyup'];
+
+  function dispatchEvent(event, view) {
+    while (view.handleEvent(event) !== true && (view = view.superview()));
+  }
+
+  function processAppEvent(event) {
+    dispatchEvent(event, Z.DOMView.viewForNode(event.target)); 
+  }
+
+  function processBodyEvent(event) {
+    if (event.target !== document.body) { return; }
+  }
+
   // Internal: Attaches the given window's node to the application's container
   // node, thereby making it visible on screen. The window's `draw` method is
   // invoked first.
@@ -71,9 +110,8 @@ Z.DOMApp = Z.Object.extend(function() {
     }
 
     // create the application's main window
-    this.windows().push(Z.DOMWindow.create({
+    this.windows().push(Z.DOMWindow.create(mainView, {
       app: this,
-      contentView: mainView.create(),
       isMain: true,
       isKey: true
     }));
@@ -128,10 +166,40 @@ Z.DOMApp = Z.Object.extend(function() {
     return this;
   });
 
+  // Public: Begins listening for user events. Most events are observed on the
+  // application's `container` node, but keyboard events are also observed on
+  // the document's `body` node. This is necessary because keyboard events only
+  // have a target when a particular node has focus, but we can't be sure that
+  // some node under the application's control always has focus, so each
+  // application on the page will observe keyboard events on the body and then
+  // deliver them to their current key window.
+  //
+  // Returns the receiver.
   this.def('listen', function() {
+    var container = this.container(), i, len;
+
+    for (i = 0, len = appEvents.length; i < len; i++) {
+      container.addEventListener(appEvents[i], processAppEvent, false);
+    }
+
+    for (i = 0, len = bodyEvents.length; i < len; i++) {
+      document.body.addEventListener(bodyEvents[i], processBodyEvent, false);
+    }
   });
 
+  // Public: Stops listening for user events.
+  //
+  // Returns the receiver.
   this.def('stopListening', function() {
+    var container = this.container(), i, len;
+
+    for (i = 0, len = appEvents.length; i < len; i++) {
+      container.removeEventListener(appEvents[i], processAppEvent, false);
+    }
+
+    for (i = 0, len = bodyEvents.length; i < len; i++) {
+      document.body.removeEventListener(bodyEvents[i], processBodyEvent, false);
+    }
   });
 
   // Public: Creates a new `Z.DOMWindow` object with the given view set to its
@@ -145,8 +213,8 @@ Z.DOMApp = Z.Object.extend(function() {
   //
   // Returns the new `Z.DOMWindow` concrete instance.
   this.def('createWindow', function(viewType, opts) {
-    var window = Z.DOMWindow.create(Z.merge(opts || {}, {
-      app: this, isMain: false, contentView: viewType.create()
+    var window = Z.DOMWindow.create(viewType, Z.merge(opts || {}, {
+      app: this, isMain: false
     }));
 
     this.windows().push(window);
@@ -182,10 +250,30 @@ Z.DOMApp = Z.Object.extend(function() {
     return window;
   });
 
-  this.def('dispatchMouseEvent', function(event) {
-  });
+  // Public: Makes the given window the key window. This method will invoke the
+  // `willResignKeyWindow` method on the current key window and 
+  // didBecomeKeyWindow` on the given key window.
+  //
+  // window - A `Z.DOMWindow` instance to make the new key window.
+  //
+  // Returns the receiver.
+  this.def('makeKeyWindow', function(window) {
+    var keyWindow = this.keyWindow(), windows = this.windows();
 
-  this.def('dispatchKeyEvent', function(event) {
+    if (!windows.contains(window)) {
+      throw new Error(Z.fmt("%@.makeKeyWindow: attempted to make a window that doesn't belong to the application the key window",
+                            this.typeName()));
+    }
+
+    if (keyWindow === window) { return this; }
+
+    keyWindow.willResignKeyWindow();
+    keyWindow.isKey(false);
+    this.keyWindow(window);
+    window.isKey(true);
+    window.didBecomeKeyWindow();
+
+    return this;
   });
 });
 

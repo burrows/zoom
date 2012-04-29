@@ -13,7 +13,7 @@
   beforeEach(function() {
     return this.addMatchers({
       toEq: function(expected) {
-          var toeq = this.isNot ? ' to not equal ' : ' to equal ';
+        var toeq = this.isNot ? ' to not equal ' : ' to equal ';
         this.message = function() {
           return "Expected object " + Z.inspect(this.actual) + toeq + Z.inspect(expected);
         };
@@ -29,5 +29,14 @@
       }
     });
   });
+
+  this.simulateMouseEvent = function(type, elem) {
+    var evt = document.createEvent('MouseEvents');
+
+    evt.initMouseEvent(type, true, true, window,
+      0, 0, 0, 0, 0, false, false, false, false, 0, null);
+
+    elem.dispatchEvent(evt);
+  };
 }());
 

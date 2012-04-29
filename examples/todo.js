@@ -361,18 +361,14 @@ Z.addNamespace(Todo, 'Todo');
 Todo.HeaderView = Z.DOMView.extend(function() {
   this.tag('h1');
   this.def('draw', function() {
-    var node = this.node(), text = document.createTextNode('Hello world!');
-    while (node.firstChild) { node.removeChild(node.firstChild); }
-    node.appendChild(text);
+    this.node().innerHTML = 'Hello world!';
   });
 });
 
 Todo.SubHeaderView = Z.DOMView.extend(function() {
   this.tag('h2');
   this.def('draw', function() {
-    var node = this.node(), text = document.createTextNode('The time is: ' + (new Date));
-    while (node.firstChild) { node.removeChild(node.firstChild); }
-    node.appendChild(text);
+    this.node().innerHTML = 'The time is: ' + (new Date);
   });
 });
 
