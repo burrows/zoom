@@ -35,16 +35,30 @@ Z.DOMApp = Z.Object.extend(function() {
   // delivered to all of them.
   bodyEvents = ['keydown', 'keypress', 'keyup'];
 
+  // Internal: Dispatches an event up the superivew chain starting from the
+  // given view.
+  //
+  // TODO: send the event to the app's statechart if it bubbles all the way up
+  //
+  // event - A native DOM event.
+  // view  - A `Z.DOMView` object to begin sending the event to.
+  //
+  // Returns nothing.
   function dispatchEvent(event, view) {
     while (view.handleEvent(event) !== true && (view = view.superview()));
   }
 
+  // Internal: An event listener callback for events observed somewhere inside
+  // the application's `container`.
   function processAppEvent(event) {
     dispatchEvent(event, Z.DOMView.viewForNode(event.target)); 
   }
 
+  // Internal: An event listener callback for key events observed on the body.
   function processBodyEvent(event) {
-    if (event.target !== document.body) { return; }
+    var keyView = this.get('keyWindow.keyView');
+    if (event.target !== document.body || !keyView) { return; }
+    dispatchEvent(event, keyView);
   }
 
   // Internal: Attaches the given window's node to the application's container
@@ -176,14 +190,19 @@ Z.DOMApp = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('listen', function() {
-    var container = this.container(), i, len;
+    var self = this, container = this.container(), i, len;
 
     for (i = 0, len = appEvents.length; i < len; i++) {
       container.addEventListener(appEvents[i], processAppEvent, false);
     }
 
+    this.__processBodyEvent__ = function(e) {
+      return processBodyEvent.call(self, e);
+    };
+
     for (i = 0, len = bodyEvents.length; i < len; i++) {
-      document.body.addEventListener(bodyEvents[i], processBodyEvent, false);
+      document.body.addEventListener(bodyEvents[i],
+                                     this.__processBodyEvent__, false);
     }
   });
 
@@ -198,7 +217,8 @@ Z.DOMApp = Z.Object.extend(function() {
     }
 
     for (i = 0, len = bodyEvents.length; i < len; i++) {
-      document.body.removeEventListener(bodyEvents[i], processBodyEvent, false);
+      document.body.removeEventListener(bodyEvents[i],
+                                        this.__processBodyEvent__, false);
     }
   });
 

@@ -254,7 +254,7 @@ describe('Z.DOMApp', function() {
     });
   });
 
-  describe('application event handling', function() {
+  describe('event handling', function() {
     var mainWin, parent, child1, child2;
 
     beforeEach(function() {
@@ -265,42 +265,41 @@ describe('Z.DOMApp', function() {
       child2  = app.get('mainWindow.contentView.subviews').at(1);
     });
 
-    it('should deliver events to the view where the event originated', function() {
-      var elem = child1.node().querySelector('.child1'), event;
+    describe('for an event on a DOM element within the application', function() {
+      it('should be delivered to the view where the event originated', function() {
+        var elem = child1.node().querySelector('.child1'), event;
 
-      child1.def('handleEvent', function(e) { event = e; });
+        child1.def('handleEvent', function(e) { event = e; });
 
-      simulateMouseEvent('mousedown', elem);
+        simulateMouseEvent(elem, 'mousedown');
 
-      expect(event).not.toBeUndefined();
-      expect(event.target).toBe(elem);
-      expect(event.type).toBe('mousedown');
+        expect(event).not.toBeUndefined();
+        expect(event.target).toBe(elem);
+        expect(event.type).toBe('mousedown');
+      });
+
+      it('should bubble the event along the superview chain', function() {
+        var elem = child2.node().querySelector('.child2'), invocations = [];
+
+        child2.def('handleEvent', function() { invocations.push(this); });
+        parent.def('handleEvent', function() { invocations.push(this); });
+        mainWin.def('handleEvent', function() { invocations.push(this); });
+
+        simulateMouseEvent(elem, 'mousedown');
+        expect(invocations).toEq([child2, parent, mainWin]);
+      });
+
+      it('should stop bubbling the event when a handler returns `true`', function() {
+        var elem = child2.node().querySelector('.child2'), invocations = [];
+
+        child2.def('handleEvent', function() { invocations.push(this); });
+        parent.def('handleEvent', function() { invocations.push(this); return true; });
+        mainWin.def('handleEvent', function() { invocations.push(this); });
+
+        simulateMouseEvent(elem, 'mousedown');
+        expect(invocations).toEq([child2, parent]);
+      });
     });
-
-    it('should bubble events along the superview chain', function() {
-      var elem = child2.node().querySelector('.child2'), invocations = [];
-
-      child2.def('handleEvent', function() { invocations.push(this); });
-      parent.def('handleEvent', function() { invocations.push(this); });
-      mainWin.def('handleEvent', function() { invocations.push(this); });
-
-      simulateMouseEvent('mousedown', elem);
-      expect(invocations).toEq([child2, parent, mainWin]);
-    });
-
-    it('should stop bubbling events when any handler returns `true`', function() {
-      var elem = child2.node().querySelector('.child2'), invocations = [];
-
-      child2.def('handleEvent', function() { invocations.push(this); });
-      parent.def('handleEvent', function() { invocations.push(this); return true; });
-      mainWin.def('handleEvent', function() { invocations.push(this); });
-
-      simulateMouseEvent('mousedown', elem);
-      expect(invocations).toEq([child2, parent]);
-    });
-  });
-
-  describe('body event handling', function() {
   });
 });
 

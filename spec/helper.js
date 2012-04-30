@@ -38,5 +38,37 @@
 
     elem.dispatchEvent(evt);
   };
+
+  this.simulateMouseEvent = function(element, event, opts){
+    var evt;
+
+    opts = opts || {};
+
+    if (document.createEventObject) { // dispatch for IE
+      evt = document.createEventObject();
+      return element.fireEvent('on'+event, evt)
+    }
+    else { // dispatch for firefox + others
+      evt = document.createEvent("MouseEvents");
+      evt.initMouseEvent(
+        event,              // type
+        true,               // canBubble
+        true,               // cancelable
+        window,             // view
+        0,                  // detail
+        0,                  // screenX
+        0,                  // screenY
+        opts.clientX || 0,  // clientX
+        opts.clientY || 0,  // clientY
+        false,              // ctrlKey
+        false,              // altKey
+        false,              // shiftKey
+        false,              // metaKey
+        0,                  // button
+        opts.relatedTarget || null); // relatedTarget
+
+      return !element.dispatchEvent(evt);
+    }
+  };
 }());
 
