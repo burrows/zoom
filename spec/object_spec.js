@@ -482,7 +482,7 @@ describe('Z.Object KVC support:', function() {
       });
     });
 
-    describe("for a property that hasn't been set and was created with the `def` option set to a non-function value", function() {
+    describe("for a property that hasn't been set and was created with the `def` option", function() {
       it('should return the value of the `def` option', function() {
         var X = Z.Model.extend(function() {
           this.prop('foo', {def: 9});
@@ -490,20 +490,6 @@ describe('Z.Object KVC support:', function() {
         });
 
         expect(X.create().foo()).toBe(9);
-        expect(X.create().bar()).toBeNull();
-        expect(X.create({foo: 8, bar: 12}).foo()).toBe(8);
-        expect(X.create({foo: 8, bar: 12}).bar()).toBe(12);
-      });
-    });
-
-    describe("for a property that hasn't been set and was created with the `def` option set to a function value", function() {
-      it('should return the value returned by executing the function given as the `def` option', function() {
-        var X = Z.Model.extend(function() {
-          this.prop('foo', {def: function() { return Z.A(2,4); } });
-          this.prop('bar');
-        });
-
-        expect(X.create().foo()).toEq(Z.A(2,4));
         expect(X.create().bar()).toBeNull();
         expect(X.create({foo: 8, bar: 12}).foo()).toBe(8);
         expect(X.create({foo: 8, bar: 12}).bar()).toBe(12);
