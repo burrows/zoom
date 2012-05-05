@@ -126,7 +126,8 @@ Z.Object.open(function() {
 
     v = desc.get ? desc.get.call(this) : this[prop];
 
-    return v === undefined || v === null ? desc.def : v;
+    return v === undefined || v === null ?
+      (typeof desc.def === 'function' ? desc.def() : desc.def) : v;
   }
 
   // Internal: Sets the value for a property. If a property with the given name
