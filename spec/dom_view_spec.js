@@ -33,6 +33,18 @@ describe('Z.DOMView', function() {
     document.body.removeChild(container);
   });
 
+  describe('.initialize', function() {
+    it('should create a detached empty DOM node', function() {
+      var v = TestView1.create(), node = v.node();
+
+      expect(node).not.toBeNull();
+      expect(node instanceof window.HTMLElement).toBe(true);
+      expect(node.parentNode).toBeNull();
+      expect(node.className).toBe('z-view');
+      expect(node.innerHTML).toBe('');
+    });
+  });
+
   describe('.viewForNode', function() {
     it('should return the `Z.DOMView` object that owns the node', function() {
       var mainWindow = app.get('mainWindow'),

@@ -8,9 +8,9 @@ Z.DOMView = Z.Object.extend(function() {
   viewClassRe = /(^|\s)z-view(\s|$)/;
   
   // Internal: A cache of concrete view instances. Every `Z.DOMView` object that
-  // gets created is added to this object keyed by its `objectId`. This cache is
+  // gets created is added to this cache keyed by its `objectId`. This cache is
   // used by the `viewForNode` method to look up a view instance based on a DOM
-  // node. When views are destroyed, they are removed from this cache.
+  // node. When views are destroyed they are removed from this cache.
   views = {};
 
   this.prop('tag', { def: 'div' });
@@ -139,9 +139,9 @@ Z.DOMView = Z.Object.extend(function() {
     this.addSubview(newView, idx);
   });
 
-  this.def('willRemoveSubview', function(view) {});
+  //this.def('willRemoveSubview', function(view) {});
 
-  this.def('didAddSubview', function(view, idx) {});
+  //this.def('didAddSubview', function(view, idx) {});
 
   //this.def('willRemoveSubview', function(subview, idx) {
   //  this.supr(subview, idx);
