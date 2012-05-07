@@ -2,37 +2,31 @@
 
 if (!this.Z) { require('./helper'); }
 
-var MainView, TestView1;
+var slice, TestView1, TestView2, TestView3, TestCompoundView;
+
+slice = Array.prototype.slice;
 
 TestView1 = Z.DOMView.extend(function() {
-  this.prop('content');
   this.def('draw', function() {
-    this.node().innerHTML = '<div class="test-view-1"><p class="foo"></p><p class="bar"></p></div>';
+    this.node().innerHTML = '<div class="test-view-1"></div>';
   });
 });
 
-MainView = Z.DOMView.extend(function() {
-  this.def('initialize', function(props) {
-    this.supr(props);
-    this.subviews().push(TestView1.create(), TestView1.create());
+TestView2 = Z.DOMView.extend(function() {
+  this.def('draw', function() {
+    this.node().innerHTML = '<div class="test-view-2"></div>';
   });
 });
+
+TestView3 = Z.DOMView.extend(function() {
+  this.def('draw', function() {
+    this.node().innerHTML = '<div class="test-view-3"></div>';
+  });
+});
+
+TestCompoundView = Z.DOMView.extend();
 
 describe('Z.DOMView', function() {
-  var container = document.createElement('div'), app;
-
-  container.id = 'test-container';
-
-  beforeEach(function() {
-    document.body.appendChild(container);
-    app = Z.DOMApp.create(MainView, container).start();
-  });
-
-  afterEach(function() {
-    app.destroy();
-    document.body.removeChild(container);
-  });
-
   describe('.initialize', function() {
     it('should create a detached empty DOM node', function() {
       var v = TestView1.create(), node = v.node();
@@ -40,26 +34,75 @@ describe('Z.DOMView', function() {
       expect(node).not.toBeNull();
       expect(node instanceof window.HTMLElement).toBe(true);
       expect(node.parentNode).toBeNull();
+      expect(node.id).toBe('z-view-' + v.objectId());
       expect(node.className).toBe('z-view');
       expect(node.innerHTML).toBe('');
+      v.destroy();
     });
   });
 
   describe('.viewForNode', function() {
     it('should return the `Z.DOMView` object that owns the node', function() {
-      var mainWindow = app.get('mainWindow'),
-          mainView   = mainWindow.get('contentView'),
-          testView1  = mainView.subviews().at(0),
-          testView2  = mainView.subviews().at(1),
-          foos       = document.querySelectorAll('.foo');
+      var v1 = TestView1.create(), v2 = TestView2.create();
 
       expect(Z.DOMView.viewForNode(document.body)).toBeNull();
-      expect(Z.DOMView.viewForNode(mainWindow.node())).toBe(mainWindow);
-      expect(Z.DOMView.viewForNode(mainView.node())).toBe(mainView);
-      expect(Z.DOMView.viewForNode(testView1.node())).toBe(testView1);
-      expect(Z.DOMView.viewForNode(testView2.node())).toBe(testView2);
-      expect(Z.DOMView.viewForNode(foos[0])).toBe(testView1);
-      expect(Z.DOMView.viewForNode(foos[1])).toBe(testView2);
+      expect(Z.DOMView.viewForNode(v1.node())).toBe(v1);
+      expect(Z.DOMView.viewForNode(v2.node())).toBe(v2);
+    });
+  });
+
+  describe('.addSubview', function() {
+    var v, sv1, sv2, sv3;
+
+    beforeEach(function() {
+      v   = TestCompoundView.create();
+      sv1 = TestView1.create();
+      sv2 = TestView2.create();
+      sv3 = TestView3.create();
+    });
+
+    it('should insert the given view to the `subviews` array at the given index', function() {
+      v.addSubview(sv1, 0);
+      expect(v.subviews()).toEq(Z.A(sv1));
+      v.addSubview(sv2, 1);
+      expect(v.subviews()).toEq(Z.A(sv1, sv2));
+      v.addSubview(sv3, 1);
+      expect(v.subviews()).toEq(Z.A(sv1, sv3, sv2));
+    });
+
+    it('should append the given view to the `subviews` array when not given an index', function() {
+      v.addSubview(sv1);
+      expect(v.subviews()).toEq(Z.A(sv1));
+      v.addSubview(sv2);
+      expect(v.subviews()).toEq(Z.A(sv1, sv2));
+      v.addSubview(sv3);
+      expect(v.subviews()).toEq(Z.A(sv1, sv2, sv3));
+    });
+
+    it("should set the subview's `superview` property to the receiver", function() {
+      expect(sv1.superview()).toBeNull();
+      v.addSubview(sv1);
+      expect(sv1.superview()).toBe(v);
+    });
+
+    it('should remove the given view from its current `superview` if it has one', function() {
+      var v2 = TestCompoundView.create();
+
+      v2.addSubview(sv1);
+      expect(v2.subviews().contains(sv1)).toBe(true);
+      v.addSubview(sv1);
+      expect(v2.subviews().contains(sv1)).toBe(false);
+    });
+
+    it("should attach the added subview's node to the receiever's node at the same index the subview resides in", function() {
+      expect(sv1.node().parentNode).toBe(null);
+      v.addSubview(sv1);
+      expect(sv1.node().parentNode).toBe(v.node());
+      v.addSubview(sv2);
+      expect(sv2.node().parentNode).toBe(v.node());
+      v.addSubview(sv3, 1);
+
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
     });
   });
 });

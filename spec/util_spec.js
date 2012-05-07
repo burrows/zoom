@@ -187,6 +187,22 @@ describe('Z.inspect', function() {
     });
   });
 
+  describe('given a DOM elemen', function() {
+    it('should return string containing the the node name and id and class attributes', function() {
+      var div = document.createElement('div'),
+          p   = document.createElement('p'),
+          h1  = document.createElement('h1');
+
+      p.id = 'foo';
+      h1.id = 'bar';
+      h1.className = 'a b';
+
+      expect(Z.inspect(div)).toBe('<div />');
+      expect(Z.inspect(p)).toBe('<p id="foo" />');
+      expect(Z.inspect(h1)).toBe('<h1 id="bar" class="a b" />');
+    });
+  });
+
   describe('given a Z.Object', function() {
     it("should invoke the object's `toString` method", function() {
       var o = Z.Object.create();

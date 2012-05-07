@@ -25,10 +25,8 @@ Child3 = Z.DOMView.extend(function() {
 Parent = Z.DOMView.extend(function() {
   this.def('initialize', function(props) {
     this.supr(props);
-    this.subviews().push(
-      Child1.create({superview: this}),
-      Child2.create({superview: this})
-    );
+    this.addSubview(Child1.create());
+    this.addSubview(Child2.create());
   });
 });
 

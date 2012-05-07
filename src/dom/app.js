@@ -65,7 +65,9 @@ Z.DOMApp = Z.Object.extend(function() {
   // node, thereby making it visible on screen. The window's `draw` method is
   // invoked first.
   //
-  // window - The window t
+  // window - The window to attach.
+  //
+  // Returns nothing.
   function attachWindow(window) {
     var container = this.container(), node = window.node();
     window.draw();
