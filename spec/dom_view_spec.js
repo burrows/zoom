@@ -61,6 +61,18 @@ describe('Z.DOMView', function() {
       sv3 = TestView3.create();
     });
 
+    it('should throw an execption if the given index is invalid', function() {
+      expect(function() {
+        v.addSubview(sv1, -1);
+      }).toThrow('Z.DOMView.addSubview: invalid index (-1) for: ' + v.toString());
+
+      v.addSubview(sv1);
+
+      expect(function() {
+        v.addSubview(sv2, 2);
+      }).toThrow('Z.DOMView.addSubview: invalid index (2) for: ' + v.toString());
+    });
+
     it('should insert the given view to the `subviews` array at the given index', function() {
       v.addSubview(sv1, 0);
       expect(v.subviews()).toEq(Z.A(sv1));
@@ -103,6 +115,126 @@ describe('Z.DOMView', function() {
       v.addSubview(sv3, 1);
 
       expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
+    });
+
+    it('should properly move an existing subview to the new index when the new index is lower than the original', function() {
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+
+      v.addSubview(sv3, 1);
+      expect(v.subviews()).toEq(Z.A(sv1, sv3, sv2));
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
+    });
+
+    it('should properly move an existing subview to the new index when the new index is greater than the original', function() {
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+
+      v.addSubview(sv1, 2);
+      expect(v.subviews()).toEq(Z.A(sv2, sv3, sv1));
+      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv3.node(), sv1.node()]);
+    });
+  });
+
+  describe('.addSubviewBefore', function() {
+    it('should throw an exception if the reference view is not a subview', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create();
+
+      expect(function() {
+        v.addSubviewBefore(sv1, sv2);
+      }).toThrow('Z.DOMView.addSubviewBefore: reference view is not a subview: ' + v.toString());
+    });
+
+    it('should add the given subview before the reference subview', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubviewBefore(sv1, sv2);
+      expect(v.subviews()).toEq(Z.A(sv2, sv1));
+      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv1.node()]);
+      v.addSubviewBefore(sv1, sv3);
+      expect(v.subviews()).toEq(Z.A(sv2, sv3, sv1));
+      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv3.node(), sv1.node()]);
+    });
+  });
+
+  describe('.addSubviewAfter', function() {
+    it('should throw an exception if the reference view is not a subview', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create();
+
+      expect(function() {
+        v.addSubviewAfter(sv1, sv2);
+      }).toThrow('Z.DOMView.addSubviewAfter: reference view is not a subview: ' + v.toString());
+    });
+
+    it('should add the given subview after the reference subview', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubviewAfter(sv1, sv2);
+      expect(v.subviews()).toEq(Z.A(sv1, sv2));
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node()]);
+      v.addSubviewAfter(sv1, sv3);
+      expect(v.subviews()).toEq(Z.A(sv1, sv3, sv2));
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
+    });
+  });
+
+  describe('.replaceSubview', function() {
+    it('should throw an exception if the old view is not a subview', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create();
+
+      expect(function() {
+        v.replaceSubview(sv1, sv2);
+      }).toThrow('Z.DOMView.replaceSubview: old view is not a subview: ' + v.toString());
+    });
+
+    it('should remove the old subview and add the new subview in its place', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+
+      v.replaceSubview(sv1, sv3);
+      expect(v.subviews()).toEq(Z.A(sv3, sv2));
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv2.node()]);
+    });
+
+    it('should properly handle replacing a view with an existing subview', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+
+      v.replaceSubview(sv1, sv2);
+      expect(v.subviews()).toEq(Z.A(sv2, sv3));
+      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv3.node()]);
+
+      v.addSubview(sv1);
+      v.replaceSubview(sv2, sv3);
+      expect(v.subviews()).toEq(Z.A(sv3, sv1));
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv1.node()]);
     });
   });
 
@@ -155,6 +287,73 @@ describe('Z.DOMView', function() {
       expect(sv1.node().parentNode).toBeNull();
       expect(sv2.node().parentNode).toBe(v.node());
       expect(sv3.node().parentNode).toBeNull(v);
+    });
+  });
+
+  describe('.remove', function() {
+    it('should remove the receiver from its superview', function() {
+      var v1 = TestCompoundView.create(),
+          v2 = TestCompoundView.create();
+
+      v1.addSubview(v2);
+
+      expect(v2.superview()).toBe(v1);
+      expect(v1.subviews()).toEq(Z.A(v2));
+      expect(slice.call(v1.node().childNodes)).toEq([v2.node()]);
+
+      expect(v2.remove()).toBe(v2);
+
+      expect(v2.superview()).toBeNull();
+      expect(v1.subviews()).toEq(Z.A());
+      expect(slice.call(v1.node().childNodes)).toEq([]);
+    });
+  });
+
+  describe('.isDescendantOf', function() {
+    it('should return `true` if the receiver is a descendant of the the given view and `false` otherwise', function() {
+      var v1   = TestCompoundView.create(),
+          v11  = TestCompoundView.create(),
+          v12  = TestCompoundView.create(),
+          v111 = TestCompoundView.create();
+          v112 = TestCompoundView.create();
+
+      v1.addSubview(v11);
+      v1.addSubview(v12);
+      v11.addSubview(v111);
+      v11.addSubview(v112);
+
+      expect(v111.isDescendantOf(v11)).toBe(true);
+      expect(v111.isDescendantOf(v1)).toBe(true);
+      expect(v112.isDescendantOf(v11)).toBe(true);
+      expect(v112.isDescendantOf(v1)).toBe(true);
+
+      expect(v111.isDescendantOf(v12)).toBe(false);
+      expect(v112.isDescendantOf(v12)).toBe(false);
+    });
+  });
+
+  describe('.isAncestorOf', function() {
+    it('should return `true` if the receiver is an ancestor of the given view and `false` otherwise', function() {
+      var v1   = TestCompoundView.create(),
+          v11  = TestCompoundView.create(),
+          v12  = TestCompoundView.create(),
+          v111 = TestCompoundView.create();
+          v112 = TestCompoundView.create();
+
+      v1.addSubview(v11);
+      v1.addSubview(v12);
+      v11.addSubview(v111);
+      v11.addSubview(v112);
+
+      expect(v1.isAncestorOf(v11)).toBe(true);
+      expect(v1.isAncestorOf(v12)).toBe(true);
+      expect(v1.isAncestorOf(v111)).toBe(true);
+      expect(v1.isAncestorOf(v112)).toBe(true);
+      expect(v11.isAncestorOf(v111)).toBe(true);
+      expect(v11.isAncestorOf(v112)).toBe(true);
+
+      expect(v12.isAncestorOf(v111)).toBe(false);
+      expect(v12.isAncestorOf(v112)).toBe(false);
     });
   });
 });
