@@ -6,14 +6,13 @@ Z.DOMWindow = Z.DOMView.extend(function() {
   this.prop('isKey', { def: false });
   this.prop('contentView', {
     get: function() { return this.get('subviews.first'); },
-    set: function(view) { return this.subviews().at(0, view); }
+    set: function(view) { return this.addSubview(view, 0); }
   });
   this.prop('keyView');
 
   this.def('initialize', function(viewType, opts) {
-    this.supr(Z.merge(opts || {}, {
-      contentView: viewType.create({superview: this})
-    }));
+    this.supr(opts);
+    this.contentView(viewType.create());
   });
 
   this.def('buildNode', function() {

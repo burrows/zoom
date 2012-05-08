@@ -8,9 +8,9 @@ Z.DOMView = Z.Object.extend(function() {
   viewClassRe = /(^|\s)z-view(\s|$)/;
   
   // Internal: A cache of concrete view instances. Every `Z.DOMView` object that
-  // gets created is added to this object keyed by its `objectId`. This cache is
+  // gets created is added to this cache keyed by its `objectId`. This cache is
   // used by the `viewForNode` method to look up a view instance based on a DOM
-  // node. When views are destroyed, they are removed from this cache.
+  // node. When views are destroyed they are removed from this cache.
   views = {};
 
   this.prop('tag', { def: 'div' });
@@ -67,14 +67,7 @@ Z.DOMView = Z.Object.extend(function() {
   });
 
   this.def('draw', function() {
-    var node = this.node();
-
-    this.subviews().each(function(subview) {
-      var child = subview.node();
-      subview.draw();
-      if (!child.parentNode) { node.appendChild(subview.node()); }
-    });
-
+    this.subviews().invoke('draw');
     return this;
   });
 
@@ -96,31 +89,22 @@ Z.DOMView = Z.Object.extend(function() {
 
   this.def('remove', function() {
     var superview = this.superview();
-
     if (!superview) { return; }
-
     superview.removeSubview(this);
   });
 
-  this.def('removeSubview', function(view) {
-    var idx = this.subviews().index(view);
-
-    if (idx === null) {
-      throw new Error(Z.fmt("%@.removeSubview: view does not exist in `subviews` array: %@",
-                           this.typeName(), view));
-    }
-
-    this.willRemoveSubview(view);
-    this.subviews().splice(idx, 1);
-    view.superview(null);
-  });
-
   this.def('addSubview', function(view, idx) {
-    if (idx === undefined) { idx = this.subviews.size(); }
+    var subviews = this.subviews(), node = this.node(), target;
 
+    if (idx === undefined) { idx = subviews.size(); }
     if (view.superview()) { view.remove(); }
-    this.subviews().splice(idx, 0, view);
-    this.didAddSubview(view, idx);
+
+    subviews.splice(idx, 0, view);
+    view.superview(this);
+
+    node.insertBefore(view.node(), node.childNodes[idx] || null);
+
+    return view;
   });
 
   this.def('addSubviewBefore', function(curView, newView) {
@@ -139,9 +123,21 @@ Z.DOMView = Z.Object.extend(function() {
     this.addSubview(newView, idx);
   });
 
-  this.def('willRemoveSubview', function(view) {});
+  this.def('removeSubview', function(view) {
+    var idx = this.subviews().index(view);
 
-  this.def('didAddSubview', function(view, idx) {});
+    if (idx === null) {
+      throw new Error(Z.fmt("%@.removeSubview: view does not exist in `subviews` array: %@",
+                           this.typeName(), view));
+    }
+
+    this.subviews().splice(idx, 1);
+    view.superview(null);
+  });
+
+  //this.def('willRemoveSubview', function(view) {});
+
+  //this.def('didAddSubview', function(view, idx) {});
 
   //this.def('willRemoveSubview', function(subview, idx) {
   //  this.supr(subview, idx);

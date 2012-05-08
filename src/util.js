@@ -218,6 +218,19 @@ Z.inspect = function(o) {
       });
 
       return recursed ? '[...]' : '[' + a.join(', ') + ']';
+    case 'domelem':
+      a = [];
+
+      if (o.id && o.id.length > 0) {
+        a.push(Z.fmt('id="%@"', o.id));
+      }
+
+      if (o.className && o.className.length > 0) {
+        a.push(Z.fmt('class="%@"', o.className));
+      }
+      return Z.fmt("<%@%@ />", o.nodeName.toLowerCase(),
+                   a.length > 0 ? ' ' + a.join(' ') : '');
+
     case 'object':
       a = [];
 
