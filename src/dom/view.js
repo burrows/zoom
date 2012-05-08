@@ -127,12 +127,15 @@ Z.DOMView = Z.Object.extend(function() {
     var idx = this.subviews().index(view);
 
     if (idx === null) {
-      throw new Error(Z.fmt("%@.removeSubview: view does not exist in `subviews` array: %@",
-                           this.typeName(), view));
+      throw new Error(Z.fmt("Z.DOMView.removeSubview: given view is not a subview: %@",
+                            view));
     }
 
     this.subviews().splice(idx, 1);
     view.superview(null);
+    this.node().removeChild(view.node());
+
+    return this;
   });
 
   //this.def('willRemoveSubview', function(view) {});

@@ -105,6 +105,58 @@ describe('Z.DOMView', function() {
       expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
     });
   });
+
+  describe('.removeSubview', function() {
+    var v, sv1, sv2, sv3;
+
+    beforeEach(function() {
+      v   = TestCompoundView.create();
+      sv1 = TestView1.create();
+      sv2 = TestView2.create();
+      sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+    });
+
+    it('should throw an exception if the view is not in the `subviews` array', function() {
+      var v2 = TestView1.create();
+
+      expect(function() {
+        v.removeSubview(v2);
+      }).toThrow('Z.DOMView.removeSubview: given view is not a subview: ' + v2.toString());
+    });
+
+    it('should remove the given view from the `subviews` array', function() {
+      expect(v.subviews()).toEq(Z.A(sv1, sv2, sv3));
+      v.removeSubview(sv2);
+      expect(v.subviews()).toEq(Z.A(sv1, sv3));
+      v.removeSubview(sv3);
+      expect(v.subviews()).toEq(Z.A(sv1));
+      v.removeSubview(sv1);
+      expect(v.subviews()).toEq(Z.A());
+    });
+
+    it("should set the subview's `superview` property to null", function() {
+      expect(sv1.superview()).toBe(v);
+      v.removeSubview(sv1);
+      expect(sv1.superview()).toBeNull();
+    });
+
+    it("should detach the removed subview's node from the receiever's node", function() {
+      expect(sv1.node().parentNode).toBe(v.node());
+      expect(sv2.node().parentNode).toBe(v.node());
+      expect(sv3.node().parentNode).toBe(v.node());
+
+      v.removeSubview(sv1);
+      v.removeSubview(sv3);
+
+      expect(sv1.node().parentNode).toBeNull();
+      expect(sv2.node().parentNode).toBe(v.node());
+      expect(sv3.node().parentNode).toBeNull(v);
+    });
+  });
 });
 
 }());
