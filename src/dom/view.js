@@ -13,7 +13,7 @@ Z.DOMView = Z.Object.extend(function() {
   // node. When views are destroyed they are removed from this cache.
   views = {};
 
-  // Public: Returns the DOM node managed by the view.
+  // Public: A property holding the DOM node managed by the view.
   this.prop('node', {
     readonly: true,
     get: function() {
@@ -21,9 +21,14 @@ Z.DOMView = Z.Object.extend(function() {
     }
   });
 
+  // Public: A property holding the view's superview.
   this.prop('superview');
 
+  // Public: A property holding the array of subviews belonging to the view.
+  // This property should not be manipulated directly, instead use the
+  // `addSubview` and `removeSubview` methods.
   this.prop('subviews', {
+    readonly: true,
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
 
@@ -48,11 +53,18 @@ Z.DOMView = Z.Object.extend(function() {
     return node ? (views[node.id.replace('z-view-', '')] || null) : null;
   });
 
+  // Internal: Adds the new view instance to the internal cache used by the
+  // `viewForNode` method.
   this.def('initialize', function(props) {
     this.supr(props);
     views[this.objectId()] = this;
   });
 
+  // Public: Destroys the view by removing it from its `superview` and
+  // recursively calling `destroy` on all `subviews`. The view instance is also
+  // removed from the internal cache used by `viewForNode`.
+  //
+  // Returns the receiver.
   this.def('destroy', function() {
     var subviews = this.subviews().slice();
 
@@ -63,6 +75,13 @@ Z.DOMView = Z.Object.extend(function() {
     return this;
   });
 
+  // Public: Builds the view's DOM node but does not attach it to the document.
+  // Creation of the node can be customized by overriding this method. Be sure
+  // to invoke `supr` when overriding to allow this method to actualy create the
+  // node as it adds `class` and `id` attributes the rest of the view system
+  // expects to be present.
+  //
+  // Returns the DOM node.
   this.def('buildNode', function() {
     var id   = 'z-view-' + this.objectId(),
         node = document.createElement(this.tag());
@@ -74,6 +93,11 @@ Z.DOMView = Z.Object.extend(function() {
     return node;
   });
 
+  // Public: Draws the view into its node. By default, this method simply
+  // recursively invokes the `draw` method on its subviews. This method should
+  // be overridden in custom view types to draw the actual contents of the view.
+  //
+  // Returns the receiver.
   this.def('draw', function() {
     this.subviews().invoke('draw');
     return this;
@@ -212,8 +236,7 @@ Z.DOMView = Z.Object.extend(function() {
     var idx = this.subviews().index(view);
 
     if (idx === null) {
-      throw new Error(Z.fmt("Z.DOMView.removeSubview: given view is not a subview: %@",
-                            view));
+      throw new Error(Z.fmt("Z.DOMView.removeSubview: given view is not a subview: %@", view));
     }
 
     this.subviews().splice(idx, 1);

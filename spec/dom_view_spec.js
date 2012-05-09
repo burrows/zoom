@@ -27,7 +27,7 @@ TestView3 = Z.DOMView.extend(function() {
 TestCompoundView = Z.DOMView.extend();
 
 describe('Z.DOMView', function() {
-  describe('.initialize', function() {
+  describe('node property', function() {
     it('should create a detached empty DOM node', function() {
       var v = TestView1.create(), node = v.node();
 
@@ -48,6 +48,30 @@ describe('Z.DOMView', function() {
       expect(Z.DOMView.viewForNode(document.body)).toBeNull();
       expect(Z.DOMView.viewForNode(v1.node())).toBe(v1);
       expect(Z.DOMView.viewForNode(v2.node())).toBe(v2);
+    });
+  });
+
+  describe('.destroy', function() {
+    it('should remove the view from its superview', function() {
+      var v1 = TestCompoundView.create(),
+          v2 = TestCompoundView.create();
+
+      v1.addSubview(v2);
+      expect(v2.superview()).toBe(v1);
+      expect(v1.subviews()).toEq(Z.A(v2));
+      expect(slice.call(v1.node().childNodes)).toEq([v2.node()]);
+      v2.destroy()
+      expect(v2.superview()).toBeNull();
+      expect(v1.subviews()).toEq(Z.A());
+      expect(slice.call(v1.node().childNodes)).toEq([]);
+    });
+
+    it('should remove the view from the cache that `viewForNode` uses', function() {
+      var v = TestCompoundView.create();
+
+      expect(Z.DOMView.viewForNode(v.node())).toBe(v);
+      v.destroy();
+      expect(Z.DOMView.viewForNode(v.node())).toBeNull();
     });
   });
 
@@ -354,6 +378,23 @@ describe('Z.DOMView', function() {
 
       expect(v12.isAncestorOf(v111)).toBe(false);
       expect(v12.isAncestorOf(v112)).toBe(false);
+    });
+  });
+
+  describe('.draw', function() {
+    it('should invoke `draw` on all subviews', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+
+      expect(v.node().querySelector('.test-view-1')).toEqual(null);
+      expect(v.node().querySelector('.test-view-2')).toEqual(null);
+      v.draw();
+      expect(v.node().querySelector('.test-view-1')).not.toEqual(null);
+      expect(v.node().querySelector('.test-view-2')).not.toEqual(null);
     });
   });
 });
