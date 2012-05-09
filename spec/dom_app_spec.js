@@ -49,6 +49,7 @@ describe('Z.DOMApp', function() {
     it('should default to `document.body`', function() {
       var app = Z.DOMApp.create(Z.DOMView);
       expect(app.container()).toBe(document.body);
+      app.destroy();
     });
   });
 
@@ -74,6 +75,7 @@ describe('Z.DOMApp', function() {
     it('should set the second argument as the container property', function() {
       var app = Z.DOMApp.create(Parent, container);
       expect(app.container()).toBe(container);
+      app.destroy();
     });
   });
 

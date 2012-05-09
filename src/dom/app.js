@@ -171,14 +171,12 @@ Z.DOMApp = Z.Object.extend(function() {
 
   // Public: Completely cleans up the application by destroying all windows and
   // views. Once destroyed, there will be no trace left of the application in
-  // the page.
+  // the container.
   //
   // Returns the receiver.
   this.def('destroy', function() {
-    var self = this, windows = this.windows(), mainWindow = windows.shift();
     this.stop();
-    windows.invoke('destroy');
-    mainWindow.destroy();
+    this.windows().invoke('destroy');
     return this;
   });
 

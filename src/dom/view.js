@@ -13,15 +13,26 @@ Z.DOMView = Z.Object.extend(function() {
   // node. When views are destroyed they are removed from this cache.
   views = {};
 
-  this.prop('tag', { def: 'div' });
-
-  this.prop('node');
+  // Public: Returns the DOM node managed by the view.
+  this.prop('node', {
+    readonly: true,
+    get: function() {
+      return this.__node__ = this.__node__ || this.buildNode();
+    }
+  });
 
   this.prop('superview');
 
   this.prop('subviews', {
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
+
+  // Public: Returns the HTML tag to use when building the `node` for instances
+  // of the view. Override this method to generate a `node` that is something
+  // other than a div.
+  //
+  // Returns a string representing the type of DOM node to use.
+  this.def('tag', function() { return 'div'; });
 
   // Public: Returns the `Z.DOMView` instance that owns the given node.
   //
@@ -40,19 +51,16 @@ Z.DOMView = Z.Object.extend(function() {
   this.def('initialize', function(props) {
     this.supr(props);
     views[this.objectId()] = this;
-    this.set('node', this.buildNode());
   });
 
   this.def('destroy', function() {
-    var node = this.node();
-    if (node.parentNode) { node.parentNode.removeChild(node); }
-    this._destroy();
-  });
+    var subviews = this.subviews().slice();
 
-  this.def('_destroy', function() {
-    this.subviews().invoke('_destroy');
     delete views[this.objectId()];
-    this.set('node', null);
+    this.remove();
+    subviews.invoke('destroy');
+
+    return this;
   });
 
   this.def('buildNode', function() {
