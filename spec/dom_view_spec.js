@@ -276,12 +276,20 @@ describe('Z.DOMView', function() {
       v.addSubview(sv3);
     });
 
-    it('should throw an exception if the view is not in the `subviews` array', function() {
+    it('should throw an exception if the given view is not in the `subviews` array', function() {
       var v2 = TestView1.create();
 
       expect(function() {
         v.removeSubview(v2);
       }).toThrow('Z.DOMView.removeSubview: given view is not a subview: ' + v2.toString());
+    });
+
+    it('should throw an exception if the given index is not in range', function() {
+      var v2 = TestView1.create();
+
+      expect(function() {
+        v.removeSubview(12);
+      }).toThrow('Z.DOMView.removeSubview: given index (12) is not in range');
     });
 
     it('should remove the given view from the `subviews` array', function() {
@@ -311,6 +319,12 @@ describe('Z.DOMView', function() {
       expect(sv1.node().parentNode).toBeNull();
       expect(sv2.node().parentNode).toBe(v.node());
       expect(sv3.node().parentNode).toBeNull(v);
+    });
+
+    it('should remove the subview at the given index when given a number instead of a view', function() {
+      expect(v.subviews()).toEq(Z.A(sv1, sv2, sv3));
+      v.removeSubview(1);
+      expect(v.subviews()).toEq(Z.A(sv1, sv3));
     });
   });
 

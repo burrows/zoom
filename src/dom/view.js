@@ -226,20 +226,35 @@ Z.DOMView = Z.Object.extend(function() {
   });
 
   // Public: Removes the given subview from the receiver's `subviews` array and
-  // set's its `superview` property to `null`.
+  // set's its `superview` property to `null`. A number representing the index
+  // of a subview can be passed instead of a reference to the view itself.
   //
-  // view - The view to remove.
+  // view - The view to remove or a number indicating the index of the view to
+  //        remove..
   //
   // Returns the receiver.
   // Throws `Error` if the given view is not a subview.
+  // Throws `Error` if the given index is not in range.
   this.def('removeSubview', function(view) {
-    var idx = this.subviews().index(view);
+    var subviews = this.subviews(), size = subviews.size(), idx;
+
+    if (typeof view === 'number') {
+      idx  = view;
+      view = subviews.at(idx);
+    }
+    else {
+      idx = subviews.index(view);
+    }
 
     if (idx === null) {
       throw new Error(Z.fmt("Z.DOMView.removeSubview: given view is not a subview: %@", view));
     }
 
-    this.subviews().splice(idx, 1);
+    if (idx < 0 || idx >= size) {
+      throw new Error(Z.fmt("Z.DOMView.removeSubview: given index (%@) is not in range", idx));
+    }
+
+    subviews.splice(idx, 1);
     view.superview(null);
     this.node().removeChild(view.node());
 
