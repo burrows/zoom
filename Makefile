@@ -1,18 +1,19 @@
 NODE_PATH := build
 
-SRCS := util.js         \
-        object.js       \
-        module.js       \
-        orderable.js    \
-        enumerable.js   \
-        array.js        \
-        sorted_array.js \
-        hash.js         \
-        mapper.js       \
-        model.js        \
-        dom/view.js     \
-        dom/window.js   \
-        dom/app.js
+SRCS := util.js          \
+        object.js        \
+        module.js        \
+        orderable.js     \
+        enumerable.js    \
+        array.js         \
+        sorted_array.js  \
+        hash.js          \
+        mapper.js        \
+        model.js         \
+        dom/view.js      \
+        dom/window.js    \
+        dom/app.js       \
+        dom/list_view.js
 
 default: spec
 
