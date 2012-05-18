@@ -692,6 +692,17 @@ Z.Object.open(function() {
     return null;
   });
 
+  // Public: Invokes the given method on the receiver one time before the
+  // current run loop completes. The method will only be executed once even if
+  // `once` is called multiple times on the same receiver with the same method
+  // name multiple times during the run loop. If the run loop is currently
+  // idle, calling this method will trigger a fresh run.
+  //
+  // m - A string containing the name of the method to run.
+  //
+  // Returns the receiver.
+  this.def('once', function(m) { Z.RunLoop.once(this, m); return this; });
+
   // Public: Registers an observer on the given path. Whenever some segment in
   // the path changes, the observer is notified by invoking the given action
   // with a notification object passed as an argument. The notification object
