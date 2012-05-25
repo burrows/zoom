@@ -4,25 +4,25 @@ if (!this.Z) { require('./helper'); }
 
 var container, Parent, Child1, Child2, Child3;
 
-Child1 = Z.DOMView.extend(function() {
+Child1 = Z.View.extend(function() {
   this.def('draw', function() {
     this.node().innerHTML = '<p class="child1"></p>';
   });
 });
 
-Child2 = Z.DOMView.extend(function() {
+Child2 = Z.View.extend(function() {
   this.def('draw', function() {
     this.node().innerHTML = '<p class="child2"></p>';
   });
 });
 
-Child3 = Z.DOMView.extend(function() {
+Child3 = Z.View.extend(function() {
   this.def('draw', function() {
     this.node().innerHTML = '<p class="child3"></p>';
   });
 });
 
-Parent = Z.DOMView.extend(function() {
+Parent = Z.View.extend(function() {
   this.def('initialize', function(props) {
     this.supr(props);
     this.addSubview(Child1.create());
@@ -30,14 +30,14 @@ Parent = Z.DOMView.extend(function() {
   });
 });
 
-describe('Z.DOMApp', function() {
+describe('Z.App', function() {
   var container = document.createElement('div'), app;
 
   container.id = 'test-container';
 
   beforeEach(function() {
     document.body.appendChild(container);
-    app = Z.DOMApp.create(Parent, container);
+    app = Z.App.create(Parent, container);
   });
 
   afterEach(function() {
@@ -47,7 +47,7 @@ describe('Z.DOMApp', function() {
 
   describe('`container` property', function() {
     it('should default to `document.body`', function() {
-      var app = Z.DOMApp.create(Z.DOMView);
+      var app = Z.App.create(Z.View);
       expect(app.container()).toBe(document.body);
       app.destroy();
     });
@@ -56,12 +56,12 @@ describe('Z.DOMApp', function() {
   describe('.initialize', function() {
     it('should throw an exception if not given a main window type', function() {
       expect(function() {
-        Z.DOMApp.create();
-      }).toThrow('Z.DOMApp.initialize: must provide a sub-type of `Z.DOMView` as the main view type');
+        Z.App.create();
+      }).toThrow('Z.App.initialize: must provide a sub-type of `Z.View` as the main view type');
 
       expect(function() {
-        Z.DOMApp.create(Z.DOMView.create());
-      }).toThrow('Z.DOMApp.initialize: must provide a sub-type of `Z.DOMView` as the main view type');
+        Z.App.create(Z.View.create());
+      }).toThrow('Z.App.initialize: must provide a sub-type of `Z.View` as the main view type');
     });
 
     it('should create the `mainWindow` property', function() {
@@ -73,14 +73,14 @@ describe('Z.DOMApp', function() {
     });
 
     it('should set the second argument as the container property', function() {
-      var app = Z.DOMApp.create(Parent, container);
+      var app = Z.App.create(Parent, container);
       expect(app.container()).toBe(container);
       app.destroy();
     });
   });
 
   describe('.createWindow', function() {
-    it('should create a new `Z.DOMWindow` object and add it to the `windows` property', function() {
+    it('should create a new `Z.Window` object and add it to the `windows` property', function() {
       var window = app.createWindow(Child3);
 
       expect(app.windows().at(1)).toBe(window);
@@ -110,13 +110,13 @@ describe('Z.DOMApp', function() {
     it('should throw an exception if passed `mainWindow`', function() {
       expect(function() {
         app.destroyWindow(app.mainWindow());
-      }).toThrow("Z.DOMApp.destroyWindow: can't destroy the main window");
+      }).toThrow("Z.App.destroyWindow: can't destroy the main window");
     });
 
     it('should throw an exception if passed a window object thats not in its `windows` array', function() {
       expect(function() {
-        app.destroyWindow(Z.DOMWindow.create(Child3));
-      }).toThrow("Z.DOMApp.destroyWindow: attempted to destroy a window that doesn't belong to the application");
+        app.destroyWindow(Z.Window.create(Child3));
+      }).toThrow("Z.App.destroyWindow: attempted to destroy a window that doesn't belong to the application");
     });
 
     it('should remove the given window from the `windows` array', function() {
@@ -222,8 +222,8 @@ describe('Z.DOMApp', function() {
     describe('.makeKeyWindow', function() {
       it('should throw an exception if the window is not owned by the application', function() {
         expect(function() {
-          app.makeKeyWindow(Z.DOMWindow.create(Child3));
-        }).toThrow("Z.DOMApp.makeKeyWindow: attempted to make a window that doesn't belong to the application the key window");
+          app.makeKeyWindow(Z.Window.create(Child3));
+        }).toThrow("Z.App.makeKeyWindow: attempted to make a window that doesn't belong to the application the key window");
       });
 
       it('should set the key window to the given window', function() {

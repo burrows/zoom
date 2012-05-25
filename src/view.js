@@ -1,13 +1,13 @@
 (function(undefined) {
 
-Z.DOMView = Z.Object.extend(function() {
+Z.View = Z.Object.extend(function() {
   var viewClassRe, views;
 
   // Internal: A regular expression for matching against a DOM element's
   // `className` property to determine if the element is a view's node.
   viewClassRe = /(^|\s)z-view(\s|$)/;
   
-  // Internal: A cache of concrete view instances. Every `Z.DOMView` object that
+  // Internal: A cache of concrete view instances. Every `Z.View` object that
   // gets created is added to this cache keyed by its `objectId`. This cache is
   // used by the `viewForNode` method to look up a view instance based on a DOM
   // node. When views are destroyed they are removed from this cache.
@@ -39,11 +39,11 @@ Z.DOMView = Z.Object.extend(function() {
   // Returns a string representing the type of DOM node to use.
   this.def('tag', function() { return 'div'; });
 
-  // Public: Returns the `Z.DOMView` instance that owns the given node.
+  // Public: Returns the `Z.View` instance that owns the given node.
   //
   // node - A DOM element reference.
   //
-  // Returns a `Z.DOMView` instance or `null` if the node doesn't belong to a
+  // Returns a `Z.View` instance or `null` if the node doesn't belong to a
   //   view.
   this.def('viewForNode', function(node) {
     while (node && !viewClassRe.test(node.className)) {
@@ -109,7 +109,7 @@ Z.DOMView = Z.Object.extend(function() {
 
   // Public: Indicates whether the receiver is a descendant of the given view.
   //
-  // view - A concreate `Z.DOMView` instance.
+  // view - A concreate `Z.View` instance.
   //
   // Returns a Boolean.
   this.def('isDescendantOf', function(view) {
@@ -122,7 +122,7 @@ Z.DOMView = Z.Object.extend(function() {
 
   // Public: Indicates whether the receiver is an ancestor of the given view.
   //
-  // view - A concreate `Z.DOMView` instance.
+  // view - A concreate `Z.View` instance.
   //
   // Returns a Boolean.
   this.def('isAncestorOf', function(view) {
@@ -159,7 +159,7 @@ Z.DOMView = Z.Object.extend(function() {
     if (idx === undefined) { idx = subviews.size(); }
 
     if (idx < 0 || idx > subviews.size()) {
-      throw new Error(Z.fmt("Z.DOMView.addSubview: invalid index (%@) for: %@",
+      throw new Error(Z.fmt("Z.View.addSubview: invalid index (%@) for: %@",
                             idx, this));
     }
 
@@ -183,7 +183,7 @@ Z.DOMView = Z.Object.extend(function() {
     var idx = this.subviews().index(refView);
 
     if (idx === null) {
-      throw new Error('Z.DOMView.addSubviewBefore: reference view is not a subview: ' + this.toString());
+      throw new Error('Z.View.addSubviewBefore: reference view is not a subview: ' + this.toString());
     }
 
     return this.addSubview(newView, idx);
@@ -201,7 +201,7 @@ Z.DOMView = Z.Object.extend(function() {
     var idx = this.subviews().index(refView);
 
     if (idx === null) {
-      throw new Error('Z.DOMView.addSubviewAfter: reference view is not a subview: ' + this.toString());
+      throw new Error('Z.View.addSubviewAfter: reference view is not a subview: ' + this.toString());
     }
 
     return this.addSubview(newView, idx + 1);
@@ -218,7 +218,7 @@ Z.DOMView = Z.Object.extend(function() {
     var idx = this.subviews().index(oldView);
 
     if (idx === null) {
-      throw new Error('Z.DOMView.replaceSubview: old view is not a subview: ' + this.toString());
+      throw new Error('Z.View.replaceSubview: old view is not a subview: ' + this.toString());
     }
 
     this.removeSubview(oldView);
@@ -247,11 +247,11 @@ Z.DOMView = Z.Object.extend(function() {
     }
 
     if (idx === null) {
-      throw new Error(Z.fmt("Z.DOMView.removeSubview: given view is not a subview: %@", view));
+      throw new Error(Z.fmt("Z.View.removeSubview: given view is not a subview: %@", view));
     }
 
     if (idx < 0 || idx >= size) {
-      throw new Error(Z.fmt("Z.DOMView.removeSubview: given index (%@) is not in range", idx));
+      throw new Error(Z.fmt("Z.View.removeSubview: given index (%@) is not in range", idx));
     }
 
     subviews.splice(idx, 1);

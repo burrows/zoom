@@ -9,7 +9,7 @@ Person = Z.Object.extend(function() {
   this.prop('last');
 });
 
-TestItemView = Z.DOMView.extend(function() {
+TestItemView = Z.View.extend(function() {
   this.prop('content');
 
   this.def('tag', function() { return 'li'; });
@@ -21,11 +21,11 @@ TestItemView = Z.DOMView.extend(function() {
   });
 });
 
-TestListView = Z.DOMListView.extend(function() {
+TestListView = Z.ListView.extend(function() {
   this.def('itemViewType', function() { return TestItemView; })
 });
 
-describe('Z.DOMListView', function() {
+describe('Z.ListView', function() {
   describe('.initialize without content', function() {
     it('should not create any subviews', function() {
       var v = TestListView.create();

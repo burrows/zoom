@@ -1,20 +1,20 @@
 NODE_PATH := build
 
-SRCS := util.js          \
-        object.js        \
-        module.js        \
-        orderable.js     \
-        enumerable.js    \
-        array.js         \
-        sorted_array.js  \
-        hash.js          \
-        mapper.js        \
-        model.js         \
-        run_loop.js      \
-        dom/view.js      \
-        dom/window.js    \
-        dom/app.js       \
-        dom/list_view.js
+SRCS := util.js         \
+        object.js       \
+        module.js       \
+        orderable.js    \
+        enumerable.js   \
+        array.js        \
+        sorted_array.js \
+        hash.js         \
+        mapper.js       \
+        model.js        \
+        run_loop.js     \
+        view.js         \
+        window.js       \
+        app.js          \
+        list_view.js
 
 default: spec
 

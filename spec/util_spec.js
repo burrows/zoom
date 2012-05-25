@@ -187,7 +187,7 @@ describe('Z.inspect', function() {
     });
   });
 
-  describe('given a DOM elemen', function() {
+  describe('given a DOM element', function() {
     it('should return string containing the the node name and id and class attributes', function() {
       var div = document.createElement('div'),
           p   = document.createElement('p'),

@@ -6,27 +6,27 @@ var slice, TestView1, TestView2, TestView3, TestCompoundView;
 
 slice = Array.prototype.slice;
 
-TestView1 = Z.DOMView.extend(function() {
+TestView1 = Z.View.extend(function() {
   this.def('draw', function() {
     this.node().innerHTML = '<div class="test-view-1"></div>';
   });
 });
 
-TestView2 = Z.DOMView.extend(function() {
+TestView2 = Z.View.extend(function() {
   this.def('draw', function() {
     this.node().innerHTML = '<div class="test-view-2"></div>';
   });
 });
 
-TestView3 = Z.DOMView.extend(function() {
+TestView3 = Z.View.extend(function() {
   this.def('draw', function() {
     this.node().innerHTML = '<div class="test-view-3"></div>';
   });
 });
 
-TestCompoundView = Z.DOMView.extend();
+TestCompoundView = Z.View.extend();
 
-describe('Z.DOMView', function() {
+describe('Z.View', function() {
   describe('node property', function() {
     it('should create a detached empty DOM node', function() {
       var v = TestView1.create(), node = v.node();
@@ -42,12 +42,12 @@ describe('Z.DOMView', function() {
   });
 
   describe('.viewForNode', function() {
-    it('should return the `Z.DOMView` object that owns the node', function() {
+    it('should return the `Z.View` object that owns the node', function() {
       var v1 = TestView1.create(), v2 = TestView2.create();
 
-      expect(Z.DOMView.viewForNode(document.body)).toBeNull();
-      expect(Z.DOMView.viewForNode(v1.node())).toBe(v1);
-      expect(Z.DOMView.viewForNode(v2.node())).toBe(v2);
+      expect(Z.View.viewForNode(document.body)).toBeNull();
+      expect(Z.View.viewForNode(v1.node())).toBe(v1);
+      expect(Z.View.viewForNode(v2.node())).toBe(v2);
     });
   });
 
@@ -69,9 +69,9 @@ describe('Z.DOMView', function() {
     it('should remove the view from the cache that `viewForNode` uses', function() {
       var v = TestCompoundView.create();
 
-      expect(Z.DOMView.viewForNode(v.node())).toBe(v);
+      expect(Z.View.viewForNode(v.node())).toBe(v);
       v.destroy();
-      expect(Z.DOMView.viewForNode(v.node())).toBeNull();
+      expect(Z.View.viewForNode(v.node())).toBeNull();
     });
   });
 
@@ -88,13 +88,13 @@ describe('Z.DOMView', function() {
     it('should throw an execption if the given index is invalid', function() {
       expect(function() {
         v.addSubview(sv1, -1);
-      }).toThrow('Z.DOMView.addSubview: invalid index (-1) for: ' + v.toString());
+      }).toThrow('Z.View.addSubview: invalid index (-1) for: ' + v.toString());
 
       v.addSubview(sv1);
 
       expect(function() {
         v.addSubview(sv2, 2);
-      }).toThrow('Z.DOMView.addSubview: invalid index (2) for: ' + v.toString());
+      }).toThrow('Z.View.addSubview: invalid index (2) for: ' + v.toString());
     });
 
     it('should insert the given view to the `subviews` array at the given index', function() {
@@ -170,7 +170,7 @@ describe('Z.DOMView', function() {
 
       expect(function() {
         v.addSubviewBefore(sv1, sv2);
-      }).toThrow('Z.DOMView.addSubviewBefore: reference view is not a subview: ' + v.toString());
+      }).toThrow('Z.View.addSubviewBefore: reference view is not a subview: ' + v.toString());
     });
 
     it('should add the given subview before the reference subview', function() {
@@ -197,7 +197,7 @@ describe('Z.DOMView', function() {
 
       expect(function() {
         v.addSubviewAfter(sv1, sv2);
-      }).toThrow('Z.DOMView.addSubviewAfter: reference view is not a subview: ' + v.toString());
+      }).toThrow('Z.View.addSubviewAfter: reference view is not a subview: ' + v.toString());
     });
 
     it('should add the given subview after the reference subview', function() {
@@ -224,7 +224,7 @@ describe('Z.DOMView', function() {
 
       expect(function() {
         v.replaceSubview(sv1, sv2);
-      }).toThrow('Z.DOMView.replaceSubview: old view is not a subview: ' + v.toString());
+      }).toThrow('Z.View.replaceSubview: old view is not a subview: ' + v.toString());
     });
 
     it('should remove the old subview and add the new subview in its place', function() {
@@ -281,7 +281,7 @@ describe('Z.DOMView', function() {
 
       expect(function() {
         v.removeSubview(v2);
-      }).toThrow('Z.DOMView.removeSubview: given view is not a subview: ' + v2.toString());
+      }).toThrow('Z.View.removeSubview: given view is not a subview: ' + v2.toString());
     });
 
     it('should throw an exception if the given index is not in range', function() {
@@ -289,7 +289,7 @@ describe('Z.DOMView', function() {
 
       expect(function() {
         v.removeSubview(12);
-      }).toThrow('Z.DOMView.removeSubview: given index (12) is not in range');
+      }).toThrow('Z.View.removeSubview: given index (12) is not in range');
     });
 
     it('should remove the given view from the `subviews` array', function() {

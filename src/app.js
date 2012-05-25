@@ -1,12 +1,12 @@
-// The `Z.DOMApp` type is the root of the Zoom window/view hierarchy. Instances
+// The `Z.App` type is the root of the Zoom window/view hierarchy. Instances
 // are responsible for setting up and initially drawing all of an application's
-// windows and view. In order to create an instance of `Z.DOMApp` it must be
+// windows and view. In order to create an instance of `Z.App` it must be
 // provided a view type to use as the applications main view and optionally a
 // container node to use for drawing the views (by default `document.body` is
-// used). Additionaly, a `Z.DOMApp` instance observes keyboard and mouse events
+// used). Additionaly, a `Z.App` instance observes keyboard and mouse events
 // and dispatches them to the appropriate view. Only mouse events that occur
 // withing the container are processed.
-Z.DOMApp = Z.Object.extend(function() {
+Z.App = Z.Object.extend(function() {
   var appEvents, bodyEvents;
 
   // Internal: This list of events to observe on the application's `container`
@@ -41,17 +41,19 @@ Z.DOMApp = Z.Object.extend(function() {
   // TODO: send the event to the app's statechart if it bubbles all the way up
   //
   // event - A native DOM event.
-  // view  - A `Z.DOMView` object to begin sending the event to.
+  // view  - A `Z.View` object to begin sending the event to.
   //
   // Returns nothing.
   function dispatchEvent(event, view) {
-    while (view.handleEvent(event) !== true && (view = view.superview()));
+    while (view && view.handleEvent(event) !== true) {
+      view = view.superview();
+    }
   }
 
   // Internal: An event listener callback for events observed somewhere inside
   // the application's `container`.
   function processAppEvent(event) {
-    dispatchEvent(event, Z.DOMView.viewForNode(event.target)); 
+    dispatchEvent(event, Z.View.viewForNode(event.target));
   }
 
   // Internal: An event listener callback for key events observed on the body.
@@ -90,7 +92,7 @@ Z.DOMApp = Z.Object.extend(function() {
     }
   });
 
-  // Public: An array containing all of the application's `Z.DOMWindow` objects.
+  // Public: An array containing all of the application's `Z.Window` objects.
   // Every application has at least one window, the main window, which is always
   // at index `0`.
   this.prop('windows', {
@@ -114,19 +116,19 @@ Z.DOMApp = Z.Object.extend(function() {
   // property.
   this.prop('keyWindow');
 
-  // Public: The `Z.DOMApp` constructor.
+  // Public: The `Z.App` constructor.
   //
-  // mainView  - A sub-type of `Z.DOMApp` to use as the root view of the
+  // mainView  - A sub-type of `Z.App` to use as the root view of the
   //             application's main window.
   // container - A DOM node to contain the app (default: `document.body`).
   this.def('initialize', function(mainView, container) {
-    if (!(Z.isA(mainView, Z.DOMView) && mainView.isType)) {
-      throw new Error(Z.fmt("%@.initialize: must provide a sub-type of `Z.DOMView` as the main view type",
+    if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
+      throw new Error(Z.fmt("%@.initialize: must provide a sub-type of `Z.View` as the main view type",
                             this.typeName()));
     }
 
     // create the application's main window
-    this.windows().push(Z.DOMWindow.create(mainView, {
+    this.windows().push(Z.Window.create(mainView, {
       app: this,
       isMain: true,
       isKey: true
@@ -222,31 +224,31 @@ Z.DOMApp = Z.Object.extend(function() {
     }
   });
 
-  // Public: Creates a new `Z.DOMWindow` object with the given view set to its
+  // Public: Creates a new `Z.Window` object with the given view set to its
   // `contentView` property and adds it to the application's `windows` array. If
   // the application has already been started then the window is drawn and its
   // node is attached to the page.
   //
-  // viewType - A `Z.DOMView` sub-type to use as the window's `contentView`.
-  // opts     - A native object containing options to pass to the `Z.DOMWIndow`
+  // viewType - A `Z.View` sub-type to use as the window's `contentView`.
+  // opts     - A native object containing options to pass to the `Z.Window`
   //            constructor (default: `{}`).
   //
-  // Returns the new `Z.DOMWindow` concrete instance.
+  // Returns the new `Z.Window` concrete instance.
   this.def('createWindow', function(viewType, opts) {
-    var window = Z.DOMWindow.create(viewType, Z.merge(opts || {}, {
+    var window = Z.Window.create(viewType, Z.merge(opts || {}, {
       app: this, isMain: false
     }));
 
     this.windows().push(window);
 
-    if (this.isStarted()) { attachWindow.call(this, window) }
+    if (this.isStarted()) { attachWindow.call(this, window); }
 
     return window;
   });
 
   // Public: Destroys the given window and removes it from the `windows` array.
   //
-  // window - The `Z.DOMWindow` object to destroy.
+  // window - The `Z.Window` object to destroy.
   //
   // Returns the given window.
   // Throws `Error` if passed a window that does not belong to the application.
@@ -271,10 +273,10 @@ Z.DOMApp = Z.Object.extend(function() {
   });
 
   // Public: Makes the given window the key window. This method will invoke the
-  // `willResignKeyWindow` method on the current key window and 
+  // `willResignKeyWindow` method on the current key window and
   // didBecomeKeyWindow` on the given key window.
   //
-  // window - A `Z.DOMWindow` instance to make the new key window.
+  // window - A `Z.Window` instance to make the new key window.
   //
   // Returns the receiver.
   this.def('makeKeyWindow', function(window) {

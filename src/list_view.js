@@ -1,4 +1,4 @@
-Z.DOMListView = Z.DOMView.extend(function() {
+Z.ListView = Z.View.extend(function() {
   function insertItemViews(items, idx) {
     var itemViewType = this.itemViewType(), i, size;
 
@@ -38,7 +38,7 @@ Z.DOMListView = Z.DOMView.extend(function() {
   this.def('tag', function() { return 'ul'; });
 
   this.def('itemViewType', function() {
-    throw new Error('Z.DOMListView.itemViewType: this method must be overridden by the sub-type');
+    throw new Error('Z.ListView.itemViewType: this method must be overridden by the sub-type');
   });
 });
 
