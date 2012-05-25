@@ -32,6 +32,10 @@ Z.View = Z.Object.extend(function() {
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
 
+  // Public: Boolean property indicating whether the view needs it's `display`
+  // method run in order to sync its state to the DOM.
+  this.prop('needsDisplay', { def: true });
+
   // Public: Returns the HTML tag to use when building the `node` for instances
   // of the view. Override this method to generate a `node` that is something
   // other than a div.
@@ -93,13 +97,60 @@ Z.View = Z.Object.extend(function() {
     return node;
   });
 
-  // Public: Draws the view into its node. By default, this method simply
-  // recursively invokes the `draw` method on its subviews. This method should
-  // be overridden in custom view types to draw the actual contents of the view.
+  // Public: Renders the view into its node. By default this method does
+  // nothing, but sub types of `Z.View` can override it in order to implement
+  // a custom view's rendering logic.
   //
   // Returns the receiver.
-  this.def('draw', function() {
-    this.subviews().invoke('draw');
+  this.def('render', function() { return this; });
+
+  // Public: Simply invokes the `display` method if the `needsDisplay` property
+  // is `true` and does nothing otherwise.
+  //
+  // Returns the receiver.
+  this.def('displayIfNeeded', function() {
+    if (this.needsDisplay()) { this.display(); }
+    return this;
+  });
+
+  // Public: Displays the receiver by invoking the `render` method and
+  // recursively calling `display` on any subviews that are in need of display.
+  //
+  // This method is where all DOM modification actually occurs and should
+  // rarely, if ever, need to be called directly. Instead, view displays are
+  // triggered by `Z.RunLoop`.
+  //
+  // Returns the receiver.
+  this.def('display', function() {
+    var node = this.node(), subviews = this.subviews(),
+        subview, removed, i, size, refnode;
+
+    this.render();
+
+    // ensure that all removed subviews have had their nodes detached
+    if (removed = this.__removedSubviews__) {
+      for (i = 0, size = removed.length; i < size; i++) {
+        if (removed[i].node().parentNode === node) {
+          node.removeChild(removed[i].node());
+        }
+      }
+      this.__removedSubviews__ = null;
+    }
+
+    // display current subviews
+    for (i = subviews.size() - 1; i >= 0; i--) {
+      subview = subviews.at(i);
+      subview.displayIfNeeded();
+      if (subview.node().parentNode !== node) {
+        refnode = subviews.at(i + 1) ? subviews.at(i + 1).node() : null;
+        node.insertBefore(subview.node(), refnode);
+      }
+    }
+
+    // mark this view as no longer needing display, so subsequent runs of the
+    // run loop will no longer re-display it
+    this.needsDisplay(false);
+
     return this;
   });
 
@@ -129,19 +180,9 @@ Z.View = Z.Object.extend(function() {
     return view.isDescendantOf(this);
   });
 
-  // Public: Removes the receiver from its superview, thereby removing it from
-  // the document.
-  //
-  // Returns the receiver.
-  this.def('remove', function() {
-    var superview = this.superview();
-    if (superview) { superview.removeSubview(this); }
-    return this;
-  });
-
   // Public: Adds the given view as a subview of the receiver. This will add the
-  // view to the receiver's `subviews` array and insert its node as a child node
-  // of the receiver's `node`.
+  // view to the receiver's `subviews` array and mark the given view as needing
+  // display.
   //
   // If the given view is already a subview of another view, it is first removed
   // from that superview before adding it to the receiver.
@@ -153,7 +194,7 @@ Z.View = Z.Object.extend(function() {
   // Returns `view`.
   // Throws `Error` if given an invalid index.
   this.def('addSubview', function(view, idx) {
-    var subviews = this.subviews(), node = this.node();
+    var subviews = this.subviews();
 
     if (view.superview()) { view.remove(); }
     if (idx === undefined) { idx = subviews.size(); }
@@ -165,8 +206,7 @@ Z.View = Z.Object.extend(function() {
 
     subviews.splice(idx, 0, view);
     view.superview(this);
-
-    node.insertBefore(view.node(), node.childNodes[idx] || null);
+    this.needsDisplay(true);
 
     return view;
   });
@@ -207,7 +247,8 @@ Z.View = Z.Object.extend(function() {
     return this.addSubview(newView, idx + 1);
   });
 
-  // Public: Replaces an existing subview with a new subview.
+  // Public: Replaces an existing subview with a new subview and marks the
+  // receiver as needing display.
   //
   // oldView - The current subview to replace.
   // newView - The new subview to replace the old subview.
@@ -225,12 +266,13 @@ Z.View = Z.Object.extend(function() {
     return this.addSubview(newView, idx);
   });
 
-  // Public: Removes the given subview from the receiver's `subviews` array and
-  // set's its `superview` property to `null`. A number representing the index
-  // of a subview can be passed instead of a reference to the view itself.
+  // Public: Removes the given subview from the receiver's `subviews` array,
+  // set's its `superview` property to `null`, and marks the receiver as needing
+  // display. A number representing the index of a subview can be passed instead
+  // of a reference to the view itself.
   //
   // view - The view to remove or a number indicating the index of the view to
-  //        remove..
+  //        remove.
   //
   // Returns the receiver.
   // Throws `Error` if the given view is not a subview.
@@ -256,12 +298,22 @@ Z.View = Z.Object.extend(function() {
 
     subviews.splice(idx, 1);
     view.superview(null);
-    this.node().removeChild(view.node());
+    this.needsDisplay(true);
 
+    (this.__removedSubviews__ = this.__removedSubviews__ || []).push(view);
+
+    return this;
+  });
+
+  // Public: Removes the receiver from its superview.
+  //
+  // Returns the receiver.
+  this.def('remove', function() {
+    var superview = this.superview();
+    if (superview) { superview.removeSubview(this); }
     return this;
   });
 });
 
 }());
-
 

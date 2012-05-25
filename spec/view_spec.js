@@ -7,19 +7,19 @@ var slice, TestView1, TestView2, TestView3, TestCompoundView;
 slice = Array.prototype.slice;
 
 TestView1 = Z.View.extend(function() {
-  this.def('draw', function() {
+  this.def('render', function() {
     this.node().innerHTML = '<div class="test-view-1"></div>';
   });
 });
 
 TestView2 = Z.View.extend(function() {
-  this.def('draw', function() {
+  this.def('render', function() {
     this.node().innerHTML = '<div class="test-view-2"></div>';
   });
 });
 
 TestView3 = Z.View.extend(function() {
-  this.def('draw', function() {
+  this.def('render', function() {
     this.node().innerHTML = '<div class="test-view-3"></div>';
   });
 });
@@ -59,11 +59,9 @@ describe('Z.View', function() {
       v1.addSubview(v2);
       expect(v2.superview()).toBe(v1);
       expect(v1.subviews()).toEq(Z.A(v2));
-      expect(slice.call(v1.node().childNodes)).toEq([v2.node()]);
       v2.destroy()
       expect(v2.superview()).toBeNull();
       expect(v1.subviews()).toEq(Z.A());
-      expect(slice.call(v1.node().childNodes)).toEq([]);
     });
 
     it('should remove the view from the cache that `viewForNode` uses', function() {
@@ -95,6 +93,13 @@ describe('Z.View', function() {
       expect(function() {
         v.addSubview(sv2, 2);
       }).toThrow('Z.View.addSubview: invalid index (2) for: ' + v.toString());
+    });
+
+    it('should set the `needsDisplay` property to `true`', function() {
+      v.display();
+      expect(v.needsDisplay()).toBe(false);
+      v.addSubview(sv1);
+      expect(v.needsDisplay()).toBe(true);
     });
 
     it('should insert the given view to the `subviews` array at the given index', function() {
@@ -130,17 +135,6 @@ describe('Z.View', function() {
       expect(v2.subviews().contains(sv1)).toBe(false);
     });
 
-    it("should attach the added subview's node to the receiever's node at the same index the subview resides in", function() {
-      expect(sv1.node().parentNode).toBe(null);
-      v.addSubview(sv1);
-      expect(sv1.node().parentNode).toBe(v.node());
-      v.addSubview(sv2);
-      expect(sv2.node().parentNode).toBe(v.node());
-      v.addSubview(sv3, 1);
-
-      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
-    });
-
     it('should properly move an existing subview to the new index when the new index is lower than the original', function() {
       v.addSubview(sv1);
       v.addSubview(sv2);
@@ -148,7 +142,6 @@ describe('Z.View', function() {
 
       v.addSubview(sv3, 1);
       expect(v.subviews()).toEq(Z.A(sv1, sv3, sv2));
-      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
     });
 
     it('should properly move an existing subview to the new index when the new index is greater than the original', function() {
@@ -158,7 +151,6 @@ describe('Z.View', function() {
 
       v.addSubview(sv1, 2);
       expect(v.subviews()).toEq(Z.A(sv2, sv3, sv1));
-      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv3.node(), sv1.node()]);
     });
   });
 
@@ -182,10 +174,8 @@ describe('Z.View', function() {
       v.addSubview(sv1);
       v.addSubviewBefore(sv1, sv2);
       expect(v.subviews()).toEq(Z.A(sv2, sv1));
-      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv1.node()]);
       v.addSubviewBefore(sv1, sv3);
       expect(v.subviews()).toEq(Z.A(sv2, sv3, sv1));
-      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv3.node(), sv1.node()]);
     });
   });
 
@@ -209,10 +199,8 @@ describe('Z.View', function() {
       v.addSubview(sv1);
       v.addSubviewAfter(sv1, sv2);
       expect(v.subviews()).toEq(Z.A(sv1, sv2));
-      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node()]);
       v.addSubviewAfter(sv1, sv3);
       expect(v.subviews()).toEq(Z.A(sv1, sv3, sv2));
-      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node(), sv2.node()]);
     });
   });
 
@@ -238,7 +226,6 @@ describe('Z.View', function() {
 
       v.replaceSubview(sv1, sv3);
       expect(v.subviews()).toEq(Z.A(sv3, sv2));
-      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv2.node()]);
     });
 
     it('should properly handle replacing a view with an existing subview', function() {
@@ -253,12 +240,10 @@ describe('Z.View', function() {
 
       v.replaceSubview(sv1, sv2);
       expect(v.subviews()).toEq(Z.A(sv2, sv3));
-      expect(slice.call(v.node().childNodes)).toEq([sv2.node(), sv3.node()]);
 
       v.addSubview(sv1);
       v.replaceSubview(sv2, sv3);
       expect(v.subviews()).toEq(Z.A(sv3, sv1));
-      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv1.node()]);
     });
   });
 
@@ -292,6 +277,13 @@ describe('Z.View', function() {
       }).toThrow('Z.View.removeSubview: given index (12) is not in range');
     });
 
+    it('should set the `needsDisplay` property to `true`', function() {
+      v.display();
+      expect(v.needsDisplay()).toBe(false);
+      v.removeSubview(sv1);
+      expect(v.needsDisplay()).toBe(true);
+    });
+
     it('should remove the given view from the `subviews` array', function() {
       expect(v.subviews()).toEq(Z.A(sv1, sv2, sv3));
       v.removeSubview(sv2);
@@ -306,19 +298,6 @@ describe('Z.View', function() {
       expect(sv1.superview()).toBe(v);
       v.removeSubview(sv1);
       expect(sv1.superview()).toBeNull();
-    });
-
-    it("should detach the removed subview's node from the receiever's node", function() {
-      expect(sv1.node().parentNode).toBe(v.node());
-      expect(sv2.node().parentNode).toBe(v.node());
-      expect(sv3.node().parentNode).toBe(v.node());
-
-      v.removeSubview(sv1);
-      v.removeSubview(sv3);
-
-      expect(sv1.node().parentNode).toBeNull();
-      expect(sv2.node().parentNode).toBe(v.node());
-      expect(sv3.node().parentNode).toBeNull(v);
     });
 
     it('should remove the subview at the given index when given a number instead of a view', function() {
@@ -337,13 +316,11 @@ describe('Z.View', function() {
 
       expect(v2.superview()).toBe(v1);
       expect(v1.subviews()).toEq(Z.A(v2));
-      expect(slice.call(v1.node().childNodes)).toEq([v2.node()]);
 
       expect(v2.remove()).toBe(v2);
 
       expect(v2.superview()).toBeNull();
       expect(v1.subviews()).toEq(Z.A());
-      expect(slice.call(v1.node().childNodes)).toEq([]);
     });
   });
 
@@ -395,22 +372,103 @@ describe('Z.View', function() {
     });
   });
 
-  describe('.draw', function() {
-    it('should invoke `draw` on all subviews', function() {
-      var v   = TestCompoundView.create(),
-          sv1 = TestView1.create(),
-          sv2 = TestView2.create();
+  describe('.display', function() {
+    it('should render the view', function() {
+      var v = TestView1.create();
 
-      v.addSubview(sv1);
-      v.addSubview(sv2);
+      expect(v.node().querySelector('.test-view-1')).toEqual(null);
+      v.display();
+      expect(v.node().querySelector('.test-view-1')).not.toEqual(null);
+    });
+
+    it('should render the subviews', function() {
+      var v = TestCompoundView.create();
+
+      v.addSubview(TestView1.create());
+      v.addSubview(TestView2.create());
 
       expect(v.node().querySelector('.test-view-1')).toEqual(null);
       expect(v.node().querySelector('.test-view-2')).toEqual(null);
-      v.draw();
+      v.display();
       expect(v.node().querySelector('.test-view-1')).not.toEqual(null);
       expect(v.node().querySelector('.test-view-2')).not.toEqual(null);
     });
-  });
+
+    it('should render and attach subview nodes for subviews added since the last time `display` was called', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.display();
+
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node()]);
+      v.addSubview(sv2);
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node()]);
+      v.addSubview(sv3, 0);
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv1.node(), sv2.node()]);
+    });
+
+    it('should remove subview nodes for subviews removed since the last time `display` was called', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+      v.display();
+
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node(), sv3.node()]);
+      sv2.remove();
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node(), sv3.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node()]);
+      v.removeSubview(sv1);
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv3.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node()]);
+      v.removeSubview(sv3);
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([]);
+    });
+
+    it('should replace subview nodes for subviews that were replaced since the last time `display` was called', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.display();
+
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node()]);
+      v.replaceSubview(sv1, sv3);
+      expect(slice.call(v.node().childNodes)).toEq([sv1.node(), sv2.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv2.node()]);
+      v.replaceSubview(sv2, sv1);
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv2.node()]);
+      v.display();
+      expect(slice.call(v.node().childNodes)).toEq([sv3.node(), sv1.node()]);
+    });
+
+    it('should set `needsDisplay` property to `false`', function() {
+      var v = TestView1.create();
+
+      expect(v.needsDisplay()).toBe(true);
+      v.display();
+      expect(v.needsDisplay()).toBe(false);
+    });
+  })
 });
 
 }());
