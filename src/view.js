@@ -134,7 +134,7 @@ Z.View = Z.Object.extend(function() {
           node.removeChild(removed[i].node());
         }
       }
-      this.__removedSubviews__ = null;
+      delete this.__removedSubviews__;
     }
 
     // display current subviews

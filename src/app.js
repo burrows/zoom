@@ -1,96 +1,16 @@
 // The `Z.App` type is the root of the Zoom window/view hierarchy. Instances
-// are responsible for setting up and initially drawing all of an application's
-// windows and view. In order to create an instance of `Z.App` it must be
-// provided a view type to use as the applications main view and optionally a
-// container node to use for drawing the views (by default `document.body` is
-// used). Additionaly, a `Z.App` instance observes keyboard and mouse events
-// and dispatches them to the appropriate view. Only mouse events that occur
-// withing the container are processed.
+// are responsible for setting up and initially rendering all of an
+// application's windows and views. In order to create a concrete instance of
+// `Z.App`, a view type to use as the applications main view must be provided.
+// Additionally, a container node can be optionally specified to use for
+// rendering the application (by default `document.body` is used).
 Z.App = Z.Object.extend(function() {
   var appEvents, bodyEvents;
 
-  // Internal: This list of events to observe on the application's `container`
-  // node.
-  appEvents = [
-    'click',
-    'dblclick',
-    'mousedown',
-    'mouseup',
-    'mouseover',
-    'mousemove',
-    'mouseout',
-    'keydown',
-    'keypress',
-    'keyup',
-    'select',
-    'change',
-    'submit',
-    'reset',
-    'focus',
-    'blur'
-  ];
-
-  // Internal: This list of events to observe on the documents's `body` node.
-  // When there is more than one application on a page, these events will be
-  // delivered to all of them.
-  bodyEvents = ['keydown', 'keypress', 'keyup'];
-
-  // Internal: Dispatches an event up the superivew chain starting from the
-  // given view.
-  //
-  // TODO: send the event to the app's statechart if it bubbles all the way up
-  //
-  // event - A native DOM event.
-  // view  - A `Z.View` object to begin sending the event to.
-  //
-  // Returns nothing.
-  function dispatchEvent(event, view) {
-    while (view && view.handleEvent(event) !== true) {
-      view = view.superview();
-    }
-  }
-
-  // Internal: An event listener callback for events observed somewhere inside
-  // the application's `container`.
-  function processAppEvent(event) {
-    dispatchEvent(event, Z.View.viewForNode(event.target));
-  }
-
-  // Internal: An event listener callback for key events observed on the body.
-  function processBodyEvent(event) {
-    var keyView = this.get('keyWindow.keyView');
-    if (event.target !== document.body || !keyView) { return; }
-    dispatchEvent(event, keyView);
-  }
-
-  // Internal: Attaches the given window's node to the application's container
-  // node, thereby making it visible on screen. The window's `draw` method is
-  // invoked first.
-  //
-  // window - The window to attach.
-  //
-  // Returns nothing.
-  function attachWindow(window) {
-    var container = this.container(), node = window.node();
-    window.draw();
-    container.appendChild(node);
-  }
-
-  // Internal: Detaches the given window's node from the application's container
-  // node, thereby removing it from the screen.
-  function detachWindow(window) {
-    this.container().removeChild(window.node());
-  }
-
   // Public: A property that returns the container DOM node that the application
-  // was initialized with. If a container was not specified by the constructor,
-  // then `document.body` is returned. All DOM modifications and events observed
+  // was initialized with. All DOM modifications and mouse events observed
   // happen within this container.
-  this.prop('container', {
-    get: function() {
-      return this.__container__ = this.__container__ || document.body;
-    }
-  });
+  this.prop('container');
 
   // Public: An array containing all of the application's `Z.Window` objects.
   // Every application has at least one window, the main window, which is always
@@ -109,7 +29,7 @@ Z.App = Z.Object.extend(function() {
 
   // Public: A boolean indicating whether the application has been started yet.
   // No windows are drawn on the screen until the application is started.
-  this.prop('isStarted', { def: false });
+  this.prop('isRunning', { def: false });
 
   // Public: The window that currently has keyboard focus. All keyboard events
   // observed by the application will be sent to the window pointed to by this
@@ -129,147 +49,115 @@ Z.App = Z.Object.extend(function() {
 
     // create the application's main window
     this.windows().push(Z.Window.create(mainView, {
-      app: this,
-      isMain: true,
-      isKey: true
+      app: this, isMain: true, isKey: true
     }));
 
-    if (container) { this.set('container', container); }
+    this.set('container', container || document.body);
   });
 
-  // Public: Starts the application by drawing and attaching all windows and
-  // setting up event listeners.
+  // Public: Starts the application by registering with the run loop, displaying
+  // all windows and setting the key window to the main window.
   //
   // Returns the receiver.
   this.def('start', function() {
-    var self = this;
-
-    if (this.isStarted()) { return this; }
-
-    this.keyWindow(this.mainWindow());
-    this.listen();
-    this.windows().each(function(window) { attachWindow.call(self, window); });
-    this.isStarted(true);
+    if (!this.isRunning()) {
+      // FIXME: register with run loop
+      this.keyWindow(this.mainWindow());
+      this.displayWindows();
+      this.isRunning(true);
+    }
 
     return this;
   });
 
-  // Public: Stops the app by removing all windows and event listeners from the
-  // container. A stopped app may be restarted again by invoking the `start`
-  // method.
+  // Public: Stops the app by deregistering with the run loop and removing all
+  // windows. A stopped app may be started again by invoking the `start` method.
   //
   // Returns the receiver.
   this.def('stop', function() {
-    var self = this;
+    if (this.isRunning()) {
+      // FIXME: deregister with run loop
+      this.set('keyWindow', null);
+      this.removeWindows().displayWindows();
+      this.isRunning(false);
+    }
 
-    if (!this.isStarted()) { return this; }
-
-    this.set('keyWindow', null);
-    this.windows().each(function(window) { detachWindow.call(self, window); });
-    this.stopListening();
-    this.isStarted(false);
     return this;
   });
 
-  // Public: Completely cleans up the application by destroying all windows and
-  // views. Once destroyed, there will be no trace left of the application in
-  // the container.
+  // Public: Display's the app's windows by invoking each window's
+  // `displayIfNeeded` method and attaching their nodes to the `container` node
+  // if necessary.
+  //
+  // This method is invoked by `Z.RunLoop` during each run after all bindings
+  // have been flushed..
   //
   // Returns the receiver.
-  this.def('destroy', function() {
-    this.stop();
-    this.windows().invoke('destroy');
+  this.def('displayWindows', function() {
+    var container = this.container(), windows = this.windows(),
+        removed, window, i, size;
+
+    // ensure that all removed subviews have had their nodes detached
+    if (removed = this.__removedWindows__) {
+      for (i = 0, size = removed.length; i < size; i++) {
+        container.removeChild(removed[i].node());
+      }
+      delete this.__removedWindows__;
+    }
+
+    for (i = 0, size = windows.size(); i < size; i++) {
+      window = windows.at(i);
+      window.displayIfNeeded();
+      if (window.node().parentNode !== container) {
+        container.appendChild(window.node());
+      }
+    }
+
     return this;
   });
 
-  // Public: Begins listening for user events. Most events are observed on the
-  // application's `container` node, but keyboard events are also observed on
-  // the document's `body` node. This is necessary because keyboard events only
-  // have a target when a particular node has focus, but we can't be sure that
-  // some node under the application's control always has focus, so each
-  // application on the page will observe keyboard events on the body and then
-  // deliver them to their current key window.
+  // Public: Adds a new window to this app's `windows` array. The window will be
+  // displayed during the next running of the run loop.
   //
-  // Returns the receiver.
-  this.def('listen', function() {
-    var self = this, container = this.container(), i, len;
-
-    for (i = 0, len = appEvents.length; i < len; i++) {
-      container.addEventListener(appEvents[i], processAppEvent, false);
+  // window - Either a concrete `Z.Window` instance or a subtype of `Z.Window`.
+  //
+  // Returns the window concrete instance added.
+  // Throws `Error` if the given object is not a `Z.Window` object.
+  this.def('addWindow', function(window) {
+    if (!Z.isA(window, Z.Window)) {
+      throw new Error(Z.fmt("Z.App.addWindow: expected a `Z.Window` object, but received `%@` instead.", window));
     }
 
-    this.__processBodyEvent__ = function(e) {
-      return processBodyEvent.call(self, e);
-    };
-
-    for (i = 0, len = bodyEvents.length; i < len; i++) {
-      document.body.addEventListener(bodyEvents[i],
-                                     this.__processBodyEvent__, false);
-    }
-  });
-
-  // Public: Stops listening for user events.
-  //
-  // Returns the receiver.
-  this.def('stopListening', function() {
-    var container = this.container(), i, len;
-
-    for (i = 0, len = appEvents.length; i < len; i++) {
-      container.removeEventListener(appEvents[i], processAppEvent, false);
-    }
-
-    for (i = 0, len = bodyEvents.length; i < len; i++) {
-      document.body.removeEventListener(bodyEvents[i],
-                                        this.__processBodyEvent__, false);
-    }
-  });
-
-  // Public: Creates a new `Z.Window` object with the given view set to its
-  // `contentView` property and adds it to the application's `windows` array. If
-  // the application has already been started then the window is drawn and its
-  // node is attached to the page.
-  //
-  // viewType - A `Z.View` sub-type to use as the window's `contentView`.
-  // opts     - A native object containing options to pass to the `Z.Window`
-  //            constructor (default: `{}`).
-  //
-  // Returns the new `Z.Window` concrete instance.
-  this.def('createWindow', function(viewType, opts) {
-    var window = Z.Window.create(viewType, Z.merge(opts || {}, {
-      app: this, isMain: false
-    }));
-
+    window = window.isType ? window.create() : window;
+    window.set({app: this, isMain: false});
     this.windows().push(window);
-
-    if (this.isStarted()) { attachWindow.call(this, window); }
-
     return window;
   });
 
-  // Public: Destroys the given window and removes it from the `windows` array.
+  // Public: Removes the given window from this app's `windows` array. The window
+  // will be removed from the DOM during the next running of the run loop.
   //
-  // window - The `Z.Window` object to destroy.
+  // window - A `Z.Window` that currently exists in the `windows` array.
   //
   // Returns the given window.
-  // Throws `Error` if passed a window that does not belong to the application.
-  // Throws `Error` if passed the main window.
-  this.def('destroyWindow', function(window) {
-    var windows = this.windows(), idx = windows.index(window);
+  // Throws `Error` if the given object is not in the `windows` array.
+  this.def('removeWindow', function(window) {
+    var windows = this.windows(), i = windows.index(window);
 
-    if (idx === null) {
-      throw new Error(Z.fmt("%@.destroyWindow: attempted to destroy a window that doesn't belong to the application",
-                            this.typeName()));
+    if (i === null) {
+      throw new Error(Z.fmt("Z.App.removeWindow: given object does not exist in the app's `windows` array: %@", window));
     }
 
-    if (window === this.mainWindow()) {
-      throw new Error(Z.fmt("%@.destroyWindow: can't destroy the main window",
-                            this.typeName()));
-    }
+    windows.splice(i, 1);
 
-    window.destroy();
-    windows.splice(idx, 1);
-
+    (this.__removedWindows__ = this.__removedWindows__ || []).push(window);
     return window;
+  });
+
+  this.def('removeWindows', function() {
+    var self = this, windows = this.windows().slice();
+    windows.each(function(window) { self.removeWindow(window); });
+    return this;
   });
 
   // Public: Makes the given window the key window. This method will invoke the
