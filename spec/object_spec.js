@@ -413,6 +413,9 @@ describe('Z.Object.hasProperty', function() {
 });
 
 describe('Z.Object.once', function() {
+  beforeEach(function() { Z.RunLoop.start(); });
+  afterEach(function() { Z.RunLoop.stop(); });
+
   it('should invoke the given method on the receiver once at the end of the run loop', function() {
     var o = Z.Object.create(), invocations = 0;
 

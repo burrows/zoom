@@ -324,6 +324,38 @@ describe('Z.View', function() {
     });
   });
 
+  describe('.window', function() {
+    it('should return `null` if the view is not attached to a window', function() {
+      var v1  = TestCompoundView.create(),
+          v11 = TestCompoundView.create(),
+          v12 = TestCompoundView.create();
+
+      v1.addSubview(v11);
+      v1.addSubview(v12);
+
+      expect(v1.window()).toBe(null);
+      expect(v11.window()).toBe(null);
+      expect(v12.window()).toBe(null);
+    });
+
+    it('should return the `Z.Window` object the view is attached to', function() {
+      var v1  = TestCompoundView.create(),
+          v11 = TestCompoundView.create(),
+          v12 = TestCompoundView.create(),
+          w;
+
+      v1.addSubview(v11);
+      v1.addSubview(v12);
+
+      w = Z.Window.create(v1);
+
+      expect(w.window()).toBe(w);
+      expect(v1.window()).toBe(w);
+      expect(v11.window()).toBe(w);
+      expect(v12.window()).toBe(w);
+    });
+  });
+
   describe('.isDescendantOf', function() {
     it('should return `true` if the receiver is a descendant of the the given view and `false` otherwise', function() {
       var v1   = TestCompoundView.create(),

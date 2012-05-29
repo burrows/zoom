@@ -158,6 +158,14 @@ Z.View = Z.Object.extend(function() {
     return false;
   });
 
+  // Public: Returns the `Z.Window` the view is currently attached to or `null`
+  // if its not attached to a window.
+  this.def('window', function() {
+    var view = this;
+    while (view && !view.isA(Z.Window)) { view = view.superview(); }
+    return view;
+  });
+
   // Public: Indicates whether the receiver is a descendant of the given view.
   //
   // view - A concreate `Z.View` instance.

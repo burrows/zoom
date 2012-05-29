@@ -281,54 +281,6 @@ describe('Z.App', function() {
       });
     });
   });
-
-  //describe('event handling', function() {
-  //  var mainWin, parent, child1, child2;
-
-  //  beforeEach(function() {
-  //    app.start();
-  //    mainWin = app.get('mainWindow');
-  //    parent  = app.get('mainWindow.contentView');
-  //    child1  = app.get('mainWindow.contentView.subviews').at(0);
-  //    child2  = app.get('mainWindow.contentView.subviews').at(1);
-  //  });
-
-  //  describe('for an event on a DOM element within the application', function() {
-  //    it('should be delivered to the view where the event originated', function() {
-  //      var elem = child1.node().querySelector('.child1'), event;
-
-  //      child1.def('handleEvent', function(e) { event = e; });
-
-  //      simulateMouseEvent(elem, 'mousedown');
-
-  //      expect(event).not.toBeUndefined();
-  //      expect(event.target).toBe(elem);
-  //      expect(event.type).toBe('mousedown');
-  //    });
-
-  //    it('should bubble the event along the superview chain', function() {
-  //      var elem = child2.node().querySelector('.child2'), invocations = [];
-
-  //      child2.def('handleEvent', function() { invocations.push(this); });
-  //      parent.def('handleEvent', function() { invocations.push(this); });
-  //      mainWin.def('handleEvent', function() { invocations.push(this); });
-
-  //      simulateMouseEvent(elem, 'mousedown');
-  //      expect(invocations).toEq([child2, parent, mainWin]);
-  //    });
-
-  //    it('should stop bubbling the event when a handler returns `true`', function() {
-  //      var elem = child2.node().querySelector('.child2'), invocations = [];
-
-  //      child2.def('handleEvent', function() { invocations.push(this); });
-  //      parent.def('handleEvent', function() { invocations.push(this); return true; });
-  //      mainWin.def('handleEvent', function() { invocations.push(this); });
-
-  //      simulateMouseEvent(elem, 'mousedown');
-  //      expect(invocations).toEq([child2, parent]);
-  //    });
-  //  });
-  //});
 });
 
 }());

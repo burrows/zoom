@@ -61,7 +61,7 @@ Z.App = Z.Object.extend(function() {
   // Returns the receiver.
   this.def('start', function() {
     if (!this.isRunning()) {
-      // FIXME: register with run loop
+      Z.RunLoop.registerApp(this).start();
       this.keyWindow(this.mainWindow());
       this.displayWindows();
       this.isRunning(true);
@@ -76,7 +76,7 @@ Z.App = Z.Object.extend(function() {
   // Returns the receiver.
   this.def('stop', function() {
     if (this.isRunning()) {
-      // FIXME: deregister with run loop
+      Z.RunLoop.deregisterApp(this);
       this.set('keyWindow', null);
       this.removeWindows().displayWindows();
       this.isRunning(false);
@@ -184,6 +184,12 @@ Z.App = Z.Object.extend(function() {
     window.didBecomeKeyWindow();
 
     return this;
+  });
+
+  this.def('dispatchMouseEvent', function(evt) {
+  });
+
+  this.def('dispatchKeyEvent', function(evt) {
   });
 });
 
