@@ -186,7 +186,7 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('dispatchMouseEvent', function(evt) {
+  this.def('dispatchMouseEvent', function(evt, view) {
   });
 
   this.def('dispatchKeyEvent', function(evt) {

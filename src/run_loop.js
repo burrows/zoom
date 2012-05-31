@@ -78,7 +78,7 @@ Z.RunLoop = Z.Object.create().open(function() {
 
     if (!app) { return; }
 
-    app.dispatchMouseEvent(e);
+    app.dispatchMouseEvent(e, view);
     schedule();
   }
 
