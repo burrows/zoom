@@ -21,6 +21,10 @@ Z.View = Z.Object.extend(function() {
     }
   });
 
+  // Public: Indicates whether this view's `node` is currently attached to the
+  // DOM.
+  this.prop('isNodeAttached', { def: false });
+
   // Public: A property holding the view's superview.
   this.prop('superview');
 
@@ -110,11 +114,13 @@ Z.View = Z.Object.extend(function() {
   // Returns the receiver.
   this.def('displayIfNeeded', function() {
     if (this.needsDisplay()) { this.display(); }
+    else { this.subviews().invoke('displayIfNeeded'); }
+
     return this;
   });
 
   // Public: Displays the receiver by invoking the `render` method and
-  // recursively calling `display` on any subviews that are in need of display.
+  // recursively calling `display` on all subviews.
   //
   // This method is where all DOM modification actually occurs and should
   // rarely, if ever, need to be called directly. Instead, view displays are
@@ -122,29 +128,23 @@ Z.View = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('display', function() {
-    var node = this.node(), subviews = this.subviews(),
-        subview, removed, i, size, refnode;
+    var subviews = this.subviews(), removed, i, size;
+
+    subviews.invoke('display');
 
     this.render();
 
-    // ensure that all removed subviews have had their nodes detached
+    // ensure that all removed subviews have had their nodes removed
     if (removed = this.__removedSubviews__) {
       for (i = 0, size = removed.length; i < size; i++) {
-        if (removed[i].node().parentNode === node) {
-          node.removeChild(removed[i].node());
-        }
+        this.removeSubviewNode(removed[i]);
       }
       delete this.__removedSubviews__;
     }
 
-    // display current subviews
-    for (i = subviews.size() - 1; i >= 0; i--) {
-      subview = subviews.at(i);
-      subview.displayIfNeeded();
-      if (subview.node().parentNode !== node) {
-        refnode = subviews.at(i + 1) ? subviews.at(i + 1).node() : null;
-        node.insertBefore(subview.node(), refnode);
-      }
+    // sync current subviews with DOM
+    for (i = 0, size = subviews.size(); i < size; i++) {
+      this.insertSubviewNode(subviews.at(i), i);
     }
 
     // mark this view as no longer needing display, so subsequent runs of the
@@ -152,6 +152,96 @@ Z.View = Z.Object.extend(function() {
     this.needsDisplay(false);
 
     return this;
+  });
+
+  // Public: Removes the given subview's `node` from the receiver's `node`.
+  // This method is called by `display` and should never be called directly
+  // unless you are overriding the `display` method.
+  //
+  // subview - The subview whose node should be removed. Note that this will
+  //           not actually exist in the recevier's `subviews` array when this
+  //           method is called since DOM modifications are deferred until the
+  //           next run loop after a view's `subviews` array has been mutated.
+  //
+  // Returns the receiver.
+  this.def('removeSubviewNode', function(subview) {
+    var node = this.node(), child = subview.node();
+
+    if (child.parentNode === node) {
+      node.removeChild(child);
+      if (this.isNodeAttached()) { subview.notifyDidDetachNode(); }
+    }
+
+    return this;
+  });
+
+  // Public: Attaches the given subview's `node` to the receiver's `node`. This
+  // method is called by `display` and should never be called directly unless
+  // you are overriding the `display` method. The `willAttachNode` and
+  // `didAttachNode` methods will be called on the given subview before and
+  // after the node is actually attached.
+  //
+  // subview - The subview whose node should be attached.
+  //
+  // Returns the receiver.
+  this.def('insertSubviewNode', function(subview, idx) {
+    var node = this.node(), child = subview.node();
+
+    if (child === node.childNodes[idx]) { return this; }
+
+    if (idx === node.childNodes.length) { node.appendChild(child); }
+    else { node.insertBefore(child, node.childNodes[idx]); }
+
+    if (this.isNodeAttached()) { subview.notifyDidAttachNode(); }
+
+    return this;
+  });
+
+  // Public: This method is called immediately before the receiver's `node` is
+  // attached to its `superview`'s `node`. By default this method does nothing
+  // and is designed to be overridden by subtypes.
+  //
+  // superview - The view that the receiver's `node` is about to be attached to.
+  //
+  // Returns nothing.
+  this.def('willAttachNode', function(superview) {});
+
+  // Public: This method is called just after the receiver's `node` has been
+  // been attached to the DOM. By default this method does nothing and is
+  // designed to be overridden by subtypes. In may be useful if you need to
+  // perform some sort of initialization of your view after its dimensions have
+  // been determined by the DOM.
+  //
+  // Returns nothing.
+  this.def('didAttachNode', function() {});
+
+  // Public: This method is called immediately just after the receiver's `node`
+  // has been detached from the DOM. By default this method does nothing and is
+  // designed to be overridden by subtypes.
+  //
+  // Returns nothing.
+  this.def('didDetachNode', function() {});
+
+  // Private: This method is called when this view's `node` has been attached to
+  // the DOM. It sets the `isNodeAttached` property, calls `didAttachNode` and
+  // then recursively calls itself on all `subviews`.
+  //
+  // Returns nothing.
+  this.def('notifyDidAttachNode', function() {
+    this.isNodeAttached(true);
+    this.didAttachNode();
+    this.subviews().invoke('notifyDidAttachNode');
+  });
+
+  // Private: This method is called when this view's `node` has been detached
+  // from the DOM. It unsets the `isNodeAttached` property, calls
+  // `didAttachNode` and then recursively calls itself on all `subviews`.
+  //
+  // Returns nothing.
+  this.def('notifyDidDetachNode', function() {
+    this.isNodeAttached(false);
+    this.didAttachNode();
+    this.subviews().invoke('notifyDidDetachNode');
   });
 
   this.def('handleEvent', function(event) {
@@ -212,9 +302,11 @@ Z.View = Z.Object.extend(function() {
                             idx, this));
     }
 
+    // FIXME: view.willMoveToSuperview(this)
     subviews.splice(idx, 0, view);
     view.superview(this);
     this.needsDisplay(true);
+    // FIXME: view.didMoveToSuperview(this)
 
     return view;
   });
@@ -304,9 +396,11 @@ Z.View = Z.Object.extend(function() {
       throw new Error(Z.fmt("Z.View.removeSubview: given index (%@) is not in range", idx));
     }
 
+    // FIXME: view.willMoveToSuperview(null)
     subviews.splice(idx, 1);
     view.superview(null);
     this.needsDisplay(true);
+    // FIXME: view.didMoveToSuperview(null)
 
     (this.__removedSubviews__ = this.__removedSubviews__ || []).push(view);
 

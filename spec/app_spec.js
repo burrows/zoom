@@ -149,6 +149,18 @@ describe('Z.App', function() {
       expect(container.querySelector('.z-main-window .child2')).not.toEqual(null);
     });
 
+    it('should notify the window and all of its subviews that their node has been attached', function() {
+      expect(app.get('mainWindow.isNodeAttached')).toBe(false);
+      expect(app.get('mainWindow.contentView.isNodeAttached')).toBe(false);
+      expect(app.get('mainWindow.contentView.subviews').at(0).isNodeAttached()).toBe(false);
+      expect(app.get('mainWindow.contentView.subviews').at(1).isNodeAttached()).toBe(false);
+      app.displayWindows();
+      expect(app.get('mainWindow.isNodeAttached')).toBe(true);
+      expect(app.get('mainWindow.contentView.isNodeAttached')).toBe(true);
+      expect(app.get('mainWindow.contentView.subviews').at(0).isNodeAttached()).toBe(true);
+      expect(app.get('mainWindow.contentView.subviews').at(1).isNodeAttached()).toBe(true);
+    });
+
     it("should attach window nodes to its container for windows added since the last time `displayWindows` was called", function() {
       var w = Z.Window.create(Child3);
 
@@ -157,6 +169,20 @@ describe('Z.App', function() {
       expect(container.querySelector('.child3')).toEqual(null);
       app.displayWindows();
       expect(container.querySelector('.child3')).not.toEqual(null);
+    });
+
+    it('should notify newly added windows that their node has been attached', function() {
+      var w = Z.Window.create(Child3);
+
+      app.displayWindows();
+      app.addWindow(w);
+      expect(app.get('mainWindow.isNodeAttached')).toBe(true);
+      expect(w.isNodeAttached()).toBe(false);
+      expect(w.get('contentView.isNodeAttached')).toBe(false);
+
+      app.displayWindows();
+      expect(w.isNodeAttached()).toBe(true);
+      expect(w.get('contentView.isNodeAttached')).toBe(true);
     });
 
     it("should remove window nodes for windows removed since the last time `displayWindows` was called", function() {
@@ -169,6 +195,24 @@ describe('Z.App', function() {
       expect(container.querySelector('.child3')).not.toEqual(null);
       app.displayWindows();
       expect(container.querySelector('.child3')).toEqual(null);
+    });
+
+    it('should notify newly removed windows that their node has been detached', function() {
+      var w = Z.Window.create(Child3);
+
+      app.addWindow(w);
+      app.displayWindows();
+      app.removeWindow(w);
+
+      expect(app.get('mainWindow.isNodeAttached')).toBe(true);
+      expect(w.isNodeAttached()).toBe(true);
+      expect(w.get('contentView.isNodeAttached')).toBe(true);
+
+      app.displayWindows();
+
+      expect(app.get('mainWindow.isNodeAttached')).toBe(true);
+      expect(w.isNodeAttached()).toBe(false);
+      expect(w.get('contentView.isNodeAttached')).toBe(false);
     });
   });
 

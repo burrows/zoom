@@ -500,7 +500,66 @@ describe('Z.View', function() {
       v.display();
       expect(v.needsDisplay()).toBe(false);
     });
-  })
+
+    it('should notify newly added subviews that their node has been attached', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.display();
+
+      // we're not attached to a window here, so node's never actually get
+      // attached to the DOM, so we have to fake being attached here
+      v.notifyDidAttachNode();
+
+      v.addSubview(sv3);
+
+      expect(v.isNodeAttached()).toBe(true);
+      expect(sv1.isNodeAttached()).toBe(true);
+      expect(sv2.isNodeAttached()).toBe(true);
+      expect(sv3.isNodeAttached()).toBe(false);
+
+      v.display();
+
+      expect(v.isNodeAttached()).toBe(true);
+      expect(sv1.isNodeAttached()).toBe(true);
+      expect(sv2.isNodeAttached()).toBe(true);
+      expect(sv3.isNodeAttached()).toBe(true);
+    });
+
+    it('should notify newly removed subviews that their node has been detached', function() {
+      var v   = TestCompoundView.create(),
+          sv1 = TestView1.create(),
+          sv2 = TestView2.create(),
+          sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+      v.display();
+
+      // we're not attached to a window here, so node's never actually get
+      // attached to the DOM, so we have to fake being attached here
+      v.notifyDidAttachNode();
+
+      v.removeSubview(sv2);
+
+      expect(v.isNodeAttached()).toBe(true);
+      expect(sv1.isNodeAttached()).toBe(true);
+      expect(sv2.isNodeAttached()).toBe(true);
+      expect(sv3.isNodeAttached()).toBe(true);
+
+      v.display();
+
+      expect(v.isNodeAttached()).toBe(true);
+      expect(sv1.isNodeAttached()).toBe(true);
+      expect(sv2.isNodeAttached()).toBe(false);
+      expect(sv3.isNodeAttached()).toBe(true);
+    });
+  });
 });
 
 }());

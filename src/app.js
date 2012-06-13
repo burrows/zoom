@@ -97,10 +97,11 @@ Z.App = Z.Object.extend(function() {
     var container = this.container(), windows = this.windows(),
         removed, window, i, size;
 
-    // ensure that all removed subviews have had their nodes detached
+    // ensure that all removed windows have had their nodes detached
     if (removed = this.__removedWindows__) {
       for (i = 0, size = removed.length; i < size; i++) {
         container.removeChild(removed[i].node());
+        removed[i].notifyDidDetachNode();
       }
       delete this.__removedWindows__;
     }
@@ -110,6 +111,7 @@ Z.App = Z.Object.extend(function() {
       window.displayIfNeeded();
       if (window.node().parentNode !== container) {
         container.appendChild(window.node());
+        window.notifyDidAttachNode();
       }
     }
 
