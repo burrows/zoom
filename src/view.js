@@ -302,11 +302,9 @@ Z.View = Z.Object.extend(function() {
                             idx, this));
     }
 
-    // FIXME: view.willMoveToSuperview(this)
     subviews.splice(idx, 0, view);
     view.superview(this);
     this.needsDisplay(true);
-    // FIXME: view.didMoveToSuperview(this)
 
     return view;
   });
@@ -396,15 +394,13 @@ Z.View = Z.Object.extend(function() {
       throw new Error(Z.fmt("Z.View.removeSubview: given index (%@) is not in range", idx));
     }
 
-    // FIXME: view.willMoveToSuperview(null)
     subviews.splice(idx, 1);
     view.superview(null);
     this.needsDisplay(true);
-    // FIXME: view.didMoveToSuperview(null)
 
     (this.__removedSubviews__ = this.__removedSubviews__ || []).push(view);
 
-    return this;
+    return view;
   });
 
   // Public: Removes the receiver from its superview.

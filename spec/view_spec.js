@@ -305,6 +305,11 @@ describe('Z.View', function() {
       v.removeSubview(1);
       expect(v.subviews()).toEq(Z.A(sv1, sv3));
     });
+
+    it('should return the removed view', function() {
+      expect(v.removeSubview(1)).toBe(sv2);
+      expect(v.removeSubview(sv3)).toBe(sv3);
+    });
   });
 
   describe('.remove', function() {
@@ -511,7 +516,7 @@ describe('Z.View', function() {
       v.addSubview(sv2);
       v.display();
 
-      // we're not attached to a window here, so node's never actually get
+      // we're not attached to a window here, so nodes never actually get
       // attached to the DOM, so we have to fake being attached here
       v.notifyDidAttachNode();
 

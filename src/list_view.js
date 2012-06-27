@@ -8,31 +8,39 @@ Z.ListView = Z.View.extend(function() {
   }
 
   function removeItemViews(idx, n) {
-    for (var i = idx + n - 1; i >= idx; i--) { this.removeSubview(i); }
-  }
-
-  function replaceItemViews(items, idx) {
-    removeItemViews(idx, items.size());
-    insertItemViews(items, idx);
+    for (var i = idx + n - 1; i >= idx; i--) {
+      this.removeSubview(i).destroy();
+    }
   }
 
   function contentObserver(n) {
-    var content = this.content(), i = n.range[0], size = n.range[1];
+    var content = this.content(), i, size;
+
+    if (n.range) { i = n.range[0]; size = n.range[1]; }
 
     switch (n.type) {
-      case 'insert'  : insertItemViews(content.slice(i, size), i); break;
-      case 'remove'  : removeItemViews(i, size); break;
-      case 'replace' : replaceItemViews(content.slice(i, size), i); break;
+      case 'change':
+        removeItemViews.call(this, 0, this.subviews().size());
+        if (content) { insertItemViews.call(this, content, 0); }
+        break;
+      case 'insert':
+        insertItemViews.call(this, content.slice(i, size), i);
+        break;
+      case 'remove':
+        removeItemViews.call(this, i, size);
+        break;
+      case 'replace':
+        removeItemViews.call(this, i, size);
+        insertItemViews.call(this, content.slice(i, size), i);
+        break;
     }
   }
 
   this.prop('content');
 
   this.def('initialize', function(props) {
-    var content;
     this.supr(props);
-    this.observe('content.@', this, contentObserver);
-    if (content = this.content()) { insertItemViews.call(this, content, 0); }
+    this.observe('content.@', this, contentObserver, {fire: true});
   });
 
   this.def('tag', function() { return 'ul'; });
