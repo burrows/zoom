@@ -546,7 +546,7 @@ describe('Z.View', function() {
       v.addSubview(sv3);
       v.display();
 
-      // we're not attached to a window here, so node's never actually get
+      // we're not attached to a window here, so nodes never actually get
       // attached to the DOM, so we have to fake being attached here
       v.notifyDidAttachNode();
 
@@ -563,6 +563,51 @@ describe('Z.View', function() {
       expect(sv1.isNodeAttached()).toBe(true);
       expect(sv2.isNodeAttached()).toBe(false);
       expect(sv3.isNodeAttached()).toBe(true);
+    });
+  });
+
+  describe('.subview', function() {
+    it('should throw an error when called on a concrete object', function() {
+      var v = TestView1.create();
+
+      expect(function() {
+        v.subview('foo', TestView2);
+      }).toThrow('Z.View.subview: must be called on a view type: ' + v.toString());
+    });
+  });
+
+  describe('.initialize with subviews defined by `.subview`', function() {
+    it('should instantiate the subview types and add the instances to the `subviews` array', function() {
+      var V, v;
+
+      V = Z.View.extend(function() {
+        this.subview('test1', TestView1);
+        this.subview('test2', TestView2);
+        this.subview('test3', TestView3);
+      });
+
+      v = V.create();
+
+      expect(v.get('subviews.size')).toBe(3);
+      expect(v.subviews().at(0).isA(TestView1)).toBe(true);
+      expect(v.subviews().at(1).isA(TestView2)).toBe(true);
+      expect(v.subviews().at(2).isA(TestView3)).toBe(true);
+    });
+
+    it('should set the subview instances to the property name they were defined with', function() {
+      var V, v;
+
+      V = Z.View.extend(function() {
+        this.subview('test1', TestView1);
+        this.subview('test2', TestView2);
+        this.subview('test3', TestView3);
+      });
+
+      v = V.create();
+
+      expect(v.test1().isA(TestView1)).toBe(true);
+      expect(v.test2().isA(TestView2)).toBe(true);
+      expect(v.get('test3').isA(TestView3)).toBe(true);
     });
   });
 });

@@ -47,6 +47,25 @@ Z.View = Z.Object.extend(function() {
   // Returns a string representing the type of DOM node to use.
   this.def('tag', function() { return 'div'; });
 
+  // Public: Adds a named subview to the view type. Defining a subview this way
+  // will cause the `.initialize` method to automatically instantiate the type
+  // and add it to the subviews array. A property with the given name is defined
+  // that will return the subview.
+  //
+  // name - A string containing the name of the subview.
+  // type - A Z.View type to create the subview from.
+  //
+  // Returns the receiver.
+  this.def('subview', function(name, type) {
+    if (!this.isType) {
+      throw new Error(Z.fmt("Z.View.subview: must be called on a view type: %@", this));
+    }
+
+    (this.__subviewTypes__ = this.__subviewTypes__ || Z.H()).at(name, type);
+    this.prop(name);
+    return this;
+  });
+
   // Public: Returns the `Z.View` instance that owns the given node.
   //
   // node - A DOM element reference.
@@ -62,10 +81,21 @@ Z.View = Z.Object.extend(function() {
   });
 
   // Internal: Adds the new view instance to the internal cache used by the
-  // `viewForNode` method.
+  // `viewForNode` method and creates any subviews defined by the `subview`
+  // method.
   this.def('initialize', function(props) {
+    var self = this, subviewTypes = this.__subviewTypes__;
+
     this.supr(props);
     views[this.objectId()] = this;
+
+    if (subviewTypes) {
+      subviewTypes.each(function(tuple) {
+        var view = tuple[1].create();
+        self.set(tuple[0], view);
+        self.addSubview(view);
+      });
+    }
   });
 
   // Public: Destroys the view by removing it from its `superview` and
@@ -372,7 +402,7 @@ Z.View = Z.Object.extend(function() {
   // view - The view to remove or a number indicating the index of the view to
   //        remove.
   //
-  // Returns the receiver.
+  // Returns the removed view.
   // Throws `Error` if the given view is not a subview.
   // Throws `Error` if the given index is not in range.
   this.def('removeSubview', function(view) {
