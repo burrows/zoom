@@ -185,7 +185,7 @@ Z.fmt = function(s) {
 
   return s.replace(/%@/g, function(m) {
     var val = vals[i++];
-    return typeof val !== 'undefined' ? val.toString() : '';
+    return val !== undefined && val !== null ? val.toString() : '';
   });
 };
 
