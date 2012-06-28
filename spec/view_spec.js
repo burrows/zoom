@@ -39,6 +39,19 @@ describe('Z.View', function() {
       expect(node.innerHTML).toBe('');
       v.destroy();
     });
+
+    it('should contain the classes returned by the `classes` method', function() {
+      var V = Z.View.extend(function() {
+        this.def('classes', function() {
+          return this.supr().concat('foo', 'bar');
+        });
+      }), v;
+
+      v = V.create();
+
+      expect(v.node().className.match(/foo/)).toBeTruthy();
+      expect(v.node().className.match(/bar/)).toBeTruthy();
+    });
   });
 
   describe('.viewForNode', function() {

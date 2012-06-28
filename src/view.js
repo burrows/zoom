@@ -66,6 +66,20 @@ Z.View = Z.Object.extend(function() {
     return this;
   });
 
+  // Public: Returns an array containing a list of class names to apply to the
+  // view's `node`. This method is designed to be overriden by sub-types in
+  // order to customize the class list. Be sure to call `supr` when overriding
+  // so that classes defined on parent types are not lost.
+  //
+  // Examples
+  //
+  //   App.MyAwesomeView = Z.View.extend(function() {
+  //     this.def('classes', function() {
+  //       return this.supr().concat('my-awesome-view');
+  //     });
+  //   });
+  this.def('classes', function() { return Z.A(); });
+
   // Public: Returns the `Z.View` instance that owns the given node.
   //
   // node - A DOM element reference.
@@ -121,11 +135,12 @@ Z.View = Z.Object.extend(function() {
   //
   // Returns the DOM node.
   this.def('buildNode', function() {
-    var id   = 'z-view-' + this.objectId(),
-        node = document.createElement(this.tag());
+    var id      = 'z-view-' + this.objectId(),
+        node    = document.createElement(this.tag()),
+        classes = Z.A('z-view').concat(this.classes());
 
     node.id = id;
-    node.className = 'z-view';
+    node.className = classes.join(' ');
     views[id] = this;
 
     return node;
@@ -138,8 +153,8 @@ Z.View = Z.Object.extend(function() {
   // Returns the receiver.
   this.def('render', function() { return this; });
 
-  // Public: Simply invokes the `display` method if the `needsDisplay` property
-  // is `true` and does nothing otherwise.
+  // Public: Invokes the `display` method if the `needsDisplay` property is
+  // `true`, otherwise recursively invokes `displayIfNeeded` on the subviews.
   //
   // Returns the receiver.
   this.def('displayIfNeeded', function() {
