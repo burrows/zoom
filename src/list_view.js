@@ -43,6 +43,11 @@ Z.ListView = Z.View.extend(function() {
     this.observe('content.@', this, contentObserver, {fire: true});
   });
 
+  this.def('destroy', function() {
+    this.stopObserving('content.@', this, contentObserver);
+    this.supr();
+  });
+
   this.def('tag', function() { return 'ul'; });
 
   this.def('itemViewType', function() {
