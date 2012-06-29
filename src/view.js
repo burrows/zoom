@@ -13,6 +13,9 @@ Z.View = Z.Object.extend(function() {
   // node. When views are destroyed they are removed from this cache.
   views = {};
 
+  // Internal: Observer callback for `displayProperties`.
+  function displayPathObserver() { this.needsDisplay(true); }
+
   // Public: A property holding the DOM node managed by the view.
   this.prop('node', {
     readonly: true,
@@ -80,6 +83,23 @@ Z.View = Z.Object.extend(function() {
   //   });
   this.def('classes', function() { return Z.A(); });
 
+  // Public: Returns an array containing a list of property paths that the view
+  // depends on for rendering. When any of the paths change, the view will
+  // automatically set its `needsDisplay` property. This method is designed to
+  // be overridden by sub-types and by default simply returns an empty array. Be
+  // sure to call `supr` when overriding so that diplay paths defined on parent
+  // types are not lost.
+  //
+  // Examples
+  //
+  //   App.MyAwesomeView = Z.View.extend(function() {
+  //     this.prop('content');
+  //     this.def('displayPaths', function() {
+  //       return this.supr().concat('content.foo', 'content.bar');
+  //     });
+  //   });
+  this.def('displayPaths', function() { return Z.A(); });
+
   // Public: Returns the `Z.View` instance that owns the given node.
   //
   // node - A DOM element reference.
@@ -110,6 +130,10 @@ Z.View = Z.Object.extend(function() {
         self.addSubview(view);
       });
     }
+
+    this.displayPaths().each(function(path) {
+      self.observe(path, self, displayPathObserver);
+    });
   });
 
   // Public: Destroys the view by removing it from its `superview` and
@@ -118,7 +142,11 @@ Z.View = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('destroy', function() {
-    var subviews = this.subviews().slice();
+    var self = this, subviews = this.subviews().slice();
+
+    this.displayPaths().each(function(path) {
+      self.stopObserving(path, self, displayPathObserver);
+    });
 
     delete views[this.objectId()];
     this.remove();

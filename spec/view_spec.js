@@ -623,6 +623,47 @@ describe('Z.View', function() {
       expect(v.get('test3').isA(TestView3)).toBe(true);
     });
   });
+
+  describe('.displayPaths', function() {
+    var Person, V, v;
+
+    Person = Z.Object.extend(function() { this.prop('name'); });
+
+    V = Z.View.extend(function() {
+      this.prop('foo');
+      this.prop('content');
+      this.def('displayPaths', function() {
+        return this.supr().concat('foo', 'content.name');
+      });
+    });
+
+    beforeEach(function() {
+      p = Person.create({name: 'Ed'});
+      v = V.create({content: p}).display();
+    });
+
+    it('should cause the view to set its `needsDisplay` property whenever one of the given paths change', function() {
+      expect(v.needsDisplay()).toBe(false);
+      v.foo(2);
+      expect(v.needsDisplay()).toBe(true);
+      v.display();
+      expect(v.needsDisplay()).toBe(false);
+      p.name('Bob');
+      expect(v.needsDisplay()).toBe(true);
+    });
+
+    it('should remove the observers when the view is destroyed', function() {
+      expect(v.needsDisplay()).toBe(false);
+      v.foo(2);
+      expect(v.needsDisplay()).toBe(true);
+      v.display()
+      expect(v.needsDisplay()).toBe(false);
+      v.destroy();
+      v.foo(3);
+      expect(v.needsDisplay()).toBe(false);
+
+    });
+  });
 });
 
 }());
