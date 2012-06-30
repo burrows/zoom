@@ -8,171 +8,171 @@ Z.addNamespace(Todo, 'Todo');
 // mapper
 //------------------------------------------------------------------------------
 
-//App.LocalStorageMapper = Z.Mapper.extend(function() {
-//  function nextId() {
-//    return localStorage['nextid'] ?
-//      localStorage['nextid'] = 1 + parseInt(localStorage['nextid']) :
-//      localStorage['nextid'] = 1;
-//  }
-//
-//  function persistTag(tag) {
-//    var id = tag.id() || nextId(), k = 'tag:' + id;
-//
-//    localStorage.setItem(k, JSON.stringify({
-//      id: id, name: tag.name()
-//    }));
-//
-//    if (!tag.id()) { tag.id(id); }
-//  }
-//
-//  function persistTodo(todo) {
-//    var id = todo.id() || nextId(), k = 'todo:' + id;
-//
-//    todo.tags().invoke('save');
-//
-//    localStorage.setItem(k, JSON.stringify({
-//      id: id,
-//      title: todo.title(),
-//      isDone: todo.isDone(),
-//      tags: todo.tags().pluck('id').toNative()
-//    }));
-//
-//    if (!todo.id()) { todo.id(id); }
-//  }
-//
-//  this.def('initialize', function() {
-//    var tags = [], todos = [], i, len, k, v;
-//
-//    for (i = 0, len = localStorage.length; i < len; i++) {
-//      k = localStorage.key(i); v = localStorage.getItem(k);
-//
-//      if      (k.match(/^tag:/))  { tags.push(JSON.parse(v)); }
-//      else if (k.match(/^todo:/)) { todos.push(JSON.parse(v)); }
-//    }
-//
-//    for (i = 0, len = tags.length; i < len; i++) { App.Tag.load(tags[i]); }
-//    for (i = 0, len = todos.length; i < len; i++) { App.Todo.load(todos[i]); }
-//  });
-//
-//  this.def('createModel', function(model) {
-//    (model.isA(App.Todo) ? persistTodo : persistTag)(model);
-//    model.createModelDidSucceed();
-//  });
-//
-//  this.def('updateModel', function(model) {
-//    (model.isA(App.Todo) ? persistTodo : persistTag)(model);
-//    model.updateModelDidSucceed();
-//  });
-//
-//  this.def('destroyModel', function(model) {
-//    var k = (model.isA(App.Todo) ? 'todo:' : 'tag:') + model.id();
-//    delete localStorage[k];
-//    model.destroyModelDidSucceed();
-//  });
-//});
-//
-////------------------------------------------------------------------------------
-//// models
-////------------------------------------------------------------------------------
-//
-//App.Todo = Z.Model.extend(function() {
-//  this.attribute('isDone', 'boolean', {def: false});
-//  this.attribute('title', 'string');
-//  this.hasMany('tags', 'App.Tag', {owner: true, inverse: 'todos'});
-//
-//  this.registerValidator('validateTitle');
-//
-//  this.def('validateTitle', function() {
-//    var title = this.title().replace(/(?:^\s*)|(?:\s*$)/g, ''); ;
-//
-//    if (!title || title.length === 0) {
-//      this.addError('title', 'title must be present');
-//    }
-//  });
-//
-//});
-//
-//App.Tag = Z.Model.extend(function() {
-//  this.attribute('name', 'string');
-//  this.hasMany('todos', 'App.Todo', {inverse: 'tags'});
-//});
-//
-//Z.Model.mapper = App.LocalStorageMapper.create();
-//
-//App.allTodos = App.Todo.query();
-//App.allTags  = App.Tag.query({orderBy: 'todos.size', isDescending: true});
-//
-////------------------------------------------------------------------------------
-//// controller
-////------------------------------------------------------------------------------
-//
-//var selectedTags = Z.A();
-//
-//App.controller = {
-//  createTodo: function(title) {
-//    var todo, tags, tag, m;
-//
-//    if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
-//      tags = Z.A(m[1].split(/\s*,\s*/)).map(function(name) {
-//        tag = App.allTags.find(function(t) { return t.name() === name; });
-//        return tag || App.Tag.create({name: name});
-//      });
-//
-//      title = title.replace(/\s*\[[^\]]*\]\s*$/, '');
-//    }
-//
-//    todo = App.Todo.create({ title: title, tags: tags || Z.A() }).save();
-//
-//    Z.log(todo, todo.errors());
-//
-//    App.rootView.set('mainView.inputView.value', null);
-//  },
-//
-//  deleteTodo: function(todo) {
-//    todo.destroy();
-//  },
-//
-//  updateIsDone: function(todo, isDone) {
-//    todo.isDone(isDone);
-//    todo.save();
-//  },
-//
-//  selectTag: function(tag) {
-//    selectedTags.push(tag);
-//    this.filterTodos();
-//  },
-//
-//  deselectTag: function(tag) {
-//    selectedTags.remove(tag);
-//    this.filterTodos();
-//  },
-//
-//  filterTodos: function() {
-//    var oldQuery = App.rootView.get('mainView.todoListView.items'), newQuery;
-//
-//    newQuery = selectedTags.size() === 0 ? App.allTodos : App.Todo.query({
-//      matchFn: function(todo) {
-//        if (todo.get('tags.size') === 0) { return false; }
-//
-//        return selectedTags.all(function(tag) {
-//          return todo.tags().contains(tag);
-//        });
-//      }
-//    });
-//
-//    if (oldQuery !== App.allTodos) { oldQuery.destroy(); }
-//
-//    App.rootView.set('mainView.todoListView.items', newQuery); 
-//  }
-//};
-//
-////------------------------------------------------------------------------------
-//// views
-////------------------------------------------------------------------------------
-//
-//App.TagView = Z.View.extend(function() {
-//  this.property('content');
-//  this.property('isSelected', { def: false });
+Todo.LocalStorageMapper = Z.Mapper.extend(function() {
+  function nextId() {
+    return localStorage['nextid'] ?
+      localStorage['nextid'] = 1 + parseInt(localStorage['nextid']) :
+      localStorage['nextid'] = 1;
+  }
+
+  function persistTag(tag) {
+    var id = tag.id() || nextId(), k = 'tag:' + id;
+
+    localStorage.setItem(k, JSON.stringify({
+      id: id, name: tag.name()
+    }));
+
+    if (!tag.id()) { tag.id(id); }
+  }
+
+  function persistTodo(todo) {
+    var id = todo.id() || nextId(), k = 'todo:' + id;
+
+    todo.tags().invoke('save');
+
+    localStorage.setItem(k, JSON.stringify({
+      id: id,
+      title: todo.title(),
+      isDone: todo.isDone(),
+      tags: todo.tags().pluck('id').toNative()
+    }));
+
+    if (!todo.id()) { todo.id(id); }
+  }
+
+  this.def('initialize', function() {
+    var tags = [], todos = [], i, len, k, v;
+
+    for (i = 0, len = localStorage.length; i < len; i++) {
+      k = localStorage.key(i); v = localStorage.getItem(k);
+
+      if      (k.match(/^tag:/))  { tags.push(JSON.parse(v)); }
+      else if (k.match(/^todo:/)) { todos.push(JSON.parse(v)); }
+    }
+
+    for (i = 0, len = tags.length; i < len; i++) { Todo.Tag.load(tags[i]); }
+    for (i = 0, len = todos.length; i < len; i++) { Todo.Todo.load(todos[i]); }
+  });
+
+  this.def('createModel', function(model) {
+    (model.isA(Todo.Todo) ? persistTodo : persistTag)(model);
+    model.createModelDidSucceed();
+  });
+
+  this.def('updateModel', function(model) {
+    (model.isA(Todo.Todo) ? persistTodo : persistTag)(model);
+    model.updateModelDidSucceed();
+  });
+
+  this.def('destroyModel', function(model) {
+    var k = (model.isA(Todo.Todo) ? 'todo:' : 'tag:') + model.id();
+    delete localStorage[k];
+    model.destroyModelDidSucceed();
+  });
+});
+
+//------------------------------------------------------------------------------
+// models
+//------------------------------------------------------------------------------
+
+Todo.Todo = Z.Model.extend(function() {
+  this.attr('isDone', 'boolean', {def: false});
+  this.attr('title', 'string');
+  this.hasMany('tags', 'Todo.Tag', {owner: true, inverse: 'todos'});
+
+  this.registerValidator('validateTitle');
+
+  this.def('validateTitle', function() {
+    var title = this.title().replace(/(?:^\s*)|(?:\s*$)/g, ''); ;
+
+    if (!title || title.length === 0) {
+      this.addError('title', 'title must be present');
+    }
+  });
+
+});
+
+Todo.Tag = Z.Model.extend(function() {
+  this.attr('name', 'string');
+  this.hasMany('todos', 'Todo.Todo', {inverse: 'tags'});
+});
+
+Z.Model.mapper = Todo.LocalStorageMapper.create();
+
+Todo.allTodos = Todo.Todo.query();
+Todo.allTags  = Todo.Tag.query({orderBy: 'todos.size', isDescending: true});
+
+//------------------------------------------------------------------------------
+// controller
+//------------------------------------------------------------------------------
+
+var selectedTags = Z.A();
+
+Todo.controller = {
+  createTodo: function(title) {
+    var todo, tags, tag, m;
+
+    if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
+      tags = Z.A(m[1].split(/\s*,\s*/)).map(function(name) {
+        tag = Todo.allTags.find(function(t) { return t.name() === name; });
+        return tag || Todo.Tag.create({name: name});
+      });
+
+      title = title.replace(/\s*\[[^\]]*\]\s*$/, '');
+    }
+
+    todo = Todo.Todo.create({title: title, tags: tags || Z.A()}).save();
+
+    Z.log(todo, todo.errors());
+
+    Todo.rootView.set('mainView.inputView.value', null);
+  },
+
+  deleteTodo: function(todo) {
+    todo.destroy();
+  },
+
+  updateIsDone: function(todo, isDone) {
+    todo.isDone(isDone);
+    todo.save();
+  },
+
+  selectTag: function(tag) {
+    selectedTags.push(tag);
+    this.filterTodos();
+  },
+
+  deselectTag: function(tag) {
+    selectedTags.remove(tag);
+    this.filterTodos();
+  },
+
+  filterTodos: function() {
+    var oldQuery = Todo.rootView.get('mainView.todoListView.items'), newQuery;
+
+    newQuery = selectedTags.size() === 0 ? Todo.allTodos : Todo.Todo.query({
+      matchFn: function(todo) {
+        if (todo.get('tags.size') === 0) { return false; }
+
+        return selectedTags.all(function(tag) {
+          return todo.tags().contains(tag);
+        });
+      }
+    });
+
+    if (oldQuery !== Todo.allTodos) { oldQuery.destroy(); }
+
+    //Todo.rootView.set('mainView.todoListView.items', newQuery); 
+  }
+};
+
+//------------------------------------------------------------------------------
+// views
+//------------------------------------------------------------------------------
+
+//Todo.TagView = Z.View.extend(function() {
+//  this.prop('content');
+//  this.prop('isSelected', { def: false });
 //  this.classes().push('tag-view');
 //
 //  this.def('didDisplay', function() {
@@ -203,70 +203,65 @@ Z.addNamespace(Todo, 'Todo');
 //    this.isSelected(!this.isSelected());
 //
 //    if (this.isSelected()) {
-//      App.controller.selectTag(this.content());
+//      Todo.controller.selectTag(this.content());
 //    }
 //    else {
-//      App.controller.deselectTag(this.content());
+//      Todo.controller.deselectTag(this.content());
 //    }
 //  });
 //});
+
+Todo.TagView = Z.View.extend(function() {
+  this.prop('content');
+  this.def('render', function() {
+    this.node().innerHTML = '<span class="badge">' +
+      this.get('content.todos.size') + '</span> ' + this.get('content.name');
+  });
+});
+
+Todo.TagListView = Z.ListView.extend(function() {
+  this.def('itemViewType', function() { return Todo.TagView; });
+});
+
+Todo.SidebarView = Z.View.extend(function() {
+  this.def('classes', function() { return this.supr().concat('span4'); });
+
+  this.subview('headerView', Z.View.extend(function() {
+    this.def('tag', function() { return 'legend'; });
+    this.def('render', function() { this.node().innerHTML = 'Tags'; });
+  }));
+
+  this.subview('tagListView', Todo.TagListView);
+});
+
+Todo.InputView = Z.View.extend(function() {
+  this.prop('value');
+
+  this.def('displayPaths', function() { return this.supr().concat('value'); });
+
+  this.def('render', function() {
+    var value = this.value();
+    this.node().innerHTML = Z.fmt('<input type="text" placeholder="Enter a Todo" value="%@"/>', value);
+  });
+
+  //this.def('handleKeyupEvent', function(evt) {
+  //  var input = $(this.element()).find('input'),
+  //      val   = input.val();
+
+  //  if (val !== this.value()) { this.value(input.val()); }
+  //});
+
+  //this.def('handleKeydownEvent', function(evt) {
+  //  var key = evt.keyCode;
+
+  //  if (key === 13) {
+  //    Todo.controller.createTodo(this.value());
+  //  }
+  //});
+});
 //
-//App.TagListView = Z.ListView.extend(function() {
-//  this.classes().push('tag-list-view');
-//  this.itemView(App.TagView);
-//});
-//
-//App.SidebarView = Z.View.extend(function() {
-//  this.classes().push('span4');
-//  this.subview('headerView', Z.View.extend(function() {
-//    this.tag('legend');
-//    this.def('renderContent', function() {
-//      return 'Tags';
-//    });
-//  }));
-//  this.subview('tagListView', App.TagListView);
-//});
-//
-//App.InputView = Z.View.extend(function() {
-//  this.property('value');
-//
-//  this.def('didDisplay', function() {
-//    this.supr();
-//    this.observe('value', this, 'valueDidChange');
-//  });
-//
-//  this.def('didRemove', function() {
-//    this.supr();
-//    this.stopObserving('value', this, 'valueDidChange');
-//  });
-//
-//  this.def('renderContent', function() {
-//    return '<input type="text" placeholder="Enter a Todo" />';
-//  });
-//
-//  this.def('handleKeyupEvent', function(evt) {
-//    var input = $(this.element()).find('input'),
-//        val   = input.val();
-//
-//    if (val !== this.value()) { this.value(input.val()); }
-//  });
-//
-//  this.def('handleKeydownEvent', function(evt) {
-//    var key = evt.keyCode;
-//
-//    if (key === 13) {
-//      App.controller.createTodo(this.value());
-//    }
-//  });
-//
-//  this.def('valueDidChange', function() {
-//    var input = $(this.element()).find('input');
-//    input.val(this.value());
-//  });
-//});
-//
-//App.TodoView = Z.View.extend(function() {
-//  this.property('content');
+//Todo.TodoView = Z.View.extend(function() {
+//  this.prop('content');
 //  this.classes().push('todo-view');
 //
 //  this.def('didDisplay', function() {
@@ -323,66 +318,36 @@ Z.addNamespace(Todo, 'Todo');
 //    var elem = $(evt.target);
 //
 //    if (elem.is('input')) {
-//      App.controller.updateIsDone(this.content(), !!elem.attr('checked'));
+//      Todo.controller.updateIsDone(this.content(), !!elem.attr('checked'));
 //    }
 //    else if (elem.is('i.icon-remove-sign')) {
-//      App.controller.deleteTodo(this.content());
+//      Todo.controller.deleteTodo(this.content());
 //    }
 //  })
 //});
 //
-//App.TodoListView = Z.ListView.extend(function() {
+//Todo.TodoListView = Z.ListView.extend(function() {
 //  this.classes().push('table', 'table-striped');
 //  this.tag('table');
 //  this.itemTag('tr');
-//  this.itemView(App.TodoView);
+//  this.itemView(Todo.TodoView);
 //});
-//
-//App.MainView = Z.View.extend(function() {
-//  this.classes().push('span8');
-//  this.subview('inputView', App.InputView);
-//  this.subview('todoListView', App.TodoListView);
-//});
-//
-//App.RootView = Z.RootView.extend(function() {
-//  this.classes().push('row');
-//
-//  this.subview('sidebarView', App.SidebarView);
-//  this.subview('mainView', App.MainView);
-//});
-//
-//App.rootView = App.RootView.create({container: $('#app')});
-//
-//App.rootView.set('sidebarView.tagListView.items', App.allTags);
-//App.rootView.set('mainView.todoListView.items', App.allTodos);
-//
-//App.rootView.display();
 
-Todo.HeaderView = Z.DOMView.extend(function() {
-  this.tag('h1');
-  this.def('draw', function() {
-    this.node().innerHTML = 'Hello world!';
-  });
+Todo.ContentView = Z.View.extend(function() {
+  this.subview('inputView', Todo.InputView);
+  //this.subview('todoListView', Todo.TodoListView);
 });
 
-Todo.SubHeaderView = Z.DOMView.extend(function() {
-  this.tag('h2');
-  this.def('draw', function() {
-    this.node().innerHTML = 'The time is: ' + (new Date);
-  });
+Todo.MainView = Z.View.extend(function() {
+  this.subview('sidebarView', Todo.SidebarView);
+  this.subview('contentView', Todo.ContentView);
 });
-
-Todo.MainView = Z.DOMView.extend(function() {
-  this.def('initialize', function(props) {
-    this.supr(props);
-    this.subviews().push(Todo.HeaderView.create(), Todo.SubHeaderView.create());
-  });
-});
-
-Todo.app = Z.DOMApp.create(Todo.MainView);
 
 document.addEventListener('DOMContentLoaded', function() {
-  Todo.app.set('container', document.getElementById('app'));
+  Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
+
+  Todo.app.set('mainWindow.contentView.sidebarView.tagListView.content', Todo.allTags);
+  
   Todo.app.start();
 });
 
