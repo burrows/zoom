@@ -5,8 +5,6 @@
 // Additionally, a container node can be optionally specified to use for
 // rendering the application (by default `document.body` is used).
 Z.App = Z.Object.extend(function() {
-  var appEvents, bodyEvents;
-
   // Public: A property that returns the container DOM node that the application
   // was initialized with. All DOM modifications and mouse events observed
   // happen within this container.

@@ -21,11 +21,9 @@
 // run loop allows us to do this by only redrawing views once, even when
 // multiple views or multiple properties of a view have changed.
 Z.RunLoop = Z.Object.create().open(function() {
-  var self    = this,
-      apps    = Z.A(),
-      queue   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); }),
-      timer   = null,
-      running = false,
+  var self  = this,
+      apps  = Z.A(),
+      queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); }),
       keyEvents, mouseEvents;
 
   keyEvents = [
@@ -46,8 +44,6 @@ Z.RunLoop = Z.Object.create().open(function() {
   ];
 
   function run() {
-    timer = null;
-
     // TODO: Z.Binding.flush();
 
     // notify all apps to display their windows if necessary
@@ -61,14 +57,9 @@ Z.RunLoop = Z.Object.create().open(function() {
     queue.clear();
   }
 
-  function schedule() {
-    if (self.isRunning() && !timer) { timer = setTimeout(run, 1); }
-    return self;
-  }
-
   function processKeyEvent(e) {
     apps.each(function(app) { app.dispatchKeyEvent(e); });
-    schedule();
+    run();
   }
 
   function processMouseEvent(e) {
@@ -79,7 +70,7 @@ Z.RunLoop = Z.Object.create().open(function() {
     if (!app) { return; }
 
     app.dispatchMouseEvent(e, view);
-    schedule();
+    run();
   }
 
   function addKeyListeners() {
@@ -176,29 +167,23 @@ Z.RunLoop = Z.Object.create().open(function() {
     return this;
   });
 
-  // Public: Schedules a run of the run loop after a short timeout. Application
-  // code should rarely ever need to invoke this method directly since runs of
-  // the run loop are automatically scheduled when an event occurs or a method
-  // is queued up with the `once` method.
+  // Public: Executes a run of the run loop. This includes flushing bindings,
+  // updating each app's windows, and executing any methods queued up with the
+  // `once` method.
   //
-  // Returns nothing.
-  this.def('schedule', schedule);
-
-  // Public: Executes a single run of the run loop. This includes flushing
-  // bindings, updating each app's windows, and executing any methods queued up
-  // with the `once` method.
-  //
-  // Application code should rarely ever need to inoke this method directly
-  // since it will be scheduled to be run by the run loop when an event occurs
-  // or a method is queued by the `once` method.
+  // Application code should rarely ever need to call this method directly since
+  // it will be called automatically by the run loop whenever an event occurs.
   //
   // Returns nothing.
   this.def('run', run);
 
   // Public: Queues up a method to invoke on the given object at the end of the
-  // current run loop. If the run loop is currently idle, it will be started.
+  // next run loop.
   //
-  // Returns nothing.
-  this.def('once', function(o, m) { queue.at(o).at(m, true); schedule(); });
+  // `o` - A `Z.Object` instance.
+  // `m` - A string representing the method to invoke on `o`.
+  //
+  // Returns `o`.
+  this.def('once', function(o, m) { queue.at(o).at(m, true); return o; });
 });
 

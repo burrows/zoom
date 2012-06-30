@@ -47,73 +47,53 @@ describe('Z.RunLoop', function() {
 
     beforeEach(function() { invocations = []; Z.RunLoop.start(); });
 
-    it('should invoke the given method on the given object at the end of the run loop', function() {
-      runs(function() {
-        Z.RunLoop.once(o1, 'foo');
-        expect(invocations).toEq([]);
-      });
-
-      waits(5);
-
-      runs(function() {
-        expect(invocations).toEq([ [o1, 'foo'] ]);
-      });
+    it('should invoke the given method on the given object at the end of the next run loop', function() {
+      Z.RunLoop.once(o1, 'foo');
+      expect(invocations).toEq([]);
+      Z.RunLoop.run();
+      expect(invocations).toEq([ [o1, 'foo'] ]);
     });
 
-    it('should invoke all queued methods at the end of the run loop', function() {
-      runs(function() {
-        Z.RunLoop.once(o1, 'foo');
-        Z.RunLoop.once(o1, 'bar');
-        Z.RunLoop.once(o2, 'foo');
-        Z.RunLoop.once(o2, 'bar');
-        expect(invocations).toEq([]);
-      });
+    it('should invoke all queued methods at the end of the next run loop', function() {
+      Z.RunLoop.once(o1, 'foo');
+      Z.RunLoop.once(o1, 'bar');
+      Z.RunLoop.once(o2, 'foo');
+      Z.RunLoop.once(o2, 'bar');
+      expect(invocations).toEq([]);
 
-      waits(5);
+      Z.RunLoop.run();
 
-      runs(function() {
-        expect(invocations).toEq([
-          [o1, 'foo'], [o1, 'bar'], [o2, 'foo'], [o2, 'bar']
-        ]);
-      });
+      expect(invocations).toEq([
+        [o1, 'foo'], [o1, 'bar'], [o2, 'foo'], [o2, 'bar']
+      ]);
     });
 
     it('should only invoke the method once even when called multiple times with the same arguments in the same run loop', function() {
-      runs(function() {
-        Z.RunLoop.once(o1, 'foo');
-        Z.RunLoop.once(o2, 'bar');
-        Z.RunLoop.once(o1, 'foo');
-        Z.RunLoop.once(o2, 'bar');
-        Z.RunLoop.once(o1, 'foo');
-        Z.RunLoop.once(o2, 'bar');
-        expect(invocations).toEq([]);
-      });
+      Z.RunLoop.once(o1, 'foo');
+      Z.RunLoop.once(o2, 'bar');
+      Z.RunLoop.once(o1, 'foo');
+      Z.RunLoop.once(o2, 'bar');
+      Z.RunLoop.once(o1, 'foo');
+      Z.RunLoop.once(o2, 'bar');
+      expect(invocations).toEq([]);
 
-      waits(5);
+      Z.RunLoop.run();
 
-      runs(function() {
-        expect(invocations).toEq([ [o1, 'foo'], [o2, 'bar'] ]);
-      });
+      expect(invocations).toEq([ [o1, 'foo'], [o2, 'bar'] ]);
     });
 
     it('should clear the queue on each run', function() {
-      runs(function() {
-        Z.RunLoop.once(o1, 'foo');
-        expect(invocations).toEq([]);
-      });
+      Z.RunLoop.once(o1, 'foo');
+      expect(invocations).toEq([]);
 
-      waits(5);
+      Z.RunLoop.run();
 
-      runs(function() {
-        expect(invocations).toEq([ [o1, 'foo'] ]);
-        Z.RunLoop.once(o2, 'bar');
-      });
+      expect(invocations).toEq([ [o1, 'foo'] ]);
+      Z.RunLoop.once(o2, 'bar');
 
-      waits(5);
+      Z.RunLoop.run();
 
-      runs(function() {
-        expect(invocations).toEq([ [o1, 'foo'], [o2, 'bar'] ]);
-      });
+      expect(invocations).toEq([ [o1, 'foo'], [o2, 'bar'] ]);
     });
   });
 

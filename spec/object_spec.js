@@ -421,19 +421,15 @@ describe('Z.Object.once', function() {
 
     o.def('foo', function() { invocations++; });
 
-    runs(function() {
-      o.once('foo');
-      o.once('foo');
-      o.once('foo');
-      o.once('foo');
-      expect(invocations).toBe(0);
-    });
+    o.once('foo');
+    o.once('foo');
+    o.once('foo');
+    o.once('foo');
+    expect(invocations).toBe(0);
 
-    waits(5);
+    Z.RunLoop.run();
 
-    runs(function() {
-      expect(invocations).toBe(1);
-    });
+    expect(invocations).toBe(1);
   });
 });
 
