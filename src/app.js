@@ -34,29 +34,21 @@ Z.App = Z.Object.extend(function() {
   // property.
   this.prop('keyWindow');
 
-  // Public: The `Z.App` constructor. In order to create an app, either a
-  // `Z.Window` concrete instance must be provided, or a `Z.View` to use as the
-  // `contentView` of the main window.
+  // Public: The `Z.App` constructor.
   //
-  // main      - Can be one of the following: a concrete instance of `Z.Window`
-  //             or sub-type, a `Z.View` sub-type, or a concrete instance of a
-  //             `Z.View` sub-type.
+  // mainView  - A sub-type of `Z.App` to use as the root view of the
+  //             application's main window.
   // container - A DOM node to contain the app (default: `document.body`).
-  this.def('initialize', function(main, container) {
-    var mainWin;
-
-    if (Z.isA(main, Z.Window) && !main.isType) {
-      mainWin = main;
-    }
-    else if (Z.isA(main, Z.View) && !main.isA(Z.Window)) {
-      mainWin = Z.Window.create(main);
-    }
-    else {
-      throw new Error("Z.App.initialize: must provide either a concrete Z.Window object or a Z.View type or concrete object");
+  this.def('initialize', function(mainView, container) {
+    if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
+      throw new Error(Z.fmt("%@.initialize: must provide a sub-type of `Z.View` as the main view type",
+                            this.typeName()));
     }
 
-    mainWin.set({app: this, isMain: true, isKey: true});
-    this.windows().push(mainWin);
+    // create the application's main window
+    this.windows().push(Z.Window.create(mainView, {
+      app: this, isMain: true, isKey: true
+    }));
 
     this.set('container', container || document.body);
   });
@@ -69,7 +61,6 @@ Z.App = Z.Object.extend(function() {
     if (!this.isRunning()) {
       Z.RunLoop.registerApp(this).start();
       this.keyWindow(this.mainWindow());
-      this.mainWindow().becomeKeyWindow();
       this.displayWindows();
       this.isRunning(true);
     }
@@ -84,8 +75,7 @@ Z.App = Z.Object.extend(function() {
   this.def('stop', function() {
     if (this.isRunning()) {
       Z.RunLoop.deregisterApp(this);
-      this.keyWindow(null);
-      this.mainWindow().resignKeyWindow();
+      this.set('keyWindow', null);
       this.removeWindows().displayWindows();
       this.isRunning(false);
     }

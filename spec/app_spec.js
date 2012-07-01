@@ -52,53 +52,18 @@ describe('Z.App', function() {
   });
 
   describe('.initialize', function() {
-    it('should throw an exception if not given a main window or view', function() {
+    it('should throw an exception if not given a main view', function() {
       expect(function() {
         Z.App.create();
-      }).toThrow('Z.App.initialize: must provide either a concrete Z.Window object or a Z.View type or concrete object');
+      }).toThrow('Z.App.initialize: must provide a sub-type of `Z.View` as the main view type');
     });
 
-    describe('with a `Z.Window` type object as the first argument', function() {
-      it('should throw an exception', function() {
-        expect(function() {
-          Z.App.create(Z.Window);
-        }).toThrow('Z.App.initialize: must provide either a concrete Z.Window object or a Z.View type or concrete object');
-      });
-    });
-
-    describe('with a `Z.Window` concrete object as the first argument', function() {
-      it('should set the window as the main window', function() {
-        var win = Z.Window.create(Child1), app = Z.App.create(win);
-
-        expect(app.mainWindow()).toBe(win);
-        expect(win.app()).toBe(app);
-        expect(win.isMain()).toBe(true);
-        expect(win.isKey()).toBe(true);
-      });
-    });
-
-    describe('with a `Z.View` type object as the first argument', function() {
-      it('should create a conrete instance of the view, wrap it in a window and set the window as the main window', function() {
-        var app = Z.App.create(Parent);
-
-        expect(app.mainWindow()).not.toBeNull();
-        expect(app.get('mainWindow.app')).toBe(app);
-        expect(app.get('mainWindow.contentView').isA(Parent)).toBe(true);
-        expect(app.get('mainWindow.isMain')).toBe(true);
-        expect(app.get('mainWindow.isKey')).toBe(true);
-      });
-    });
-
-    describe('with a `Z.View` concrete object as the first argument', function() {
-      it('should wrap the view in a window and set the window as the main window', function() {
-        var v = Parent.create(), app = Z.App.create(v);
-
-        expect(app.mainWindow()).not.toBeNull();
-        expect(app.get('mainWindow.app')).toBe(app);
-        expect(app.get('mainWindow.contentView')).toBe(v);
-        expect(app.get('mainWindow.isMain')).toBe(true);
-        expect(app.get('mainWindow.isKey')).toBe(true);
-      });
+    it('should create the `mainWindow` property', function() {
+      expect(app.mainWindow()).not.toBeNull();
+      expect(app.get('mainWindow.app')).toBe(app);
+      expect(app.get('mainWindow.contentView').isA(Parent)).toBe(true);
+      expect(app.get('mainWindow.isMain')).toBe(true);
+      expect(app.get('mainWindow.isKey')).toBe(true);
     });
 
     it('should set the second argument as the container property', function() {
