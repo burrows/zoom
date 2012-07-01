@@ -55,12 +55,114 @@ describe('Z.Window', function() {
       expect(w.isKey()).toBe(true);
       expect(w.needsDisplay()).toBe(true);
     });
+
+    describe('when `keyView` is `null`', function() {
+      it('should call `becomeKeyView` on `initialKeyView` if it is currently accepting key view status and set it to the `keyView` property', function() {
+        var w = Z.Window.create(Z.View.extend(function() {
+          this.subview('sv', TestView.extend(function() {
+            this.def('acceptsKeyView', function() { return true; });
+          }));
+        })), sv = w.get('contentView.sv');
+
+        w.initialKeyView(sv);
+        w.display();
+
+        spyOn(sv, 'becomeKeyView');
+        w.becomeKeyWindow();
+        expect(sv.becomeKeyView).toHaveBeenCalled();
+        expect(w.keyView()).toBe(sv);
+      });
+
+      it('should not call `becomeKeyView` on `initialKeyView` if it is not currently accepting key view status', function() {
+        var w = Z.Window.create(Z.View.extend(function() {
+          this.subview('sv', TestView.extend(function() {
+            this.def('acceptsKeyView', function() { return false; });
+          }));
+        })), sv = w.get('contentView.sv');
+
+        w.initialKeyView(sv);
+        w.display();
+
+        spyOn(sv, 'becomeKeyView');
+        w.becomeKeyWindow();
+        expect(sv.becomeKeyView).not.toHaveBeenCalled();
+        expect(w.keyView()).toBeNull();
+      });
+    });
+
+    describe('when `keyView` is not `null`', function() {
+      var w, sv1, sv2;
+
+      beforeEach(function() {
+        w = Z.Window.create(Z.View.extend(function() {
+          this.subview('sv1', TestView);
+          this.subview('sv2', TestView);
+        }));
+
+        sv1 = w.get('contentView.sv1');
+        sv2 = w.get('contentView.sv2');
+
+        w.initialKeyView(sv1);
+      });
+
+      it('should call `becomeKeyView` on the current `keyView` if it accepts key view status', function() {
+        sv1.acceptsKeyView = function() { return true; };
+        sv2.acceptsKeyView = function() { return true; };
+        w.display();
+        w.keyView(sv2);
+
+        spyOn(sv1, 'becomeKeyView');
+        spyOn(sv2, 'becomeKeyView');
+        w.becomeKeyWindow();
+        expect(sv1.becomeKeyView).not.toHaveBeenCalled();
+        expect(sv2.becomeKeyView).toHaveBeenCalled();
+        expect(w.keyView()).toBe(sv2);
+      });
+
+      it('should not call `becomeKeyView` on the current `keyView` if it does not accept key view status and attempt to set `initialKeyView` to the key view', function() {
+        sv1.acceptsKeyView = function() { return true; };
+        sv2.acceptsKeyView = function() { return false; };
+        w.display();
+        w.keyView(sv2);
+
+        spyOn(sv1, 'becomeKeyView');
+        spyOn(sv2, 'becomeKeyView');
+        w.becomeKeyWindow();
+        expect(sv1.becomeKeyView).toHaveBeenCalled();
+        expect(sv2.becomeKeyView).not.toHaveBeenCalled();
+        expect(w.keyView()).toBe(sv1);
+      });
+
+      it('should set `keyView` to `null` if neither the current key view or initial key view acccept key view status', function() {
+        sv1.acceptsKeyView = function() { return false; };
+        sv2.acceptsKeyView = function() { return false; };
+        w.display();
+        w.keyView(sv2);
+
+        spyOn(sv1, 'becomeKeyView');
+        spyOn(sv2, 'becomeKeyView');
+        w.becomeKeyWindow();
+        expect(sv1.becomeKeyView).not.toHaveBeenCalled();
+        expect(sv2.becomeKeyView).not.toHaveBeenCalled();
+        expect(w.keyView()).toBeNull();
+      });
+    });
   });
 
   describe('.resignKeyWindow', function() {
-    it('should set `isKey` to `false` and `needsDisplay` to `true`', function() {
-      var w = Z.Window.create(TestView);
+    var w, sv1, sv2;
 
+    beforeEach(function() {
+      w = Z.Window.create(Z.View.extend(function() {
+        this.subview('sv1', TestView);
+        this.subview('sv2', TestView);
+      }));
+
+      sv1 = w.get('contentView.sv1');
+      sv2 = w.get('contentView.sv2');
+    });
+
+    it('should set `isKey` to `false` and `needsDisplay` to `true`', function() {
       w.becomeKeyWindow();
       w.display();
 
@@ -71,6 +173,21 @@ describe('Z.Window', function() {
 
       expect(w.isKey()).toBe(false);
       expect(w.needsDisplay()).toBe(true);
+    });
+
+    it('should call `resignKeyView` on the current value of `keyView` if it is set', function() {
+      w.becomeKeyWindow();
+      w.keyView(sv2);
+      spyOn(sv2, 'resignKeyView');
+      w.resignKeyWindow();
+      expect(sv2.resignKeyView).toHaveBeenCalled();
+    });
+
+    it('should not clear `keyView` if it is set', function() {
+      w.becomeKeyWindow();
+      w.keyView(sv2);
+      w.resignKeyWindow();
+      expect(w.keyView()).toBe(sv2);
     });
   });
 });
