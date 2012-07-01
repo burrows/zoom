@@ -664,6 +664,77 @@ describe('Z.View', function() {
 
     });
   });
+
+  describe('key view loop', function() {
+    var V = TestCompoundView.extend(function() {
+      this.subview('sv1', TestView1.extend(function() {
+        this.def('nextKeyView', function() { return this.get('superview.sv2'); });
+        this.def('previousKeyView', function() { return this.get('superview.sv3'); });
+      }));
+
+      this.subview('sv2', TestView2.extend(function() {
+        this.def('nextKeyView', function() { return this.get('superview.sv3'); });
+        this.def('previousKeyView', function() { return this.get('superview.sv1'); });
+      }));
+
+      this.subview('sv3', TestView3.extend(function() {
+        this.def('nextKeyView', function() { return this.get('superview.sv1'); });
+        this.def('previousKeyView', function() { return this.get('superview.sv2'); });
+      }));
+    }), v;
+
+    beforeEach(function() {
+      v = V.create();
+    });
+
+    describe('.nextValidKeyView', function() {
+      it('should return `null` when `nextKeyView` returns `null`', function() {
+        v.sv1().nextKeyView = function() { return null; };
+
+        expect(v.sv1().nextValidKeyView()).toBeNull();
+      });
+
+      it('should return `null` when no other key view accepts key view', function() {
+        v.sv1().acceptsKeyView = function() { return true; };
+        v.sv2().acceptsKeyView = function() { return false; };
+        v.sv3().acceptsKeyView = function() { return false; };
+
+        expect(v.sv1().nextValidKeyView()).toBeNull();
+      });
+
+      it('should return the next key view that accepts key view', function() {
+        v.sv1().acceptsKeyView = function() { return true; };
+        v.sv2().acceptsKeyView = function() { return false; };
+        v.sv3().acceptsKeyView = function() { return true; };
+
+        expect(v.sv1().nextValidKeyView()).toBe(v.sv3());
+      });
+    });
+
+    describe('.previousValidKeyView', function() {
+      it('should return `null` when `previousKeyView` returns `null`', function() {
+        v.sv1().prevKeyView = function() { return null; };
+
+        expect(v.sv1().previousValidKeyView()).toBeNull();
+      });
+
+      it('should return `null` when no other key view accepts key view', function() {
+        v.sv1().acceptsKeyView = function() { return true; };
+        v.sv2().acceptsKeyView = function() { return false; };
+        v.sv3().acceptsKeyView = function() { return false; };
+
+        expect(v.sv1().previousValidKeyView()).toBeNull();
+      });
+
+      it('should return the previous key view that accepts key view', function() {
+        v.sv1().acceptsKeyView = function() { return true; };
+        v.sv2().acceptsKeyView = function() { return true; };
+        v.sv3().acceptsKeyView = function() { return false; };
+
+        expect(v.sv1().previousValidKeyView()).toBe(v.sv2());
+      });
+    });
+  });
 });
 
 }());

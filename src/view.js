@@ -39,6 +39,11 @@ Z.View = Z.Object.extend(function() {
     get: function() { return this.__subviews__ = this.__subviews__ || Z.A(); }
   });
 
+  // Public: Boolean property indicating whether the view is currently the key
+  // view. The key view is first view to receive keyboard events when its window
+  // is the key window.
+  this.prop('isKey', { def: false });
+
   // Public: Boolean property indicating whether the view needs it's `display`
   // method run in order to sync its state to the DOM.
   this.prop('needsDisplay', { def: true });
@@ -483,6 +488,56 @@ Z.View = Z.Object.extend(function() {
     var superview = this.superview();
     if (superview) { superview.removeSubview(this); }
     return this;
+  });
+
+  // Public: Indicates whether the view currently accepts becoming the key view.
+  // The key view will be the first view to receive keyboard events when its
+  // window is the key window. Sub-types should override this method to return
+  // `true` in order to enable becoming the key view.
+  this.def('acceptsKeyView', function() { return false; });
+
+  // Public: Notifies the view that its about to become the key view.
+  this.def('becomeKeyView', function() {
+    this.isKey(true);
+    this.needsDisplay(true);
+  });
+
+  // Public: Notifies the view that its about to relinquish key view status.
+  this.def('resignKeyView', function() {
+    this.isKey(false);
+    this.needsDisplay(true);
+  });
+
+  // Public: Returns the next view in the key view loop or `null` if there isn't
+  // one. Sub-types should override this to establish a key view loop.
+  this.def('nextKeyView', function() { return null; });
+
+  // Public: Returns the previous view in the key view loop or `null` if there
+  // isn't one. Sub-types should override this to establish a key view loop.
+  this.def('previousKeyView', function() { return null; });
+
+  // Public: Returns the next view in the key view loop that accepts key view
+  // status.
+  this.def('nextValidKeyView', function() {
+    var view = this;
+
+    while ((view = view.nextKeyView()) && view !== this) {
+      if (view.acceptsKeyView()) { return view; }
+    }
+
+    return null;
+  });
+
+  // Public: Returns the previous view in the key view loop that accepts key view
+  // status.
+  this.def('previousValidKeyView', function() {
+    var view = this;
+
+    while ((view = view.previousKeyView()) && view !== this) {
+      if (view.acceptsKeyView()) { return view; }
+    }
+
+    return null;
   });
 });
 
