@@ -5,7 +5,7 @@ Z.View = Z.Object.extend(function() {
 
   // Internal: A regular expression for matching against a DOM element's
   // `className` property to determine if the element is a view's node.
-  viewClassRe = /(^|\s)z-view(\s|$)/;
+  viewClassRe = /\bz-view\b/;
   
   // Internal: A cache of concrete view instances. Every `Z.View` object that
   // gets created is added to this cache keyed by its `objectId`. This cache is
