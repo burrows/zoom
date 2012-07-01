@@ -177,11 +177,9 @@ Z.App = Z.Object.extend(function() {
 
     if (keyWindow === window) { return this; }
 
-    keyWindow.willResignKeyWindow();
-    keyWindow.isKey(false);
+    keyWindow.resignKeyWindow();
     this.keyWindow(window);
-    window.isKey(true);
-    window.didBecomeKeyWindow();
+    window.becomeKeyWindow();
 
     return this;
   });

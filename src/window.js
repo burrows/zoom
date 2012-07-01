@@ -7,24 +7,26 @@ Z.Window = Z.View.extend(function() {
   this.prop('contentView');
   this.prop('keyView');
 
+  this.def('classes', function() {
+    var classes = this.supr().concat('z-window');
+    if (this.isMain()) { classes.push('z-main-window'); }
+    return classes;
+  });
+
   this.def('initialize', function(view, opts) {
     this.supr(opts);
     this.contentView(this.addSubview(view.isType ? view.create() : view));
   });
 
-  this.def('buildNode', function() {
-    var node = this.supr(), classes = ['z-window'];
-
-    if (this.isMain()) { classes.push('z-main-window'); }
-
-    node.className = node.className + ' ' + classes.join(' ');
-
-    return node;
+  this.def('becomeKeyWindow', function() {
+    this.isKey(true);
+    this.needsDisplay(true);
   });
 
-  this.def('willResignKeyWindow', function() {});
-
-  this.def('didBecomeKeyWindow', function() {});
+  this.def('resignKeyWindow', function() {
+    this.isKey(false);
+    this.needsDisplay(true);
+  });
 });
 
 }());

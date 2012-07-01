@@ -306,19 +306,19 @@ describe('Z.App', function() {
         expect(window1.isKey()).toBe(true);
       });
 
-      it('should invoke `willResignKeyWindow` on the current key window', function() {
+      it('should invoke `resignKeyWindow` on the current key window', function() {
         var invoked = false;
 
-        mainWindow.def('willResignKeyWindow', function() { invoked = true; });
+        mainWindow.def('resignKeyWindow', function() { invoked = true; });
 
         app.makeKeyWindow(window1);
         expect(invoked).toBe(true);
       });
 
-      it('should invoke `didBecomeKeyWindow` on the new key window', function() {
+      it('should invoke `becomeKeyWindow` on the new key window', function() {
         var invoked = false;
 
-        window1.def('didBecomeKeyWindow', function() { invoked = true; });
+        window1.def('becomeKeyWindow', function() { invoked = true; });
 
         app.makeKeyWindow(window1);
         expect(invoked).toBe(true);
