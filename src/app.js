@@ -61,6 +61,7 @@ Z.App = Z.Object.extend(function() {
     if (!this.isRunning()) {
       Z.RunLoop.registerApp(this).start();
       this.keyWindow(this.mainWindow());
+      this.mainWindow().becomeKeyWindow();
       this.displayWindows();
       this.isRunning(true);
     }
@@ -73,9 +74,12 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('stop', function() {
+    var keyWin = this.keyWindow();
+
     if (this.isRunning()) {
       Z.RunLoop.deregisterApp(this);
       this.set('keyWindow', null);
+      keyWin.resignKeyWindow();
       this.removeWindows().displayWindows();
       this.isRunning(false);
     }
@@ -119,16 +123,15 @@ Z.App = Z.Object.extend(function() {
   // Public: Adds a new window to this app's `windows` array. The window will be
   // displayed during the next running of the run loop.
   //
-  // window - Either a concrete `Z.Window` instance or a subtype of `Z.Window`.
+  // window - A concrete `Z.Window` or sub-type instance.
   //
   // Returns the window concrete instance added.
   // Throws `Error` if the given object is not a `Z.Window` object.
   this.def('addWindow', function(window) {
-    if (!Z.isA(window, Z.Window)) {
-      throw new Error(Z.fmt("Z.App.addWindow: expected a `Z.Window` object, but received `%@` instead.", window));
+    if (!Z.isA(window, Z.Window) || window.isType) {
+      throw new Error(Z.fmt("Z.App.addWindow: expected a `Z.Window` concrete instance, but received `%@` instead.", window));
     }
 
-    window = window.isType ? window.create() : window;
     window.set({app: this, isMain: false});
     this.windows().push(window);
     return window;
@@ -161,8 +164,8 @@ Z.App = Z.Object.extend(function() {
   });
 
   // Public: Makes the given window the key window. This method will invoke the
-  // `willResignKeyWindow` method on the current key window and
-  // didBecomeKeyWindow` on the given key window.
+  // `resignKeyWindow` method on the current key window and `becomeKeyWindow` on
+  // the new key window.
   //
   // window - A `Z.Window` instance to make the new key window.
   //

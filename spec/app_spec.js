@@ -85,6 +85,12 @@ describe('Z.App', function() {
       expect(app.keyWindow()).toBe(app.mainWindow());
     });
 
+    it('should invoke `becomeKeyWindow` on the `mainWindow`', function() {
+      spyOn(app.mainWindow(), 'becomeKeyWindow');
+      app.start();
+      expect(app.mainWindow().becomeKeyWindow).toHaveBeenCalled();
+    });
+
     it('should attach `mainWindow` to `container`', function() {
       expect(document.querySelector('#test-container > .z-main-window')).toEqual(null);
       app.start();
@@ -113,6 +119,17 @@ describe('Z.App', function() {
       expect(app.keyWindow()).toBe(app.mainWindow());
       app.stop();
       expect(app.keyWindow()).toBeNull();
+    });
+
+    it('should invoke `resignKeyWindow` on the `keyWindow`', function() {
+      var win = Z.Window.create(Child1);
+
+      app.addWindow(win);
+      app.start();
+      app.makeKeyWindow(win);
+      spyOn(win, 'resignKeyWindow');
+      app.stop();
+      expect(win.resignKeyWindow).toHaveBeenCalled();
     });
 
     it('should detach `mainWindow` from `container`', function() {
@@ -222,7 +239,13 @@ describe('Z.App', function() {
 
       expect(function() {
         app.addWindow(o);
-      }).toThrow(Z.fmt('Z.App.addWindow: expected a `Z.Window` object, but received `%@` instead.', o));
+      }).toThrow(Z.fmt('Z.App.addWindow: expected a `Z.Window` concrete instance, but received `%@` instead.', o));
+    });
+
+    it('should throw an exception when given a `Z.Window` type instead of a concrete instance', function() {
+      expect(function() {
+        app.addWindow(Z.Window);
+      }).toThrow(Z.fmt('Z.App.addWindow: expected a `Z.Window` concrete instance, but received `%@` instead.', Z.Window));
     });
 
     it('should add the given concrete window object to the `windows` array', function() {
@@ -230,18 +253,6 @@ describe('Z.App', function() {
       expect(app.windows()).toEq(Z.A(app.mainWindow()));
       app.addWindow(w);
       expect(app.windows()).toEq(Z.A(app.mainWindow(), w));
-    });
-
-    it('should create a concrete instance when given a window type object and add it to the `windows` array', function() {
-      var type = Z.Window.extend(function() {
-        this.def('initialize', function(opts) {
-          this.supr(Child3, opts);
-        });
-      });
-      expect(app.windows().size()).toBe(1);
-      app.addWindow(type);
-      expect(app.windows().size()).toBe(2);
-      expect(app.get('windows.last').isA(type)).toBe(true);
     });
 
     it("should set the window's app property to the receiver", function() {
