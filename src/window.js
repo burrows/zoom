@@ -44,24 +44,64 @@ Z.Window = Z.View.extend(function() {
     this.needsDisplay(true);
   });
 
-  // FIXME: Searches for the next valid key view and makes it the key view if
-  // found.
+  // Public: Searches for the next valid key view and attempts to make it the
+  // key view if found. The search order is as follows:
   //
-  // Search order:
-  //   - current key view's nextValidKeyView
-  //   - window's initialKeyView if it accepts key view
-  //   - initialKeyView's nextValidKeyVIew
+  // * current `keyView`'s `nextValidKeyView`
+  // * `initialKeyView` if it currently accepts key view
+  // * `initialKeyView`'s `nextValidKeyView`
+  //
+  // Returns nothing.
   this.def('selectNextKeyView', function() {
+    var current = this.keyView(), initial = this.initialKeyView(), next;
+
+    if (current && (next = current.nextValidKeyView()) && next.acceptsKeyView()) {
+      this.makeKeyView(next);
+    }
+    else if (initial) {
+      if (initial.acceptsKeyView()) {
+        this.makeKeyView(initial);
+      }
+      else if ((next = initial.nextKeyView()) && next.acceptsKeyView()) {
+        this.makeKeyView(next);
+      }
+      else {
+        this.makeKeyView(null);
+      }
+    }
+    else {
+      this.makeKeyView(null);
+    }
   });
 
-  // FIXME: Searches for the previous valid key view and makes it the key view if
-  // found.
+  // Public: Searches for the previous valid key view and attempts to make it
+  // the key view if found. The search order is as follows:
   //
-  // Search order:
-  //   - current key view's previousValidKeyView
-  //   - window's initialKeyView if it accepts key view
-  //   - initialKeyView's previousValidKeyVIew
+  // * current `keyView`'s `previousValidKeyView`
+  // * `initialKeyView` if it currently accepts key view
+  // * `initialKeyView`'s `previousValidKeyView`
+  //
+  // Returns nothing.
   this.def('selectPreviousKeyView', function() {
+    var current = this.keyView(), initial = this.initialKeyView(), prev;
+
+    if (current && (prev = current.previousValidKeyView()) && prev.acceptsKeyView()) {
+      this.makeKeyView(prev);
+    }
+    else if (initial) {
+      if (initial.acceptsKeyView()) {
+        this.makeKeyView(initial);
+      }
+      else if ((prev = initial.previousKeyView()) && prev.acceptsKeyView()) {
+        this.makeKeyView(prev);
+      }
+      else {
+        this.makeKeyView(null);
+      }
+    }
+    else {
+      this.makeKeyView(null);
+    }
   });
 
   // Public: Attempts to make the given view the key view for the window.

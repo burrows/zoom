@@ -230,6 +230,122 @@ describe('Z.Window', function() {
       expect(w.needsDisplay()).toBe(true);
     });
   });
+
+  describe('.selectNextKeyView', function() {
+    var w, sv1, sv2, sv3;
+
+    beforeEach(function() {
+      w = Z.Window.create(Z.View.extend(function() {
+        this.subview('sv1', TestView);
+        this.subview('sv2', TestView);
+        this.subview('sv3', TestView);
+      }));
+
+      sv1 = w.get('contentView.sv1');
+      sv2 = w.get('contentView.sv2');
+      sv3 = w.get('contentView.sv3');
+
+      sv1.nextKeyView = function() { return null; };
+      sv2.nextKeyView = function() { return null; };
+      sv3.nextKeyView = function() { return null; };
+
+      w.initialKeyView(sv1);
+    });
+
+    it("should make the current key view's next valid key view the key view", function() {
+      w.makeKeyView(sv1);
+      sv1.nextKeyView = function() { return sv2; };
+      sv2.acceptsKeyView = function() { return true; };
+      w.selectNextKeyView();
+      expect(w.keyView()).toBe(sv2);
+    });
+
+    it('should make `initialKeyView` the key view when the current key view is null or has no next valid key view', function() {
+      w.makeKeyView(null);
+      sv1.acceptsKeyView = function() { return true; };
+      w.selectNextKeyView();
+      expect(w.keyView()).toBe(sv1);
+
+      w.makeKeyView(sv2);
+      sv1.acceptsKeyView = function() { return true; };
+      w.selectNextKeyView();
+      expect(w.keyView()).toBe(sv1);
+    });
+
+    it("should make `initialKeyView`'s next valid key view the key view when `initialKeyView` does not accept key view ", function() {
+      w.makeKeyView(sv3);
+      sv1.acceptsKeyView = function() { return false; }
+      sv1.nextKeyView = function() { return sv2; };
+      sv2.acceptsKeyView = function() { return true; }
+      w.selectNextKeyView();
+      expect(w.keyView()).toBe(sv2);
+    });
+
+    it("should set the key view to null when a next valid key view can't be found", function() {
+      w.makeKeyView(sv3);
+      sv1.acceptsKeyView = function() { return false; }
+      w.selectNextKeyView();
+      expect(w.keyView()).toBeNull();
+    });
+  });
+
+  describe('.selectPreviousKeyView', function() {
+    var w, sv1, sv2, sv3;
+
+    beforeEach(function() {
+      w = Z.Window.create(Z.View.extend(function() {
+        this.subview('sv1', TestView);
+        this.subview('sv2', TestView);
+        this.subview('sv3', TestView);
+      }));
+
+      sv1 = w.get('contentView.sv1');
+      sv2 = w.get('contentView.sv2');
+      sv3 = w.get('contentView.sv3');
+
+      sv1.previousKeyView = function() { return null; };
+      sv2.previousKeyView = function() { return null; };
+      sv3.previousKeyView = function() { return null; };
+
+      w.initialKeyView(sv1);
+    });
+
+    it("should make the current key view's previous valid key view the key view", function() {
+      w.makeKeyView(sv2);
+      sv2.previousKeyView = function() { return sv1; };
+      sv1.acceptsKeyView = function() { return true; };
+      w.selectPreviousKeyView();
+      expect(w.keyView()).toBe(sv1);
+    });
+
+    it('should make `initialKeyView` the key view when the current key view is null or has no previous valid key view', function() {
+      w.makeKeyView(null);
+      sv1.acceptsKeyView = function() { return true; };
+      w.selectPreviousKeyView();
+      expect(w.keyView()).toBe(sv1);
+
+      w.makeKeyView(sv3);
+      sv1.acceptsKeyView = function() { return true; };
+      w.selectPreviousKeyView();
+      expect(w.keyView()).toBe(sv1);
+    });
+
+    it("should make `initialKeyView`'s previous valid key view the key view when `initialKeyView` does not accept key view ", function() {
+      w.makeKeyView(sv2);
+      sv1.acceptsKeyView = function() { return false; }
+      sv1.previousKeyView = function() { return sv3; };
+      sv3.acceptsKeyView = function() { return true; }
+      w.selectPreviousKeyView();
+      expect(w.keyView()).toBe(sv3);
+    });
+
+    it("should set the key view to null when a previous valid key view can't be found", function() {
+      w.makeKeyView(sv3);
+      sv1.acceptsKeyView = function() { return false; }
+      w.selectPreviousKeyView();
+      expect(w.keyView()).toBeNull();
+    });
+  });
 });
 
 }());
