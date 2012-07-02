@@ -1,5 +1,12 @@
 (function(undefined) {
 
+// Public: `Z.View` objects manage the actual DOM nodes that ultimately get
+// displayed by the browser. They handle the rendering of the nodes, manage
+// their location within the view hierarchy, and handle events that occur on
+// them.
+//
+// The `Z.View` type itself is abstract, applications are made up of sub-types
+// that inherit from `Z.View` and override many of its methods.
 Z.View = Z.Object.extend(function() {
   var viewClassRe, views;
 

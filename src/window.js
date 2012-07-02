@@ -1,19 +1,35 @@
+// `Z.Window` objects provide a root for `Z.View` hierarchies and accept and
+// distribute events from the app that manages them.
 Z.Window = Z.View.extend(function() {
+  // Public: A property that returns the `Z.App` object that owns the window.
   this.prop('app');
+
+  // Public: Indicates whether the window is the main window.
   this.prop('isMain', { def: false });
+
+  // Public: A property that returns the window's content view.
   this.prop('contentView');
+
+  // Public: The window's current key view. Keyboard events sent to this window
+  // will be first sent to the value of this property.
   this.prop('keyView');
 
-  // Public: A Property that returns the view that should be made the key view
+  // Public: A property that returns the view that should be made the key view
   // when the window becomes the key window.
   this.prop('initialKeyView');
 
+  // Public: Overrides `Z.View.classes` to append window specific class names to
+  // the window's node.
   this.def('classes', function() {
     var classes = this.supr().concat('z-window');
     if (this.isMain()) { classes.push('z-main-window'); }
     return classes;
   });
 
+  // Public: The `Z.Window` constructor. Creates the window's content view.
+  //
+  // view - A `Z.View` sub-type or instance.
+  // opts - An optional native object of properties to set (default: `{}`).
   this.def('initialize', function(view, opts) {
     this.supr(opts);
     this.contentView(this.addSubview(view.isType ? view.create() : view));
