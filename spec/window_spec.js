@@ -43,6 +43,96 @@ describe('Z.Window', function() {
     });
   });
 
+  describe('.makeKeyView', function() {
+    var w, sv1, sv2;
+
+    beforeEach(function() {
+      w = Z.Window.create(Z.View.extend(function() {
+        this.subview('sv1', TestView);
+        this.subview('sv2', TestView);
+      }));
+
+      sv1 = w.get('contentView.sv1');
+      sv2 = w.get('contentView.sv2');
+
+      w.keyView(sv1);
+    });
+
+    it('should do nothing if the given view is already the key view and return `true`', function() {
+      spyOn(sv1, 'resignKeyView');
+      spyOn(sv1, 'becomeKeyView');
+      expect(w.makeKeyView(sv1)).toBe(true);
+      expect(sv1.resignKeyView).not.toHaveBeenCalled();
+      expect(sv1.becomeKeyView).not.toHaveBeenCalled();
+    });
+
+    describe('given a view', function() {
+      it('should call `resignKeyView` on the current `keyView`', function() {
+        spyOn(sv1, 'resignKeyView');
+        w.makeKeyView(sv2);
+        expect(sv1.resignKeyView).toHaveBeenCalled();
+      });
+
+      it('should not change `keyView` when `resignKeyView` returns `false`', function() {
+        sv1.resignKeyView = function() { return false; };
+        w.makeKeyView(sv2);
+        expect(w.keyView()).toBe(sv1);
+      });
+
+      it('should return `false` when `resignKeyView` returns `false`', function() {
+        sv1.resignKeyView = function() { return false; };
+        expect(w.makeKeyView(sv2)).toBe(false);
+      });
+
+      it('should call `becomeKeyView` on given view', function() {
+        spyOn(sv2, 'becomeKeyView');
+        w.makeKeyView(sv2);
+        expect(sv2.becomeKeyView).toHaveBeenCalled();
+      });
+
+      it('should set `keyView` to `null` when `becomeKeyView` returns `false`', function() {
+        sv2.becomeKeyView = function() { return false; };
+        w.makeKeyView(sv2);
+        expect(w.keyView()).toBeNull();
+      });
+
+      it('should return `true` when `becomeKeyView` returns `false`', function() {
+        sv2.becomeKeyView = function() { return false; };
+        expect(w.makeKeyView(sv2)).toBe(true);
+      });
+    });
+
+    describe('given `null`', function() {
+      it('should call `resignKeyView` on the current `keyView`', function() {
+        spyOn(sv1, 'resignKeyView');
+        w.makeKeyView(null);
+        expect(sv1.resignKeyView).toHaveBeenCalled();
+      });
+
+      it('should not change `keyView` when `resignKeyView` returns `false`', function() {
+        sv1.resignKeyView = function() { return false; };
+        w.makeKeyView(null);
+        expect(w.keyView()).toBe(sv1);
+      });
+
+      it('should return `false` when `resignKeyView` returns `false`', function() {
+        sv1.resignKeyView = function() { return false; };
+        expect(w.makeKeyView(null)).toBe(false);
+      });
+
+      it('should set `keyView` to `null` when `resignKeyView` returns `true`', function() {
+        sv1.resignKeyView = function() { return true; };
+        w.makeKeyView(null);
+        expect(w.keyView()).toBeNull();
+      });
+
+      it('should return `true` when `resignKeyView` returns `true`', function() {
+        sv1.resignKeyView = function() { return true; };
+        expect(w.makeKeyView(null)).toBe(true);
+      });
+    });
+  });
+
   describe('.becomeKeyWindow', function() {
     it('should set `isKey` and `needsDisplay` to `true`', function() {
       var w = Z.Window.create(TestView);

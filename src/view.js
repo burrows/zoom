@@ -490,22 +490,32 @@ Z.View = Z.Object.extend(function() {
     return this;
   });
 
-  // Public: Indicates whether the view currently accepts becoming the key view.
-  // The key view will be the first view to receive keyboard events when its
-  // window is the key window. Sub-types should override this method to return
-  // `true` in order to enable becoming the key view.
+  // Public: Indicates whether the view currently accepts key view status. The
+  // key view will be the first view to receive keyboard events when its window
+  // is the key window. Sub-types should override this method to return `true`
+  // in order to enable becoming the key view.
   this.def('acceptsKeyView', function() { return false; });
 
-  // Public: Notifies the view that its about to become the key view.
+  // Public: Notifies the view that its about to become the key view. Returns
+  // a boolean indicating whether key view status was accepted. The default
+  // implementation of this method always returns `true`, accepting key view
+  // status. Sub-types can override this method to update state or return
+  // `false` to refuse key view status.
   this.def('becomeKeyView', function() {
     this.isKey(true);
     this.needsDisplay(true);
+    return true;
   });
 
   // Public: Notifies the view that its about to relinquish key view status.
+  // Returns a boolean indicating whether key view status was relinquished. The
+  // default implementation of this method always returns `true`, resigning key
+  // view status. Sub-types can override this method to update state or return
+  // `false` to refuse to relinquish key view status.
   this.def('resignKeyView', function() {
     this.isKey(false);
     this.needsDisplay(true);
+    return true;
   });
 
   // Public: Returns the next view in the key view loop or `null` if there isn't
@@ -517,7 +527,7 @@ Z.View = Z.Object.extend(function() {
   this.def('previousKeyView', function() { return null; });
 
   // Public: Returns the next view in the key view loop that accepts key view
-  // status.
+  // status or `null` if one can't be found.
   this.def('nextValidKeyView', function() {
     var view = this;
 
@@ -529,7 +539,7 @@ Z.View = Z.Object.extend(function() {
   });
 
   // Public: Returns the previous view in the key view loop that accepts key view
-  // status.
+  // status or `null` if one can't be found.
   this.def('previousValidKeyView', function() {
     var view = this;
 
