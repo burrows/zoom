@@ -21,25 +21,16 @@ Z.Window = Z.View.extend(function() {
 
   // Public: Called by the window's `app` when it determines that it should
   // be the key window. This method marks the receiver as being key and needing
-  // display and attempts to set the key view. The view to select as the key
-  // view is determined as follows:
-  //
-  // 1. the current value of `keyView` if it currently accepts key view status
-  // 2. the value of `initialKeyView` if it currently accepts key view status
-  // 3. otherwise `keyView` is set to `null`
+  // display and attempts to set the key view to `initialKeyView` if its not
+  // already set.
   //
   // Returns nothing.
   this.def('becomeKeyWindow', function() {
-    var keyView = this.keyView(), initialKeyView = this.initialKeyView();
+    var initialKeyView = this.initialKeyView();
 
-    if (keyView && keyView.acceptsKeyView()) {
-      keyView.becomeKeyView();
+    if (!this.keyView() && initialKeyView && initialKeyView.acceptsKeyView()) {
+      this.makeKeyView(initialKeyView);
     }
-    else if (initialKeyView && initialKeyView.acceptsKeyView()) {
-      this.keyView(initialKeyView);
-      initialKeyView.becomeKeyView();
-    }
-    else { this.keyView(null); }
 
     this.isKey(true);
     this.needsDisplay(true);
@@ -47,12 +38,8 @@ Z.Window = Z.View.extend(function() {
 
   // Public: Called by the window's `app` when it determines that it should no
   // longer be the key window. This method marks the receiver as not being key
-  // and needing display. It also calls `resignKeyView` on the current `keyView`
-  // if it is set.
+  // and needing display.
   this.def('resignKeyWindow', function() {
-    var keyView = this.keyView();
-
-    if (keyView) { keyView.resignKeyView(); }
     this.isKey(false);
     this.needsDisplay(true);
   });
