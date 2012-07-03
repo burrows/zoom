@@ -7,7 +7,7 @@
 //
 // The `Z.View` type itself is abstract, applications are made up of sub-types
 // that inherit from `Z.View` and override many of its methods.
-Z.View = Z.Object.extend(function() {
+Z.View = Z.Object.extend(Z.Enumerable, function() {
   var viewClassRe, views;
 
   // Internal: A regular expression for matching against a DOM element's
@@ -34,6 +34,10 @@ Z.View = Z.Object.extend(function() {
   // Public: Indicates whether this view's `node` is currently attached to the
   // DOM.
   this.prop('isNodeAttached', { def: false });
+
+  // Public: A property holding the window the view belongs to or `null` if its
+  // not currently attached to a window.
+  this.prop('window');
 
   // Public: A property holding the view's superview.
   this.prop('superview');
@@ -329,18 +333,6 @@ Z.View = Z.Object.extend(function() {
     this.subviews().invoke('notifyDidDetachNode');
   });
 
-  this.def('handleEvent', function(event) {
-    return false;
-  });
-
-  // Public: Returns the `Z.Window` the view is currently attached to or `null`
-  // if its not attached to a window.
-  this.def('window', function() {
-    var view = this;
-    while (view && !view.isA(Z.Window)) { view = view.superview(); }
-    return view;
-  });
-
   // Public: Indicates whether the receiver is a descendant of the given view.
   //
   // view - A concreate `Z.View` instance.
@@ -389,6 +381,7 @@ Z.View = Z.Object.extend(function() {
 
     subviews.splice(idx, 0, view);
     view.superview(this);
+    view.window(this.window());
     this.needsDisplay(true);
 
     return view;
@@ -545,8 +538,8 @@ Z.View = Z.Object.extend(function() {
     return null;
   });
 
-  // Public: Returns the previous view in the key view loop that accepts key view
-  // status or `null` if one can't be found.
+  // Public: Returns the previous view in the key view loop that accepts key
+  // view status or `null` if one can't be found.
   this.def('previousValidKeyView', function() {
     var view = this;
 
@@ -555,6 +548,19 @@ Z.View = Z.Object.extend(function() {
     }
 
     return null;
+  });
+
+  // Public: The `Z.View` iterator, invokes the given function once for each
+  // view in the view hierarchy, starting with the receiver.
+  //
+  // f - A function object. It will be invoked once for each view in the
+  //     hierarchy.
+  //
+  // Returns the receiver.
+  this.def('each', function(f) {
+    f(this);
+    this.subviews().each(function(subview) { subview.each(f); });
+    return this;
   });
 });
 

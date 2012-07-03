@@ -31,8 +31,10 @@ Z.Window = Z.View.extend(function() {
   // view - A `Z.View` sub-type or instance.
   // opts - An optional native object of properties to set (default: `{}`).
   this.def('initialize', function(view, opts) {
+    var self = this;
     this.supr(opts);
     this.contentView(this.addSubview(view.isType ? view.create() : view));
+    this.contentView().each(function(v) { v.window(self); });
   });
 
   // Public: Called by the window's `app` when it determines that it should

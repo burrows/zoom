@@ -139,6 +139,15 @@ describe('Z.View', function() {
       expect(sv1.superview()).toBe(v);
     });
 
+    it("should set the subview's `window` property to the receiver's `window` property", function() {
+      var w = Z.Window.create(v);
+
+      expect(v.window()).toBe(w);
+      expect(sv1.window()).toBeNull();
+      v.addSubview(sv1);
+      expect(sv1.window()).toBe(w);
+    });
+
     it('should remove the given view from its current `superview` if it has one', function() {
       var v2 = TestCompoundView.create();
 
@@ -339,38 +348,6 @@ describe('Z.View', function() {
 
       expect(v2.superview()).toBeNull();
       expect(v1.subviews()).toEq(Z.A());
-    });
-  });
-
-  describe('.window', function() {
-    it('should return `null` if the view is not attached to a window', function() {
-      var v1  = TestCompoundView.create(),
-          v11 = TestCompoundView.create(),
-          v12 = TestCompoundView.create();
-
-      v1.addSubview(v11);
-      v1.addSubview(v12);
-
-      expect(v1.window()).toBe(null);
-      expect(v11.window()).toBe(null);
-      expect(v12.window()).toBe(null);
-    });
-
-    it('should return the `Z.Window` object the view is attached to', function() {
-      var v1  = TestCompoundView.create(),
-          v11 = TestCompoundView.create(),
-          v12 = TestCompoundView.create(),
-          w;
-
-      v1.addSubview(v11);
-      v1.addSubview(v12);
-
-      w = Z.Window.create(v1);
-
-      expect(w.window()).toBe(w);
-      expect(v1.window()).toBe(w);
-      expect(v11.window()).toBe(w);
-      expect(v12.window()).toBe(w);
     });
   });
 
@@ -733,6 +710,30 @@ describe('Z.View', function() {
 
         expect(v.sv1().previousValidKeyView()).toBe(v.sv2());
       });
+    });
+  });
+
+  describe('.each', function() {
+    it("should yield each view in the receiver's hierarchy", function() {
+      var v1   = TestCompoundView.create(),
+          v11  = TestCompoundView.create(),
+          v12  = TestCompoundView.create(),
+          v13  = TestCompoundView.create(),
+          v121 = TestCompoundView.create(),
+          v122 = TestCompoundView.create(),
+          v131 = TestCompoundView.create(),
+          test = Z.A();
+
+      v1.addSubview(v11);
+      v1.addSubview(v12);
+      v1.addSubview(v13)
+      v12.addSubview(v121);
+      v12.addSubview(v122);
+      v13.addSubview(v131);
+
+      v1.each(function(v) { test.push(v); });
+
+      expect(test).toEq(Z.A(v1, v11, v12, v121, v122, v13, v131));
     });
   });
 });

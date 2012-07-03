@@ -28,6 +28,17 @@ describe('Z.Window', function() {
       expect(cv.superview()).toBe(w);
       expect(w.subviews().contains(cv)).toBe(true);
     });
+
+    it('should set the `window` property on each view in the content view hierarchy', function() {
+      var ContentView = Z.View.extend(function() {
+        this.subview('sv1', Z.View);
+        this.subview('sv2', Z.View);
+      }), w = Z.Window.create(ContentView);
+
+      expect(w.get('contentView.window')).toBe(w);
+      expect(w.get('contentView.sv1.window')).toBe(w);
+      expect(w.get('contentView.sv2.window')).toBe(w);
+    });
   });
 
   describe('node property', function() {
