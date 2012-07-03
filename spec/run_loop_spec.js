@@ -115,32 +115,6 @@ describe('Z.RunLoop', function() {
       expect(app2.displayWindows).toHaveBeenCalled();
     });
   });
-
-  describe('mouse event handling', function() {
-    beforeEach(function() { app1.start(); app2.start(); });
-    afterEach(function() { app1.stop(); app2.stop(); });
-
-    it('should invoke the `dispatchMouseEvent` method on the app containing the view where the event occured', function() {
-      var child1 = app1.get('mainWindow.contentView'),
-          child2 = app2.get('mainWindow.contentView');
-
-      spyOn(app1, 'dispatchMouseEvent');
-      spyOn(app2, 'dispatchMouseEvent');
-
-      simulateMouseEvent(document.querySelector('.child1'), 'mousedown');
-      expect(app1.dispatchMouseEvent).toHaveBeenCalled();
-      expect(app1.dispatchMouseEvent.mostRecentCall.args[1]).toBe(child1);
-      expect(app2.dispatchMouseEvent).not.toHaveBeenCalled();
-
-      app1.dispatchMouseEvent.reset();
-      app2.dispatchMouseEvent.reset();
-
-      simulateMouseEvent(document.querySelector('.child2'), 'mousedown');
-      expect(app1.dispatchMouseEvent).not.toHaveBeenCalled();
-      expect(app2.dispatchMouseEvent).toHaveBeenCalled();
-      expect(app2.dispatchMouseEvent.mostRecentCall.args[1]).toBe(child2);
-    });
-  });
 });
 
 }());

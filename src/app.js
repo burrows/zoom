@@ -187,10 +187,17 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('dispatchMouseEvent', function(evt, view) {
-  });
+  //this.def('dispatchEvent', function(e) {
+  //  var handled = false;
 
-  this.def('dispatchKeyEvent', function(evt) {
-  });
+  //  if (e.isA(Z.MouseEvent)) {
+  //    handled = dispatchMouseEvent.call(this, e);
+  //  }
+  //  else if (e.isA(Z.KeyEvent)) {
+  //    handled = dispatchKeyEvent.call(this, e);
+  //  }
+
+  //  // FIXME: send event to statechart unless it was handled
+  //});
 });
 

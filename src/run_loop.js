@@ -23,25 +23,7 @@
 Z.RunLoop = Z.Object.create().open(function() {
   var self  = this,
       apps  = Z.A(),
-      queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); }),
-      keyEvents, mouseEvents;
-
-  keyEvents = [
-    'keydown',
-    'keypress',
-    'keyup'
-  ];
-
-  mouseEvents = [
-    'click',
-    'dblclick',
-    'mousedown',
-    'mouseup',
-    'mouseover',
-    'mousemove',
-    'mouseout',
-    'select'
-  ];
+      queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
 
   function run() {
     // TODO: Z.Binding.flush();
@@ -58,51 +40,46 @@ Z.RunLoop = Z.Object.create().open(function() {
   }
 
   function processKeyEvent(e) {
-    apps.each(function(app) { app.dispatchKeyEvent(e); });
+    var event = Z.Event.fromNative(e);
+    apps.each(function(app) { app.dispatchEvent(event); });
     run();
   }
 
   function processMouseEvent(e) {
-    var view   = Z.View.viewForNode(e.target),
-        window = view ? view.window() : null,
-        app    = window ? window.app() : null;
+    var event = Z.Event.fromNative(e), view = event.view();
 
-    if (!app) { return; }
+    if (!view) { return; }
 
-    app.dispatchMouseEvent(e, view);
+    view.get('window.app').dispatchEvent(event);
     run();
   }
 
   function addKeyListeners() {
-    var i, len;
-
-    for (i = 0, len = keyEvents.length; i < len; i++) {
-      document.addEventListener(keyEvents[i], processKeyEvent, false);
-    }
+    Z.Event.keyEvents.each(function(event) {
+      document.addEventListener(event, processKeyEvent, false);
+    });
   }
 
   function removeKeyListeners() {
-    var i, len;
-
-    for (i = 0, len = keyEvents.length; i < len; i++) {
-      document.removeEventListener(keyEvents[i], processKeyEvent, false);
-    }
+    Z.Event.keyEvents.each(function(event) {
+      document.removeEventListener(event, processKeyEvent, false);
+    });
   }
 
   function addMouseListeners(app) {
-    var elem = app.container(), i, len;
+    var elem = app.container();
 
-    for (i = 0, len = mouseEvents.length; i < len; i++) {
-      elem.addEventListener(mouseEvents[i], processMouseEvent, false);
-    }
+    Z.Event.mouseEvents.each(function(event) {
+      elem.addEventListener(event, processMouseEvent, false);
+    });
   }
 
   function removeMouseListeners(app) {
-    var elem = app.container(), i, len;
+    var elem = app.container();
 
-    for (i = 0, len = mouseEvents.length; i < len; i++) {
-      elem.removeEventListener(mouseEvents[i], processMouseEvent, false);
-    }
+    Z.Event.mouseEvents.each(function(event) {
+      elem.removeEventListener(event, processMouseEvent, false);
+    });
   }
 
   function startListening() {

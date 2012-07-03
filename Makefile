@@ -10,6 +10,7 @@ SRCS := util.js         \
         hash.js         \
         mapper.js       \
         model.js        \
+        event.js        \
         run_loop.js     \
         view.js         \
         window.js       \
