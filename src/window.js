@@ -18,6 +18,11 @@ Z.Window = Z.View.extend(function() {
   // when the window becomes the key window.
   this.prop('initialKeyView');
 
+  // Internal: Specifies the properties for the `toString` method to display.
+  this.def('toStringProperties', function() {
+    return this.supr().concat('isMain');
+  });
+
   // Public: Overrides `Z.View.classes` to append window specific class names to
   // the window's node.
   this.def('classes', function() {

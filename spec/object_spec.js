@@ -330,7 +330,8 @@ describe('Z.Object.toString', function() {
   var X = Z.Object.extend(function() {
     this.prop('x');
     this.prop('y');
-    this.prop('z', {get: function() {}});
+    this.prop('z');
+    this.def('toStringProperties', function() { return ['x', 'y']; });
   });
 
   it('should return the type name when called on a type object', function() {
@@ -341,12 +342,13 @@ describe('Z.Object.toString', function() {
     expect(X.toString()).toBe('(Unknown)');
   });
 
-  it('should return a string containing the type name, object id and current non-computed property values', function() {
-    var o1 = Z.Object.create(), o2 = X.create({x: 1, y: 2});
+  it('should return a string containing the type name, object id and property values indicated by `toStringProperties`', function() {
+    var o1 = Z.Object.create(), o2 = X.create({x: 1, y: 2, z: 3});
 
     expect(o1.toString()).toEqual("#<Z.Object:" + (o1.objectId()) + '>');
     expect(o2.toString()).toMatch(/x: 1/);
     expect(o2.toString()).toMatch(/y: 2/);
+    expect(o2.toString()).not.toMatch(/z: 3/);
   });
 
   it('should handle recursive objects', function() {

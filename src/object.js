@@ -391,6 +391,13 @@ Z.Object.open(function() {
     return '(Unknown)';
   });
 
+  // Public: Specifies the properties to display by the `toString` method.
+  // Sub-types can override this method to specify additional properties to
+  // display.
+  //
+  // Returns a native array.
+  this.def('toStringProperties', function() { return []; });
+
   // Public: Generates a string representation of the object. When called on a
   // type object, this method simply delegates to the `Z.Object.typeName`
   // method, otherwise it generates a string containing the name of the object's
@@ -398,20 +405,19 @@ Z.Object.open(function() {
   //
   // Returns a string.
   this.def('toString', function() {
-    var self = this, type, descriptors, props, recursed, a;
+    var self = this, type, props, recursed, a;
 
     if (this.isType) { return this.typeName(); }
 
-    type        = this.type();
-    descriptors = this.propertyDescriptors();
-    a           = [];
+    type  = this.type();
+    props = this.toStringProperties();
+    a     = [];
 
     recursed = Z.detectRecursion(this, function() {
-      var k;
+      var i, len;
 
-      for (k in descriptors) {
-        if (descriptors[k].get !== null) { continue; }
-        a.push(k + ': ' + Z.inspect(self.get(k)));
+      for (i = 0, len = props.length; i < len; i++) {
+        a.push(props[i] + ': ' + Z.inspect(self.get(props[i])));
       }
     });
 

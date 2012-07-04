@@ -59,6 +59,11 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // method run in order to sync its state to the DOM.
   this.prop('needsDisplay', { def: true });
 
+  // Internal: Specifies the properties for the `toString` method to display.
+  this.def('toStringProperties', function() {
+    return this.supr().concat('isKey', 'needsDisplay', 'node');
+  });
+
   // Public: Returns the HTML tag to use when building the `node` for instances
   // of the view. Override this method to generate a `node` that is something
   // other than a div.

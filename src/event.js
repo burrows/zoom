@@ -72,6 +72,12 @@ Z.Event = Z.Object.extend(function() {
   this.prop('timestamp');
   this.prop('nativeEvent');
 
+  // Internal: Specifies the properties for the `toString` method to display.
+  this.def('toStringProperties', function() {
+    return this.supr().concat('kind', 'isAlt', 'isCtrl', 'isMeta', 'isShift',
+                              'timestamp');
+  });
+
   this.def('handler', function() {
     var kind = this.kind();
     return kind[0].toLowerCase() + kind.slice(1);

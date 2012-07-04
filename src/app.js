@@ -34,6 +34,11 @@ Z.App = Z.Object.extend(function() {
   // property.
   this.prop('keyWindow');
 
+  // Internal: Specifies the properties for the `toString` method to display.
+  this.def('toStringProperties', function() {
+    return this.supr().concat('container', 'isRunning');
+  });
+
   // Public: The `Z.App` constructor.
   //
   // mainView  - A sub-type of `Z.App` to use as the root view of the
