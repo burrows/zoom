@@ -162,6 +162,10 @@ Z.App = Z.Object.extend(function() {
     return window;
   });
 
+  // Public: Removes all window's belonging to the app by passing each to
+  // `removeWindow`.
+  //
+  // Returns the receiver.
   this.def('removeWindows', function() {
     var self = this, windows = this.windows().slice();
     windows.each(function(window) { self.removeWindow(window); });
@@ -192,6 +196,15 @@ Z.App = Z.Object.extend(function() {
     return window;
   });
 
+  // Internal: Dispatches the given `Z.Event` object to the appropriate window.
+  // For keyboard events, the event is sent to the key window. For mouse events,
+  // the event is sent to the window over which the event occurred. If a mouse
+  // down event occurs over a window that is not the key window, it is first
+  // made the key window before the event is dispatched to it.
+  //
+  // e - A `Z.Event` object.
+  //
+  // Returns nothing.
   this.def('dispatchEvent', function(e) {
     var keyWin = this.keyWindow();
 
@@ -200,8 +213,6 @@ Z.App = Z.Object.extend(function() {
     }
 
     keyWin.dispatchEvent(e);
-
-    // FIXME: send event to statechart unless it was handled
   });
 });
 
