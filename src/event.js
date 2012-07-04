@@ -15,7 +15,7 @@ Z.Event = Z.Object.extend(function() {
   function mouseEvent(native) {
     var type = native.type,
         node = native.target,
-        view = Z.View.viewForNode(node),
+        view = Z.View.forNode(node),
         kind, button;
 
     if (type === 'mousemove') { kind = Z.MouseMove; }

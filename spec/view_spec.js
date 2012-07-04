@@ -54,13 +54,13 @@ describe('Z.View', function() {
     });
   });
 
-  describe('.viewForNode', function() {
+  describe('.forNode', function() {
     it('should return the `Z.View` object that owns the node', function() {
       var v1 = TestView1.create(), v2 = TestView2.create();
 
-      expect(Z.View.viewForNode(document.body)).toBeNull();
-      expect(Z.View.viewForNode(v1.node())).toBe(v1);
-      expect(Z.View.viewForNode(v2.node())).toBe(v2);
+      expect(Z.View.forNode(document.body)).toBeNull();
+      expect(Z.View.forNode(v1.node())).toBe(v1);
+      expect(Z.View.forNode(v2.node())).toBe(v2);
     });
   });
 
@@ -77,12 +77,12 @@ describe('Z.View', function() {
       expect(v1.subviews()).toEq(Z.A());
     });
 
-    it('should remove the view from the cache that `viewForNode` uses', function() {
+    it('should remove the view from the cache that `forNode` uses', function() {
       var v = TestCompoundView.create();
 
-      expect(Z.View.viewForNode(v.node())).toBe(v);
+      expect(Z.View.forNode(v.node())).toBe(v);
       v.destroy();
-      expect(Z.View.viewForNode(v.node())).toBeNull();
+      expect(Z.View.forNode(v.node())).toBeNull();
     });
   });
 

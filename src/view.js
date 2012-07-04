@@ -16,7 +16,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   
   // Internal: A cache of concrete view instances. Every `Z.View` object that
   // gets created is added to this cache keyed by its `objectId`. This cache is
-  // used by the `viewForNode` method to look up a view instance based on a DOM
+  // used by the `forNode` method to look up a view instance based on a DOM
   // node. When views are destroyed they are removed from this cache.
   views = {};
 
@@ -127,7 +127,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns a `Z.View` instance or `null` if the node doesn't belong to a
   //   view.
-  this.def('viewForNode', function(node) {
+  this.def('forNode', function(node) {
     while (node && !viewClassRe.test(node.className)) {
       node = node.parentNode;
     }
@@ -136,8 +136,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   });
 
   // Internal: Adds the new view instance to the internal cache used by the
-  // `viewForNode` method and creates any subviews defined by the `subview`
-  // method.
+  // `forNode` method and creates any subviews defined by the `subview` method.
   this.def('initialize', function(props) {
     var self = this, subviewTypes = this.__subviewTypes__;
 
@@ -159,7 +158,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
   // Public: Destroys the view by removing it from its `superview` and
   // recursively calling `destroy` on all `subviews`. The view instance is also
-  // removed from the internal cache used by `viewForNode`.
+  // removed from the internal cache used by `forNode`.
   //
   // Returns the receiver.
   this.def('destroy', function() {
