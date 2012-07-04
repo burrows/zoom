@@ -23,11 +23,8 @@ Child3 = Z.View.extend(function() {
 });
 
 Parent = Z.View.extend(function() {
-  this.def('initialize', function(props) {
-    this.supr(props);
-    this.addSubview(Child1.create());
-    this.addSubview(Child2.create());
-  });
+  this.subview('sv1', Child1);
+  this.subview('sv2', Child2);
 });
 
 describe('Z.App', function() {
@@ -42,6 +39,7 @@ describe('Z.App', function() {
 
   afterEach(function() {
     document.body.removeChild(container);
+    app.stop();
   });
 
   describe('`container` property', function() {
@@ -333,6 +331,65 @@ describe('Z.App', function() {
 
         app.makeKeyWindow(window1);
         expect(invoked).toBe(true);
+      });
+
+      it('should return the given window', function() {
+        expect(app.makeKeyWindow(window1)).toBe(window1);
+      });
+    });
+  });
+
+  describe('.dispatchEvent', function() {
+    var mainWin, win1;
+
+    beforeEach(function() {
+      app.addWindow(Z.Window.create(Parent));
+      app.start();
+
+      mainWin = app.mainWindow();
+      win1 = app.windows().at(1);
+    });
+
+    describe('with a `Z.MouseEvent`', function() {
+      it('should make the window that a mouse down event occurs over the key window if its not already', function() {
+        var e = Z.MouseEvent.create({
+          kind   : Z.LeftMouseDown,
+          window : win1,
+          view   : win1.contentView(),
+          node   : win1.get('contentView.sv1.node')
+        });
+
+        expect(app.keyWindow()).toBe(mainWin);
+        expect(mainWin.isKey()).toBe(true);
+        expect(win1.isKey()).toBe(false);
+        app.dispatchEvent(e);
+        expect(app.keyWindow()).toBe(win1);
+        expect(mainWin.isKey()).toBe(false);
+        expect(win1.isKey()).toBe(true);
+      });
+
+      it("should forward the event object to the window's `dispatchEvent` method", function() {
+        var e = Z.MouseEvent.create({
+          kind   : Z.LeftMouseDown,
+          window : mainWin,
+          view   : mainWin.contentView(),
+          node   : mainWin.get('contentView.sv1.node')
+        });
+
+        spyOn(mainWin, 'dispatchEvent');
+        app.dispatchEvent(e);
+        expect(mainWin.dispatchEvent).toHaveBeenCalledWith(e);
+      });
+    });
+
+    describe('with a `Z.KeyEvent`', function() {
+      it("should forward the event object to the key window's `dispatchEvent` method", function() {
+        var e = Z.KeyEvent.create({kind: Z.KeyDown});
+
+        app.makeKeyWindow(win1);
+        spyOn(win1, 'dispatchEvent');
+        app.dispatchEvent(e);
+        expect(win1.dispatchEvent).toHaveBeenCalledWith(e);
       });
     });
   });

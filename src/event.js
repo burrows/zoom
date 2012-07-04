@@ -14,7 +14,8 @@ Z.Event = Z.Object.extend(function() {
 
   function mouseEvent(native) {
     var type = native.type,
-        view = Z.View.viewForNode(native.target),
+        node = native.target,
+        view = Z.View.viewForNode(node),
         kind, button;
 
     if (type === 'mousemove') { kind = Z.MouseMove; }
@@ -28,14 +29,15 @@ Z.Event = Z.Object.extend(function() {
 
     return Z.MouseEvent.create({
       kind        : kind,
-      window      : view.window(),
       isAlt       : native.altKey,
       isCtrl      : native.ctrlKey,
       isMeta      : native.metaKey,
       isShift     : native.shiftKey,
       timestamp   : new Date(),
       nativeEvent : native,
+      window      : view.window(),
       view        : view,
+      node        : node,
       x           : native.clientX,
       y           : native.clientY
     });
@@ -44,7 +46,6 @@ Z.Event = Z.Object.extend(function() {
   function keyEvent(native) {
     return Z.KeyEvent.create({
       kind        : native.type === 'keydown' ? Z.KeyDown : Z.KeyUp,
-      window      : null,
       isAlt       : native.altKey,
       isCtrl      : native.ctrlKey,
       isMeta      : native.metaKey,
@@ -64,7 +65,6 @@ Z.Event = Z.Object.extend(function() {
   });
 
   this.prop('kind');
-  this.prop('window');
   this.prop('isAlt');
   this.prop('isCtrl');
   this.prop('isMeta');
@@ -79,7 +79,9 @@ Z.Event = Z.Object.extend(function() {
 });
 
 Z.MouseEvent = Z.Event.extend(function() {
+  this.prop('window');
   this.prop('view');
+  this.prop('node');
   this.prop('x');
   this.prop('y');
 

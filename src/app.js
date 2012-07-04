@@ -169,7 +169,7 @@ Z.App = Z.Object.extend(function() {
   //
   // window - A `Z.Window` instance to make the new key window.
   //
-  // Returns the receiver.
+  // Returns `window`.
   this.def('makeKeyWindow', function(window) {
     var keyWindow = this.keyWindow(), windows = this.windows();
 
@@ -178,26 +178,25 @@ Z.App = Z.Object.extend(function() {
                             this.typeName()));
     }
 
-    if (keyWindow === window) { return this; }
+    if (keyWindow !== window) {
+      keyWindow.resignKeyWindow();
+      this.keyWindow(window);
+      window.becomeKeyWindow();
+    }
 
-    keyWindow.resignKeyWindow();
-    this.keyWindow(window);
-    window.becomeKeyWindow();
-
-    return this;
+    return window;
   });
 
-  //this.def('dispatchEvent', function(e) {
-  //  var handled = false;
+  this.def('dispatchEvent', function(e) {
+    var keyWin = this.keyWindow();
 
-  //  if (e.isA(Z.MouseEvent)) {
-  //    handled = dispatchMouseEvent.call(this, e);
-  //  }
-  //  else if (e.isA(Z.KeyEvent)) {
-  //    handled = dispatchKeyEvent.call(this, e);
-  //  }
+    if (e.isA(Z.MouseEvent) && e.kind() === Z.LeftMouseDown) {
+      keyWin = this.makeKeyWindow(e.window());
+    }
 
-  //  // FIXME: send event to statechart unless it was handled
-  //});
+    keyWin.dispatchEvent(e);
+
+    // FIXME: send event to statechart unless it was handled
+  });
 });
 

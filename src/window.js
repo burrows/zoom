@@ -142,5 +142,8 @@ Z.Window = Z.View.extend(function() {
 
     return true;
   });
+
+  this.def('dispatchEvent', function(e) {
+  });
 });
 
