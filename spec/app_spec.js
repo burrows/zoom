@@ -38,14 +38,15 @@ describe('Z.App', function() {
   });
 
   afterEach(function() {
-    document.body.removeChild(container);
     app.stop();
+    document.body.removeChild(container);
   });
 
   describe('`container` property', function() {
     it('should default to `document.body`', function() {
-      var app = Z.App.create(Z.View);
-      expect(app.container()).toBe(document.body);
+      var a = Z.App.create(Z.View);
+      expect(a.container()).toBe(document.body);
+      a.stop();
     });
   });
 
@@ -65,8 +66,9 @@ describe('Z.App', function() {
     });
 
     it('should set the second argument as the container property', function() {
-      var app = Z.App.create(Parent, container);
+      var a = Z.App.create(Parent, container);
       expect(app.container()).toBe(container);
+      a.stop();
     });
   });
 

@@ -30,6 +30,8 @@ describe('Z.RunLoop', function() {
   });
 
   afterEach(function() {
+    app1.stop();
+    app2.stop();
     document.body.removeChild(container1);
     document.body.removeChild(container2);
   });
@@ -46,6 +48,7 @@ describe('Z.RunLoop', function() {
     o2 = Test.create();
 
     beforeEach(function() { invocations = []; Z.RunLoop.start(); });
+    afterEach(function() { invocations = []; Z.RunLoop.stop(); });
 
     it('should invoke the given method on the given object at the end of the next run loop', function() {
       Z.RunLoop.once(o1, 'foo');
@@ -113,6 +116,8 @@ describe('Z.RunLoop', function() {
       Z.RunLoop.run();
       expect(app1.displayWindows).toHaveBeenCalled();
       expect(app2.displayWindows).toHaveBeenCalled();
+      Z.RunLoop.deregisterApp(app1);
+      Z.RunLoop.deregisterApp(app2);
     });
   });
 });
