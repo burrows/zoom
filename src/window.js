@@ -1,6 +1,25 @@
 // `Z.Window` objects provide a root for `Z.View` hierarchies and accept and
 // distribute events from the app that manages them.
 Z.Window = Z.View.extend(function() {
+  // Internal: Bubbles the given event up the superview chain of the given view
+  // until a view is found that both handles the event an whose event handler
+  // returns `true`.
+  //
+  // e - A `Z.Event` object.
+  // view - The `Z.View` object to start the bubbling.
+  //
+  // Returns `true` if the event was handled and `false` otherwise.
+  function bubbleEvent(e, view) {
+    var handled = false, handler = e.handler();
+
+    while (view && !handled) {
+      if (view.respondTo(handler)) { handled = view[handler](e) === true; }
+      view = view.superview();
+    }
+
+    return handled;
+  }
+
   // Public: A property that returns the `Z.App` object that owns the window.
   this.prop('app');
 
@@ -148,17 +167,18 @@ Z.Window = Z.View.extend(function() {
     return true;
   });
 
-  function bubbleEvent(e, view) {
-    var handled = false, handler = e.handler();
-
-    while (view && !handled) {
-      if (view.respondTo(handler)) { handled = view[handler](e) === true; }
-      view = view.superview();
-    }
-
-    return handled;
-  }
-
+  // Internal: Dispatches the given event to the appropriate view based on the
+  // event type and the current key view.
+  //
+  // Mouse events are sent to the view over which the event occurred. If the
+  // event is a mouse down event, then an attempt is made to change the key view
+  // to the target view or one of its ancestors.
+  //
+  // Key events are sent to the current key view.
+  //
+  // e - A `Z.Event` object.
+  //
+  // Returns `true` if the event was handled and `false` otherwise.
   this.def('dispatchEvent', function(e) {
     var handled = false, view;
 
