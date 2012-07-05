@@ -149,6 +149,39 @@ Z.Window = Z.View.extend(function() {
   });
 
   this.def('dispatchEvent', function(e) {
+    var keyView = this.keyView() || this,
+        handled = false,
+        handler = e.handler(),
+        view;
+
+    if (e.isA(Z.MouseEvent)) {
+      // change key view on mouse down events
+      if (e.kind() === Z.LeftMouseDown && keyView !== view) {
+        view = e.view();
+
+        while (view) {
+          if (view.acceptsKeyView()) { this.makeKeyView(view); break; }
+          else { view = view.superview(); }
+        }
+      }
+
+      view = e.view();
+
+      while (view && !handled) {
+        if (view.respondTo(handler)) { handled = view[handler](e) === true; }
+        view = view.superview();
+      }
+    }
+    else if (e.isA(Z.KeyEvent)) {
+      view = keyView;
+
+      while (view && !handled) {
+        if (view.respondTo(handler)) { handled = view[handler](e) === true; }
+        view = view.superview();
+      }
+    }
+
+    return handled;
   });
 });
 

@@ -91,7 +91,9 @@ Z.MouseEvent = Z.Event.extend(function() {
   this.prop('x');
   this.prop('y');
 
-  this.def('handler', function() { return this.supr().replace(/^left/, ''); });
+  this.def('handler', function() {
+    return this.supr().replace(/^leftM/, 'm');
+  });
 });
 
 Z.KeyEvent = Z.Event.extend(function() {
