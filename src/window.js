@@ -148,15 +148,23 @@ Z.Window = Z.View.extend(function() {
     return true;
   });
 
+  function bubbleEvent(e, view) {
+    var handled = false, handler = e.handler();
+
+    while (view && !handled) {
+      if (view.respondTo(handler)) { handled = view[handler](e) === true; }
+      view = view.superview();
+    }
+
+    return handled;
+  }
+
   this.def('dispatchEvent', function(e) {
-    var keyView = this.keyView() || this,
-        handled = false,
-        handler = e.handler(),
-        view;
+    var handled = false, view;
 
     if (e.isA(Z.MouseEvent)) {
-      // change key view on mouse down events
-      if (e.kind() === Z.LeftMouseDown && keyView !== view) {
+      // attempt to change the key view on mouse down events
+      if (e.kind() === Z.LeftMouseDown && this.keyView() !== e.view()) {
         view = e.view();
 
         while (view) {
@@ -165,20 +173,10 @@ Z.Window = Z.View.extend(function() {
         }
       }
 
-      view = e.view();
-
-      while (view && !handled) {
-        if (view.respondTo(handler)) { handled = view[handler](e) === true; }
-        view = view.superview();
-      }
+      handled = bubbleEvent(e, e.view());
     }
     else if (e.isA(Z.KeyEvent)) {
-      view = keyView;
-
-      while (view && !handled) {
-        if (view.respondTo(handler)) { handled = view[handler](e) === true; }
-        view = view.superview();
-      }
+      handled = bubbleEvent(e, this.keyView() || this);
     }
 
     return handled;
