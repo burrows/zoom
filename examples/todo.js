@@ -95,6 +95,8 @@ Todo.Todo = Z.Model.extend(function() {
 Todo.Tag = Z.Model.extend(function() {
   this.attr('name', 'string');
   this.hasMany('todos', 'Todo.Todo', {inverse: 'tags'});
+
+  this.prop('isSelected', {def: false});
 });
 
 Z.Model.mapper = Todo.LocalStorageMapper.create();
@@ -113,7 +115,7 @@ Todo.controller = {
     var todo, tags, tag, m;
 
     if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
-      tags = Z.A(m[1].split(/\s*,\s*/)).map(function(name) {
+      tags = Z.Array.create(m[1].split(/\s*,\s*/)).map(function(name) {
         tag = Todo.allTags.find(function(t) { return t.name() === name; });
         return tag || Todo.Tag.create({name: name});
       });
@@ -125,30 +127,34 @@ Todo.controller = {
 
     Z.log(todo, todo.errors());
 
-    Todo.rootView.set('mainView.inputView.value', null);
+    Todo.app.set('mainWindow.contentView.contentView.inputView.value', null)
   },
 
   deleteTodo: function(todo) {
     todo.destroy();
   },
 
-  updateIsDone: function(todo, isDone) {
-    todo.isDone(isDone);
+  toggleIsDone: function(todo) {
+    todo.isDone(!todo.isDone());
     todo.save();
   },
 
-  selectTag: function(tag) {
-    selectedTags.push(tag);
-    this.filterTodos();
-  },
-
-  deselectTag: function(tag) {
-    selectedTags.remove(tag);
+  toggleTagSelection: function(tag) {
+    if (selectedTags.contains(tag)) {
+      tag.isSelected(false);
+      selectedTags.remove(tag);
+    }
+    else {
+      tag.isSelected(true);
+      selectedTags.push(tag);
+    }
     this.filterTodos();
   },
 
   filterTodos: function() {
-    var oldQuery = Todo.rootView.get('mainView.todoListView.items'), newQuery;
+    var todoListView = Todo.app.get('mainWindow.contentView.contentView.todoListView'),
+        oldQuery     = todoListView.content(),
+        newQuery;
 
     newQuery = selectedTags.size() === 0 ? Todo.allTodos : Todo.Todo.query({
       matchFn: function(todo) {
@@ -162,7 +168,7 @@ Todo.controller = {
 
     if (oldQuery !== Todo.allTodos) { oldQuery.destroy(); }
 
-    //Todo.rootView.set('mainView.todoListView.items', newQuery); 
+    todoListView.content(newQuery);
   }
 };
 
@@ -170,57 +176,36 @@ Todo.controller = {
 // views
 //------------------------------------------------------------------------------
 
-//Todo.TagView = Z.View.extend(function() {
-//  this.prop('content');
-//  this.prop('isSelected', { def: false });
-//  this.classes().push('tag-view');
-//
-//  this.def('didDisplay', function() {
-//    this.supr();
-//    this.observe('content.todos.size', this, 'updateNumTodos');
-//    this.observe('isSelected', this, 'updateIsSelected');
-//  });
-//
-//  this.def('didRemove', function() {
-//    this.supr();
-//    this.stopObserving('content.todos.size', this, 'updateNumTodos');
-//    this.stopObserving('isSelected', this, 'updateIsSelected');
-//  });
-//
-//  this.def('renderContent', function() {
-//    return '<span class="badge">' + this.get('content.todos.size') + '</span> ' + this.get('content.name');
-//  });
-//
-//  this.def('updateNumTodos', function() {
-//    $(this.element()).find('span.badge').text(this.get('content.todos.size'));
-//  });
-//
-//  this.def('updateIsSelected', function() {
-//    $(this.element()).toggleClass('selected', this.isSelected());
-//  });
-//
-//  this.def('handleClickEvent', function(evt) {
-//    this.isSelected(!this.isSelected());
-//
-//    if (this.isSelected()) {
-//      Todo.controller.selectTag(this.content());
-//    }
-//    else {
-//      Todo.controller.deselectTag(this.content());
-//    }
-//  });
-//});
-
 Todo.TagView = Z.View.extend(function() {
   this.prop('content');
+
+  this.def('tag', function() { return 'li'; });
+
+  this.def('displayPaths', function() {
+    return this.supr().concat('content.isSelected');
+  });
+
   this.def('render', function() {
-    this.node().innerHTML = '<span class="badge">' +
+    var node = this.node(),
+        isSelected = this.get('content.isSelected'),
+        badgeClasses = ['badge'];
+
+     if (isSelected) { badgeClasses.push('badge-info'); }
+
+    node.innerHTML = Z.fmt('<span class="%@">', badgeClasses.join(' ')) +
       this.get('content.todos.size') + '</span> ' + this.get('content.name');
+  });
+
+  this.def('mouseDown', function(e) {
+    Todo.controller.toggleTagSelection(this.content());
   });
 });
 
 Todo.TagListView = Z.ListView.extend(function() {
   this.def('itemViewType', function() { return Todo.TagView; });
+  this.def('classes', function() {
+    return this.supr().concat('tag-list-view');
+  });
 });
 
 Todo.SidebarView = Z.View.extend(function() {
@@ -237,117 +222,107 @@ Todo.SidebarView = Z.View.extend(function() {
 Todo.InputView = Z.View.extend(function() {
   this.prop('value');
 
-  this.def('displayPaths', function() { return this.supr().concat('value'); });
+  this.def('displayPaths', function() {  return this.supr().concat('value'); });
+
+  this.def('acceptsKeyView', function() { return true; });
 
   this.def('render', function() {
-    var value = this.value();
-    this.node().innerHTML = Z.fmt('<input type="text" placeholder="Enter a Todo" value="%@"/>', value);
+    var value = this.value(), node = this.node(), input;
+
+    if (!node.hasChildNodes()) {
+      node.innerHTML = '<input type="text" placeholder="Enter a Todo"/>';
+    }
+
+    input = node.firstChild;
+    if (input.value !== value) { input.value = value; }
+
+    if (this.isKey()) {
+      if (document.activeElement !== input) { input.focus(); }
+    }
   });
 
-  //this.def('handleKeyupEvent', function(evt) {
-  //  var input = $(this.element()).find('input'),
-  //      val   = input.val();
+  this.def('keyDown', function(e) {
+    var input = this.node().firstChild;
+    if (input && document.activeElement !== input) { input.focus(); }
+    if (e.key() === 13) { Todo.controller.createTodo(this.value()); }
+    return true;
+  });
 
-  //  if (val !== this.value()) { this.value(input.val()); }
-  //});
-
-  //this.def('handleKeydownEvent', function(evt) {
-  //  var key = evt.keyCode;
-
-  //  if (key === 13) {
-  //    Todo.controller.createTodo(this.value());
-  //  }
-  //});
+  this.def('keyUp', function(e) {
+    var input = this.node().firstChild;
+    if (input) { this.value(input.value); }
+    return true;
+  });
 });
-//
-//Todo.TodoView = Z.View.extend(function() {
-//  this.prop('content');
-//  this.classes().push('todo-view');
-//
-//  this.def('didDisplay', function() {
-//    this.supr();
-//    this.observe('content.isDone', this, 'updateIsDone');
-//    this.observe('content.tags.@', this, 'updateTags');
-//  });
-//
-//  this.def('didRemove', function() {
-//    this.supr();
-//    this.stopObserving('content.isDone', this, 'updateIsDone');
-//    this.stopObserving('content.tags.@', this, 'updateTags');
-//  });
-//
-//  this.def('renderContent', function() {
-//    var todo = this.content();
-//
-//    return [
-//      Z.fmt('<td><input type="checkbox" %@ /></td>', todo.isDone() ? 'checked' : ''),
-//      Z.fmt('<td class="title%@">%@</td>', todo.isDone() ? ' done' : '', todo.title()),
-//      Z.fmt('<td class="tags">%@</td>', this.renderTags()),
-//      '<td><i class="icon-remove-sign"></i></td>'
-//    ].join('');
-//  });
-//
-//  this.def('renderTags', function() {
-//    return this.get('content.tags').map(function(tag) {
-//      return '<span class="label label-info">' + tag.name() + '</span>';
-//    }).join('')
-//  });
-//
-//  this.def('updateIsDone', function() {
-//    var elem   = $(this.element()),
-//        input  = elem.find('input'),
-//        title  = elem.find('.title'),
-//        isDone = this.get('content.isDone');
-//
-//    if (isDone) {
-//      input.attr('checked', 'checked');
-//      title.addClass('done');
-//    }
-//    else {
-//      input.attr('checked', null);
-//      title.removeClass('done');
-//    }
-//  });
-//
-//  this.def('updateTags', function() {
-//    var elem = $(this.element()).find('.tags');
-//    elem.text(this.renderTags());
-//  });
-//
-//  this.def('handleClickEvent', function(evt) {
-//    var elem = $(evt.target);
-//
-//    if (elem.is('input')) {
-//      Todo.controller.updateIsDone(this.content(), !!elem.attr('checked'));
-//    }
-//    else if (elem.is('i.icon-remove-sign')) {
-//      Todo.controller.deleteTodo(this.content());
-//    }
-//  })
-//});
-//
-//Todo.TodoListView = Z.ListView.extend(function() {
-//  this.classes().push('table', 'table-striped');
-//  this.tag('table');
-//  this.itemTag('tr');
-//  this.itemView(Todo.TodoView);
-//});
+
+Todo.TodoView = Z.View.extend(function() {
+  this.prop('content');
+
+  this.def('tag', function() { return 'tr'; });
+
+  this.def('classes', function() {
+    return this.supr().concat('todo-view');
+  });
+
+  this.def('displayPaths', function() {
+    return this.supr().concat('content.isDone', 'content.tags.@');
+  });
+
+  this.def('render', function() {
+    var node = this.node(), todo = this.content(), tags;
+
+    tags = todo.tags().map(function(tag) {
+      return '<span class="label label-info">' + tag.name() + '</span>';
+    }).join('')
+
+    node.innerHTML = [
+      Z.fmt('<td><input type="checkbox" %@ /></td>', todo.isDone() ? 'checked' : ''),
+      Z.fmt('<td class="title%@">%@</td>', todo.isDone() ? ' done' : '', todo.title()),
+      Z.fmt('<td class="tags">%@</td>', tags),
+      '<td><i class="icon-remove-sign"></i></td>'
+    ].join('');
+  });
+
+  this.def('mouseDown', function(e) {
+    var elem = e.node();
+
+    if (elem.nodeName === 'INPUT') {
+      Todo.controller.toggleIsDone(this.content());
+    }
+    else if (elem.className.match(/\bicon-remove-sign\b/)) {
+      Todo.controller.deleteTodo(this.content());
+    }
+  });
+});
+
+Todo.TodoListView = Z.ListView.extend(function() {
+  this.def('classes', function() {
+    return this.supr().concat('table', 'table-striped');
+  });
+  this.def('tag', function() { return 'table'; });
+  this.def('itemViewType', function() { return Todo.TodoView; });
+});
 
 Todo.ContentView = Z.View.extend(function() {
+  this.def('classes', function() {
+    return this.supr().concat('span8');
+  });
   this.subview('inputView', Todo.InputView);
-  //this.subview('todoListView', Todo.TodoListView);
+  this.subview('todoListView', Todo.TodoListView);
 });
 
 Todo.MainView = Z.View.extend(function() {
+  this.def('classes', function() {
+    return this.supr().concat('row');
+  });
   this.subview('sidebarView', Todo.SidebarView);
   this.subview('contentView', Todo.ContentView);
 });
 
 document.addEventListener('DOMContentLoaded', function() {
   Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
-
   Todo.app.set('mainWindow.contentView.sidebarView.tagListView.content', Todo.allTags);
-  
+  Todo.app.set('mainWindow.contentView.contentView.todoListView.content', Todo.allTodos);
   Todo.app.start();
 });
 
