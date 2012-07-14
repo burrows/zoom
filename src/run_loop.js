@@ -46,11 +46,11 @@ Z.RunLoop = Z.Object.create().open(function() {
   }
 
   function processMouseEvent(e) {
-    var event = Z.Event.fromNative(e), view = event.view();
+    var view = Z.View.forNode(e.target);
 
     if (!view) { return; }
 
-    view.get('window.app').dispatchEvent(event);
+    view.get('window.app').dispatchEvent(Z.Event.fromNative(e));
     run();
   }
 

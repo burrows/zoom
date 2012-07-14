@@ -51,7 +51,8 @@ Z.Event = Z.Object.extend(function() {
       isMeta      : native.metaKey,
       isShift     : native.shiftKey,
       timestamp   : new Date(),
-      nativeEvent : native
+      nativeEvent : native,
+      key         : native.which
     });
   }
 
@@ -97,7 +98,6 @@ Z.MouseEvent = Z.Event.extend(function() {
 });
 
 Z.KeyEvent = Z.Event.extend(function() {
-  this.prop('char');
   this.prop('key');
 });
 
