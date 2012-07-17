@@ -1,7 +1,17 @@
 * investigate notification types on array item observers, and array and
   hash @ property
-* fire option doesn't work that well with array @ observers
 * implement named finders
 * batched property changes
 * model docs
 * limit Z.inspect recursion
+* binding system
+* statechart
+* Z.MouseDragged events
+* split out Z.App, Z.Window, and Z.View out into a UI library
+* build basic UI components
+  * text field
+  * button
+  * container view
+  * checkbox
+  * draggable windows
+  * modal windows
