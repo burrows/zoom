@@ -1,33 +1,31 @@
-// The `Z.RunLoop` singleton object is the mechanism that allows the execution
-// of code to be deferred for a short amount of time until an application's data
-// bindings have "stabilized".
+// The `Z.RunLoop` singleton object processes browser events by dispatching them
+// to the appropriate `Z.App` object and triggers view displays when they occur.
 //
-// Zoom's KVO system operates synchronously, that is when a particular observed
-// property is set, any objects observing that property are notified and have
-// their handlers executed before the call to `Z.Object.set` returns. This is
-// simple and straightforward, but could potentially lead to performance
-// problems if relied upon to propagate data between an application's model,
-// controller, and view layers. Instead, property bindings should be used to
-// serve this purpose since they are flushed all at once, after the current
-// thread of execution has completed. This means that if a property changes many
-// times in a single thread of execution (say a `total` computed property that
-// sums up a set of properties on associated objects that are all being updated)
-// any other properties that are bound to it only get updated once.
-//
-// The fact that bindings are propagated this way has particular implications
-// on the view layer. In the case of a DOM application, modifying the DOM is
-// comparatively expensive to just about anything else the application will do.
-// This means that we want to minimize touching the DOM as much as possible. The
-// run loop allows us to do this by only redrawing views once, even when
-// multiple views or multiple properties of a view have changed.
+// The Zoom view system is designed to buffer all DOM modifications -
+// manipulating a view `subviews` array for instance does not actually make any
+// immediate changes to the DOM structure the views are managing. The DOM is not
+// updated until the `Z.View.display` method is later invoked. But when does the
+// `display` method get invoked? That logic is handled by the run loop, it is
+// responsible for triggering view displays when it observes an event (i.e. a
+// mouse event, or an ajax request completing). The reason for this indirection
+// is that manipulating the DOM is expensive and we want to avoid doing it as
+// much as possible. We minimize interaction with the DOM by allowing changes to
+// "batch up" and then update the DOM all in one go after an event (which
+// triggered the view changes in the first place) has been fully processed.
 Z.RunLoop = Z.Object.create().open(function() {
-  var self  = this,
-      apps  = Z.A(),
-      queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+  var self = this, apps, queue;
 
+  // Internal: The list of `Z.App` objects that are currently registered with
+  // the run loop.
+  apps = Z.A();
+
+  // Internal: A hash of function objects queued up with the `once` method.
+  queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+
+  // Internal: Performs a single run of the run loop. This includes triggering
+  // displays of each window as well as executing functions queued up with the
+  // `once` method.
   function run() {
-    // TODO: Z.Binding.flush();
-
     // notify all apps to display their windows if necessary
     apps.invoke('displayWindows');
 
@@ -39,12 +37,16 @@ Z.RunLoop = Z.Object.create().open(function() {
     queue.clear();
   }
 
+  // Internal: The key event listener - each native key event is converted to a
+  // `Z.Event` object and dispatched to each registered app.
   function processKeyEvent(e) {
     var event = Z.Event.fromNative(e);
     apps.each(function(app) { app.dispatchEvent(event); });
     run();
   }
 
+  // Internal: The mouse event listener - each native key event is converted to
+  // a `Z.Event` object and dispatched to the app over which the event occurred.
   function processMouseEvent(e) {
     var view = Z.View.forNode(e.target);
 
@@ -54,42 +56,19 @@ Z.RunLoop = Z.Object.create().open(function() {
     run();
   }
 
-  function addKeyListeners() {
-    Z.Event.keyEvents.each(function(event) {
-      document.addEventListener(event, processKeyEvent, false);
-    });
-  }
-
-  function removeKeyListeners() {
-    Z.Event.keyEvents.each(function(event) {
-      document.removeEventListener(event, processKeyEvent, false);
-    });
-  }
-
+  // Internal: Registers a mouse listener for the given app's `container` node.
   function addMouseListeners(app) {
-    var elem = app.container();
-
-    Z.Event.mouseEvents.each(function(event) {
-      elem.addEventListener(event, processMouseEvent, false);
+    apps.each(function(app) {
+      Z.Event.registerMouseListener(app.container(), processMouseEvent);
     });
   }
 
+  // Internal: Deregisters the mouse listener for the given app's `container`
+  // node.
   function removeMouseListeners(app) {
-    var elem = app.container();
-
-    Z.Event.mouseEvents.each(function(event) {
-      elem.removeEventListener(event, processMouseEvent, false);
+    apps.each(function(app) {
+      Z.Event.deregisterMouseListener(app.container(), processMouseEvent);
     });
-  }
-
-  function startListening() {
-    addKeyListeners();
-    apps.each(addMouseListeners);
-  }
-
-  function stopListening() {
-    removeKeyListeners();
-    apps.each(removeMouseListeners);
   }
 
   // Public: A boolean property indicating whether the run loop is currently
@@ -123,7 +102,8 @@ Z.RunLoop = Z.Object.create().open(function() {
   // Returns the receiver.
   this.def('start', function() {
     if (!this.isRunning()) {
-      startListening();
+      Z.Event.registerKeyListener(processKeyEvent);
+      addMouseListeners();
       this.isRunning(true);
     }
 
@@ -137,7 +117,8 @@ Z.RunLoop = Z.Object.create().open(function() {
   // Returns the receiver.
   this.def('stop', function() {
     if (this.isRunning()) {
-      stopListening();
+      Z.Event.deregisterKeyListener(processKeyEvent);
+      removeMouseListeners();
       this.isRunning(false);
     }
 
