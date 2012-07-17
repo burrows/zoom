@@ -13,7 +13,7 @@
 // "batch up" and then update the DOM all in one go after an event (which
 // triggered the view changes in the first place) has been fully processed.
 Z.RunLoop = Z.Object.create().open(function() {
-  var self = this, apps, queue;
+  var self = this, slice = Array.prototype.slice, apps, queue, ajaxSend;
 
   // Internal: The list of `Z.App` objects that are currently registered with
   // the run loop.
@@ -71,6 +71,32 @@ Z.RunLoop = Z.Object.create().open(function() {
     });
   }
 
+  // Internal: Monkey patches `XMLHttpRequest.prototype.send` to trigger a run
+  // loop every time an ajax request completes.
+  function wrapAjaxRequests() {
+    if (typeof XMLHttpRequest === 'undefined') { return; }
+
+    ajaxSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.send = function() {
+      var xhr = this, orig = this.onreadystatechange;
+
+      this.onreadystatechange = function() {
+        var state = xhr.readyState, r = orig();
+        if (state === 4) { run(); }
+        return r;
+      };
+
+      return ajaxSend.apply(this, slice.call(arguments));
+    };
+  }
+
+  // Internal: Removes the `XMLHttpRequest.prototype.send` monkey patch.
+  function unwrapAjaxRequests() {
+    if (typeof XMLHttpRequest === 'undefined') { return; }
+    XMLHttpRequest.prototype.send = ajaxSend;
+  }
+
   // Public: A boolean property indicating whether the run loop is currently
   // running.
   this.prop('isRunning', { def: false });
@@ -104,6 +130,7 @@ Z.RunLoop = Z.Object.create().open(function() {
     if (!this.isRunning()) {
       Z.Event.registerKeyListener(processKeyEvent);
       addMouseListeners();
+      wrapAjaxRequests();
       this.isRunning(true);
     }
 
@@ -119,6 +146,7 @@ Z.RunLoop = Z.Object.create().open(function() {
     if (this.isRunning()) {
       Z.Event.deregisterKeyListener(processKeyEvent);
       removeMouseListeners();
+      unwrapAjaxRequests();
       this.isRunning(false);
     }
 
