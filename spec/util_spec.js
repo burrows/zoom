@@ -76,9 +76,9 @@ describe('Z.type', function() {
     expect(Z.type(new RegExp())).toBe('regexp');
   });
 
-  it("should return the string 'domelem' when passed a DOM element", function() {
-    expect(Z.type(document.body)).toBe('domelem');
-    expect(Z.type(document.createElement('p'))).toBe('domelem');
+  it("should return the string 'node' when passed a DOM node", function() {
+    expect(Z.type(document.body)).toBe('node');
+    expect(Z.type(document.createElement('p'))).toBe('node');
   });
 
   it("should return the string 'object' when passed an Object instance", function() {

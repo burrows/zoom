@@ -218,7 +218,7 @@ Z.inspect = function(o) {
       });
 
       return recursed ? '[...]' : '[' + a.join(', ') + ']';
-    case 'domelem':
+    case 'node':
       a = [];
 
       if (o.id && o.id.length > 0) {
@@ -416,11 +416,11 @@ Z.type = function(o) {
     case '[object RegExp]'    : return 'regexp';
     case '[object Object]'    :
       if (o.hasOwnProperty('callee')) { return 'arguments'; } // ie fallback
-      else if (o.nodeType === 1) { return 'domelem'; }        // domino hack
+      else if (o.nodeType === 1) { return 'node'; }           // domino hack
       else { return o.isZObject === true ? 'zobject' : 'object'; }
       break;
     default:
-      return o.nodeType === 1 ? 'domelem' : 'unknown';
+      return o.nodeType === 1 ? 'node' : 'unknown';
   }
 };
 
