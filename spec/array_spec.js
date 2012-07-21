@@ -887,13 +887,13 @@ describe('Z.Array `@` property', function() {
   it('should notify observers when items are replaced in the array', function() {
     a.at(0, 19);
     expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('replace');
+    expect(observer.notifications[0].type).toEqual('update');
     expect(observer.notifications[0].range).toEqual([0, 1]);
     expect(observer.notifications[0].previous).toEq(Z.A(0));
     expect(observer.notifications[0].current).toEq(Z.A(19));
     a.splice(2, 4, 20, 30, 40, 50);
     expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toEqual('replace');
+    expect(observer.notifications[1].type).toEqual('update');
     expect(observer.notifications[1].range).toEqual([2, 4]);
     expect(observer.notifications[1].previous).toEq(Z.A(2, 3, 4, 5));
     expect(observer.notifications[1].current).toEq(Z.A(20, 30, 40, 50));
@@ -902,7 +902,7 @@ describe('Z.Array `@` property', function() {
   it('should notify observers when items are both replaced and inserted', function() {
     a.splice(2, 2, 20, 30, 40, 50);
     expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[0].type).toEqual('replace');
+    expect(observer.notifications[0].type).toEqual('update');
     expect(observer.notifications[0].range).toEqual([2, 2]);
     expect(observer.notifications[0].previous).toEq(Z.A(2, 3));
     expect(observer.notifications[0].current).toEq(Z.A(20, 30));
@@ -915,7 +915,7 @@ describe('Z.Array `@` property', function() {
   it('should notify observers when items are both replaced and removed', function() {
     a.splice(2, 4, 20, 30);
     expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[0].type).toEqual('replace');
+    expect(observer.notifications[0].type).toEqual('update');
     expect(observer.notifications[0].range).toEqual([2, 2]);
     expect(observer.notifications[0].previous).toEq(Z.A(2, 3));
     expect(observer.notifications[0].current).toEq(Z.A(20, 30));

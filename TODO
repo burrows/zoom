@@ -1,5 +1,3 @@
-* investigate notification types on array item observers, and array and
-  hash @ property
 * implement named finders
 * batched property changes
 * model docs

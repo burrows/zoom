@@ -45,7 +45,7 @@ var slice = Array.prototype.slice;
 //   // {type: 'remove', path: '@', observee: #<Z.Array:95 [...]>, range: [2, 1]}
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   // Internal: Registers item observers on the given items. Item observers are
-  // created when an unknown property is observed on an array
+  // created when an unknown property is observed on an array.
   //
   // items - The items to add observers to.
   //
@@ -95,7 +95,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   //   the array.
   // * Prepares notification objects for item observers.
   //
-  // type - The type of mutation that will occur (insert, remove, or replace).
+  // type - The type of mutation that will occur (insert, remove, or update).
   // idx  - The index in the array where the mutation will start.
   // n    - The number of items, starting from `idx` that are affected by the
   //        mutation.
@@ -128,11 +128,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
         });
         deregisterItemObservers.call(this, prevItems.__z_items__);
         break;
-      case 'replace':
+      case 'update':
         if (idx === 0)       { this.willChangeProperty('first'); }
         if (idx === len - 1) { this.willChangeProperty('last'); }
         this.willChangeProperty('@', {
-          type     : 'replace',
+          type     : 'update',
           range    : [idx, n],
           previous : prevItems
         });
@@ -172,7 +172,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   // * Sends notification objects for item observers.
   //
   // type - The type of mutation that just occurred (insert, remove, or
-  //        replace).
+  //        update).
   // idx  - The index in the array where the mutation started.
   // n    - The number of items, starting from `idx` that were affected by the
   //        mutation.
@@ -205,11 +205,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
           current : undefined
         });
         break;
-      case 'replace':
+      case 'update':
         if (idx === 0) { this.didChangeProperty('first'); }
         if (idx === len - 1) { this.didChangeProperty('last'); }
         this.didChangeProperty('@', {
-          type    : 'replace',
+          type    : 'update',
           range   : [idx, n],
           current : curItems
         });
@@ -260,7 +260,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   // mutations. Observing this property will cause notifications to be sent
   // every time a mutation is made to the array. The `type` key in the
   // notification objects will be set to one of the following: `insert`,
-  // `remove`, `replace`. Additionaly, a `range` key will be present that is a
+  // `remove`, or `update`. Additionaly, a `range` key will be present that is a
   // tuple containing the starting index of the mutation as well as the number
   // of items that are affected, starting from that index.
   this.prop('@', { readonly: true, get: function() { return this; } });
@@ -410,8 +410,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     var items = slice.call(arguments, 2),
         len   = this.size(),
         idx   = i < 0 ? len + i : i,
-        expand, insertIdx, insertNum, removeIdx, removeNum, replaceIdx,
-        replaceNum;
+        expand, insertIdx, insertNum, removeIdx, removeNum, updateIdx,
+        updateNum;
 
     if (idx < 0) {
       throw new Error(Z.fmt("Z.Array.splice: index `%@` is too small for %@", i, this));
@@ -419,15 +419,15 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
 
     if (n === undefined) { n = len - idx; }
 
-    expand     = idx >= len;
-    replaceNum = expand ? 0 : Z.min(n, items.length);
-    replaceIdx = idx;
-    insertNum  = items.length - replaceNum;
-    insertIdx  = idx + replaceNum;
-    removeNum  = expand ? 0 : n - replaceNum;
-    removeIdx  = idx + replaceNum;
+    expand    = idx >= len;
+    updateNum = expand ? 0 : Z.min(n, items.length);
+    updateIdx = idx;
+    insertNum = items.length - updateNum;
+    insertIdx = idx + updateNum;
+    removeNum = expand ? 0 : n - updateNum;
+    removeIdx = idx + updateNum;
 
-    if (replaceNum > 0) { willMutate.call(this, 'replace', replaceIdx, replaceNum); }
+    if (updateNum > 0) { willMutate.call(this, 'update', updateIdx, updateNum); }
     if (insertNum > 0)  { willMutate.call(this, 'insert', insertIdx, insertNum); }
     if (removeNum > 0)  { willMutate.call(this, 'remove', removeIdx, removeNum); }
 
@@ -435,9 +435,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
 
     this.__z_items__.splice.apply(this.__z_items__, [idx, n].concat(items));
 
-    if (replaceNum > 0) { didMutate.call(this, 'replace', replaceIdx, replaceNum); }
-    if (insertNum > 0)  { didMutate.call(this, 'insert', insertIdx, insertNum); }
-    if (removeNum > 0)  { didMutate.call(this, 'remove', removeIdx, removeNum); }
+    if (updateNum > 0) { didMutate.call(this, 'update', updateIdx, updateNum); }
+    if (insertNum > 0) { didMutate.call(this, 'insert', insertIdx, insertNum); }
+    if (removeNum > 0) { didMutate.call(this, 'remove', removeIdx, removeNum); }
 
     return this;
   });
@@ -676,9 +676,9 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   this.def('sort$', function(fn) {
     var size = this.size();
 
-    willMutate.call(this, 'replace', 0, size);
+    willMutate.call(this, 'update', 0, size);
     this.__z_items__.sort(fn || Z.cmp);
-    didMutate.call(this, 'replace', 0, size);
+    didMutate.call(this, 'update', 0, size);
 
     return this;
   });

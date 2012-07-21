@@ -29,7 +29,7 @@ Z.ListView = Z.View.extend(function() {
       case 'remove':
         removeItemViews.call(this, i, size);
         break;
-      case 'replace':
+      case 'update':
         removeItemViews.call(this, i, size);
         insertItemViews.call(this, content.slice(i, size), i);
         break;
