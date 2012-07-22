@@ -13,7 +13,8 @@
 // "batch up" and then update the DOM all in one go after an event (which
 // triggered the view changes in the first place) has been fully processed.
 Z.RunLoop = Z.Object.create().open(function() {
-  var self = this, slice = Array.prototype.slice, apps, queue, ajaxSend;
+  var self = this, slice = Array.prototype.slice, apps, queue, ajaxSend,
+      mouseEvents, keyEvents;
 
   // Internal: The list of `Z.App` objects that are currently registered with
   // the run loop.
@@ -21,6 +22,12 @@ Z.RunLoop = Z.Object.create().open(function() {
 
   // Internal: A hash of function objects queued up with the `once` method.
   queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+
+  // Internal: List of native key events that the run loop listens for.
+  keyEvents = Z.A('keydown', 'keyup');
+
+  // Internal: List of native mouse events that the run loop listens for.
+  mouseEvents = Z.A('mousemove', 'mousedown', 'mouseup');
 
   // Internal: Performs a single run of the run loop. This includes triggering
   // displays of each window as well as executing functions queued up with the
@@ -37,10 +44,55 @@ Z.RunLoop = Z.Object.create().open(function() {
     queue.clear();
   }
 
+  // Internal: Builds a `Z.KeyEvent` object from the given native key event.
+  function keyEvent(native) {
+    return Z.KeyEvent.create({
+      kind        : native.type === 'keydown' ? Z.KeyDown : Z.KeyUp,
+      isAlt       : native.altKey,
+      isCtrl      : native.ctrlKey,
+      isMeta      : native.metaKey,
+      isShift     : native.shiftKey,
+      timestamp   : new Date(),
+      nativeEvent : native,
+      key         : native.which
+    });
+  }
+
+  // Internal: Builds a `Z.KeyEvent` object from the given native mouse event.
+  function mouseEvent(native) {
+    var type = native.type,
+        node = native.target,
+        view = Z.View.forNode(node),
+        kind, button;
+
+    if (type === 'mousemove') { kind = Z.MouseMove; }
+    else {
+      button = {0: 'left', 2: 'right'}[native.button] || 'other';
+      kind   = {
+        mousedown: {left: Z.LeftMouseDown, right: Z.RightMouseDown, other: Z.OtherMouseDown},
+        mouseup:   {left: Z.LeftMouseUp,   right: Z.RightMouseUp,   other: Z.OtherMouseUp}
+      }[type][button];
+    }
+
+    return Z.MouseEvent.create({
+      kind        : kind,
+      isAlt       : native.altKey,
+      isCtrl      : native.ctrlKey,
+      isMeta      : native.metaKey,
+      isShift     : native.shiftKey,
+      timestamp   : new Date(),
+      nativeEvent : native,
+      window      : view.window(),
+      view        : view,
+      node        : node,
+      location    : [native.clientX, native.clientY]
+    });
+  }
+
   // Internal: The key event listener - each native key event is converted to a
   // `Z.Event` object and dispatched to each registered app.
   function processKeyEvent(e) {
-    var event = Z.Event.fromNative(e);
+    var event = keyEvent(e);
     apps.each(function(app) { app.dispatchEvent(event); });
     run();
   }
@@ -52,22 +104,39 @@ Z.RunLoop = Z.Object.create().open(function() {
 
     if (!view) { return; }
 
-    view.get('window.app').dispatchEvent(Z.Event.fromNative(e));
+    view.get('window.app').dispatchEvent(mouseEvent(e));
     run();
   }
 
-  // Internal: Registers a mouse listener for the given app's `container` node.
-  function addMouseListeners(app) {
-    apps.each(function(app) {
-      Z.Event.registerMouseListener(app.container(), processMouseEvent);
+  // Internal: Registers key listeners on the `document` node.
+  function addKeyListeners() {
+    keyEvents.each(function(e) {
+      document.addEventListener(e, processKeyEvent, false);
     });
   }
 
-  // Internal: Deregisters the mouse listener for the given app's `container`
-  // node.
+  // Internal: Deregisters key listeners on the `document` node.
+  function removeKeyListeners() {
+    keyEvents.each(function(e) {
+      document.removeEventListener(e, processKeyEvent, false);
+    });
+  }
+
+  // Internal: Registers mouse listeners on the given app's `container` node.
+  function addMouseListeners(app) {
+    var node = app.container();
+
+    mouseEvents.each(function(e) {
+      node.addEventListener(e, processMouseEvent, false);
+    });
+  }
+
+  // Internal: Deregisters mouse listeners on the given app's `container` node.
   function removeMouseListeners(app) {
-    apps.each(function(app) {
-      Z.Event.deregisterMouseListener(app.container(), processMouseEvent);
+    var node = app.node();
+
+    mouseEvents.each(function(e) {
+      node.removeEventListener(e, processMouseEvent, false);
     });
   }
 
@@ -128,8 +197,8 @@ Z.RunLoop = Z.Object.create().open(function() {
   // Returns the receiver.
   this.def('start', function() {
     if (!this.isRunning()) {
-      Z.Event.registerKeyListener(processKeyEvent);
-      addMouseListeners();
+      addKeyListeners();
+      apps.each(addMouseListeners);
       wrapAjaxRequests();
       this.isRunning(true);
     }
@@ -144,8 +213,8 @@ Z.RunLoop = Z.Object.create().open(function() {
   // Returns the receiver.
   this.def('stop', function() {
     if (this.isRunning()) {
-      Z.Event.deregisterKeyListener(processKeyEvent);
-      removeMouseListeners();
+      removeKeyListeners();
+      apps.each(removeMouseListeners);
       unwrapAjaxRequests();
       this.isRunning(false);
     }
