@@ -8,6 +8,7 @@ Z.RightMouseUp   = 'RightMouseUp';
 Z.OtherMouseDown = 'OtherMouseDown';
 Z.OtherMouseUp   = 'OtherMouseUp';
 Z.MouseMove      = 'MouseMove';
+Z.MouseDrag      = 'MouseDrag';
 
 // Public: Provides a `Z.Object` wrapper type for native browser event objects.
 Z.Event = Z.Object.extend(function() {

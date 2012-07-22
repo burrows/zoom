@@ -13,8 +13,8 @@
 // "batch up" and then update the DOM all in one go after an event (which
 // triggered the view changes in the first place) has been fully processed.
 Z.RunLoop = Z.Object.create().open(function() {
-  var self = this, slice = Array.prototype.slice, apps, queue, ajaxSend,
-      mouseEvents, keyEvents;
+  var self = this, slice = Array.prototype.slice,
+      apps, queue, keyEvents, mouseEvents, isMouseDown, ajaxSend;
 
   // Internal: The list of `Z.App` objects that are currently registered with
   // the run loop.
@@ -28,6 +28,11 @@ Z.RunLoop = Z.Object.create().open(function() {
 
   // Internal: List of native mouse events that the run loop listens for.
   mouseEvents = Z.A('mousemove', 'mousedown', 'mouseup');
+
+  // Internal: Keeps track of whether the mouse is currently down. This is used
+  // to determine whether to translate a native mousemove event to a
+  // `Z.MouseMove` or `Z.MouseDrag` event.
+  isMouseDown = false;
 
   // Internal: Performs a single run of the run loop. This includes triggering
   // displays of each window as well as executing functions queued up with the
@@ -65,13 +70,18 @@ Z.RunLoop = Z.Object.create().open(function() {
         view = Z.View.forNode(node),
         kind, button;
 
-    if (type === 'mousemove') { kind = Z.MouseMove; }
+    if (type === 'mousemove') {
+      kind = isMouseDown ? Z.MouseDrag : Z.MouseMove;
+    }
     else {
       button = {0: 'left', 2: 'right'}[native.button] || 'other';
       kind   = {
         mousedown: {left: Z.LeftMouseDown, right: Z.RightMouseDown, other: Z.OtherMouseDown},
         mouseup:   {left: Z.LeftMouseUp,   right: Z.RightMouseUp,   other: Z.OtherMouseUp}
       }[type][button];
+
+      if (kind === Z.LeftMouseDown) { isMouseDown = true; }
+      else if (kind === Z.LeftMouseUp) { isMouseDown = false; }
     }
 
     return Z.MouseEvent.create({
@@ -133,7 +143,7 @@ Z.RunLoop = Z.Object.create().open(function() {
 
   // Internal: Deregisters mouse listeners on the given app's `container` node.
   function removeMouseListeners(app) {
-    var node = app.node();
+    var node = app.container();
 
     mouseEvents.each(function(e) {
       node.removeEventListener(e, processMouseEvent, false);
