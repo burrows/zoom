@@ -110,12 +110,18 @@ Z.RunLoop = Z.Object.create().open(function() {
   // Internal: The mouse event listener - each native key event is converted to
   // a `Z.Event` object and dispatched to the app over which the event occurred.
   function processMouseEvent(e) {
-    var view = Z.View.forNode(e.target);
+    var view = Z.View.forNode(e.target), window, app, event;
 
     if (!view) { return; }
 
-    view.get('window.app').dispatchEvent(mouseEvent(e));
-    run();
+    window = view.window();
+    app    = window.app();
+    event  = mouseEvent(e);
+
+    if (e.type !== 'mousemove' || window.acceptsMouseMoveEvents()) {
+      app.dispatchEvent(event);
+      run();
+    }
   }
 
   // Internal: Registers key listeners on the `document` node.

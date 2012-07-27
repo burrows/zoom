@@ -50,6 +50,8 @@ Z.Window = Z.View.extend(function() {
     return classes;
   });
 
+  this.def('acceptsMouseMoveEvents', function() { return false; });
+
   // Public: The `Z.Window` constructor. Creates the window's content view.
   //
   // view - A `Z.View` sub-type or instance.
