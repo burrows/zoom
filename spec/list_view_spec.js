@@ -22,7 +22,7 @@ TestItemView = Z.View.extend(function() {
   this.def('draw', function() {
     var p = this.content(),
         s = '<span class="first">%@</span><span class="last">%@</span>';
-    this.node().innerHTML = Z.fmt(s, p.first(), p.last());
+    this.node.innerHTML = Z.fmt(s, p.first(), p.last());
   });
 });
 

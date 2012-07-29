@@ -185,13 +185,12 @@ Todo.TagView = Z.View.extend(function() {
   });
 
   this.def('render', function() {
-    var node = this.node(),
-        isSelected = this.get('content.isSelected'),
+    var isSelected = this.get('content.isSelected'),
         badgeClasses = ['badge'];
 
      if (isSelected) { badgeClasses.push('badge-info'); }
 
-    node.innerHTML = Z.fmt('<span class="%@">', badgeClasses.join(' ')) +
+    this.node.innerHTML = Z.fmt('<span class="%@">', badgeClasses.join(' ')) +
       this.get('content.todos.size') + '</span> ' + this.get('content.name');
   });
 
@@ -212,7 +211,7 @@ Todo.SidebarView = Z.View.extend(function() {
 
   this.subview('headerView', Z.View.extend(function() {
     this.def('tag', function() { return 'legend'; });
-    this.def('render', function() { this.node().innerHTML = 'Tags'; });
+    this.def('render', function() { this.node.innerHTML = 'Tags'; });
   }));
 
   this.subview('tagListView', Todo.TagListView);
@@ -226,7 +225,7 @@ Todo.InputView = Z.View.extend(function() {
   this.def('acceptsKeyView', function() { return true; });
 
   this.def('render', function() {
-    var value = this.value(), node = this.node(), input;
+    var value = this.value(), node = this.node, input;
 
     if (!node.hasChildNodes()) {
       node.innerHTML = '<input type="text" placeholder="Enter a Todo"/>';
@@ -241,14 +240,14 @@ Todo.InputView = Z.View.extend(function() {
   });
 
   this.def('keyDown', function(e) {
-    var input = this.node().firstChild;
+    var input = this.node.firstChild;
     if (input && document.activeElement !== input) { input.focus(); }
     if (e.key() === 13) { Todo.controller.createTodo(this.value()); }
     return true;
   });
 
   this.def('keyUp', function(e) {
-    var input = this.node().firstChild;
+    var input = this.node.firstChild;
     if (input) { this.value(input.value); }
     return true;
   });
@@ -268,7 +267,7 @@ Todo.TodoView = Z.View.extend(function() {
   });
 
   this.def('render', function() {
-    var node = this.node(), todo = this.content(), tags;
+    var node = this.node, todo = this.content(), tags;
 
     tags = todo.tags().map(function(tag) {
       return '<span class="label label-info">' + tag.name() + '</span>';

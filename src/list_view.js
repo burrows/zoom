@@ -18,7 +18,7 @@
 //     this.def('tag', function() { return 'li'; });
 //
 //     this.def('render', function() {
-//       this.node().innerHTML = this.content();
+//       this.node.innerHTML = this.content();
 //     })
 //   });
 //

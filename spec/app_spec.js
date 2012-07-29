@@ -6,19 +6,19 @@ var container, Parent, Child1, Child2, Child3;
 
 Child1 = Z.View.extend(function() {
   this.def('render', function() {
-    this.node().innerHTML = '<p class="child1"></p>';
+    this.node.innerHTML = '<p class="child1"></p>';
   });
 });
 
 Child2 = Z.View.extend(function() {
   this.def('render', function() {
-    this.node().innerHTML = '<p class="child2"></p>';
+    this.node.innerHTML = '<p class="child2"></p>';
   });
 });
 
 Child3 = Z.View.extend(function() {
   this.def('render', function() {
-    this.node().innerHTML = '<p class="child3"></p>';
+    this.node.innerHTML = '<p class="child3"></p>';
   });
 });
 
@@ -334,7 +334,7 @@ describe('Z.App', function() {
           kind   : Z.LeftMouseDown,
           window : win1,
           view   : win1.contentView(),
-          node   : win1.get('contentView.sv1.node')
+          node   : win1.get('contentView.sv1').node
         });
 
         expect(app.keyWindow()).toBe(mainWin);
@@ -351,7 +351,7 @@ describe('Z.App', function() {
           kind   : Z.LeftMouseDown,
           window : mainWin,
           view   : mainWin.contentView(),
-          node   : mainWin.get('contentView.sv1.node')
+          node   : mainWin.get('contentView.sv1').node
         });
 
         spyOn(mainWin, 'dispatchEvent');

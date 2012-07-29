@@ -99,7 +99,7 @@ Z.App = Z.Object.extend(function() {
     // ensure that all removed windows have had their nodes detached
     if (removed = this.__removedWindows__) {
       for (i = 0, size = removed.length; i < size; i++) {
-        node = removed[i].node();
+        node = removed[i].node;
         if (node.parentNode === container) {
           container.removeChild(node);
           removed[i].notifyDidDetachNode();
@@ -111,8 +111,8 @@ Z.App = Z.Object.extend(function() {
     for (i = 0, size = windows.size(); i < size; i++) {
       window = windows.at(i);
       window.displayIfNeeded();
-      if (window.node().parentNode !== container) {
-        container.appendChild(window.node());
+      if (window.node.parentNode !== container) {
+        container.appendChild(window.node);
         window.notifyDidAttachNode();
       }
     }

@@ -23,13 +23,8 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Internal: Observer callback for `displayProperties`.
   function displayPathObserver() { this.needsDisplay(true); }
 
-  // Public: A property holding the DOM node managed by the view.
-  this.prop('node', {
-    readonly: true,
-    get: function() {
-      return this.__node__ = this.__node__ || this.buildNode();
-    }
-  });
+  // Public: A native property holding the DOM node managed by the view.
+  this.node = null;
 
   // Public: Indicates whether this view's `node` is currently attached to the
   // DOM.
@@ -61,7 +56,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
   // Internal: Specifies the properties for the `toString` method to display.
   this.def('toStringProperties', function() {
-    return this.supr().concat('isKey', 'needsDisplay', 'node');
+    return this.supr().concat('isKey', 'needsDisplay');
   });
 
   // Public: Returns the HTML tag to use when building the `node` for instances
@@ -136,12 +131,15 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   });
 
   // Internal: Adds the new view instance to the internal cache used by the
-  // `forNode` method and creates any subviews defined by the `subview` method.
+  // `forNode` method and creates any subviews defined with the `subview`
+  // method.
   this.def('init', function(props) {
     var self = this, subviewTypes = this.__subviewTypes__;
 
     this.supr(props);
     views[this.objectId()] = this;
+
+    this.node = this.buildNode();
 
     if (subviewTypes) {
       subviewTypes.each(function(tuple) {
@@ -257,7 +255,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('removeSubviewNode', function(subview) {
-    var node = this.node(), child = subview.node();
+    var node = this.node, child = subview.node;
 
     if (child.parentNode === node) {
       node.removeChild(child);
@@ -277,7 +275,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('insertSubviewNode', function(subview, idx) {
-    var node = this.node(), child = subview.node();
+    var node = this.node, child = subview.node;
 
     if (child === node.childNodes[idx]) { return this; }
 
