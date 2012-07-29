@@ -15,9 +15,9 @@ p3 = Person.create({first: 'Meera', last: 'Reed'});
 p4 = Person.create({first: 'Doran', last: 'Martell'});
 
 TestItemView = Z.View.extend(function() {
-  this.prop('content');
+  this.tag = 'li';
 
-  this.def('tag', function() { return 'li'; });
+  this.prop('content');
 
   this.def('draw', function() {
     var p = this.content(),

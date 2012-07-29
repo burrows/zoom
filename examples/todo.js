@@ -176,9 +176,9 @@ Todo.controller = {
 //------------------------------------------------------------------------------
 
 Todo.TagView = Z.View.extend(function() {
-  this.prop('content');
+  this.tag = 'li';
 
-  this.def('tag', function() { return 'li'; });
+  this.prop('content');
 
   this.def('displayPaths', function() {
     return this.supr().concat('content.isSelected');
@@ -210,7 +210,7 @@ Todo.SidebarView = Z.View.extend(function() {
   this.def('classes', function() { return this.supr().concat('span4'); });
 
   this.subview('headerView', Z.View.extend(function() {
-    this.def('tag', function() { return 'legend'; });
+    this.tag = 'legend';
     this.def('render', function() { this.node.innerHTML = 'Tags'; });
   }));
 
@@ -254,9 +254,9 @@ Todo.InputView = Z.View.extend(function() {
 });
 
 Todo.TodoView = Z.View.extend(function() {
-  this.prop('content');
+  this.tag = 'tr';
 
-  this.def('tag', function() { return 'tr'; });
+  this.prop('content');
 
   this.def('classes', function() {
     return this.supr().concat('todo-view');
@@ -294,10 +294,10 @@ Todo.TodoView = Z.View.extend(function() {
 });
 
 Todo.TodoListView = Z.ListView.extend(function() {
+  this.tag  = 'table';
   this.def('classes', function() {
     return this.supr().concat('table', 'table-striped');
   });
-  this.def('tag', function() { return 'table'; });
   this.def('itemViewType', function() { return Todo.TodoView; });
 });
 

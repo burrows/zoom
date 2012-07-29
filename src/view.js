@@ -23,6 +23,11 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Internal: Observer callback for `displayProperties`.
   function displayPathObserver() { this.needsDisplay(true); }
 
+  // Public: A native property that indicates the HTML tag to use when building
+  // the view's `node`. Set this property to generate a `node` that is something
+  // other than a div.
+  this.tag = 'div';
+
   // Public: A native property holding the DOM node managed by the view.
   this.node = null;
 
@@ -58,13 +63,6 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('toStringProperties', function() {
     return this.supr().concat('isKey', 'needsDisplay');
   });
-
-  // Public: Returns the HTML tag to use when building the `node` for instances
-  // of the view. Override this method to generate a `node` that is something
-  // other than a div.
-  //
-  // Returns a string representing the type of DOM node to use.
-  this.def('tag', function() { return 'div'; });
 
   // Public: Adds a named subview to the view type. Defining a subview this way
   // will cause the `.init` method to automatically instantiate the type and add
@@ -182,7 +180,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Returns the DOM node.
   this.def('buildNode', function() {
     var id      = 'z-view-' + this.objectId(),
-        node    = document.createElement(this.tag()),
+        node    = document.createElement(this.tag),
         classes = Z.A('z-view').concat(this.classes());
 
     node.id = id;

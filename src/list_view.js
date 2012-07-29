@@ -9,13 +9,13 @@
 // Examples:
 //
 //   MyItemView = Z.View.extend(function() {
+//     this.tag = 'li';
+//
 //     this.prop('content');
 //
 //     this.def('displayPaths', function() {
 //       return this.supr().concat('content');
 //     });
-//
-//     this.def('tag', function() { return 'li'; });
 //
 //     this.def('render', function() {
 //       this.node.innerHTML = this.content();
@@ -23,7 +23,7 @@
 //   });
 //
 //   MyListView = Z.ListView.extend(function() {
-//     this.def('tag', function() { return 'ul'; });
+//     this.tag = 'ul';
 //
 //     this.def('itemViewType', function() { return MyItemView; });
 //   });
@@ -87,6 +87,10 @@ Z.ListView = Z.View.extend(function() {
     }
   }
 
+  // Public: `Z.ListView` instances generate a `ul` node by default. Subtypes
+  // can set this property to use a tag other than `ul`.
+  this.tag = 'ul';
+
   // Public: A property pointing to an array of objects for the list view to
   // display. The list view observes changes to this property and automatically
   // syncs any changes to its `subviews` array.
@@ -106,10 +110,6 @@ Z.ListView = Z.View.extend(function() {
     this.stopObserving('content.@', this, contentObserver);
     this.supr();
   });
-
-  // Public: Overrides the default implementation to return `ul` instead of
-  // `div`. Subtypes may override this to use a tag other than `ul`.
-  this.def('tag', function() { return 'ul'; });
 
   // Public: Returns the `Z.View` subtype to use for content item views. This
   // method must be overridden by subtypes.
