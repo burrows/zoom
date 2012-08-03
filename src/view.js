@@ -189,7 +189,6 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
     node.id = id;
     node.className = classes.join(' ');
-    views[id] = this;
 
     return node;
   });
