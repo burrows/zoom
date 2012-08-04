@@ -25,10 +25,6 @@ Z.App = Z.Object.extend(function() {
     get: function() { return this.get('windows.first'); }
   });
 
-  // Public: A boolean indicating whether the application has been started yet.
-  // No windows are drawn on the screen until the application is started.
-  this.prop('isRunning', { def: false });
-
   // Public: The window that currently has keyboard focus. All keyboard events
   // observed by the application will be sent to the window pointed to by this
   // property.
@@ -36,7 +32,7 @@ Z.App = Z.Object.extend(function() {
 
   // Internal: Specifies the properties for the `toString` method to display.
   this.def('toStringProperties', function() {
-    return this.supr().concat('container', 'isRunning');
+    return this.supr().concat('container');
   });
 
   // Public: The `Z.App` constructor.
@@ -58,37 +54,22 @@ Z.App = Z.Object.extend(function() {
     this.set('container', container || document.body);
   });
 
-  // Public: Starts the application by registering with the run loop, displaying
-  // all windows and setting the key window to the main window.
-  //
-  // Returns the receiver.
-  this.def('start', function() {
-    if (!this.isRunning()) {
-      Z.RunLoop.registerApp(this).start();
+  this.def('run', function() {
+    if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
       this.mainWindow().becomeKeyWindow();
-      this.displayWindows();
-      this.isRunning(true);
     }
+
+    this.runLoop = Z.RunLoop.create(this);
+    this.runLoop.run();
 
     return this;
   });
 
-  // Public: Stops the app by deregistering with the run loop and removing all
-  // windows. A stopped app may be started again by invoking the `start` method.
-  //
-  // Returns the receiver.
-  this.def('stop', function() {
-    var keyWin = this.keyWindow();
-
-    if (this.isRunning()) {
-      Z.RunLoop.deregisterApp(this);
-      this.set('keyWindow', null);
-      keyWin.resignKeyWindow();
-      this.removeWindows().displayWindows();
-      this.isRunning(false);
-    }
-
+  this.def('destroy', function() {
+    this.set('keyWindow', null);
+    this.removeWindows().displayWindows();
+    this.runLoop.destroy();
     return this;
   });
 
@@ -202,17 +183,34 @@ Z.App = Z.Object.extend(function() {
   // down event occurs over a window that is not the key window, it is first
   // made the key window before the event is dispatched to it.
   //
+  // This method is called by the app's `runLoop` object and returns a boolean
+  // indicated whether it handled the event. The run loop object only triggers
+  // a run of the run loop if this method returns `true`.
+  //
   // e - A `Z.Event` object.
   //
-  // Returns nothing.
+  // Returns `true` if the app processes the event and `false` if it does not.
   this.def('dispatchEvent', function(e) {
-    var keyWin = this.keyWindow();
+    var kind = e.kind(), keyWin = this.keyWindow(), view, window;
 
-    if (e.isA(Z.MouseEvent) && e.kind() === Z.LeftMouseDown) {
-      keyWin = this.makeKeyWindow(e.window());
+    if (e.isA(Z.MouseEvent)) {
+      view   = e.view();
+      window = view && view.window();
+
+      if (!view || !window) { return false; }
+
+      if (kind === Z.MouseMove && !window.acceptsMouseMoveEvents()) {
+        return false;
+      }
+
+      if (kind === Z.LeftMouseDown) {
+        keyWin = this.makeKeyWindow(e.window());
+      }
     }
 
     keyWin.dispatchEvent(e);
+
+    return true;
   });
 });
 

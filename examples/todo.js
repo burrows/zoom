@@ -112,16 +112,15 @@ var selectedTags = Z.A();
 
 Todo.controller = {
   createTodo: function(title) {
-    var todo, tags, tag, m;
+    var todo, tags, tag;
 
-    if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
-      tags = Z.Array.create(m[1].split(/\s*,\s*/)).map(function(name) {
-        tag = Todo.allTags.find(function(t) { return t.name() === name; });
-        return tag || Todo.Tag.create({name: name});
-      });
+    tags = Z.Array.create(title.match(/#\w+/g) || []).map(function(name) {
+      name = name.replace('#', '');
+      tag = Todo.allTags.find(function(t) { return t.name() === name; });
+      return tag || Todo.Tag.create({name: name});
+    });
 
-      title = title.replace(/\s*\[[^\]]*\]\s*$/, '');
-    }
+    title = title.replace(/#\w+/g, '').replace(/^\s+|\s+$/g, '')
 
     todo = Todo.Todo.create({title: title, tags: tags || Z.A()}).save();
 
@@ -323,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
   Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
   Todo.app.set('mainWindow.contentView.sidebarView.tagListView.content', Todo.allTags);
   Todo.app.set('mainWindow.contentView.contentView.todoListView.content', Todo.allTodos);
-  Todo.app.start();
+  Todo.app.run();
 });
 
 }());
