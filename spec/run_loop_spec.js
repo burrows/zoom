@@ -13,7 +13,7 @@ describe('Z.RunLoop', function() {
     app = {
       displayWindows: function() {},
       dispatchEvent: function() {},
-      container: function() { return container; }
+      container: container
     };
 
     runLoop = Z.RunLoop.create(app);
@@ -21,7 +21,7 @@ describe('Z.RunLoop', function() {
 
   afterEach(function() {
     runLoop.destroy();
-    document.body.removeChild(app.container());
+    document.body.removeChild(app.container);
   });
 
   describe('.run', function() {
@@ -88,20 +88,20 @@ describe('Z.RunLoop', function() {
     it("should observe events on the app's container and invoke the run method", function() {
       spyOn(app, 'dispatchEvent').andReturn(true);
       spyOn(runLoop, 'run');
-      simulateMouseEvent(app.container(), 'mousedown');
+      simulateMouseEvent(app.container, 'mousedown');
       expect(runLoop.run).toHaveBeenCalled();
       expect(runLoop.run.callCount).toBe(1);
     });
 
     it('should create a MouseMove event when the left mouse button is up and a MouseDrag event when it is down', function() {
       spyOn(app, 'dispatchEvent');
-      simulateMouseEvent(app.container(), 'mousemove');
+      simulateMouseEvent(app.container, 'mousemove');
       expect(app.dispatchEvent.argsForCall[0][0].kind()).toBe(Z.MouseMove);
-      simulateMouseEvent(app.container(), 'mousedown');
-      simulateMouseEvent(app.container(), 'mousemove');
+      simulateMouseEvent(app.container, 'mousedown');
+      simulateMouseEvent(app.container, 'mousemove');
       expect(app.dispatchEvent.argsForCall[2][0].kind()).toBe(Z.MouseDrag);
-      simulateMouseEvent(app.container(), 'mouseup');
-      simulateMouseEvent(app.container(), 'mousemove');
+      simulateMouseEvent(app.container, 'mouseup');
+      simulateMouseEvent(app.container, 'mousemove');
       expect(app.dispatchEvent.argsForCall[4][0].kind()).toBe(Z.MouseMove);
     });
   });
@@ -109,10 +109,10 @@ describe('Z.RunLoop', function() {
   describe('destroy', function() {
     it('should teardown event handlers', function() {
       spyOn(app, 'dispatchEvent');
-      simulateMouseEvent(app.container(), 'mousemove');
+      simulateMouseEvent(app.container, 'mousemove');
       expect(app.dispatchEvent.callCount).toBe(1);
       runLoop.destroy();
-      simulateMouseEvent(app.container(), 'mousemove');
+      simulateMouseEvent(app.container, 'mousemove');
       expect(app.dispatchEvent.callCount).toBe(1);
     });
   });

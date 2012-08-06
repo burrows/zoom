@@ -5,10 +5,9 @@
 // Additionally, a container node can be optionally specified to use for
 // rendering the application (by default `document.body` is used).
 Z.App = Z.Object.extend(function() {
-  // Public: A property that returns the container DOM node that the application
-  // was initialized with. All DOM modifications and mouse events observed
-  // happen within this container.
-  this.prop('container');
+  // Public: A regular property that holds the container DOM node. All DOM
+  // modifications and mouse events observed happen within this container.
+  this.container = null;
 
   // Public: An array containing all of the application's `Z.Window` objects.
   // Every application has at least one window, the main window, which is always
@@ -30,11 +29,6 @@ Z.App = Z.Object.extend(function() {
   // property.
   this.prop('keyWindow');
 
-  // Internal: Specifies the properties for the `toString` method to display.
-  this.def('toStringProperties', function() {
-    return this.supr().concat('container');
-  });
-
   // Public: The `Z.App` constructor.
   //
   // mainView  - A sub-type of `Z.App` to use as the root view of the
@@ -51,7 +45,7 @@ Z.App = Z.Object.extend(function() {
       app: this, isMain: true, isKey: true
     }));
 
-    this.set('container', container || document.body);
+    this.container = container || document.body;
   });
 
   // Public: Begins running the app by creating a run loop and rendering all
@@ -93,7 +87,7 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('displayWindows', function() {
-    var container = this.container(), windows = this.windows(),
+    var container = this.container, windows = this.windows(),
         removed, window, i, size, node;
 
     // ensure that all removed windows have had their nodes detached

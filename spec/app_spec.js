@@ -45,7 +45,7 @@ describe('Z.App', function() {
   describe('`container` property', function() {
     it('should default to `document.body`', function() {
       var a = Z.App.create(Z.View);
-      expect(a.container()).toBe(document.body);
+      expect(a.container).toBe(document.body);
       a.destroy();
     });
   });
@@ -67,7 +67,7 @@ describe('Z.App', function() {
 
     it('should set the second argument as the container property', function() {
       var a = Z.App.create(Parent, container);
-      expect(app.container()).toBe(container);
+      expect(app.container).toBe(container);
       a.destroy();
     });
   });

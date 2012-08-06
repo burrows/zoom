@@ -108,7 +108,7 @@ Z.RunLoop = Z.Object.extend(function() {
 
   // Internal: Registers mouse listeners on the app's `container` node.
   function addMouseListeners(app) {
-    var node = this.app.container(), i, len;
+    var node = this.app.container, i, len;
 
     this.mouseHandler = Z.bind(processMouseEvent, this);
 
@@ -119,7 +119,7 @@ Z.RunLoop = Z.Object.extend(function() {
 
   // Internal: Deregisters mouse listeners on the app's `container` node.
   function removeMouseListeners(app) {
-    var node = this.app.container(), i, len;
+    var node = this.app.container, i, len;
 
     for (i = 0, len = mouseEvents.length; i < len; i++) {
       node.removeEventListener(mouseEvents[i], this.mouseHandler, false);
