@@ -271,11 +271,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   // the items from the given array are added to the newly created array. If a
   // number is given, an array is created with space allocated for the number of
   // items specified.
-  this.def('initialize', function() {
+  this.def('init', function() {
     var arg = arguments[0];
 
     if (arguments.length > 1) {
-      throw new Error(Z.fmt("Z.Array.initialize: wrong number of arguments (%@ for 0 or 1)", arguments.length));
+      throw new Error(Z.fmt("Z.Array.init: wrong number of arguments (%@ for 0 or 1)", arguments.length));
     }
 
     if (arguments.length === 0) {
@@ -291,7 +291,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
       this.__z_items__ = arg.__z_items__;
     }
     else {
-      throw new Error(Z.fmt("Z.Array.initialize: invalid argument (%@), expected a number or array", Z.inspect(arg)));
+      throw new Error(Z.fmt("Z.Array.init: invalid argument (%@), expected a number or array", Z.inspect(arg)));
     }
   });
 

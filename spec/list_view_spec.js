@@ -31,14 +31,14 @@ TestListView = Z.ListView.extend(function() {
 });
 
 describe('Z.ListView', function() {
-  describe('.initialize without content', function() {
+  describe('.init without content', function() {
     it('should not create any subviews', function() {
       var v = TestListView.create();
       expect(v.subviews()).toEq(Z.A());
     });
   });
 
-  describe('.initialize with content', function() {
+  describe('.init with content', function() {
     it('should create subviews for each item in the content', function() {
       var v = TestListView.create({content: Z.A(p1, p2)});
 

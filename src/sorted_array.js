@@ -81,7 +81,7 @@ Z.SortedArray = Z.Array.extend(function() {
   //                  option.
   //   isDescending - Set this option to `true` to sort items in descending
   //                  order.
-  this.def('initialize', function(opts) {
+  this.def('init', function(opts) {
     this.supr();
 
     opts = opts || {};

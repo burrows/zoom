@@ -137,7 +137,7 @@ Z.RunLoop = Z.Object.extend(function() {
   // Public: The `Z.RunLoop` constructor - sets up event listeners.
   //
   // app - A `Z.App` object.
-  this.def('initialize', function(app) {
+  this.def('init', function(app) {
     this.app   = app;
     this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
     this.isMouseDown = false;

@@ -566,7 +566,7 @@ describe('Z.View', function() {
     });
   });
 
-  describe('.initialize with subviews defined by `.subview`', function() {
+  describe('.init with subviews defined by `.subview`', function() {
     it('should instantiate the subview types and add the instances to the `subviews` array', function() {
       var V, v;
 

@@ -50,11 +50,11 @@ describe('Z.App', function() {
     });
   });
 
-  describe('.initialize', function() {
+  describe('.init', function() {
     it('should throw an exception if not given a main view', function() {
       expect(function() {
         Z.App.create();
-      }).toThrow('Z.App.initialize: must provide a sub-type of `Z.View` as the main view type');
+      }).toThrow('Z.App.init: must provide a sub-type of `Z.View` as the main view type');
     });
 
     it('should create the `mainWindow` property', function() {

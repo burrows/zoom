@@ -24,7 +24,7 @@ repo = Z.Object.extend(function() {
     }
   }
 
-  this.def('initialize', function() {
+  this.def('init', function() {
     this.idMap   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
     this.queries = Z.H();
   });
@@ -613,7 +613,7 @@ Z.Model = Z.Object.extend(function() {
     return this[Z.fmt('__z_association_%@__', name)];
   });
 
-  this.def('initialize', function(attributes) {
+  this.def('init', function(attributes) {
     var props = {}, key;
 
     this.__sourceState__ = NEW;
@@ -710,7 +710,7 @@ Z.Model = Z.Object.extend(function() {
 });
 
 Z.HasManyArray = Z.Array.extend(function() {
-  this.def('initialize', function(model, descriptor) {
+  this.def('init', function(model, descriptor) {
     this.__z_model__      = model;
     this.__z_descriptor__ = descriptor;
 
@@ -787,7 +787,7 @@ Z.Query = Z.SortedArray.extend(function() {
     matchDependsOn: []
   };
 
-  this.def('initialize', function(type, opts) {
+  this.def('init', function(type, opts) {
     var sortOpts = {};
 
     opts = Z.defaults(Z.dup(opts), defaultOpts);

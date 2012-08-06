@@ -24,9 +24,9 @@ describe('Z.Object.extend', function() {
     expect(Z.Object.extend().isType).toBe(true);
   });
 
-  it('should not invoke the `initialize` method', function() {
+  it('should not invoke the `init` method', function() {
     var called = false, X = Z.Object.extend(function() {
-      this.def('initialize', function() { called = true; });
+      this.def('init', function() { called = true; });
     }), Y;
 
     Y = X.extend();
@@ -98,20 +98,20 @@ describe('Z.Object.create', function() {
     expect(Z.Object.create().isType).toBe(false);
   });
 
-  it('should invoke the `initialize` method', function() {
+  it('should invoke the `init` method', function() {
     var called = false, X = Z.Object.extend(), x;
 
-    X.def('initialize', function() { called = true; });
+    X.def('init', function() { called = true; });
 
     x = X.create();
 
     expect(called).toBe(true);
   });
 
-  it('should pass all arguments to the `initialize` method', function() {
+  it('should pass all arguments to the `init` method', function() {
     var X = Z.Object.extend(), x, args;
 
-    X.def('initialize', function() {
+    X.def('init', function() {
       args = Array.prototype.slice.call(arguments);
     });
 

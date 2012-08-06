@@ -11,7 +11,7 @@ TestView = Z.View.extend(function() {
 });
 
 describe('Z.Window', function() {
-  describe('.initialize', function() {
+  describe('.init', function() {
     it('should create a concrete instance of the given view type and set it as the `contentView`', function() {
       var w = Z.Window.create(TestView), cv = w.contentView();
       expect(cv.isType).toBe(false);

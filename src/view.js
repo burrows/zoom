@@ -72,9 +72,9 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('tag', function() { return 'div'; });
 
   // Public: Adds a named subview to the view type. Defining a subview this way
-  // will cause the `.initialize` method to automatically instantiate the type
-  // and add it to the subviews array. A property with the given name is defined
-  // that will return the subview.
+  // will cause the `.init` method to automatically instantiate the type and add
+  // it to the subviews array. A property with the given name is defined that
+  // will return the subview.
   //
   // name - A string containing the name of the subview.
   // type - A Z.View type to create the subview from.
@@ -137,7 +137,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
   // Internal: Adds the new view instance to the internal cache used by the
   // `forNode` method and creates any subviews defined by the `subview` method.
-  this.def('initialize', function(props) {
+  this.def('init', function(props) {
     var self = this, subviewTypes = this.__subviewTypes__;
 
     this.supr(props);

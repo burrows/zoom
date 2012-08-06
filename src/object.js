@@ -20,7 +20,7 @@ var objectId = 1, slice = Array.prototype.slice;
 // means that they respond to all methods defined on `Z.Object`. The main
 // difference between type objects and concrete instances is that type objects
 // are created by `Z.Object.extend` and concrete instances are created by
-// `Z.Object.create` and have their `initialize` method invoked if present.
+// `Z.Object.create` and have their `init` method invoked if present.
 //
 // Even though javascript supports prototypal inheritance at the language level,
 // it still leaves a bit to be desired. The language provides no easy way to
@@ -241,12 +241,12 @@ Z.Object.open(function() {
   });
 
   // Public: Creates a "concrete instance" of the receiver and invokes the
-  // `initialize` method. A concrete instance is simply an object created from a
-  // type object or another concrete instance using the `create` method.
+  // `init` method. A concrete instance is simply an object created from a type
+  // object or another concrete instance using the `create` method.
   //
-  // *args - An arbitrary list of arguments, they are forwarded on to the
-  //         `initialize` method. `Z.Object.initialize` expects a native object
-  //         containing key/value pairs of properties to set.
+  // *args - An arbitrary list of arguments, they are forwarded on to the `init`
+  //         method. `Z.Object.init` expects a native object containing
+  //         key/value pairs of properties to set.
   //
   // Returns the newly created and initialized object.
   this.def('create', function() {
@@ -254,8 +254,8 @@ Z.Object.open(function() {
 
     o.isType = false;
 
-    if (o.respondTo('initialize')) {
-      o.initialize.apply(o, slice.call(arguments));
+    if (o.respondTo('init')) {
+      o.init.apply(o, slice.call(arguments));
     }
 
     setupDependsOnObservers.call(o);
@@ -555,7 +555,7 @@ Z.Object.open(function() {
   // props - A native object containing property/value pairs (default: null).
   //
   // Returns the receiver.
-  this.def('initialize', function(props) {
+  this.def('init', function(props) {
     if (props) { this.set(props); }
     return this;
   });

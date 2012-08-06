@@ -24,7 +24,7 @@ Z.Module = Z.Object.extend(function() {
   // f - A function containing the module body.
   //
   // Returns nothing.
-  this.def('initialize', function(f) {
+  this.def('init', function(f) {
     this.supr();
 
     this.isType           = true;

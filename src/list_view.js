@@ -95,7 +95,7 @@ Z.ListView = Z.View.extend(function() {
   // Internal: The list view constructor - adds an observer to the `content`
   // property and fires that observer in order to setup the initial state of the
   // `subviews` array.
-  this.def('initialize', function(props) {
+  this.def('init', function(props) {
     this.supr(props);
     this.observe('content.@', this, contentObserver, {fire: true});
   });

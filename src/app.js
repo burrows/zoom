@@ -40,9 +40,9 @@ Z.App = Z.Object.extend(function() {
   // mainView  - A sub-type of `Z.App` to use as the root view of the
   //             application's main window.
   // container - A DOM node to contain the app (default: `document.body`).
-  this.def('initialize', function(mainView, container) {
+  this.def('init', function(mainView, container) {
     if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
-      throw new Error(Z.fmt("%@.initialize: must provide a sub-type of `Z.View` as the main view type",
+      throw new Error(Z.fmt("%@.init: must provide a sub-type of `Z.View` as the main view type",
                             this.typeName()));
     }
 
