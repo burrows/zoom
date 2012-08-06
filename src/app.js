@@ -199,20 +199,20 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns `true` if the app processes the event and `false` if it does not.
   this.def('dispatchEvent', function(e) {
-    var kind = e.kind(), keyWin = this.keyWindow(), view, window;
+    var keyWin = this.keyWindow(), view, window;
 
     if (e.isA(Z.MouseEvent)) {
-      view   = e.view();
+      view   = e.view;
       window = view && view.window();
 
       if (!view || !window) { return false; }
 
-      if (kind === Z.MouseMove && !window.acceptsMouseMoveEvents()) {
+      if (e.kind === Z.MouseMove && !window.acceptsMouseMoveEvents()) {
         return false;
       }
 
-      if (kind === Z.LeftMouseDown) {
-        keyWin = this.makeKeyWindow(e.window());
+      if (e.kind === Z.LeftMouseDown) {
+        keyWin = this.makeKeyWindow(e.window);
       }
     }
 

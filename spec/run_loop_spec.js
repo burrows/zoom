@@ -96,13 +96,13 @@ describe('Z.RunLoop', function() {
     it('should create a MouseMove event when the left mouse button is up and a MouseDrag event when it is down', function() {
       spyOn(app, 'dispatchEvent');
       simulateMouseEvent(app.container, 'mousemove');
-      expect(app.dispatchEvent.argsForCall[0][0].kind()).toBe(Z.MouseMove);
+      expect(app.dispatchEvent.argsForCall[0][0].kind).toBe(Z.MouseMove);
       simulateMouseEvent(app.container, 'mousedown');
       simulateMouseEvent(app.container, 'mousemove');
-      expect(app.dispatchEvent.argsForCall[2][0].kind()).toBe(Z.MouseDrag);
+      expect(app.dispatchEvent.argsForCall[2][0].kind).toBe(Z.MouseDrag);
       simulateMouseEvent(app.container, 'mouseup');
       simulateMouseEvent(app.container, 'mousemove');
-      expect(app.dispatchEvent.argsForCall[4][0].kind()).toBe(Z.MouseMove);
+      expect(app.dispatchEvent.argsForCall[4][0].kind).toBe(Z.MouseMove);
     });
   });
 
