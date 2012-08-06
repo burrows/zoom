@@ -414,27 +414,6 @@ describe('Z.Object.hasProperty', function() {
   });
 });
 
-describe('Z.Object.once', function() {
-  beforeEach(function() { Z.RunLoop.start(); });
-  afterEach(function() { Z.RunLoop.stop(); });
-
-  it('should invoke the given method on the receiver once at the end of the run loop', function() {
-    var o = Z.Object.create(), invocations = 0;
-
-    o.def('foo', function() { invocations++; });
-
-    o.once('foo');
-    o.once('foo');
-    o.once('foo');
-    o.once('foo');
-    expect(invocations).toBe(0);
-
-    Z.RunLoop.run();
-
-    expect(invocations).toBe(1);
-  });
-});
-
 describe('Z.Object KVC support:', function() {
   var Person = Z.Object.extend(function() {
     this.prop('firstName');

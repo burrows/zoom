@@ -54,6 +54,10 @@ Z.App = Z.Object.extend(function() {
     this.set('container', container || document.body);
   });
 
+  // Public: Begins running the app by creating a run loop and rendering all
+  // windows.
+  //
+  // Returns the receiver.
   this.def('run', function() {
     if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
@@ -66,10 +70,17 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
+  // Public: Destroys the app by removing all windows from the DOM and
+  // destroying the app's run loop.
+  //
+  // Returns the receiver.
   this.def('destroy', function() {
-    this.set('keyWindow', null);
-    this.removeWindows().displayWindows();
-    this.runLoop.destroy();
+    if (this.runLoop) {
+      this.set('keyWindow', null);
+      this.removeWindows().displayWindows();
+      this.runLoop.destroy();
+    }
+
     return this;
   });
 
@@ -83,13 +94,16 @@ Z.App = Z.Object.extend(function() {
   // Returns the receiver.
   this.def('displayWindows', function() {
     var container = this.container(), windows = this.windows(),
-        removed, window, i, size;
+        removed, window, i, size, node;
 
     // ensure that all removed windows have had their nodes detached
     if (removed = this.__removedWindows__) {
       for (i = 0, size = removed.length; i < size; i++) {
-        container.removeChild(removed[i].node());
-        removed[i].notifyDidDetachNode();
+        node = removed[i].node();
+        if (node.parentNode === container) {
+          container.removeChild(node);
+          removed[i].notifyDidDetachNode();
+        }
       }
       delete this.__removedWindows__;
     }
