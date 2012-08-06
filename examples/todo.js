@@ -40,7 +40,7 @@ Todo.LocalStorageMapper = Z.Mapper.extend(function() {
     if (!todo.id()) { todo.id(id); }
   }
 
-  this.def('initialize', function() {
+  this.def('init', function() {
     var tags = [], todos = [], i, len, k, v;
 
     for (i = 0, len = localStorage.length; i < len; i++) {
