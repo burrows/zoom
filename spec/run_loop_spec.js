@@ -3,121 +3,117 @@
 if (!this.Z) { require('./helper'); }
 
 describe('Z.RunLoop', function() {
-  var container1, container2, app1, app2, Child1, Child2;
-
-  Child1 = Z.View.extend(function() {
-    this.def('render', function() {
-      this.node().innerHTML = '<p class="child1"></p>';
-    });
-  });
-
-  Child2 = Z.View.extend(function() {
-    this.def('render', function() {
-      this.node().innerHTML = '<p class="child2"></p>';
-    });
-  });
+  var app, runLoop;
 
   beforeEach(function() {
-    container1 = document.createElement('div');
-    container1.id = 'test-container-1';
-    document.body.appendChild(container1);
-    app1 = Z.App.create(Child1, container1);
+    var container = document.createElement('div');
 
-    container2 = document.createElement('div');
-    container2.id = 'test-container-2';
-    document.body.appendChild(container2);
-    app2 = Z.App.create(Child2, container2);
+    document.body.appendChild(container);
+
+    app = {
+      displayWindows: function() {},
+      dispatchEvent: function() {},
+      container: container
+    };
+
+    runLoop = Z.RunLoop.create(app);
   });
 
   afterEach(function() {
-    app1.stop();
-    app2.stop();
-    document.body.removeChild(container1);
-    document.body.removeChild(container2);
-  });
-
-  describe('.once', function() {
-    var Test, invocations, o1, o2;
-
-    Test = Z.Object.extend(function() {
-      this.def('foo', function() { invocations.push([this, 'foo']); });
-      this.def('bar', function() { invocations.push([this, 'bar']); });
-    });
-
-    o1 = Test.create();
-    o2 = Test.create();
-
-    beforeEach(function() { invocations = []; Z.RunLoop.start(); });
-    afterEach(function() { invocations = []; Z.RunLoop.stop(); });
-
-    it('should invoke the given method on the given object at the end of the next run loop', function() {
-      Z.RunLoop.once(o1, 'foo');
-      expect(invocations).toEq([]);
-      Z.RunLoop.run();
-      expect(invocations).toEq([ [o1, 'foo'] ]);
-    });
-
-    it('should invoke all queued methods at the end of the next run loop', function() {
-      Z.RunLoop.once(o1, 'foo');
-      Z.RunLoop.once(o1, 'bar');
-      Z.RunLoop.once(o2, 'foo');
-      Z.RunLoop.once(o2, 'bar');
-      expect(invocations).toEq([]);
-
-      Z.RunLoop.run();
-
-      expect(invocations).toEq([
-        [o1, 'foo'], [o1, 'bar'], [o2, 'foo'], [o2, 'bar']
-      ]);
-    });
-
-    it('should only invoke the method once even when called multiple times with the same arguments in the same run loop', function() {
-      Z.RunLoop.once(o1, 'foo');
-      Z.RunLoop.once(o2, 'bar');
-      Z.RunLoop.once(o1, 'foo');
-      Z.RunLoop.once(o2, 'bar');
-      Z.RunLoop.once(o1, 'foo');
-      Z.RunLoop.once(o2, 'bar');
-      expect(invocations).toEq([]);
-
-      Z.RunLoop.run();
-
-      expect(invocations).toEq([ [o1, 'foo'], [o2, 'bar'] ]);
-    });
-
-    it('should clear the queue on each run', function() {
-      Z.RunLoop.once(o1, 'foo');
-      expect(invocations).toEq([]);
-
-      Z.RunLoop.run();
-
-      expect(invocations).toEq([ [o1, 'foo'] ]);
-      Z.RunLoop.once(o2, 'bar');
-
-      Z.RunLoop.run();
-
-      expect(invocations).toEq([ [o1, 'foo'], [o2, 'bar'] ]);
-    });
+    runLoop.destroy();
+    document.body.removeChild(app.container);
   });
 
   describe('.run', function() {
-    it('should invoke the `displayWindows` on all registered apps', function() {
-      spyOn(app1, 'displayWindows');
-      spyOn(app2, 'displayWindows');
-      Z.RunLoop.run();
-      expect(app1.displayWindows).not.toHaveBeenCalled();
-      expect(app2.displayWindows).not.toHaveBeenCalled();
-      Z.RunLoop.registerApp(app1);
-      Z.RunLoop.run();
-      expect(app1.displayWindows).toHaveBeenCalled();
-      expect(app2.displayWindows).not.toHaveBeenCalled();
-      app1.displayWindows.reset();
-      Z.RunLoop.registerApp(app2);
-      Z.RunLoop.run();
-      expect(app1.displayWindows).toHaveBeenCalled();
-      expect(app2.displayWindows).toHaveBeenCalled();
-      Z.RunLoop.deregisterApp(app1);
-      Z.RunLoop.deregisterApp(app2);
+    var o1, o2;
+
+    beforeEach(function() {
+      o1 = Z.Object.create();
+      o2 = Z.Object.create();
+
+      o1.def('foo', function() {});
+      o2.def('foo', function() {});
+    });
+
+    it("should invoke the app's displayWindows method", function() {
+      spyOn(app, 'displayWindows');
+      runLoop.run();
+      expect(app.displayWindows).toHaveBeenCalled();
+    });
+
+    it("should invoke all methods queued up with the once method", function() {
+      spyOn(o1, 'foo');
+      spyOn(o2, 'foo');
+
+      runLoop.once(o1, 'foo');
+      runLoop.once(o2, 'foo');
+
+      runLoop.run();
+
+      expect(o1.foo).toHaveBeenCalled();
+      expect(o1.foo.callCount).toBe(1);
+    });
+
+    it("should invoke once methods one time even when they are queued multiple times", function() {
+      spyOn(o1, 'foo');
+
+      runLoop.once(o1, 'foo');
+      runLoop.once(o1, 'foo');
+      runLoop.once(o1, 'foo');
+      runLoop.once(o1, 'foo');
+
+      runLoop.run();
+
+      expect(o1.foo).toHaveBeenCalled();
+      expect(o1.foo.callCount).toBe(1);
+    });
+
+    it("should clear the once queue", function() {
+      spyOn(o1, 'foo');
+
+      runLoop.once(o1, 'foo');
+
+      runLoop.run();
+
+      expect(o1.foo).toHaveBeenCalled();
+      expect(o1.foo.callCount).toBe(1);
+
+      runLoop.run();
+
+      expect(o1.foo.callCount).toBe(1);
+    });
+  });
+
+  describe('mouse event listener', function() {
+    it("should observe events on the app's container and invoke the run method", function() {
+      spyOn(app, 'dispatchEvent').andReturn(true);
+      spyOn(runLoop, 'run');
+      simulateMouseEvent(app.container, 'mousedown');
+      expect(runLoop.run).toHaveBeenCalled();
+      expect(runLoop.run.callCount).toBe(1);
+    });
+
+    it('should create a MouseMove event when the left mouse button is up and a MouseDrag event when it is down', function() {
+      spyOn(app, 'dispatchEvent');
+      simulateMouseEvent(app.container, 'mousemove');
+      expect(app.dispatchEvent.argsForCall[0][0].kind).toBe(Z.MouseMove);
+      simulateMouseEvent(app.container, 'mousedown');
+      simulateMouseEvent(app.container, 'mousemove');
+      expect(app.dispatchEvent.argsForCall[2][0].kind).toBe(Z.MouseDrag);
+      simulateMouseEvent(app.container, 'mouseup');
+      simulateMouseEvent(app.container, 'mousemove');
+      expect(app.dispatchEvent.argsForCall[4][0].kind).toBe(Z.MouseMove);
+    });
+  });
+
+  describe('destroy', function() {
+    it('should teardown event handlers', function() {
+      spyOn(app, 'dispatchEvent');
+      simulateMouseEvent(app.container, 'mousemove');
+      expect(app.dispatchEvent.callCount).toBe(1);
+      runLoop.destroy();
+      simulateMouseEvent(app.container, 'mousemove');
+      expect(app.dispatchEvent.callCount).toBe(1);
     });
   });
 });

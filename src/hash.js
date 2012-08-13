@@ -92,11 +92,11 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   //       can be any object or a function. When given a function, that function
   //       is invoked each time an unknown key is accessed and is passed a
   //       reference to the hash itself as well as the key.
-  this.def('initialize', function(def) {
+  this.def('init', function(def) {
     var nargs = arguments.length;
 
     if (nargs > 1) {
-      throw new Error(Z.fmt("Z.Hash.initialize: given %@ arguments, expected 0 or 1", nargs));
+      throw new Error(Z.fmt("Z.Hash.init: given %@ arguments, expected 0 or 1", nargs));
     }
 
     this.__z_head__    = null;

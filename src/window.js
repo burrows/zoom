@@ -56,7 +56,7 @@ Z.Window = Z.View.extend(function() {
   //
   // view - A `Z.View` sub-type or instance.
   // opts - An optional native object of properties to set (default: `{}`).
-  this.def('initialize', function(view, opts) {
+  this.def('init', function(view, opts) {
     var self = this;
     this.supr(opts);
     this.contentView(this.addSubview(view.isType ? view.create() : view));
@@ -186,8 +186,8 @@ Z.Window = Z.View.extend(function() {
 
     if (e.isA(Z.MouseEvent)) {
       // attempt to change the key view on mouse down events
-      if (e.kind() === Z.LeftMouseDown && this.keyView() !== e.view()) {
-        view = e.view();
+      if (e.kind === Z.LeftMouseDown && this.keyView() !== e.view) {
+        view = e.view;
 
         while (view) {
           if (view.acceptsKeyView()) { this.makeKeyView(view); break; }
@@ -195,7 +195,7 @@ Z.Window = Z.View.extend(function() {
         }
       }
 
-      handled = bubbleEvent(e, e.view());
+      handled = bubbleEvent(e, e.view);
     }
     else if (e.isA(Z.KeyEvent)) {
       handled = bubbleEvent(e, this.keyView() || this);

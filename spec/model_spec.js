@@ -397,7 +397,7 @@ describe('Z.Model.load', function() {
   });
 });
 
-describe('Z.Model.initialize', function() {
+describe('Z.Model.init', function() {
   it('should set the given attributes', function() {
     var m = Test.BasicModel.create({ foo: 'abc', bar: 1 });
 

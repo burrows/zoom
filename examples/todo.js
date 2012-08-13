@@ -40,7 +40,7 @@ Todo.LocalStorageMapper = Z.Mapper.extend(function() {
     if (!todo.id()) { todo.id(id); }
   }
 
-  this.def('initialize', function() {
+  this.def('init', function() {
     var tags = [], todos = [], i, len, k, v;
 
     for (i = 0, len = localStorage.length; i < len; i++) {
@@ -112,16 +112,15 @@ var selectedTags = Z.A();
 
 Todo.controller = {
   createTodo: function(title) {
-    var todo, tags, tag, m;
+    var todo, tags, tag;
 
-    if ((m = title.match(/\[([^\]]*)\]\s*$/))) {
-      tags = Z.Array.create(m[1].split(/\s*,\s*/)).map(function(name) {
-        tag = Todo.allTags.find(function(t) { return t.name() === name; });
-        return tag || Todo.Tag.create({name: name});
-      });
+    tags = Z.Array.create(title.match(/#\w+/g) || []).map(function(name) {
+      name = name.replace('#', '');
+      tag = Todo.allTags.find(function(t) { return t.name() === name; });
+      return tag || Todo.Tag.create({name: name});
+    });
 
-      title = title.replace(/\s*\[[^\]]*\]\s*$/, '');
-    }
+    title = title.replace(/#\w+/g, '').replace(/^\s+|\s+$/g, '')
 
     todo = Todo.Todo.create({title: title, tags: tags || Z.A()}).save();
 
@@ -177,22 +176,21 @@ Todo.controller = {
 //------------------------------------------------------------------------------
 
 Todo.TagView = Z.View.extend(function() {
-  this.prop('content');
+  this.tag = 'li';
 
-  this.def('tag', function() { return 'li'; });
+  this.prop('content');
 
   this.def('displayPaths', function() {
     return this.supr().concat('content.isSelected');
   });
 
   this.def('render', function() {
-    var node = this.node(),
-        isSelected = this.get('content.isSelected'),
+    var isSelected = this.get('content.isSelected'),
         badgeClasses = ['badge'];
 
      if (isSelected) { badgeClasses.push('badge-info'); }
 
-    node.innerHTML = Z.fmt('<span class="%@">', badgeClasses.join(' ')) +
+    this.node.innerHTML = Z.fmt('<span class="%@">', badgeClasses.join(' ')) +
       this.get('content.todos.size') + '</span> ' + this.get('content.name');
   });
 
@@ -212,8 +210,8 @@ Todo.SidebarView = Z.View.extend(function() {
   this.def('classes', function() { return this.supr().concat('span4'); });
 
   this.subview('headerView', Z.View.extend(function() {
-    this.def('tag', function() { return 'legend'; });
-    this.def('render', function() { this.node().innerHTML = 'Tags'; });
+    this.tag = 'legend';
+    this.def('render', function() { this.node.innerHTML = 'Tags'; });
   }));
 
   this.subview('tagListView', Todo.TagListView);
@@ -227,7 +225,7 @@ Todo.InputView = Z.View.extend(function() {
   this.def('acceptsKeyView', function() { return true; });
 
   this.def('render', function() {
-    var value = this.value(), node = this.node(), input;
+    var value = this.value(), node = this.node, input;
 
     if (!node.hasChildNodes()) {
       node.innerHTML = '<input type="text" placeholder="Enter a Todo"/>';
@@ -242,23 +240,23 @@ Todo.InputView = Z.View.extend(function() {
   });
 
   this.def('keyDown', function(e) {
-    var input = this.node().firstChild;
+    var input = this.node.firstChild;
     if (input && document.activeElement !== input) { input.focus(); }
     if (e.key() === 13) { Todo.controller.createTodo(this.value()); }
     return true;
   });
 
   this.def('keyUp', function(e) {
-    var input = this.node().firstChild;
+    var input = this.node.firstChild;
     if (input) { this.value(input.value); }
     return true;
   });
 });
 
 Todo.TodoView = Z.View.extend(function() {
-  this.prop('content');
+  this.tag = 'tr';
 
-  this.def('tag', function() { return 'tr'; });
+  this.prop('content');
 
   this.def('classes', function() {
     return this.supr().concat('todo-view');
@@ -269,7 +267,7 @@ Todo.TodoView = Z.View.extend(function() {
   });
 
   this.def('render', function() {
-    var node = this.node(), todo = this.content(), tags;
+    var node = this.node, todo = this.content(), tags;
 
     tags = todo.tags().map(function(tag) {
       return '<span class="label label-info">' + tag.name() + '</span>';
@@ -296,10 +294,10 @@ Todo.TodoView = Z.View.extend(function() {
 });
 
 Todo.TodoListView = Z.ListView.extend(function() {
+  this.tag  = 'table';
   this.def('classes', function() {
     return this.supr().concat('table', 'table-striped');
   });
-  this.def('tag', function() { return 'table'; });
   this.def('itemViewType', function() { return Todo.TodoView; });
 });
 
@@ -323,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
   Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
   Todo.app.set('mainWindow.contentView.sidebarView.tagListView.content', Todo.allTags);
   Todo.app.set('mainWindow.contentView.contentView.todoListView.content', Todo.allTodos);
-  Todo.app.start();
+  Todo.app.run();
 });
 
 }());

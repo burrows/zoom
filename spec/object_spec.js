@@ -24,9 +24,9 @@ describe('Z.Object.extend', function() {
     expect(Z.Object.extend().isType).toBe(true);
   });
 
-  it('should not invoke the `initialize` method', function() {
+  it('should not invoke the `init` method', function() {
     var called = false, X = Z.Object.extend(function() {
-      this.def('initialize', function() { called = true; });
+      this.def('init', function() { called = true; });
     }), Y;
 
     Y = X.extend();
@@ -98,20 +98,20 @@ describe('Z.Object.create', function() {
     expect(Z.Object.create().isType).toBe(false);
   });
 
-  it('should invoke the `initialize` method', function() {
+  it('should invoke the `init` method', function() {
     var called = false, X = Z.Object.extend(), x;
 
-    X.def('initialize', function() { called = true; });
+    X.def('init', function() { called = true; });
 
     x = X.create();
 
     expect(called).toBe(true);
   });
 
-  it('should pass all arguments to the `initialize` method', function() {
+  it('should pass all arguments to the `init` method', function() {
     var X = Z.Object.extend(), x, args;
 
-    X.def('initialize', function() {
+    X.def('init', function() {
       args = Array.prototype.slice.call(arguments);
     });
 
@@ -411,27 +411,6 @@ describe('Z.Object.hasProperty', function() {
   it('should return `false` if a property with the given name does not exist on the object', function() {
     expect(A.hasProperty('idontexist')).toBe(false);
     expect(A.hasProperty('bar')).toBe(false);
-  });
-});
-
-describe('Z.Object.once', function() {
-  beforeEach(function() { Z.RunLoop.start(); });
-  afterEach(function() { Z.RunLoop.stop(); });
-
-  it('should invoke the given method on the receiver once at the end of the run loop', function() {
-    var o = Z.Object.create(), invocations = 0;
-
-    o.def('foo', function() { invocations++; });
-
-    o.once('foo');
-    o.once('foo');
-    o.once('foo');
-    o.once('foo');
-    expect(invocations).toBe(0);
-
-    Z.RunLoop.run();
-
-    expect(invocations).toBe(1);
   });
 });
 

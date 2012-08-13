@@ -15,14 +15,14 @@ p3 = Person.create({first: 'Meera', last: 'Reed'});
 p4 = Person.create({first: 'Doran', last: 'Martell'});
 
 TestItemView = Z.View.extend(function() {
-  this.prop('content');
+  this.tag = 'li';
 
-  this.def('tag', function() { return 'li'; });
+  this.prop('content');
 
   this.def('draw', function() {
     var p = this.content(),
         s = '<span class="first">%@</span><span class="last">%@</span>';
-    this.node().innerHTML = Z.fmt(s, p.first(), p.last());
+    this.node.innerHTML = Z.fmt(s, p.first(), p.last());
   });
 });
 
@@ -31,14 +31,14 @@ TestListView = Z.ListView.extend(function() {
 });
 
 describe('Z.ListView', function() {
-  describe('.initialize without content', function() {
+  describe('.init without content', function() {
     it('should not create any subviews', function() {
       var v = TestListView.create();
       expect(v.subviews()).toEq(Z.A());
     });
   });
 
-  describe('.initialize with content', function() {
+  describe('.init with content', function() {
     it('should create subviews for each item in the content', function() {
       var v = TestListView.create({content: Z.A(p1, p2)});
 

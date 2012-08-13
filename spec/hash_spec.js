@@ -269,7 +269,7 @@ describe('Z.Hash constructor', function() {
     it('should throw an exception', function() {
       expect(function() {
         Z.Hash.create(1,2,3);
-      }).toThrow('Z.Hash.initialize: given 3 arguments, expected 0 or 1');
+      }).toThrow('Z.Hash.init: given 3 arguments, expected 0 or 1');
     });
   });
 });

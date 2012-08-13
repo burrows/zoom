@@ -6,12 +6,12 @@ if (!this.Z) { require('./helper'); }
 
 TestView = Z.View.extend(function() {
   this.def('render', function() {
-    this.node().innerHTML = '<div class="test-view-1"></div>';
+    this.node.innerHTML = '<div class="test-view-1"></div>';
   });
 });
 
 describe('Z.Window', function() {
-  describe('.initialize', function() {
+  describe('.init', function() {
     it('should create a concrete instance of the given view type and set it as the `contentView`', function() {
       var w = Z.Window.create(TestView), cv = w.contentView();
       expect(cv.isType).toBe(false);
@@ -43,12 +43,12 @@ describe('Z.Window', function() {
 
   describe('node property', function() {
     it('should have the class `z-window`', function() {
-      var w = Z.Window.create(Z.View), node = w.node();
+      var w = Z.Window.create(Z.View), node = w.node;
       expect(node.className).toMatch(/\bz-window\b/);
     });
 
     it('should have the class `z-main-window` when the `isMain` property is set', function() {
-      var w = Z.Window.create(Z.View, {isMain: true}), node = w.node();
+      var w = Z.Window.create(Z.View, {isMain: true}), node = w.node;
       expect(node.className).toMatch(/\bz-window\b/);
       expect(node.className).toMatch(/\bz-main-window\b/);
     });
@@ -391,7 +391,7 @@ describe('Z.Window', function() {
           kind: Z.LeftMouseDown,
           window: win,
           view: sv12,
-          node: sv12.node()
+          node: sv12.node
         });
       });
 

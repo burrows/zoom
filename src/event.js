@@ -12,67 +12,62 @@ Z.MouseDrag      = 'MouseDrag';
 
 // Public: Provides a `Z.Object` wrapper type for native browser event objects.
 Z.Event = Z.Object.extend(function() {
-  // Public: A property indicating the kind of event this represents. The
-  // supported event kinds are listed at the top of this file.
-  this.prop('kind');
+  // Public: A regular property indicating the kind of event this object
+  // represents. The supported event kinds are listed at the top of this file.
+  this.kind = null;
 
-  // Public: A property indicating whether or the the Alt key was pressed when
+  // Public: A regular property indicating whether the Alt key was pressed when
   // the event was triggered.
-  this.prop('isAlt');
+  this.isAlt = null;
 
-  // Public: A property indicating whether or the the Ctrl key was pressed when
+  // Public: A regular property indicating whether the Ctrl key was pressed when
   // the event was triggered.
-  this.prop('isCtrl');
+  this.isCtrl = null;
 
-  // Public: A property indicating whether or the the Meta key was pressed when
+  // Public: A regular property indicating whether the Meta key was pressed when
   // the event was triggered.
-  this.prop('isMeta');
+  this.isMeta = null;
 
-  // Public: A property indicating whether or the the Shift key was pressed when
-  // the event was triggered.
-  this.prop('isShift');
+  // Public: A regular property indicating whether the Shift key was pressed
+  // when the event was triggered.
+  this.isShift = null;
 
-  // Public: A property containing a `Date` object representing the time at
-  // which the event was observed.
-  this.prop('timestamp');
+  // Public: A regular property containing a `Date` object representing the time
+  // at which the event was observed.
+  this.timestamp = null;
 
-  // Public: A property containing the native event this object is wrapping.
-  this.prop('nativeEvent');
+  // Public: A regular property containing the native event this object is
+  // wrapping.
+  this.nativeEvent = null;
 
-  // Internal: Specifies the properties for the `toString` method to display.
-  //
-  // native - A native browser mouse event object.
-  //
-  // Returns a `Z.Event` object.
-  this.def('toStringProperties', function() {
-    return this.supr().concat('kind', 'isAlt', 'isCtrl', 'isMeta', 'isShift',
-                              'timestamp');
-  });
+  // Public: Overrides the default `init` method to allow for setting the event
+  // object's regular properties using a native object.
+  this.def('init', function(props) { return Z.merge(this, props || {}); });
 
   // Internal: Converts the event's `kind` to the name of a handler method name
   // that views can implement in order to be notified of the event.
   this.def('handler', function() {
-    var kind = this.kind();
-    return kind[0].toLowerCase() + kind.slice(1);
+    return this.kind[0].toLowerCase() + this.kind.slice(1);
   });
 });
 
 // Public: A `Z.Event` wrapper for browser native mouse events.
 Z.MouseEvent = Z.Event.extend(function() {
-  // Public: A property containing the `Z.Window` object over which the event
+  // Public: A regular property containing the `Z.Window` object over which the
+  // event occurred.
+  this.window = null;
+
+  // Public: A regular property containing the `Z.View` object over which the
+  // event occurred.
+  this.view = null;
+
+  // Public: A regular property containing the DOM node over which the event
   // occurred.
-  this.prop('window');
+  this.node = null;
 
-  // Public: A property containing the `Z.View` object over which the event
-  // occurred.
-  this.prop('view');
-
-  // Public: A property containing the DOM node over which the event occurred.
-  this.prop('node');
-
-  // Public: A property containing the x and y coordinates of the mouse event
-  // relative to the browser window.
-  this.prop('location');
+  // Public: A regular property containing the x and y coordinates of the mouse
+  // event relative to the browser window.
+  this.location = null;
 
   // Internal: Converts the event's `kind` to the name of a handler method name
   // that views can implement in order to be notified of the event.
@@ -83,7 +78,7 @@ Z.MouseEvent = Z.Event.extend(function() {
 
 // Public: A `Z.Event` wrapper for browser native key events.
 Z.KeyEvent = Z.Event.extend(function() {
-  // Public: A property containing they character code of the key event.
-  this.prop('key');
+  // Public: A regular property containing they character code of the key event.
+  this.key = null;
 });
 

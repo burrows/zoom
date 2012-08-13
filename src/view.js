@@ -23,13 +23,13 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Internal: Observer callback for `displayProperties`.
   function displayPathObserver() { this.needsDisplay(true); }
 
-  // Public: A property holding the DOM node managed by the view.
-  this.prop('node', {
-    readonly: true,
-    get: function() {
-      return this.__node__ = this.__node__ || this.buildNode();
-    }
-  });
+  // Public: A native property that indicates the HTML tag to use when building
+  // the view's `node`. Set this property to generate a `node` that is something
+  // other than a div.
+  this.tag = 'div';
+
+  // Public: A native property holding the DOM node managed by the view.
+  this.node = null;
 
   // Public: Indicates whether this view's `node` is currently attached to the
   // DOM.
@@ -61,20 +61,13 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
   // Internal: Specifies the properties for the `toString` method to display.
   this.def('toStringProperties', function() {
-    return this.supr().concat('isKey', 'needsDisplay', 'node');
+    return this.supr().concat('isKey', 'needsDisplay');
   });
 
-  // Public: Returns the HTML tag to use when building the `node` for instances
-  // of the view. Override this method to generate a `node` that is something
-  // other than a div.
-  //
-  // Returns a string representing the type of DOM node to use.
-  this.def('tag', function() { return 'div'; });
-
   // Public: Adds a named subview to the view type. Defining a subview this way
-  // will cause the `.initialize` method to automatically instantiate the type
-  // and add it to the subviews array. A property with the given name is defined
-  // that will return the subview.
+  // will cause the `.init` method to automatically instantiate the type and add
+  // it to the subviews array. A property with the given name is defined that
+  // will return the subview.
   //
   // name - A string containing the name of the subview.
   // type - A Z.View type to create the subview from.
@@ -136,12 +129,15 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   });
 
   // Internal: Adds the new view instance to the internal cache used by the
-  // `forNode` method and creates any subviews defined by the `subview` method.
-  this.def('initialize', function(props) {
+  // `forNode` method and creates any subviews defined with the `subview`
+  // method.
+  this.def('init', function(props) {
     var self = this, subviewTypes = this.__subviewTypes__;
 
     this.supr(props);
     views[this.objectId()] = this;
+
+    this.node = this.buildNode();
 
     if (subviewTypes) {
       subviewTypes.each(function(tuple) {
@@ -184,7 +180,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Returns the DOM node.
   this.def('buildNode', function() {
     var id      = 'z-view-' + this.objectId(),
-        node    = document.createElement(this.tag()),
+        node    = document.createElement(this.tag),
         classes = Z.A('z-view').concat(this.classes());
 
     node.id = id;
@@ -257,7 +253,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('removeSubviewNode', function(subview) {
-    var node = this.node(), child = subview.node();
+    var node = this.node, child = subview.node;
 
     if (child.parentNode === node) {
       node.removeChild(child);
@@ -277,7 +273,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('insertSubviewNode', function(subview, idx) {
-    var node = this.node(), child = subview.node();
+    var node = this.node, child = subview.node;
 
     if (child === node.childNodes[idx]) { return this; }
 

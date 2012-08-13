@@ -5,10 +5,9 @@
 // Additionally, a container node can be optionally specified to use for
 // rendering the application (by default `document.body` is used).
 Z.App = Z.Object.extend(function() {
-  // Public: A property that returns the container DOM node that the application
-  // was initialized with. All DOM modifications and mouse events observed
-  // happen within this container.
-  this.prop('container');
+  // Public: A regular property that holds the container DOM node. All DOM
+  // modifications and mouse events observed happen within this container.
+  this.container = null;
 
   // Public: An array containing all of the application's `Z.Window` objects.
   // Every application has at least one window, the main window, which is always
@@ -25,28 +24,19 @@ Z.App = Z.Object.extend(function() {
     get: function() { return this.get('windows.first'); }
   });
 
-  // Public: A boolean indicating whether the application has been started yet.
-  // No windows are drawn on the screen until the application is started.
-  this.prop('isRunning', { def: false });
-
   // Public: The window that currently has keyboard focus. All keyboard events
   // observed by the application will be sent to the window pointed to by this
   // property.
   this.prop('keyWindow');
-
-  // Internal: Specifies the properties for the `toString` method to display.
-  this.def('toStringProperties', function() {
-    return this.supr().concat('container', 'isRunning');
-  });
 
   // Public: The `Z.App` constructor.
   //
   // mainView  - A sub-type of `Z.App` to use as the root view of the
   //             application's main window.
   // container - A DOM node to contain the app (default: `document.body`).
-  this.def('initialize', function(mainView, container) {
+  this.def('init', function(mainView, container) {
     if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
-      throw new Error(Z.fmt("%@.initialize: must provide a sub-type of `Z.View` as the main view type",
+      throw new Error(Z.fmt("%@.init: must provide a sub-type of `Z.View` as the main view type",
                             this.typeName()));
     }
 
@@ -55,38 +45,34 @@ Z.App = Z.Object.extend(function() {
       app: this, isMain: true, isKey: true
     }));
 
-    this.set('container', container || document.body);
+    this.container = container || document.body;
   });
 
-  // Public: Starts the application by registering with the run loop, displaying
-  // all windows and setting the key window to the main window.
+  // Public: Begins running the app by creating a run loop and rendering all
+  // windows.
   //
   // Returns the receiver.
-  this.def('start', function() {
-    if (!this.isRunning()) {
-      Z.RunLoop.registerApp(this).start();
+  this.def('run', function() {
+    if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
       this.mainWindow().becomeKeyWindow();
-      this.displayWindows();
-      this.isRunning(true);
     }
+
+    this.runLoop = Z.RunLoop.create(this);
+    this.runLoop.run();
 
     return this;
   });
 
-  // Public: Stops the app by deregistering with the run loop and removing all
-  // windows. A stopped app may be started again by invoking the `start` method.
+  // Public: Destroys the app by removing all windows from the DOM and
+  // destroying the app's run loop.
   //
   // Returns the receiver.
-  this.def('stop', function() {
-    var keyWin = this.keyWindow();
-
-    if (this.isRunning()) {
-      Z.RunLoop.deregisterApp(this);
+  this.def('destroy', function() {
+    if (this.runLoop) {
       this.set('keyWindow', null);
-      keyWin.resignKeyWindow();
       this.removeWindows().displayWindows();
-      this.isRunning(false);
+      this.runLoop.destroy();
     }
 
     return this;
@@ -101,14 +87,17 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('displayWindows', function() {
-    var container = this.container(), windows = this.windows(),
-        removed, window, i, size;
+    var container = this.container, windows = this.windows(),
+        removed, window, i, size, node;
 
     // ensure that all removed windows have had their nodes detached
     if (removed = this.__removedWindows__) {
       for (i = 0, size = removed.length; i < size; i++) {
-        container.removeChild(removed[i].node());
-        removed[i].notifyDidDetachNode();
+        node = removed[i].node;
+        if (node.parentNode === container) {
+          container.removeChild(node);
+          removed[i].notifyDidDetachNode();
+        }
       }
       delete this.__removedWindows__;
     }
@@ -116,8 +105,8 @@ Z.App = Z.Object.extend(function() {
     for (i = 0, size = windows.size(); i < size; i++) {
       window = windows.at(i);
       window.displayIfNeeded();
-      if (window.node().parentNode !== container) {
-        container.appendChild(window.node());
+      if (window.node.parentNode !== container) {
+        container.appendChild(window.node);
         window.notifyDidAttachNode();
       }
     }
@@ -202,17 +191,34 @@ Z.App = Z.Object.extend(function() {
   // down event occurs over a window that is not the key window, it is first
   // made the key window before the event is dispatched to it.
   //
+  // This method is called by the app's `runLoop` object and returns a boolean
+  // indicated whether it handled the event. The run loop object only triggers
+  // a run of the run loop if this method returns `true`.
+  //
   // e - A `Z.Event` object.
   //
-  // Returns nothing.
+  // Returns `true` if the app processes the event and `false` if it does not.
   this.def('dispatchEvent', function(e) {
-    var keyWin = this.keyWindow();
+    var keyWin = this.keyWindow(), view, window;
 
-    if (e.isA(Z.MouseEvent) && e.kind() === Z.LeftMouseDown) {
-      keyWin = this.makeKeyWindow(e.window());
+    if (e.isA(Z.MouseEvent)) {
+      view   = e.view;
+      window = view && view.window();
+
+      if (!view || !window) { return false; }
+
+      if (e.kind === Z.MouseMove && !window.acceptsMouseMoveEvents()) {
+        return false;
+      }
+
+      if (e.kind === Z.LeftMouseDown) {
+        keyWin = this.makeKeyWindow(e.window);
+      }
     }
 
     keyWin.dispatchEvent(e);
+
+    return true;
   });
 });
 

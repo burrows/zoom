@@ -24,6 +24,13 @@ Z.getPrototypeOf = isNative(Object.getPrototypeOf) ? Object.getPrototypeOf : fun
   return o.constructor ? o.constructor.prototype : null;
 };
 
+// Internal: Polyfill for `Function.bind`.
+// Source: https://gist.github.com/1597825.
+Z.bind = function(fn, ctx) {
+  return typeof Function.bind === 'function' ? fn.bind(ctx) :
+    function() { return fn.apply(ctx, slice.call(arguments)); };
+};
+
 // Public: Registers a namespace for `Z.Object.typeName` to search through to
 // determine the name of a type object. All of your application objects should
 // be created under a namespace object instead of in the global scope.
