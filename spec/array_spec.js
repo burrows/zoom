@@ -1415,4 +1415,40 @@ describe('Z.Array.sortBy', function() {
   });
 });
 
+describe('Z.array.dup', function() {
+  it('should return a new copy of the receiver', function() {
+    var a1 = Z.A(1,2,3);
+    expect(a1.dup()).toEq(a1);
+    expect(a1.dup()).not.toBe(a1);
+  });
+});
+
+describe('Z.Array.uniq', function() {
+  it('should return a new array without duplicate items', function() {
+    expect(Z.A(1,2,2,3,3,3,4,4,4,4,5,5,5,5,5).uniq()).toEq(Z.A(1,2,3,4,5));
+    expect(Z.A('foo', 'bar', 'foo', 'baz', 'bar', 'quux').uniq()).toEq(Z.A('foo', 'bar', 'baz', 'quux'));
+    expect(Z.A([1,2], [3,4], [4,5], [3,4]).uniq()).toEq(Z.A([1,2], [3,4], [4,5]));
+  });
+});
+
+describe('Z.Array.uniq$', function() {
+  it('should remove duplicate items from the receiver', function() {
+    var a1 = Z.A(1,2,2,3,3,3,4,4,4,4,5,5,5,5,5),
+        a2 = Z.A('foo', 'bar', 'foo', 'baz', 'bar', 'quux'),
+        a3 = Z.A([1,2], [3,4], [4,5], [3,4]);
+
+    expect(a1.uniq$()).toBe(a1);
+    expect(a1).toEq(Z.A(1,2,3,4,5));
+    expect(a2.uniq$()).toBe(a2);
+    expect(a2).toEq(Z.A('foo', 'bar', 'baz', 'quux'));
+    expect(a3.uniq$()).toBe(a3);
+    expect(a3).toEq(Z.A([1,2], [3,4], [4,5]));
+  });
+
+  it('should return `null` if no changes were made', function() {
+    expect(Z.A(1,2,3).uniq$()).toBeNull();
+    expect(Z.A('foo', 'bar').uniq$()).toBeNull();
+  });
+});
+
 }());

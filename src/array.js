@@ -401,7 +401,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   //
   // i      - The index to start the mutation, may be negative.
   // n      - The number of items to remove, starting from `i`. If not
-  //          given, the all items starting from `i` are removed.
+  //          given, then all items starting from `i` are removed.
   // *items - Zero or more items to add to the array, starting at index `i`.
   //
   // Returns the receiver.
@@ -681,6 +681,41 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     didMutate.call(this, 'update', 0, size);
 
     return this;
+  });
+
+  // Public: Returns a new `Z.Array` instance that contains all items in the
+  // receiver.
+  //
+  // Returns a `Z.Array`.
+  this.def('dup', function() { return Z.Array.create(this.__z_items__); });
+
+  // Public: Returns a new `Z.Array` instance containing only the unique items
+  // in the receiver.
+  //
+  // Returns a `Z.Array`.
+  this.def('uniq', function() {
+    var a = this.dup();
+    a.uniq$();
+    return a;
+  });
+
+  // Public: Removes duplicate items from the receiver.
+  //
+  // Returns the receiver if duplicates where found and `nil` if no changes were
+  //   made.
+  this.def('uniq$', function() {
+    var h = Z.H(), items = this.__z_items__, remove = [], i, len;
+
+    for (i = 0, len = items.length; i < len; i++) {
+      if (h.hasKey(items[i])) { remove.push(i); }
+      else { h.at(items[i], true); }
+    }
+
+    for (i = remove.length - 1; i >= 0; i--) {
+      this.splice(remove[i], 1);
+    }
+
+    return remove.length > 0 ? this : null;
   });
 
   // Public: Sorts the receiver by the given property path or comparison
