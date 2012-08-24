@@ -54,11 +54,6 @@ Z.BaseState = Z.Object.extend(function() {
 });
 
 Z.State = Z.BaseState.extend(function() {
-  this.def('init', function(name) {
-    this.supr(name);
-    this.currentSubstate = null;
-  });
-
   this.def('enter', function(paths) {
     var heads = paths.invoke('shift'),
         next  = heads.first() || this.substates.keys().first();
@@ -78,23 +73,21 @@ Z.State = Z.BaseState.extend(function() {
     this.isCurrent = true;
     this.didEnterState();
 
-    if (next) {
-      this.currentSubstate = next;
-      this.substates.at(next).enter(paths);
-    }
+    if (next) { this.substates.at(next).enter(paths); }
 
     return this;
   });
 
   this.def('exit', function() {
+    var substate = this.substates.values().find(function(s) {
+      return s.isCurrent;
+    });
+
     if (!this.isCurrent) {
       throw new Error(Z.fmt("%@.exit: state %@ is not current", this.typeName(), this));
     }
 
-    if (this.currentSubstate) {
-      this.substates.at(this.currentSubstate).exit();
-      this.currentSubstate = null;
-    }
+    if (substate) { substate.exit(); }
 
     this.willExitState();
     this.isCurrent = false;

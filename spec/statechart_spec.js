@@ -142,22 +142,10 @@ describe('Z.State', function() {
       expect(s2.enter.argsForCall[0][0]).toEq(Z.A(Z.A()));
     });
 
-    it('should set `currentSubstate` to the given next substate', function() {
-      expect(s.currentSubstate).toBeNull();
-      s.enter(Z.A(Z.A('s3')));
-      expect(s.currentSubstate).toBe('s3');
-    });
-
     it('should call `enter` on the first substate when a destination path is not given', function() {
       spyOn(s1, 'enter');
       s.enter(Z.A());
       expect(s1.enter).toHaveBeenCalled();
-    });
-
-    it('should set `currentSubstate` to the first substate when a destination path is not given', function() {
-      expect(s.currentSubstate).toBeNull();
-      s.enter(Z.A());
-      expect(s.currentSubstate).toBe('s1');
     });
   });
 
@@ -203,13 +191,6 @@ describe('Z.State', function() {
       s.exit();
       expect(s.willExitState).toHaveBeenCalled();
       expect(s3.exit).toHaveBeenCalled();
-    });
-
-    it('should set `currentSubstate` to `null`', function() {
-      s.enter(Z.A(Z.A('s2')));
-      expect(s.currentSubstate).toBe('s2');
-      s.exit();
-      expect(s.currentSubstate).toBeNull();
     });
   });
 });
