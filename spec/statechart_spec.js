@@ -2,24 +2,24 @@
 
 if (!this.Z) { require('./helper'); }
 
-describe('Z.State', function() {
+describe('Z.BaseState', function() {
   describe('.init', function() {
     it('should set the `name` property', function() {
-      var s = Z.State.create('a');
+      var s = Z.BaseState.create('a');
       expect(s.name).toBe('a');
     });
 
     it('should set substates property to an empty hash', function() {
-      var s = Z.State.create('a');
+      var s = Z.BaseState.create('a');
       expect(s.substates).toEq(Z.H());
     });
   });
 
   describe('.addSubstate', function() {
     it('should add the given state to the substates hash', function() {
-      var a = Z.State.create('a'),
-          b = Z.State.create('b'),
-          c = Z.State.create('c');
+      var a = Z.BaseState.create('a'),
+          b = Z.BaseState.create('b'),
+          c = Z.BaseState.create('c');
 
       a.addSubstate(b);
       expect(a.substates).toEq(Z.H('b', b));
@@ -28,9 +28,9 @@ describe('Z.State', function() {
     });
 
     it('should set the superstate property of the given state', function() {
-      var a = Z.State.create('a'),
-          b = Z.State.create('b'),
-          c = Z.State.create('c');
+      var a = Z.BaseState.create('a'),
+          b = Z.BaseState.create('b'),
+          c = Z.BaseState.create('c');
 
       a.addSubstate(b);
       expect(b.superstate).toBe(a);
@@ -41,10 +41,10 @@ describe('Z.State', function() {
 
   describe('.ancestorStates', function() {
     it("should return an array of the given state's ancestor states", function() {
-      var a = Z.State.create('a'),
-          b = Z.State.create('b'),
-          c = Z.State.create('c'),
-          d = Z.State.create('d');
+      var a = Z.BaseState.create('a'),
+          b = Z.BaseState.create('b'),
+          c = Z.BaseState.create('c'),
+          d = Z.BaseState.create('d');
 
       a.addSubstate(b);
       b.addSubstate(c);
@@ -59,19 +59,19 @@ describe('Z.State', function() {
 
   describe('.commonAncestor', function() {
     it('should throw an exception if the given state is not in the same tree', function() {
-      var a = Z.State.create('a'), b = Z.State.create('b');
+      var a = Z.BaseState.create('a'), b = Z.BaseState.create('b');
 
       expect(function() {
         a.commonAncestor(b);
-      }).toThrow(Z.fmt("Z.State.commonAncestor: state %@ does not belong to the same statechart as state %@", a, b));
+      }).toThrow(Z.fmt("Z.BaseState.commonAncestor: state %@ does not belong to the same statechart as state %@", a, b));
     });
 
     it('should return the first common ancestor state among the receiver and given state', function() {
-      var a = Z.State.create('a'),
-          b = Z.State.create('b'),
-          c = Z.State.create('c'),
-          d = Z.State.create('d'),
-          e = Z.State.create('e');
+      var a = Z.BaseState.create('a'),
+          b = Z.BaseState.create('b'),
+          c = Z.BaseState.create('c'),
+          d = Z.BaseState.create('d'),
+          e = Z.BaseState.create('e');
 
       a.addSubstate(b);
       a.addSubstate(c);
@@ -84,7 +84,9 @@ describe('Z.State', function() {
       expect(d.commonAncestor(c)).toBe(a);
     });
   });
+});
 
+describe('Z.State', function() {
   describe('.enter', function() {
     var s, s1, s2, s3;
 
@@ -109,7 +111,7 @@ describe('Z.State', function() {
     it('should throw an exception when given a destination path whose head is not a substate', function() {
       expect(function() {
         s.enter(Z.A(Z.A('x', 'y', 'z')));
-      }).toThrow(Z.fmt("Z.State.enter: `x` is not a substate of %@", s));
+      }).toThrow(Z.fmt("Z.State.enter: state %@ has no substate named 'x'", s));
     });
 
     it('should throw an exception when given multiple destination paths whose heads are not the same', function() {

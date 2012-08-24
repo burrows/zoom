@@ -12,13 +12,12 @@
 //   sendEvent(name) -
 //   goto(state | states)
 
-Z.State = Z.Object.extend(function() {
-  this.def('init', function(name, opts) {
-    this.name            = name;
-    this.substates       = Z.H();
-    this.superstate      = null;
-    this.isCurrent       = false;
-    this.currentSubstate = null;
+Z.BaseState = Z.Object.extend(function() {
+  this.def('init', function(name) {
+    this.name       = name;
+    this.substates  = Z.H();
+    this.superstate = null;
+    this.isCurrent  = false;
   });
 
   this.def('addSubstate', function(state) {
@@ -46,26 +45,34 @@ Z.State = Z.Object.extend(function() {
       if (astates[i] === bstates[i]) { return astates[i]; }
     }
 
-    throw new Error(Z.fmt("Z.State.commonAncestor: state %@ does not belong to the same statechart as state %@", this, other));
+    throw new Error(Z.fmt("%@.commonAncestor: state %@ does not belong to the same statechart as state %@", this.typeName(), this, other));
   });
 
   this.def('didEnterState', Z.identity);
+
   this.def('willExitState', Z.identity);
+});
+
+Z.State = Z.BaseState.extend(function() {
+  this.def('init', function(name) {
+    this.supr(name);
+    this.currentSubstate = null;
+  });
 
   this.def('enter', function(paths) {
     var heads = paths.invoke('shift'),
         next  = heads.first() || this.substates.keys().first();
 
     if (this.isCurrent) {
-      throw new Error(Z.fmt("Z.State.enter: state %@ is already current", this));
+      throw new Error(Z.fmt("%@.enter: state %@ is already current", this.typeName(), this));
     }
 
     if (heads.uniq().size() > 1) {
-      throw new Error(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent heads: %@", this, heads.toNative()));
+      throw new Error(Z.fmt("%@.enter: state %@ given destination paths with inconsistent heads: %@", this.typeName(), this, heads.toNative()));
     }
 
     if (next && !this.substates.hasKey(next)) {
-      throw new Error(Z.fmt("Z.State.enter: `%@` is not a substate of %@", next, this));
+      throw new Error(Z.fmt("%@.enter: state %@ has no substate named '%@'", this.typeName(), this, next));
     }
 
     this.isCurrent = true;
@@ -81,7 +88,7 @@ Z.State = Z.Object.extend(function() {
 
   this.def('exit', function() {
     if (!this.isCurrent) {
-      throw new Error(Z.fmt("Z.State.exit: state %@ is not current", this));
+      throw new Error(Z.fmt("%@.exit: state %@ is not current", this.typeName(), this));
     }
 
     if (this.currentSubstate) {
