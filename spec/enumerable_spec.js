@@ -48,6 +48,13 @@ describe('Z.Enumerable.first', function() {
   });
 });
 
+describe('Z.Enumerable.select', function() {
+  it('should return a Z.Array containing all of the values in the enumerable that the given predicate function passes for', function() {
+    expect(f.select(function(x) { return x[0] === 'b'; })).toEq(Z.A('bar', 'baz'));
+    expect(a.select(function(x) { return x % 2 === 0; })).toEq(Z.A(2, 4, 6, 8, 10));
+  });
+});
+
 describe('Z.Enumerable.reject', function() {
   it('should return a Z.Array containing all of the values in the enumerable except those that the given predicate function passes for', function() {
     expect(f.reject(function(x) { return x[0] === 'b'; })).toEq(Z.A('foo', 'quux'));

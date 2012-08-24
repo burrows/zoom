@@ -126,6 +126,23 @@ Z.Enumerable = Z.Module.create(function() {
   });
 
   // Public: Returns a `Z.Array` containing all items of the enumerable for
+  // which the given function returns `true`.
+  //
+  // f - A function that takes a item of the enumerable and returns a boolean.
+  //
+  // Examples
+  //
+  //   Z.A(1,2,3,4,5,6).select(function(x) { return x % 2 === 0; }); // => #<Z.Array:29 [2, 4, 6]>
+  //
+  // Returns a `Z.Array` instance.
+  this.def('select', function(f) {
+    return this.inject(Z.A(), function(acc, item) {
+      if (f(item)) { acc.push(item); }
+      return acc;
+    });
+  });
+
+  // Public: Returns a `Z.Array` containing all items of the enumerable for
   // which the given function returns `false`.
   //
   // f - A function that takes a item of the enumerable and returns a boolean.
@@ -136,7 +153,7 @@ Z.Enumerable = Z.Module.create(function() {
   //
   // Returns a `Z.Array` instance.
   this.def('reject', function(f) {
-    return this.inject(Z.Array.create(), function(acc, item) {
+    return this.inject(Z.A(), function(acc, item) {
       if (!f(item)) { acc.push(item); }
       return acc;
     });
