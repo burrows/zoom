@@ -95,3 +95,24 @@ Z.State = Z.BaseState.extend(function() {
     return this;
   });
 });
+
+Z.ConcurrentState = Z.BaseState.extend(function() {
+  this.def('enter', function(paths) {
+    var pathsByHead;
+
+    this.isCurrent = true;
+    this.didEnterState();
+
+    pathsByHead = Z.Hash.create(function(h, k) { return h.at(k, Z.A()); });
+    paths.each(function(path) { pathsByHead.at(path.shift()).push(path); });
+
+    this.substates.each(function(tuple) {
+      tuple[1].enter(pathsByHead.at(tuple[0]));
+    });
+
+    return this;
+  });
+
+  this.def('exit', function() {
+  });
+});

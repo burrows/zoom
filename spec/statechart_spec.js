@@ -121,7 +121,7 @@ describe('Z.State', function() {
       }).toThrow(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent heads: %@", s, ['x', 'x', 'm']));
     });
 
-    it('should set `isCurrent` to true', function() {
+    it('should set `isCurrent` to `true`', function() {
       expect(s1.isCurrent).toBe(false);
       s1.enter(Z.A());
       expect(s1.isCurrent).toBe(true);
@@ -191,6 +191,60 @@ describe('Z.State', function() {
       s.exit();
       expect(s.willExitState).toHaveBeenCalled();
       expect(s3.exit).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('Z.ConcurrentState', function() {
+  describe('.enter', function() {
+    var s, s1, s2, s3;
+
+    beforeEach(function() {
+      s  = Z.ConcurrentState.create('s');
+      s1 = Z.State.create('s1');
+      s2 = Z.State.create('s2');
+      s3 = Z.State.create('s3');
+
+      s.addSubstate(s1);
+      s.addSubstate(s2);
+      s.addSubstate(s3);
+    });
+
+    it('should set `isCurrent` to `true`', function() {
+      expect(s.isCurrent).toBe(false);
+      s.enter(Z.A());
+      expect(s.isCurrent).toBe(true);
+    });
+
+    it('should call `didEnterState` on the receiver', function() {
+      spyOn(s, 'didEnterState');
+      s.enter(Z.A());
+      expect(s.didEnterState).toHaveBeenCalled();
+    });
+
+    it('should call `didEnterState` on the receiver and then call `enter` on each substate', function() {
+      spyOn(s, 'didEnterState');
+      spyOn(s1, 'enter');
+      spyOn(s2, 'enter');
+      spyOn(s3, 'enter');
+      s.enter(Z.A());
+      expect(s.didEnterState).toHaveBeenCalled();
+      expect(s1.enter).toHaveBeenCalled();
+      expect(s2.enter).toHaveBeenCalled();
+      expect(s3.enter).toHaveBeenCalled();
+    });
+
+    it('should pass along the destination paths that belong to the corresponding concurrent substate when calling `enter` on the substate', function() {
+      spyOn(s1, 'enter');
+      spyOn(s2, 'enter');
+      spyOn(s3, 'enter');
+      s.enter(Z.A(Z.A('s1', 'a'), Z.A('s2', 'b'), Z.A('s3', 'c')));
+      expect(s1.enter).toHaveBeenCalled();
+      expect(s1.enter.argsForCall[0][0]).toEq(Z.A(Z.A('a')));
+      expect(s2.enter).toHaveBeenCalled();
+      expect(s2.enter.argsForCall[0][0]).toEq(Z.A(Z.A('b')));
+      expect(s3.enter).toHaveBeenCalled();
+      expect(s3.enter.argsForCall[0][0]).toEq(Z.A(Z.A('c')));
     });
   });
 });
