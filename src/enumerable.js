@@ -159,6 +159,26 @@ Z.Enumerable = Z.Module.create(function() {
     });
   });
 
+  // Public: Returns a `Z.Hash` that maps the results of the given function to
+  // `Z.Array`s containing the coresponding items that produced the result.
+  //
+  // f - A function that takes an item of the enumerable and returns any value.
+  //
+  // Examples
+  //
+  //   Z.A(1,2,3,4,5,6).groupBy(function(i) { return i % 2; });
+  //   // => #<Z.Hash:41 {1: #<Z.Array:42 [1, 3, 5]>, 0: #<Z.Array:44 [2, 4, 6]>}>
+  //
+  // Returns a `Z.Hash` instance.
+  this.def('groupBy', function(f) {
+    return this.inject(Z.H(), function(acc, item) {
+      var k = f(item);
+      if (!acc.at(k)) { acc.at(k, Z.A()); }
+      acc.at(k).push(item);
+      return acc;
+    });
+  });
+
   // Public: Returns `true` if the given fuction returns `true` for every item
   // in the enumerable and `false` otherwise.
   //

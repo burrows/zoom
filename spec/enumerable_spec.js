@@ -62,6 +62,13 @@ describe('Z.Enumerable.reject', function() {
   });
 });
 
+describe('Z.Enumerable.groupBy', function() {
+  it('should return a Z.Hash mapping the results of the given function to arrays containing the corresponding enumerable items', function() {
+    expect(f.groupBy(function(x) { return x[0]; })).toEq(Z.H('f', Z.A('foo'), 'b', Z.A('bar', 'baz'), 'q', Z.A('quux')));
+    expect(a.groupBy(function(x) { return x % 2})).toEq(Z.H(0, Z.A(2,4,6,8,10), 1, Z.A(1,3,5,7,9)));
+  });
+});
+
 describe('Z.Enumerable.invoke', function() {
   it('should call the given method on each item in the array and return a new array contain the results', function() {
     var o1 = Z.Object.create(), o2 = Z.Object.create(), o3 = Z.Object.create(),
