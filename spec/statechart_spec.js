@@ -260,6 +260,55 @@ describe('Z.ConcurrentState', function() {
       expect(s3.enter.argsForCall[0][0]).toEq(Z.A(Z.A('c')));
     });
   });
+
+  describe('.exit', function() {
+    var s, s1, s2, s3;
+
+    beforeEach(function() {
+      s  = Z.ConcurrentState.create('s');
+      s1 = Z.State.create('s1');
+      s2 = Z.State.create('s2');
+      s3 = Z.State.create('s3');
+
+      s.addSubstate(s1);
+      s.addSubstate(s2);
+      s.addSubstate(s3);
+    });
+
+    it('should throw an exception if the state is not current', function() {
+      expect(s.isCurrent).toBe(false);
+      expect(function() {
+        s.exit();
+      }).toThrow(Z.fmt("Z.ConcurrentState.exit: state %@ is not current", s));
+    });
+
+    it('should set `isCurrent` to false', function() {
+      s.enter(Z.A());
+      expect(s.isCurrent).toBe(true);
+      s.exit();
+      expect(s.isCurrent).toBe(false);
+    });
+
+    it('should call `willExitState` on the receiver', function() {
+      s.enter(Z.A());
+      spyOn(s, 'willExitState');
+      s.exit();
+      expect(s.willExitState).toHaveBeenCalled();
+    });
+
+    it('should call `exit` on all substates and then call `willExitState` on the receiver', function() {
+      s.enter(Z.A());
+      spyOn(s, 'willExitState');
+      spyOn(s1, 'exit');
+      spyOn(s2, 'exit');
+      spyOn(s3, 'exit');
+      s.exit();
+      expect(s1.exit).toHaveBeenCalled();
+      expect(s2.exit).toHaveBeenCalled();
+      expect(s3.exit).toHaveBeenCalled();
+      expect(s.willExitState).toHaveBeenCalled();
+    });
+  });
 });
 
 }());

@@ -110,9 +110,8 @@ Z.ConcurrentState = Z.BaseState.extend(function() {
     pathsByHead = paths.groupBy(function(p) { return p.shift(); });
 
     pathsByHead.keys().each(function(head) {
-      if (!substates.hasKey(head)) {
-        throw new Error(Z.fmt("%@.enter: state %@ has no substate named '%@'", self.typeName(), self, head));
-      }
+      if (substates.hasKey(head)) { return; }
+      throw new Error(Z.fmt("%@.enter: state %@ has no substate named '%@'", self.typeName(), self, head));
     });
 
     substates.each(function(tuple) {
@@ -123,5 +122,14 @@ Z.ConcurrentState = Z.BaseState.extend(function() {
   });
 
   this.def('exit', function() {
+    if (!this.isCurrent) {
+      throw new Error(Z.fmt("%@.exit: state %@ is not current", this.typeName(), this));
+    }
+
+    this.substates.values().invoke('exit');
+    this.willExitState();
+    this.isCurrent = false;
+
+    return this;
   });
 });
