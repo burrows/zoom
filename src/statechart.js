@@ -98,16 +98,25 @@ Z.State = Z.BaseState.extend(function() {
 
 Z.ConcurrentState = Z.BaseState.extend(function() {
   this.def('enter', function(paths) {
-    var pathsByHead;
+    var self = this, substates = this.substates, pathsByHead;
+
+    if (this.isCurrent) {
+      throw new Error(Z.fmt("%@.enter: state %@ is already current", this.typeName(), this));
+    }
 
     this.isCurrent = true;
     this.didEnterState();
 
-    pathsByHead = Z.Hash.create(function(h, k) { return h.at(k, Z.A()); });
-    paths.each(function(path) { pathsByHead.at(path.shift()).push(path); });
+    pathsByHead = paths.groupBy(function(p) { return p.shift(); });
 
-    this.substates.each(function(tuple) {
-      tuple[1].enter(pathsByHead.at(tuple[0]));
+    pathsByHead.keys().each(function(head) {
+      if (!substates.hasKey(head)) {
+        throw new Error(Z.fmt("%@.enter: state %@ has no substate named '%@'", self.typeName(), self, head));
+      }
+    });
+
+    substates.each(function(tuple) {
+      tuple[1].enter(pathsByHead.at(tuple[0]) || Z.A());
     });
 
     return this;

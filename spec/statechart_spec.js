@@ -210,6 +210,19 @@ describe('Z.ConcurrentState', function() {
       s.addSubstate(s3);
     });
 
+    it('should throw an exception if the state is already current', function() {
+      s.enter(Z.A());
+      expect(function() {
+        s.enter(Z.A());
+      }).toThrow(Z.fmt("Z.ConcurrentState.enter: state %@ is already current", s));
+    });
+
+    it('should throw an exception when given a destination path whose head is not a substate', function() {
+      expect(function() {
+        s.enter(Z.A(Z.A('x', 'y', 'z')));
+      }).toThrow(Z.fmt("Z.ConcurrentState.enter: state %@ has no substate named 'x'", s));
+    });
+
     it('should set `isCurrent` to `true`', function() {
       expect(s.isCurrent).toBe(false);
       s.enter(Z.A());
