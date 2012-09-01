@@ -13,6 +13,17 @@
 //   goto(state | states)
 
 Z.BaseState = Z.Object.extend(function() {
+  function pivot(path1, path2) {
+    var s = null, i, len;
+
+    for (i = 0, len = Z.min(path1.size(), path2.size()); i < len; i++) {
+      if (path1.at(i) === path2.at(i)) { s = path1.at(i); }
+      else { break; }
+    }
+
+    return s;
+  }
+
   this.def('init', function(name) {
     this.name       = name;
     this.substates  = Z.H();
@@ -26,26 +37,28 @@ Z.BaseState = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('ancestorStates', function() {
-    var a = [this], s = this;
-    while (s = s.superstate) { a.push(s); }
+  this.def('path', function() {
+    var a = Z.A(this), s = this;
+    while (s = s.superstate) { a.unshift(s); }
     return a;
   });
 
-  this.def('commonAncestor', function(other) {
-    var astates  = this.ancestorStates(),
-        bstates  = other.ancestorStates(),
-        mindepth = Z.min(astates.length, bstates.length),
-        i, len;
+  // Returns a tuple containing the pivot state, exit state, and enter state.
+  this.def('transitionStates', function(end) {
+    var startPath = this.path(),
+        endPath   = end.path(),
+        p         = pivot(startPath, endPath),
+        i         = startPath.index(p);
 
-    astates = astates.slice(astates.length - mindepth, astates.length);
-    bstates = bstates.slice(bstates.length - mindepth, bstates.length);
-
-    for (i = 0, len = astates.length; i < len; i++) {
-      if (astates[i] === bstates[i]) { return astates[i]; }
+    if (this === end) {
+      throw new Error(Z.fmt("%@.transitionStates: start and end states are the same: %@", this.typeName(), this));
     }
 
-    throw new Error(Z.fmt("%@.commonAncestor: state %@ does not belong to the same statechart as state %@", this.typeName(), this, other));
+    if (!p) {
+      throw new Error(Z.fmt("%@.transitionStates: states %@ and %@ do not belong to the same statechart", this.typeName(), this, end));
+    }
+
+    return [p, startPath.at(i + 1), endPath.at(i + 1)];
   });
 
   this.def('didEnterState', Z.identity);

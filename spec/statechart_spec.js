@@ -39,8 +39,8 @@ describe('Z.BaseState', function() {
     });
   });
 
-  describe('.ancestorStates', function() {
-    it("should return an array of the given state's ancestor states", function() {
+  describe('.path', function() {
+    it("should return an array containing the the path of states starting from the root to the receiver", function() {
       var a = Z.BaseState.create('a'),
           b = Z.BaseState.create('b'),
           c = Z.BaseState.create('c'),
@@ -50,38 +50,53 @@ describe('Z.BaseState', function() {
       b.addSubstate(c);
       b.addSubstate(d);
 
-      expect(a.ancestorStates()).toEq([a]);
-      expect(b.ancestorStates()).toEq([b, a]);
-      expect(c.ancestorStates()).toEq([c, b, a]);
-      expect(d.ancestorStates()).toEq([d, b, a]);
+      expect(a.path()).toEq(Z.A(a));
+      expect(b.path()).toEq(Z.A(a, b));
+      expect(c.path()).toEq(Z.A(a, b, c));
+      expect(d.path()).toEq(Z.A(a, b, d));
     });
   });
 
-  describe('.commonAncestor', function() {
-    it('should throw an exception if the given state is not in the same tree', function() {
-      var a = Z.BaseState.create('a'), b = Z.BaseState.create('b');
+  describe('.transisitionStates', function() {
+    var s, s1, s2, s3, s11, s12, s31, s32;
 
-      expect(function() {
-        a.commonAncestor(b);
-      }).toThrow(Z.fmt("Z.BaseState.commonAncestor: state %@ does not belong to the same statechart as state %@", a, b));
+    beforeEach(function() {
+      s   = Z.BaseState.create('s');
+      s1  = Z.BaseState.create('s1');
+      s2  = Z.BaseState.create('s2');
+      s3  = Z.BaseState.create('s3');
+      s11 = Z.BaseState.create('s11');
+      s12 = Z.BaseState.create('s12');
+      s31 = Z.BaseState.create('s31');
+      s32 = Z.BaseState.create('s32');
+
+      s.addSubstate(s1);
+      s.addSubstate(s2);
+      s.addSubstate(s3);
+      s1.addSubstate(s11);
+      s1.addSubstate(s12);
+      s3.addSubstate(s31);
+      s3.addSubstate(s32);
     });
 
-    it('should return the first common ancestor state among the receiver and given state', function() {
-      var a = Z.BaseState.create('a'),
-          b = Z.BaseState.create('b'),
-          c = Z.BaseState.create('c'),
-          d = Z.BaseState.create('d'),
-          e = Z.BaseState.create('e');
+    it('should throw an exception when the receiver and given state do not belong to the same tree', function() {
+      var x = Z.BaseState.create('x');
 
-      a.addSubstate(b);
-      a.addSubstate(c);
-      b.addSubstate(d);
-      b.addSubstate(e);
+      expect(function() {
+        s1.transitionStates(x);
+      }).toThrow(Z.fmt("Z.BaseState.transitionStates: states %@ and %@ do not belong to the same statechart", s1, x));
+    });
 
-      expect(d.commonAncestor(e)).toBe(b);
-      expect(d.commonAncestor(b)).toBe(b);
-      expect(e.commonAncestor(b)).toBe(b);
-      expect(d.commonAncestor(c)).toBe(a);
+    it('should throw an exception when the receiver and given state are the same', function() {
+      expect(function() {
+        s1.transitionStates(s1);
+      }).toThrow(Z.fmt("Z.BaseState.transitionStates: start and end states are the same: %@", s1));
+    });
+
+    it('should return a tuple containing the pivot state, exit root state, and enter root state', function() {
+      expect(s11.transitionStates(s12)).toEq([s1, s11, s12]);
+      expect(s11.transitionStates(s31)).toEq([s, s1, s3]);
+      expect(s32.transitionStates(s2)).toEq([s, s3, s2]);
     });
   });
 });
