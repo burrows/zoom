@@ -39,6 +39,33 @@ describe('Z.BaseState', function() {
     });
   });
 
+  describe('.isRoot', function() {
+    it('should return true if the state has no superstate and false otherwise', function() {
+      var s = Z.BaseState.create('s'), s1 = Z.BaseState.create('s1');
+      s.addSubstate(s1);
+      expect(s.isRoot()).toBe(true);
+      expect(s1.isRoot()).toBe(false);
+    });
+  });
+
+  describe('.root', function() {
+    it('should return the root state', function() {
+      var a = Z.BaseState.create('a'),
+          b = Z.BaseState.create('b'),
+          c = Z.BaseState.create('c');
+          d = Z.BaseState.create('d');
+
+      a.addSubstate(b);
+      a.addSubstate(c);
+      c.addSubstate(d);
+
+      expect(a.root()).toBe(a);
+      expect(b.root()).toBe(a);
+      expect(c.root()).toBe(a);
+      expect(d.root()).toBe(a);
+    });
+  });
+
   describe('.path', function() {
     it("should return an array containing the the path of states starting from the root to the receiver", function() {
       var a = Z.BaseState.create('a'),

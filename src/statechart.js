@@ -37,6 +37,14 @@ Z.BaseState = Z.Object.extend(function() {
     return this;
   });
 
+  this.def('isRoot', function() { return !this.superstate; });
+
+  this.def('root', function() {
+    var s = this;
+    while (s.superstate) { s = s.superstate; }
+    return s;
+  });
+
   this.def('path', function() {
     var a = Z.A(this), s = this;
     while (s = s.superstate) { a.unshift(s); }
