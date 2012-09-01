@@ -193,6 +193,39 @@ describe('Z.State', function() {
       expect(s3.exit).toHaveBeenCalled();
     });
   });
+
+  describe('.currentStates', function() {
+    var s, s1, s2, s11, s12;
+
+    beforeEach(function() {
+      s   = Z.State.create('s');
+      s1  = Z.State.create('s1');
+      s2  = Z.State.create('s2');
+      s11 = Z.State.create('s11');
+      s12 = Z.State.create('s12');
+
+      s.addSubstate(s1);
+      s.addSubstate(s2);
+      s1.addSubstate(s11);
+      s1.addSubstate(s12);
+    });
+
+    it('should return `null` when the state is not current', function() {
+      expect(s.isCurrent).toBe(false);
+      expect(s.currentStates()).toBeNull();
+    });
+
+    it('should return a `Z.Array` containing the result of invoking `currentStates` on the current substate with the name of the receiver prepended to each path', function() {
+      s.enter(Z.A(Z.A('s1', 's12')));
+      expect(s.currentStates()).toEq(Z.A(Z.A('s', 's1', 's12')));
+
+      spyOn(s1, 'currentStates').andCallFake(function() {
+        return Z.A(Z.A('a', 'b'), Z.A('c', 'd'));
+      });
+
+      expect(s.currentStates()).toEq(Z.A(Z.A('s', 'a', 'b'), Z.A('s', 'c', 'd')));
+    });
+  });
 });
 
 describe('Z.ConcurrentState', function() {
@@ -307,6 +340,37 @@ describe('Z.ConcurrentState', function() {
       expect(s2.exit).toHaveBeenCalled();
       expect(s3.exit).toHaveBeenCalled();
       expect(s.willExitState).toHaveBeenCalled();
+    });
+  });
+
+  describe('.currentStates', function() {
+    var s, s1, s2, s11, s12, s21, s22;
+
+    beforeEach(function() {
+      s   = Z.ConcurrentState.create('s');
+      s1  = Z.State.create('s1');
+      s2  = Z.State.create('s2');
+      s11 = Z.State.create('s11');
+      s12 = Z.State.create('s12');
+      s21 = Z.State.create('s21');
+      s22 = Z.State.create('s22');
+
+      s.addSubstate(s1);
+      s.addSubstate(s2);
+      s1.addSubstate(s11);
+      s1.addSubstate(s12);
+      s2.addSubstate(s21);
+      s2.addSubstate(s22);
+    });
+
+    it('should return `null` when the state is not current', function() {
+      expect(s.isCurrent).toBe(false);
+      expect(s.currentStates()).toBeNull();
+    });
+
+    it('should return a `Z.Array` containing the result of invokeing `currentStates` on each substate with the name of the receiver prepended to each path', function() {
+      s.enter(Z.A(Z.A('s1', 's11'), Z.A('s2', 's22')));
+      expect(s.currentStates()).toEq(Z.A(Z.A('s', 's1', 's11'), Z.A('s', 's2', 's22')));
     });
   });
 });

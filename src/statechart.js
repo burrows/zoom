@@ -94,6 +94,24 @@ Z.State = Z.BaseState.extend(function() {
 
     return this;
   });
+
+  this.def('currentStates', function() {
+    var name = this.name, substate, states;
+
+    if (!this.isCurrent) { return null; }
+
+    substate = this.substates.values().find(function(s) {
+      return s.isCurrent;
+    });
+
+    if (!substate) { return Z.A(Z.A(name)); }
+
+    states = substate.currentStates();
+
+    states.each(function(state) { state.unshift(name); });
+
+    return states;
+  });
 });
 
 Z.ConcurrentState = Z.BaseState.extend(function() {
@@ -131,5 +149,19 @@ Z.ConcurrentState = Z.BaseState.extend(function() {
     this.isCurrent = false;
 
     return this;
+  });
+
+  this.def('currentStates', function() {
+    var name = this.name, states = Z.A();
+
+    if (!this.isCurrent) { return null; }
+
+    this.substates.each(function(tuple) {
+      tuple[1].currentStates().each(function(state) {
+        states.push(state.unshift(name));
+      });
+    });
+
+    return states;
   });
 });
