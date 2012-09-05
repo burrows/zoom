@@ -2,24 +2,44 @@
 
 if (!this.Z) { require('./helper'); }
 
-describe('Z.BaseState', function() {
+describe('Z.State', function() {
   describe('.init', function() {
     it('should set the `name` property', function() {
-      var s = Z.BaseState.create('a');
+      var s = Z.State.create('a');
       expect(s.name).toBe('a');
     });
 
     it('should set substates property to an empty hash', function() {
-      var s = Z.BaseState.create('a');
+      var s = Z.State.create('a');
       expect(s.substates).toEq(Z.H());
+    });
+
+    it('should set `isCurrent` to `false`', function() {
+      var s = Z.State.create('a');
+      expect(s.isCurrent).toBe(false);
+    });
+
+    it("should set `path` to an empty array", function() {
+      var s = Z.State.create('a');
+      expect(s.path).toEq([]);
+    });
+
+    it('should default `isConcurrent` to `false`', function() {
+      var s = Z.State.create('a');
+      expect(s.isConcurrent).toBe(false);
+    });
+
+    it('should allow setting `isConcurrent` to `true`', function() {
+      var s = Z.State.create('a', {isConcurrent: true});
+      expect(s.isConcurrent).toBe(true);
     });
   });
 
   describe('.addSubstate', function() {
     it('should add the given state to the substates hash', function() {
-      var a = Z.BaseState.create('a'),
-          b = Z.BaseState.create('b'),
-          c = Z.BaseState.create('c');
+      var a = Z.State.create('a'),
+          b = Z.State.create('b'),
+          c = Z.State.create('c');
 
       a.addSubstate(b);
       expect(a.substates).toEq(Z.H('b', b));
@@ -28,112 +48,115 @@ describe('Z.BaseState', function() {
     });
 
     it('should set the superstate property of the given state', function() {
-      var a = Z.BaseState.create('a'),
-          b = Z.BaseState.create('b'),
-          c = Z.BaseState.create('c');
+      var a = Z.State.create('a'),
+          b = Z.State.create('b'),
+          c = Z.State.create('c');
 
       a.addSubstate(b);
       expect(b.superstate).toBe(a);
       a.addSubstate(c);
       expect(c.superstate).toBe(a);
     });
-  });
 
-  describe('.isRoot', function() {
-    it('should return true if the state has no superstate and false otherwise', function() {
-      var s = Z.BaseState.create('s'), s1 = Z.BaseState.create('s1');
-      s.addSubstate(s1);
-      expect(s.isRoot()).toBe(true);
-      expect(s1.isRoot()).toBe(false);
-    });
-  });
+    it("should update the substate and it's descendant's `path` properties", function() {
+      var a = Z.State.create('a'),
+          b = Z.State.create('b'),
+          c = Z.State.create('c'),
+          d = Z.State.create('d');
 
-  describe('.root', function() {
-    it('should return the root state', function() {
-      var a = Z.BaseState.create('a'),
-          b = Z.BaseState.create('b'),
-          c = Z.BaseState.create('c');
-          d = Z.BaseState.create('d');
+      expect(a.path).toEq([]);
+      expect(b.path).toEq([]);
+      expect(c.path).toEq([]);
+      expect(d.path).toEq([]);
 
-      a.addSubstate(b);
-      a.addSubstate(c);
-      c.addSubstate(d);
-
-      expect(a.root()).toBe(a);
-      expect(b.root()).toBe(a);
-      expect(c.root()).toBe(a);
-      expect(d.root()).toBe(a);
-    });
-  });
-
-  describe('.path', function() {
-    it("should return an array containing the the path of states starting from the root to the receiver", function() {
-      var a = Z.BaseState.create('a'),
-          b = Z.BaseState.create('b'),
-          c = Z.BaseState.create('c'),
-          d = Z.BaseState.create('d');
-
-      a.addSubstate(b);
       b.addSubstate(c);
       b.addSubstate(d);
 
-      expect(a.path()).toEq(Z.A(a));
-      expect(b.path()).toEq(Z.A(a, b));
-      expect(c.path()).toEq(Z.A(a, b, c));
-      expect(d.path()).toEq(Z.A(a, b, d));
+      expect(a.path).toEq([]);
+      expect(b.path).toEq([]);
+      expect(c.path).toEq(['c']);
+      expect(d.path).toEq(['d']);
+
+      a.addSubstate(b);
+
+      expect(a.path).toEq([]);
+      expect(b.path).toEq(['b']);
+      expect(c.path).toEq(['b', 'c']);
+      expect(d.path).toEq(['b', 'd']);
     });
   });
 
-  describe('.transisitionStates', function() {
-    var s, s1, s2, s3, s11, s12, s31, s32;
+  describe('.enter on a clustered state', function() {
+    var r, s1, s2, s3;
 
     beforeEach(function() {
-      s   = Z.BaseState.create('s');
-      s1  = Z.BaseState.create('s1');
-      s2  = Z.BaseState.create('s2');
-      s3  = Z.BaseState.create('s3');
-      s11 = Z.BaseState.create('s11');
-      s12 = Z.BaseState.create('s12');
-      s31 = Z.BaseState.create('s31');
-      s32 = Z.BaseState.create('s32');
+      r  = Z.State.create('root');
+      s1 = Z.State.create('s1');
+      s2 = Z.State.create('s2');
+      s3 = Z.State.create('s3');
 
-      s.addSubstate(s1);
-      s.addSubstate(s2);
-      s.addSubstate(s3);
-      s1.addSubstate(s11);
-      s1.addSubstate(s12);
-      s3.addSubstate(s31);
-      s3.addSubstate(s32);
+      r.addSubstate(s1);
+      r.addSubstate(s2);
+      r.addSubstate(s3);
     });
 
-    it('should throw an exception when the receiver and given state do not belong to the same tree', function() {
-      var x = Z.BaseState.create('x');
-
+    it('should throw an exception when given a destination path whose head is not a substate', function() {
       expect(function() {
-        s1.transitionStates(x);
-      }).toThrow(Z.fmt("Z.BaseState.transitionStates: states %@ and %@ do not belong to the same statechart", s1, x));
+        r.enter([['x', 'y', 'z']]);
+      }).toThrow(Z.fmt("Z.State.enter: state %@ has no substate named 'x'", r));
     });
 
-    it('should throw an exception when the receiver and given state are the same', function() {
+    it('should throw an exception when given multiple destination paths whose heads are not the same', function() {
       expect(function() {
-        s1.transitionStates(s1);
-      }).toThrow(Z.fmt("Z.BaseState.transitionStates: start and end states are the same: %@", s1));
+        r.enter([['x', 'y'], ['x', 'z'], ['m', 'n']]);
+      }).toThrow(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent heads: %@", r, ['x', 'x', 'm']));
     });
 
-    it('should return a tuple containing the pivot state, exit root state, and enter root state', function() {
-      expect(s11.transitionStates(s12)).toEq([s1, s11, s12]);
-      expect(s11.transitionStates(s31)).toEq([s, s1, s3]);
-      expect(s32.transitionStates(s2)).toEq([s, s3, s2]);
+    it('should set `isCurrent` to `true`', function() {
+      expect(s1.isCurrent).toBe(false);
+      s1.enter([]);
+      expect(s1.isCurrent).toBe(true);
+    });
+
+    it('should call `didEnterState` on the receiver when its not already current', function() {
+      spyOn(s1, 'didEnterState');
+      s1.enter([]);
+      expect(s1.didEnterState).toHaveBeenCalled();
+    });
+
+    it('should not call `didEnterState` on the receiver when it is already current', function() {
+      s1.enter([]);
+      spyOn(s1, 'didEnterState');
+      s1.enter([]);
+      expect(s1.didEnterState).not.toHaveBeenCalled();
+    });
+
+    it('should call `enter` on the given next substate', function() {
+      spyOn(s2, 'enter');
+      r.enter([['s2']]);
+      expect(s2.enter).toHaveBeenCalled();
+      expect(s2.enter.argsForCall[0][0]).toEq([[]]);
+    });
+
+    it('should call `enter` on the first substate when a destination path is not given', function() {
+      spyOn(s1, 'enter');
+      r.enter([]);
+      expect(s1.enter).toHaveBeenCalled();
+    });
+
+    it('should call `exit` on the current substate when it is different than the substate being entered', function() {
+      r.enter([['s3']]);
+      spyOn(s3, 'exit');
+      r.enter([['s2']]);
+      expect(s3.exit).toHaveBeenCalled();
     });
   });
-});
 
-describe('Z.State', function() {
-  describe('.enter', function() {
+  describe('.enter on a concurrent state', function() {
     var s, s1, s2, s3;
 
     beforeEach(function() {
-      s  = Z.State.create('s');
+      s  = Z.State.create('s', {isConcurrent: true});
       s1 = Z.State.create('s1');
       s2 = Z.State.create('s2');
       s3 = Z.State.create('s3');
@@ -143,59 +166,103 @@ describe('Z.State', function() {
       s.addSubstate(s3);
     });
 
-    it('should throw an exception if the state is already current', function() {
-      s1.enter(Z.A());
-      expect(function() {
-        s1.enter(Z.A());
-      }).toThrow(Z.fmt("Z.State.enter: state %@ is already current", s1));
-    });
-
     it('should throw an exception when given a destination path whose head is not a substate', function() {
       expect(function() {
-        s.enter(Z.A(Z.A('x', 'y', 'z')));
+        s.enter([['x', 'y', 'z']]);
       }).toThrow(Z.fmt("Z.State.enter: state %@ has no substate named 'x'", s));
     });
 
-    it('should throw an exception when given multiple destination paths whose heads are not the same', function() {
-      var paths = Z.A(Z.A('x', 'y'), Z.A('x', 'z'), Z.A('m', 'n'));
-      expect(function() {
-        s.enter(paths);
-      }).toThrow(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent heads: %@", s, ['x', 'x', 'm']));
-    });
-
     it('should set `isCurrent` to `true`', function() {
-      expect(s1.isCurrent).toBe(false);
-      s1.enter(Z.A());
-      expect(s1.isCurrent).toBe(true);
+      expect(s.isCurrent).toBe(false);
+      s.enter([]);
+      expect(s.isCurrent).toBe(true);
     });
 
-    it('should call `didEnterState` on the receiver', function() {
-      spyOn(s1, 'didEnterState');
-      s1.enter(Z.A());
-      expect(s1.didEnterState).toHaveBeenCalled();
-    });
-
-    it('should call `didEnterState` on the receiver and then call `enter` on the given next substate', function() {
+    it('should call `didEnterState` on the receiver when it is not already current', function() {
       spyOn(s, 'didEnterState');
-      spyOn(s2, 'enter');
-      s.enter(Z.A(Z.A('s2')));
+      s.enter([]);
       expect(s.didEnterState).toHaveBeenCalled();
-      expect(s2.enter).toHaveBeenCalled();
-      expect(s2.enter.argsForCall[0][0]).toEq(Z.A(Z.A()));
     });
 
-    it('should call `enter` on the first substate when a destination path is not given', function() {
+    it('should not call `didEnterState` on the receiver when it is already current', function() {
+      s.enter([]);
+      spyOn(s, 'didEnterState');
+      s.enter([]);
+      expect(s.didEnterState).not.toHaveBeenCalled();
+    });
+
+    it('should call `enter` on each substate', function() {
       spyOn(s1, 'enter');
-      s.enter(Z.A());
+      spyOn(s2, 'enter');
+      spyOn(s3, 'enter');
+      s.enter([]);
       expect(s1.enter).toHaveBeenCalled();
+      expect(s2.enter).toHaveBeenCalled();
+      expect(s3.enter).toHaveBeenCalled();
+    });
+
+    it('should pass along the destination paths that belong to the corresponding concurrent substate when calling `enter` on the substate', function() {
+      spyOn(s1, 'enter');
+      spyOn(s2, 'enter');
+      spyOn(s3, 'enter');
+      s.enter([['s1', 'a'], ['s2', 'b'], ['s3', 'c']]);
+      expect(s1.enter).toHaveBeenCalled();
+      expect(s1.enter.argsForCall[0][0]).toEq([['a']]);
+      expect(s2.enter).toHaveBeenCalled();
+      expect(s2.enter.argsForCall[0][0]).toEq([['b']]);
+      expect(s3.enter).toHaveBeenCalled();
+      expect(s3.enter.argsForCall[0][0]).toEq([['c']]);
     });
   });
 
-  describe('.exit', function() {
+  describe('.exit on a clustered state', function() {
+    var r, s1, s2, s3;
+
+    beforeEach(function() {
+      r  = Z.State.create('root');
+      s1 = Z.State.create('s1');
+      s2 = Z.State.create('s2');
+      s3 = Z.State.create('s3');
+
+      r.addSubstate(s1);
+      r.addSubstate(s2);
+      r.addSubstate(s3);
+    });
+
+    it('should throw an exception if the state is not current', function() {
+      expect(r.isCurrent).toBe(false);
+      expect(function() {
+        r.exit();
+      }).toThrow(Z.fmt("Z.State.exit: state %@ is not current", r));
+    });
+
+    it('should set `isCurrent` to false', function() {
+      s1.enter([]);
+      expect(s1.isCurrent).toBe(true);
+      s1.exit();
+      expect(s1.isCurrent).toBe(false);
+    });
+
+    it('should call `willExitState` on the receiver', function() {
+      s1.enter([]);
+      spyOn(s1, 'willExitState');
+      s1.exit();
+      expect(s1.willExitState).toHaveBeenCalled();
+    });
+
+    it('should call `exit` on the current substate', function() {
+      r.enter([['s3']]);
+      spyOn(s3, 'exit');
+      r.exit();
+      expect(s3.exit).toHaveBeenCalled();
+    });
+  });
+
+  describe('.exit on a concurrent state', function() {
     var s, s1, s2, s3;
 
     beforeEach(function() {
-      s  = Z.State.create('s');
+      s  = Z.State.create('s', {isConcurrent: true});
       s1 = Z.State.create('s1');
       s2 = Z.State.create('s2');
       s3 = Z.State.create('s3');
@@ -213,167 +280,21 @@ describe('Z.State', function() {
     });
 
     it('should set `isCurrent` to false', function() {
-      s1.enter(Z.A());
-      expect(s1.isCurrent).toBe(true);
-      s1.exit();
-      expect(s1.isCurrent).toBe(false);
-    });
-
-    it('should call `willExitState` on the receiver', function() {
-      s1.enter(Z.A());
-      spyOn(s1, 'willExitState');
-      s1.exit();
-      expect(s1.willExitState).toHaveBeenCalled();
-    });
-
-    it('should call `exit` on the current substate and then call `willExitState` on the receiver', function() {
-      s.enter(Z.A(Z.A('s3')));
-      spyOn(s, 'willExitState');
-      spyOn(s3, 'exit');
-      s.exit();
-      expect(s.willExitState).toHaveBeenCalled();
-      expect(s3.exit).toHaveBeenCalled();
-    });
-  });
-
-  describe('.currentStates', function() {
-    var s, s1, s2, s11, s12;
-
-    beforeEach(function() {
-      s   = Z.State.create('s');
-      s1  = Z.State.create('s1');
-      s2  = Z.State.create('s2');
-      s11 = Z.State.create('s11');
-      s12 = Z.State.create('s12');
-
-      s.addSubstate(s1);
-      s.addSubstate(s2);
-      s1.addSubstate(s11);
-      s1.addSubstate(s12);
-    });
-
-    it('should return `null` when the state is not current', function() {
-      expect(s.isCurrent).toBe(false);
-      expect(s.currentStates()).toBeNull();
-    });
-
-    it('should return a `Z.Array` containing the result of invoking `currentStates` on the current substate with the name of the receiver prepended to each path', function() {
-      s.enter(Z.A(Z.A('s1', 's12')));
-      expect(s.currentStates()).toEq(Z.A(Z.A('s', 's1', 's12')));
-
-      spyOn(s1, 'currentStates').andCallFake(function() {
-        return Z.A(Z.A('a', 'b'), Z.A('c', 'd'));
-      });
-
-      expect(s.currentStates()).toEq(Z.A(Z.A('s', 'a', 'b'), Z.A('s', 'c', 'd')));
-    });
-  });
-});
-
-describe('Z.ConcurrentState', function() {
-  describe('.enter', function() {
-    var s, s1, s2, s3;
-
-    beforeEach(function() {
-      s  = Z.ConcurrentState.create('s');
-      s1 = Z.State.create('s1');
-      s2 = Z.State.create('s2');
-      s3 = Z.State.create('s3');
-
-      s.addSubstate(s1);
-      s.addSubstate(s2);
-      s.addSubstate(s3);
-    });
-
-    it('should throw an exception if the state is already current', function() {
-      s.enter(Z.A());
-      expect(function() {
-        s.enter(Z.A());
-      }).toThrow(Z.fmt("Z.ConcurrentState.enter: state %@ is already current", s));
-    });
-
-    it('should throw an exception when given a destination path whose head is not a substate', function() {
-      expect(function() {
-        s.enter(Z.A(Z.A('x', 'y', 'z')));
-      }).toThrow(Z.fmt("Z.ConcurrentState.enter: state %@ has no substate named 'x'", s));
-    });
-
-    it('should set `isCurrent` to `true`', function() {
-      expect(s.isCurrent).toBe(false);
-      s.enter(Z.A());
-      expect(s.isCurrent).toBe(true);
-    });
-
-    it('should call `didEnterState` on the receiver', function() {
-      spyOn(s, 'didEnterState');
-      s.enter(Z.A());
-      expect(s.didEnterState).toHaveBeenCalled();
-    });
-
-    it('should call `didEnterState` on the receiver and then call `enter` on each substate', function() {
-      spyOn(s, 'didEnterState');
-      spyOn(s1, 'enter');
-      spyOn(s2, 'enter');
-      spyOn(s3, 'enter');
-      s.enter(Z.A());
-      expect(s.didEnterState).toHaveBeenCalled();
-      expect(s1.enter).toHaveBeenCalled();
-      expect(s2.enter).toHaveBeenCalled();
-      expect(s3.enter).toHaveBeenCalled();
-    });
-
-    it('should pass along the destination paths that belong to the corresponding concurrent substate when calling `enter` on the substate', function() {
-      spyOn(s1, 'enter');
-      spyOn(s2, 'enter');
-      spyOn(s3, 'enter');
-      s.enter(Z.A(Z.A('s1', 'a'), Z.A('s2', 'b'), Z.A('s3', 'c')));
-      expect(s1.enter).toHaveBeenCalled();
-      expect(s1.enter.argsForCall[0][0]).toEq(Z.A(Z.A('a')));
-      expect(s2.enter).toHaveBeenCalled();
-      expect(s2.enter.argsForCall[0][0]).toEq(Z.A(Z.A('b')));
-      expect(s3.enter).toHaveBeenCalled();
-      expect(s3.enter.argsForCall[0][0]).toEq(Z.A(Z.A('c')));
-    });
-  });
-
-  describe('.exit', function() {
-    var s, s1, s2, s3;
-
-    beforeEach(function() {
-      s  = Z.ConcurrentState.create('s');
-      s1 = Z.State.create('s1');
-      s2 = Z.State.create('s2');
-      s3 = Z.State.create('s3');
-
-      s.addSubstate(s1);
-      s.addSubstate(s2);
-      s.addSubstate(s3);
-    });
-
-    it('should throw an exception if the state is not current', function() {
-      expect(s.isCurrent).toBe(false);
-      expect(function() {
-        s.exit();
-      }).toThrow(Z.fmt("Z.ConcurrentState.exit: state %@ is not current", s));
-    });
-
-    it('should set `isCurrent` to false', function() {
-      s.enter(Z.A());
+      s.enter([]);
       expect(s.isCurrent).toBe(true);
       s.exit();
       expect(s.isCurrent).toBe(false);
     });
 
     it('should call `willExitState` on the receiver', function() {
-      s.enter(Z.A());
+      s.enter([]);
       spyOn(s, 'willExitState');
       s.exit();
       expect(s.willExitState).toHaveBeenCalled();
     });
 
-    it('should call `exit` on all substates and then call `willExitState` on the receiver', function() {
-      s.enter(Z.A());
-      spyOn(s, 'willExitState');
+    it('should call `exit` on all substates', function() {
+      s.enter([]);
       spyOn(s1, 'exit');
       spyOn(s2, 'exit');
       spyOn(s3, 'exit');
@@ -381,15 +302,14 @@ describe('Z.ConcurrentState', function() {
       expect(s1.exit).toHaveBeenCalled();
       expect(s2.exit).toHaveBeenCalled();
       expect(s3.exit).toHaveBeenCalled();
-      expect(s.willExitState).toHaveBeenCalled();
     });
   });
 
-  describe('.currentStates', function() {
+  describe('.current', function() {
     var s, s1, s2, s11, s12, s21, s22;
 
     beforeEach(function() {
-      s   = Z.ConcurrentState.create('s');
+      s   = Z.State.create('s', {isConcurrent: true});
       s1  = Z.State.create('s1');
       s2  = Z.State.create('s2');
       s11 = Z.State.create('s11');
@@ -407,12 +327,12 @@ describe('Z.ConcurrentState', function() {
 
     it('should return `null` when the state is not current', function() {
       expect(s.isCurrent).toBe(false);
-      expect(s.currentStates()).toBeNull();
+      expect(s.current()).toBeNull();
     });
 
-    it('should return a `Z.Array` containing the result of invokeing `currentStates` on each substate with the name of the receiver prepended to each path', function() {
-      s.enter(Z.A(Z.A('s1', 's11'), Z.A('s2', 's22')));
-      expect(s.currentStates()).toEq(Z.A(Z.A('s', 's1', 's11'), Z.A('s', 's2', 's22')));
+    it('should return an array of all current leaf states', function() {
+      s.enter([['s1', 's11'], ['s2', 's22']]);
+      expect(s.current()).toEq([s11, s22]);
     });
   });
 });

@@ -1,111 +1,93 @@
 // Z.State
-//   name - string
-//   substates - hash
-//   superstate - Z.State
-//   historyState
-//   resolve(string) - returns the state at the given path relative to the receiver
-//   isCurrent
-//   currentSubstates
-//   currentStates
-//   enter
-//   exit
-//   sendEvent(name) -
-//   goto(state | states)
+//   name         - string, set at init
+//   isConcurrent - boolean, set at init
+//   isCurrent    - boolean, set by enter/exit
+//   substates    - hash mapping name to state object
+//   superstate   - reference to parent
+//   path         - array of state names, set during init, updated during addSubstate
+//   current()    - traverse current states to leaf nodes, return list of leaf nodes
+//   enter(paths) - enters the node, calls exit on current substate if its not on the path
+//   exit()       - recursively exits the state bottom up
+//   send(event)  -
+// Z.Statechart
+//   root - reference to root node
+//   goto(states)
+//   send(action)
+//   current() - returns a list of string paths of current states
 
-Z.BaseState = Z.Object.extend(function() {
-  function pivot(path1, path2) {
-    var s = null, i, len;
-
-    for (i = 0, len = Z.min(path1.size(), path2.size()); i < len; i++) {
-      if (path1.at(i) === path2.at(i)) { s = path1.at(i); }
-      else { break; }
-    }
-
-    return s;
+Z.State = Z.Object.extend(function() {
+  function updatePath(state) {
+    state.path = state.superstate.path.slice().concat([state.name]);
+    state.substates.values().each(updatePath);
   }
 
-  this.def('init', function(name) {
-    this.name       = name;
-    this.substates  = Z.H();
-    this.superstate = null;
-    this.isCurrent  = false;
-  });
+  //function setRoot(state, root) {
+  //  state.root = root;
+  //  state.substates.values().each(function(state) { setRoot(state, root); });
+  //}
 
-  this.def('addSubstate', function(state) {
-    this.substates.at(state.name, state);
-    state.superstate = this;
-    return this;
-  });
+  function enterClustered(paths) {
+    var heads = [], cur, next, i, len;
 
-  this.def('isRoot', function() { return !this.superstate; });
-
-  this.def('root', function() {
-    var s = this;
-    while (s.superstate) { s = s.superstate; }
-    return s;
-  });
-
-  this.def('path', function() {
-    var a = Z.A(this), s = this;
-    while (s = s.superstate) { a.unshift(s); }
-    return a;
-  });
-
-  // Returns a tuple containing the pivot state, exit state, and enter state.
-  this.def('transitionStates', function(end) {
-    var startPath = this.path(),
-        endPath   = end.path(),
-        p         = pivot(startPath, endPath),
-        i         = startPath.index(p);
-
-    if (this === end) {
-      throw new Error(Z.fmt("%@.transitionStates: start and end states are the same: %@", this.typeName(), this));
+    for (i = 0, len = paths.length; i < len; i++) {
+      heads.push(paths[i].shift());
     }
 
-    if (!p) {
-      throw new Error(Z.fmt("%@.transitionStates: states %@ and %@ do not belong to the same statechart", this.typeName(), this, end));
+    if (Z.Array.create(heads).uniq().size() > 1) {
+      throw new Error(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent heads: %@", this, heads));
     }
 
-    return [p, startPath.at(i + 1), endPath.at(i + 1)];
-  });
-
-  this.def('didEnterState', Z.identity);
-
-  this.def('willExitState', Z.identity);
-});
-
-Z.State = Z.BaseState.extend(function() {
-  this.def('enter', function(paths) {
-    var heads = paths.invoke('shift'),
-        next  = heads.first() || this.substates.keys().first();
-
-    if (this.isCurrent) {
-      throw new Error(Z.fmt("%@.enter: state %@ is already current", this.typeName(), this));
+    if (heads[0] && !this.substates.hasKey(heads[0])) {
+      throw new Error(Z.fmt("Z.State.enter: state %@ has no substate named '%@'", this, heads[0]));
     }
 
-    if (heads.uniq().size() > 1) {
-      throw new Error(Z.fmt("%@.enter: state %@ given destination paths with inconsistent heads: %@", this.typeName(), this, heads.toNative()));
+    cur = this.substates.values().find(function(s) { return s.isCurrent; });
+
+    if (this.substates.size() > 0) {
+      next = heads[0] ? this.substates.at(heads[0]) : this.substates.first()[1];
     }
 
-    if (next && !this.substates.hasKey(next)) {
-      throw new Error(Z.fmt("%@.enter: state %@ has no substate named '%@'", this.typeName(), this, next));
+    if (cur && cur !== next) { cur.exit(); }
+
+    if (!this.isCurrent) {
+      this.isCurrent = true;
+      this.didEnterState();
     }
 
-    this.isCurrent = true;
-    this.didEnterState();
-
-    if (next) { this.substates.at(next).enter(paths); }
+    if (next) { next.enter(paths); }
 
     return this;
-  });
+  }
 
-  this.def('exit', function() {
+  function enterConcurrent(paths) {
+    var self = this, substates = this.substates, pathsByHead;
+
+    if (!this.isCurrent) {
+      this.isCurrent = true;
+      this.didEnterState();
+    }
+
+    pathsByHead = Z.Array.create(paths).groupBy(function(p) { return p.shift(); });
+
+    pathsByHead.keys().each(function(head) {
+      if (substates.hasKey(head)) { return; }
+      throw new Error(Z.fmt("Z.State.enter: state %@ has no substate named '%@'", self, head));
+    });
+
+    substates.each(function(tuple) {
+      tuple[1].enter((pathsByHead.at(tuple[0]) || Z.A()).toNative());
+    });
+
+    return this;
+  }
+
+  function exitClustered() {
     var substate = this.substates.values().find(function(s) {
       return s.isCurrent;
     });
 
     if (!this.isCurrent) {
-      throw new Error(Z.fmt("%@.exit: state %@ is not current", this.typeName(), this));
+      throw new Error(Z.fmt("Z.State.exit: state %@ is not current", this));
     }
 
     if (substate) { substate.exit(); }
@@ -114,55 +96,11 @@ Z.State = Z.BaseState.extend(function() {
     this.isCurrent = false;
 
     return this;
-  });
+  }
 
-  this.def('currentStates', function() {
-    var name = this.name, substate, states;
-
-    if (!this.isCurrent) { return null; }
-
-    substate = this.substates.values().find(function(s) {
-      return s.isCurrent;
-    });
-
-    if (!substate) { return Z.A(Z.A(name)); }
-
-    states = substate.currentStates();
-
-    states.each(function(state) { state.unshift(name); });
-
-    return states;
-  });
-});
-
-Z.ConcurrentState = Z.BaseState.extend(function() {
-  this.def('enter', function(paths) {
-    var self = this, substates = this.substates, pathsByHead;
-
-    if (this.isCurrent) {
-      throw new Error(Z.fmt("%@.enter: state %@ is already current", this.typeName(), this));
-    }
-
-    this.isCurrent = true;
-    this.didEnterState();
-
-    pathsByHead = paths.groupBy(function(p) { return p.shift(); });
-
-    pathsByHead.keys().each(function(head) {
-      if (substates.hasKey(head)) { return; }
-      throw new Error(Z.fmt("%@.enter: state %@ has no substate named '%@'", self.typeName(), self, head));
-    });
-
-    substates.each(function(tuple) {
-      tuple[1].enter(pathsByHead.at(tuple[0]) || Z.A());
-    });
-
-    return this;
-  });
-
-  this.def('exit', function() {
+  function exitConcurrent() {
     if (!this.isCurrent) {
-      throw new Error(Z.fmt("%@.exit: state %@ is not current", this.typeName(), this));
+      throw new Error(Z.fmt("Z.State.exit: state %@ is not current", this));
     }
 
     this.substates.values().invoke('exit');
@@ -170,19 +108,48 @@ Z.ConcurrentState = Z.BaseState.extend(function() {
     this.isCurrent = false;
 
     return this;
+  }
+
+  this.def('init', function(name, opts) {
+    opts = Z.defaults(opts || {}, {isConcurrent: false});
+
+    this.name         = name;
+    this.substates    = Z.H();
+    this.superstate   = null;
+    this.isConcurrent = opts.isConcurrent;
+    this.isCurrent    = false;
+    this.path         = [];
   });
 
-  this.def('currentStates', function() {
-    var name = this.name, states = Z.A();
+  this.def('addSubstate', function(state) {
+    this.substates.at(state.name, state);
+    state.superstate = this;
+    updatePath(state);
+    return this;
+  });
+
+  this.def('enter', function(paths) {
+    return this.isConcurrent ?
+      enterConcurrent.call(this, paths) : enterClustered.call(this, paths);
+  });
+
+  this.def('exit', function() {
+    return this.isConcurrent ?
+      exitConcurrent.call(this) : exitClustered.call(this);
+  });
+
+  this.def('current', function() {
+    var substates = this.substates.values();
 
     if (!this.isCurrent) { return null; }
+    if (substates.size() === 0) { return [this]; }
 
-    this.substates.each(function(tuple) {
-      tuple[1].currentStates().each(function(state) {
-        states.push(state.unshift(name));
-      });
+    return substates.inject([], function(acc, s) {
+      if (s.isCurrent) { acc = acc.concat(s.current()); }
+      return acc;
     });
-
-    return states;
   });
+
+  this.def('didEnterState', Z.identity);
+  this.def('willExitState', Z.identity);
 });
