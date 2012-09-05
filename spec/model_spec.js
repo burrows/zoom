@@ -223,6 +223,20 @@ describe('Z.Model.load', function() {
       expect(m.isInvalid()).toBe(false);
       expect(m.isBusy()).toBe(false);
     });
+
+    describe('when the model in the identity map is empty', function() {
+      it('should not throw an exception', function() {
+        var m = Test.BasicModel.empty(19);
+
+        expect(function() {
+          Test.BasicModel.load({id: 19, foo: 'x', bar: 2});
+        }).not.toThrow();
+
+        expect(m.sourceState()).toBe(Z.Model.LOADED);
+        expect(m.foo()).toBe('x');
+        expect(m.bar()).toBe(2);
+      });
+    });
   });
 
   describe('given attributes that do not include an id', function() {

@@ -136,6 +136,11 @@ function setState(state) {
   if (busy)    { this.didChangeProperty('isBusy'); }
 }
 
+function isEditable(model) {
+  var state = model.sourceState(), busy = model.isBusy();
+  return model.__isLoading__ || ((state === NEW || state === LOADED) && !busy);
+}
+
 Z.Model = Z.Object.extend(function() {
   var attributeTypes = {};
 
@@ -158,7 +163,7 @@ Z.Model = Z.Object.extend(function() {
         state  = this.sourceState();
 
     if (owner) {
-      if ((state !== NEW && state !== LOADED) || this.isBusy()) {
+      if (!isEditable(this)) {
         throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the owner side is %@: %@",
                               this.typeName(), name, this.stateString(), this));
       }
@@ -265,12 +270,12 @@ Z.Model = Z.Object.extend(function() {
       set: function(v) {
         var state = this.sourceState(), changes;
 
-        if (state === EMPTY || this.isBusy()) {
+        if (!isEditable(this)) {
           throw new Error(Z.fmt("%@.%@ (setter): can't set attributes on a model in the %@ state: %@",
                                 this.typeName(), name, this.stateString(), this));
         }
 
-        if (state !== NEW) {
+        if (state === LOADED) {
           if (!this.isDirty()) {
             changes = this.set('changes', Z.H());
             setState.call(this, {dirty: true});
@@ -346,6 +351,8 @@ Z.Model = Z.Object.extend(function() {
     attrs = Z.dup(attrs);
     model = repo.retrieve(this, attrs.id) || this.create({id: attrs.id});
 
+    model.__isLoading__ = true;
+
     Z.del(attrs, 'id');
 
     // extract associated attributes
@@ -377,6 +384,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
+    model.__isLoading__ = false;
     setState.call(model, {source: LOADED, dirty: false, invalid: false, busy: false});
 
     return model;
@@ -749,7 +757,7 @@ Z.HasManyArray = Z.Array.extend(function() {
     }
 
     if (owner) {
-      if ((state !== NEW && state !== LOADED) || model.isBusy()) {
+      if (!isEditable(model)) {
         throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the owner side is %@: %@",
                               model.typeName(), descriptor.name, model.stateString(), model));
 
