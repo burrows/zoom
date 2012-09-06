@@ -807,6 +807,17 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   this.def('getUnknownProperty', function(k) {
     return this.pluck(k).flatten();
   });
+
+  // Internal: Proxies sets for unknown properties out to all items in the
+  // array.
+  //
+  // k - The name of the property to set from each item.
+  // v - The value to set on each item.
+  //
+  // Returns nothing.
+  this.def('setUnknownProperty', function(k, v) {
+    this.each(function(item) { item.set(k, v); });
+  });
 });
 
 // Public: A shortcut for constructing `Z.Array` concrete instances from a list

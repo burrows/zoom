@@ -805,6 +805,39 @@ describe('Z.Array.getUnknownProperty', function() {
   });
 });
 
+describe('Z.Array.setUnknownProperty', function() {
+  var Foo, Bar;
+
+  Foo = Z.Object.extend(function() {
+    this.prop('bar');
+  });
+
+  Bar = Z.Object.extend(function() {
+    this.prop('x');
+  });
+
+  it('should set the given property path on each item in the array', function() {
+    var b1 = Bar.create({x: 1}),
+        b2 = Bar.create({x: 2}),
+        b3 = Bar.create({x: 3}),
+        f1 = Foo.create({bar: b1}),
+        f2 = Foo.create({bar: b2}),
+        f3 = Foo.create({bar: b3}),
+        a1 = Z.A(f1, f2, f3),
+        a2 = Z.A(b1, b2, b3);
+
+    a2.set('x', 9);
+    expect(b1.x()).toBe(9);
+    expect(b2.x()).toBe(9);
+    expect(b3.x()).toBe(9);
+
+    a1.set('bar.x', 12);
+    expect(b1.x()).toBe(12);
+    expect(b2.x()).toBe(12);
+    expect(b3.x()).toBe(12);
+  });
+});
+
 describe('Z.Array `@` property', function() {
   var a, observer;
 
