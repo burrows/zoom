@@ -561,7 +561,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('send', function() {
     var args = slice.call(arguments), action = args[0], handled, sv;
 
-    handled = this.respondTo(action) && this[action].apply(this, args) === true;
+    handled = this.respondTo(action) && this[action].apply(this, args.slice(1)) === true;
 
     if (handled) { return true; }
     else if ((sv = this.superview())) { return sv.send.apply(sv, args); }

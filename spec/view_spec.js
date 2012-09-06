@@ -713,6 +713,33 @@ describe('Z.View', function() {
     });
   });
 
+  describe('.send', function() {
+    it('should send the action up the superview chain until a view implements the action and returns true', function() {
+      var a = Z.View.create(),
+          b = Z.View.create(),
+          c = Z.View.create(),
+          d = Z.View.create();
+
+      a.def('someAction', function() {});
+      b.def('someAction', function() { return true; });
+      d.def('someAction', function() {});
+
+      spyOn(a, 'someAction').andCallThrough();
+      spyOn(b, 'someAction').andCallThrough();
+      spyOn(d, 'someAction').andCallThrough();
+
+      a.addSubview(b);
+      b.addSubview(c);
+      c.addSubview(d);
+
+      d.send('someAction', 1, 2);
+
+      expect(d.someAction).toHaveBeenCalledWith(1, 2);
+      expect(b.someAction).toHaveBeenCalledWith(1, 2);
+      expect(a.someAction).not.toHaveBeenCalled();
+    });
+  });
+
   describe('.each', function() {
     it("should yield each view in the receiver's hierarchy", function() {
       var v1   = TestCompoundView.create(),
