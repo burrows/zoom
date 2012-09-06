@@ -1,5 +1,7 @@
 (function(undefined) {
 
+var slice = Array.prototype.slice;
+
 // Public: `Z.View` objects manage the actual DOM nodes that ultimately get
 // displayed by the browser. They handle the rendering of the nodes, manage
 // their location within the view hierarchy, and handle events that occur on
@@ -547,6 +549,23 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     }
 
     return null;
+  });
+
+  // Public: Sends an action up the superview chain until a view is found that
+  // both implements a method with the given action name and returns `true`.
+  //
+  // action  - A string containing the action name.
+  // args... - An additional list of arguments to send to the action method(s).
+  //
+  // Returns `true` if the action was handled and `false` otherwise.
+  this.def('send', function() {
+    var args = slice.call(arguments), action = args[0], handled, sv;
+
+    handled = this.respondTo(action) && this[action].apply(this, args) === true;
+
+    if (handled) { return true; }
+    else if ((sv = this.superview())) { return sv.send.apply(sv, args); }
+    else { return false; }
   });
 
   // Public: The `Z.View` iterator, invokes the given function once for each
