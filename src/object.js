@@ -1011,27 +1011,32 @@ Z.Object.open(function() {
 
   // Public: This method is invoked by the KVC system when an attempt is made to
   // get an unknown property name. The default implementation of this method
-  // throws an exception, but you may want to override this in sub-types in
-  // order to implement special handling for unknown properties.
+  // attempts to find a raw property with the given name and returns one of the
+  // following:
+  //
+  // * `null` if there is no property with the given name
+  // * the raw property value if it is not a function
+  // * the result of calling the function if the raw property is a function
+  //   object
   //
   // k - The name of the unknown property.
-  //
-  // Throws `Error`.
   this.def('getUnknownProperty', function(k) {
-    throw new Error(Z.fmt("Z.Object.get: undefined key `%@` for %@", k, this));
+    if (typeof this[k] === 'undefined') { return null; }
+    return typeof this[k] === 'function' ? this[k]() : this[k];
   });
 
   // Public: This method is invoked by the KVC system when an attempt is make to
   // set an unknown property name. The default implementation of this method
-  // throws an exeception, but you may want to override this in sub-types in
-  // order to implement special handling for unknown properties.
+  // sets a raw property of the given name or if the raw property points to a
+  // function object, then the function is called with the given value.
   //
   // k - The name of the unknown property.
   // v - The value being set.
   //
-  // Throws `Error`.
+  // Returns `null`.
   this.def('setUnknownProperty', function(k, v) {
-    throw new Error(Z.fmt("Z.Object.set: undefined key `%@` for %@", k, this));
+    if (typeof this[k] === 'function') { this[k](v); } else { this[k] = v; }
+    return null;
   });
 });
 

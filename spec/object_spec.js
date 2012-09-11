@@ -525,20 +525,43 @@ describe('Z.Object KVC support:', function() {
   });
 
   describe('.getUnknownProperty', function() {
-    it('should throw an undefined key exception', function() {
-      var o = Z.Object.create();
-      expect(function() {
-        o.get('blah');
-      }).toThrow("Z.Object.get: undefined key `blah` for " + o.toString());
+    var o;
+
+    beforeEach(function() {
+      o = Z.Object.create()
+      o.def('foo', function() { return 'foo'; });
+      o.bar = 'bar';
+    });
+
+    it('should return `null` if there is no raw property value with the given name', function() {
+      expect(o.get('doesntExist')).toBeNull();
+    });
+
+    it('should return the raw property value if its not a function', function() {
+      expect(o.get('bar')).toBe('bar');
+    });
+
+    it('should return the result of calling the raw property if it is a function', function() {
+      expect(o.get('foo')).toBe('foo');
     });
   });
 
   describe('.setUnknownProperty', function() {
-    it('should throw an undefined key exception', function() {
-      var o = Z.Object.create();
-      expect(function() {
-        o.set('blah', 1);
-      }).toThrow("Z.Object.set: undefined key `blah` for " + (o.toString()));
+    var o;
+
+    beforeEach(function() {
+      o = Z.Object.create()
+      o.def('foo', function(v) { this.__foo__ = v; });
+    });
+
+    it('should set a raw property of the given name', function() {
+      o.set('bar', 9);
+      expect(o.bar).toBe(9);
+    });
+
+    it('should call the function with the given value if the raw property is a function object', function() {
+      o.set('foo', 7);
+      expect(o.__foo__).toBe(7);
     });
   });
 
