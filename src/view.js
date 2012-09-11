@@ -61,6 +61,11 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // method run in order to sync its state to the DOM.
   this.prop('needsDisplay', { def: true });
 
+  // Public: Optional delegate object for the view. Delegate objects are
+  // involved in handling actions send up a view's `superview` chain via the
+  // `send` method.
+  this.prop('delegate');
+
   // Internal: Specifies the properties for the `toString` method to display.
   this.def('toStringProperties', function() {
     return this.supr().concat('isKey', 'needsDisplay');

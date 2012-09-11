@@ -745,13 +745,13 @@ describe('Z.View', function() {
           c = Z.View.create({delegate: Z.Object.create()}),
           d = Z.View.create({delegate: Z.Object.create()});
 
-      a.delegate.def('someAction', function() {});
-      b.delegate.def('someAction', function() { return true; });
-      d.delegate.def('someAction', function() {});
+      a.delegate().def('someAction', function() {});
+      b.delegate().def('someAction', function() { return true; });
+      d.delegate().def('someAction', function() {});
 
-      spyOn(a.delegate, 'someAction').andCallThrough();
-      spyOn(b.delegate, 'someAction').andCallThrough();
-      spyOn(d.delegate, 'someAction').andCallThrough();
+      spyOn(a.delegate(), 'someAction').andCallThrough();
+      spyOn(b.delegate(), 'someAction').andCallThrough();
+      spyOn(d.delegate(), 'someAction').andCallThrough();
 
       a.addSubview(b);
       b.addSubview(c);
@@ -759,9 +759,9 @@ describe('Z.View', function() {
 
       d.send('someAction', 1, 2);
 
-      expect(d.delegate.someAction).toHaveBeenCalledWith(1, 2);
-      expect(b.delegate.someAction).toHaveBeenCalledWith(1, 2);
-      expect(a.delegate.someAction).not.toHaveBeenCalled();
+      expect(d.delegate().someAction).toHaveBeenCalledWith(1, 2);
+      expect(b.delegate().someAction).toHaveBeenCalledWith(1, 2);
+      expect(a.delegate().someAction).not.toHaveBeenCalled();
     });
   });
 
