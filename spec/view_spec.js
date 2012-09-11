@@ -148,6 +148,32 @@ describe('Z.View', function() {
       expect(sv1.window()).toBe(w);
     });
 
+    it('should set the `window` property on each view in the subview tree', function() {
+      var w = Z.Window.create(v), sv1, sv2, sv3, sv4;
+
+      sv1 = Z.View.create();
+      sv2 = Z.View.create();
+      sv3 = Z.View.create();
+      sv4 = Z.View.create();
+
+      sv1.addSubview(sv2);
+      sv1.addSubview(sv3);
+      sv2.addSubview(sv4);
+
+      expect(v.window()).toBe(w);
+      expect(sv1.window()).toBeNull();
+      expect(sv2.window()).toBeNull();
+      expect(sv3.window()).toBeNull();
+      expect(sv4.window()).toBeNull();
+
+      v.addSubview(sv1);
+
+      expect(sv1.window()).toBe(w);
+      expect(sv2.window()).toBe(w);
+      expect(sv3.window()).toBe(w);
+      expect(sv4.window()).toBe(w);
+    });
+
     it('should remove the given view from its current `superview` if it has one', function() {
       var v2 = TestCompoundView.create();
 

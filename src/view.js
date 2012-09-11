@@ -387,7 +387,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
     subviews.splice(idx, 0, view);
     view.superview(this);
-    view.window(this.window());
+    view.toArray().set('window', this.window());
     this.needsDisplay(true);
 
     return view;
