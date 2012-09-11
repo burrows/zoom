@@ -553,15 +553,28 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
   // Public: Sends an action up the superview chain until a view is found that
   // both implements a method with the given action name and returns `true`.
+  // Each view's delegate will also get an opportunity to handle the action.
   //
   // action  - A string containing the action name.
   // args... - An additional list of arguments to send to the action method(s).
   //
   // Returns `true` if the action was handled and `false` otherwise.
   this.def('send', function() {
-    var args = slice.call(arguments), action = args[0], handled, sv;
+    var args    = slice.call(arguments),
+        action  = args[0],
+        handled = false,
+        del     = this.get('delegate'),
+        sv;
 
-    handled = this.respondTo(action) && this[action].apply(this, args.slice(1)) === true;
+    // attempt to allow the view to handle the action
+    if (this.respondTo(action)) {
+      handled = this[action].apply(this, args.slice(1)) === true;
+    }
+
+    // attempt to allow the view's delegate to handle the action
+    if (!handled && del && del.respondTo(action)) {
+      handled = del[action].apply(del, args.slice(1)) === true;
+    }
 
     if (handled) { return true; }
     else if ((sv = this.superview())) { return sv.send.apply(sv, args); }

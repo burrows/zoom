@@ -738,6 +738,31 @@ describe('Z.View', function() {
       expect(b.someAction).toHaveBeenCalledWith(1, 2);
       expect(a.someAction).not.toHaveBeenCalled();
     });
+
+    it("should send the action to each view's delegate object if it exists and responds to the action", function() {
+      var a = Z.View.create({delegate: Z.Object.create()}),
+          b = Z.View.create({delegate: Z.Object.create()}),
+          c = Z.View.create({delegate: Z.Object.create()}),
+          d = Z.View.create({delegate: Z.Object.create()});
+
+      a.delegate.def('someAction', function() {});
+      b.delegate.def('someAction', function() { return true; });
+      d.delegate.def('someAction', function() {});
+
+      spyOn(a.delegate, 'someAction').andCallThrough();
+      spyOn(b.delegate, 'someAction').andCallThrough();
+      spyOn(d.delegate, 'someAction').andCallThrough();
+
+      a.addSubview(b);
+      b.addSubview(c);
+      c.addSubview(d);
+
+      d.send('someAction', 1, 2);
+
+      expect(d.delegate.someAction).toHaveBeenCalledWith(1, 2);
+      expect(b.delegate.someAction).toHaveBeenCalledWith(1, 2);
+      expect(a.delegate.someAction).not.toHaveBeenCalled();
+    });
   });
 
   describe('.each', function() {
