@@ -176,10 +176,10 @@ Z.Window = Z.View.extend(function() {
         }
       }
 
-      handled = e.view.send(e.handler());
+      handled = e.view.send(e.handler(), e);
     }
     else if (e.isA(Z.KeyEvent)) {
-      handled = (this.keyView() || this).send(e.handler());
+      handled = (this.keyView() || this).send(e.handler(), e);
     }
 
     return handled;
