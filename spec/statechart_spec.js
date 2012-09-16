@@ -355,7 +355,72 @@ describe('Z.State', function() {
   });
 
   describe('.goto', function() {
+    var root, a, b, c, d, e, f, g, h, i, j, k, l, m;
+
+    beforeEach(function() {
+      root = Z.State.create('root');
+      a    = Z.State.create('a');
+      b    = Z.State.create('b');
+      c    = Z.State.create('c');
+      d    = Z.State.create('d');
+      e    = Z.State.create('e');
+      f    = Z.State.create('f');
+      g    = Z.State.create('g', {isConcurrent: true});
+      h    = Z.State.create('h');
+      i    = Z.State.create('i');
+      j    = Z.State.create('j');
+      k    = Z.State.create('k');
+      l    = Z.State.create('l');
+      m    = Z.State.create('m');
+
+      root.addSubstate(a);
+      a.addSubstate(b);
+      a.addSubstate(e);
+      b.addSubstate(c);
+      b.addSubstate(d);
+      e.addSubstate(f);
+      e.addSubstate(g);
+      g.addSubstate(h);
+      g.addSubstate(k);
+      h.addSubstate(i);
+      h.addSubstate(j);
+      k.addSubstate(l);
+      k.addSubstate(m);
+    });
+
+    it('should raise an exception when the receiver state is not current', function() {
+      expect(function() {
+        c.goto('a.b.d');
+      }).toThrow(Z.fmt("Z.State.goto: state %@ is not current", c));
+    });
+
+    it('should raise an exception when multiple pivot states are found between the receiver and the given destination paths', function() {
+      root.enter([['a', 'b', 'c']]);
+
+      expect(function() {
+        c.goto('a.b.d', 'a.e.f');
+      }).toThrow(Z.fmt("Z.State.goto: multiple pivot states found between state %@ and paths a.b.d, a.e.f", c));
+    });
+
     it('should raise an exception if any given destination state is not reachable from the receiver', function() {
+      root.enter([['a', 'e', 'g', 'h', 'i']]);
+      expect(function() {
+        i.goto('a.e.g.k.l');
+      }).toThrow(Z.fmt("Z.State.goto: path 'a.e.g.k.l' is not reachable from state %@", i));
+    });
+
+    it("should invoke `enter` on the pivot state with the pivot state's path trimmed from the destination paths", function() {
+      root.enter([['a', 'e', 'f']]);
+      spyOn(e, 'enter');
+      f.goto('a.e.g.h.j', 'a.e.g.k.m');
+      expect(e.enter).toHaveBeenCalledWith([['g', 'h', 'j'], ['g', 'k', 'm']]);
+    });
+
+    it('should not affect the states in concurrent superstates', function() {
+      root.enter([['a', 'e', 'g', 'h', 'j'], ['a', 'e', 'g', 'k', 'm']]);
+      expect(root.currentPaths()).toEq([['a', 'e', 'g', 'h', 'j'], ['a', 'e', 'g', 'k', 'm']]);
+      m.goto('a.e.g.k.l');
+      expect(root.currentPaths()).toEq([['a', 'e', 'g', 'h', 'j'], ['a', 'e', 'g', 'k', 'l']]);
     });
   });
 });

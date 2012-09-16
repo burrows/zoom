@@ -42,13 +42,13 @@ var slice = Array.prototype.slice;
 
 Z.State = Z.Object.extend(function() {
   function resolvePath(path) {
-    var head = path.shift(), state = this.substates.at(head);
+    var head = path[0], state = this.substates.at(head);
 
     if (!state) {
       throw new Error(Z.fmt("Z.State.resolvePath: state %@ has no substate named '%@'", this, head));
     }
 
-    return path.length === 0 ? state : resolvePath.call(state, path);
+    return path.length === 1 ? state : resolvePath.call(state, path.slice(1));
   }
 
   function enterClustered(paths) {
@@ -143,6 +143,31 @@ Z.State = Z.Object.extend(function() {
     return this;
   }
 
+  function ancestors() {
+    var s = this, a = [];
+
+    while (s) {
+      a.unshift(s);
+      s = s.superstate;
+    }
+
+    return a;
+  }
+
+  function findPivot(other) {
+    var a1 = ancestors.call(this), a2 = ancestors.call(other), i, len, p;
+
+    for (i = 0, len = Z.min(a1.length, a2.length); i < len; i++) {
+      if (a1[i] === a2[i]) { p = a1[i]; } else { break; }
+    }
+
+    if (!p) {
+      throw new Error(Z.fmt("Z.State.pivot: states %@ and %@ do not belong to the same statechart", this, other));
+    }
+
+    return p;
+  }
+
   this.def('init', function(name, opts) {
     opts = Z.defaults(opts || {}, {isConcurrent: false});
 
@@ -202,6 +227,40 @@ Z.State = Z.Object.extend(function() {
 
   this.def('root', function() {
     return this.superstate ? this.superstate.root() : this;
+  });
+
+  this.def('goto', function() {
+    var self  = this,
+        root  = this.root(),
+        paths, states, pivots, pivot;
+
+    if (!this.isCurrent) {
+      throw new Error(Z.fmt("Z.State.goto: state %@ is not current", this));
+    }
+
+    paths  = Z.Array.create(arguments).flatten().map(function(s) { return s.split('.'); });
+    states = paths.map(function(path) { return resolvePath.call(root, path); });
+    pivots = states.map(function(state) { return findPivot.call(self, state); });
+
+    if (pivots.uniq().size() > 1) {
+      throw new Error(Z.fmt("Z.State.goto: multiple pivot states found between state %@ and paths %@", this, paths.map(function(p) { return p.join('.'); }).join(', ')));
+    }
+
+    pivots.each(function(pivot, i) {
+      if (pivot.isConcurrent) {
+        throw new Error(Z.fmt("Z.State.goto: path '%@' is not reachable from state %@", paths.at(i).join('.'), self));
+      }
+    });
+
+    pivot = pivots.at(0);
+
+    paths = paths.map(function(path) {
+      return path.slice(pivot.path().length);
+    });
+
+    pivot.enter(paths.toNative());
+
+    return this;
   });
 
   this.def('didEnterState', Z.identity);
