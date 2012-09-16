@@ -37,7 +37,7 @@ spec: zoom lint
 	NODE_PATH=$(NODE_PATH) ./node_modules/.bin/jasmine-node ./spec
 
 repl: zoom
-	NODE_NO_READLINE=1 rlwrap node ./util/repl.js
+	env NODE_NO_READLINE=1 rlwrap node ./util/repl.js
 
 clean:
 	rm -rf ./build
