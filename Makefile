@@ -1,4 +1,5 @@
 NODE_PATH := build
+SPEC ?= ./spec
 
 SRCS := util.js         \
         object.js       \
@@ -35,7 +36,7 @@ lintspec:
 	./node_modules/.bin/jshint spec/*.js --config ./jshint.json
 
 spec: zoom lint
-	NODE_PATH=$(NODE_PATH) ./node_modules/.bin/jasmine-node ./spec
+	NODE_PATH=$(NODE_PATH) ./node_modules/.bin/jasmine-node $(SPEC)
 
 repl: zoom
 	env NODE_NO_READLINE=1 rlwrap node ./util/repl.js

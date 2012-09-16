@@ -52,30 +52,24 @@ Z.State = Z.Object.extend(function() {
   }
 
   function enterClustered(paths) {
-    var nexts = [], head, next, cur, i, len;
+    var heads = [], next, cur, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
-      head = paths[i].shift();
-
-      if (head !== this.name) {
-        throw new Error(Z.fmt("Z.State.enter: head of destination path ('%@') does not match the name of state %@", head, this));
-      }
-
-      nexts.push(paths[i][0]);
+      heads.push(paths[i].shift());
     }
 
-    if (Z.Array.create(nexts).uniq().size() > 1) {
-      throw new Error(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent next states: %@", this, nexts));
+    if (Z.Array.create(heads).uniq().size() > 1) {
+      throw new Error(Z.fmt("Z.State.enter: state %@ given destination paths with inconsistent heads: %@", this, heads));
     }
 
-    if (nexts[0] && !this.substates.hasKey(nexts[0])) {
-      throw new Error(Z.fmt("Z.State.enter: state %@ has no substate named '%@'", this, nexts[0]));
+    if (heads[0] && !this.substates.hasKey(heads[0])) {
+      throw new Error(Z.fmt("Z.State.enter: state %@ has no substate named '%@'", this, heads[0]));
     }
 
     cur = this.substates.values().find(function(s) { return s.isCurrent; });
 
     if (this.substates.size() > 0) {
-      next = nexts[0] ? this.substates.at(nexts[0]) : this.substates.first()[1];
+      next = heads[0] ? this.substates.at(heads[0]) : this.substates.first()[1];
     }
 
     if (cur && cur !== next) { cur.exit(); }
@@ -91,7 +85,7 @@ Z.State = Z.Object.extend(function() {
   }
 
   function enterConcurrent(paths) {
-    var nexts = {}, substates = this.substates, head, next, i, len;
+    var heads = {}, substates = this.substates, head, i, len;
 
     if (!this.isCurrent) {
       this.isCurrent = true;
@@ -100,26 +94,21 @@ Z.State = Z.Object.extend(function() {
 
     for (i = 0, len = paths.length; i < len; i++) {
       head = paths[i].shift();
-      next = paths[i][0];
 
-      if (head !== this.name) {
-        throw new Error(Z.fmt("Z.State.enter: head of destination path ('%@') does not match the name of state %@", head, this));
-      }
-
-      if (next) {
-        nexts[next] = nexts[next] || [];
-        nexts[next].push(paths[i]);
+      if (head) {
+        heads[head] = heads[head] || [];
+        heads[head].push(paths[i]);
       }
     }
 
-    for (next in nexts) {
-      if (!nexts.hasOwnProperty(next)) { continue; }
-      if (substates.hasKey(next)) { continue; }
-      throw new Error(Z.fmt("Z.State.enter: state %@ has no substate named '%@'", this, next));
+    for (head in heads) {
+      if (!heads.hasOwnProperty(head)) { continue; }
+      if (substates.hasKey(head)) { continue; }
+      throw new Error(Z.fmt("Z.State.enter: state %@ has no substate named '%@'", this, head));
     }
 
     substates.each(function(tuple) {
-      tuple[1].enter((nexts[tuple[0]] || []));
+      tuple[1].enter((heads[tuple[0]] || []));
     });
 
     return this;
@@ -164,6 +153,10 @@ Z.State = Z.Object.extend(function() {
     this.isCurrent    = false;
   });
 
+  this.def('toStringProperties', function() {
+    return this.supr().concat('name', 'isConcurrent');
+  });
+
   this.def('addSubstate', function(state) {
     this.substates.at(state.name, state);
     state.superstate = this;
@@ -172,7 +165,7 @@ Z.State = Z.Object.extend(function() {
 
   this.def('path', function() {
     return this.superstate ?
-      this.superstate.path().concat(this.name) : [this.name];
+      this.superstate.path().concat(this.name) : [];
   });
 
   this.def('enter', function(paths) {
@@ -201,7 +194,7 @@ Z.State = Z.Object.extend(function() {
     var states = this.current(), paths = [], i, len;
 
     for (i = 0, len = states.length; i < len; i++) {
-      paths.push(states[i].path);
+      paths.push(states[i].path());
     }
 
     return paths;
