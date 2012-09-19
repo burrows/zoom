@@ -6,17 +6,21 @@
 //     substates          - hash mapping name to state object
 //     superstate         - reference to parent
 //   public methods:
+//     root()             - returns the root state
 //     path()             - dot separated string of state names leading to state
 //     current()          - returns array of current state objects
 //     currentPaths()     - returns the paths of each current state
-//     start(paths)       - enters the given states or the default states if no paths are given
 //     send(action, args) - bubbles the action up each current state
 //     goto(states)       - checks to make sure that transitions are valid, invokes enter on pivot
 //   private methods:
-//     root()             - returns the root state
 //     enter(paths)       - enters the node, calls exit on current substate if its not on the path
 //     exit()             - recursively exits the state bottom up
 //     transition()       - executes queued transitions
+//
+// `goto` must queue transitions until all current states have had an
+// opportunity to handle an action
+//
+// actions are sent to all current states with the `send` method called on the root state
 //
 // cache the following:
 //   path
@@ -169,7 +173,7 @@ Z.State = Z.Object.extend(function() {
   });
 
   this.def('toStringProperties', function() {
-    return this.supr().concat('name', 'path', 'isConcurrent');
+    return this.supr().concat('path', 'isCurrent', 'isConcurrent');
   });
 
   this.def('addSubstate', function(state) {
@@ -211,17 +215,15 @@ Z.State = Z.Object.extend(function() {
         root  = this.root(),
         paths, states, pivots, pivot;
 
-    paths  = Z.Array.create(arguments).flatten().map(function(s) { return s.split('.'); });
-    states = paths.map(function(path) { return resolvePath.call(root, path); });
-
-    // if this is the root, simply enter it with the given paths and return
-    if (!this.superstate) { return enter.call(this, paths.toNative()); }
-
-    if (!this.isCurrent) {
+    if (!this.isCurrent && this.superstate) {
       throw new Error(Z.fmt("Z.State.goto: state %@ is not current", this));
     }
 
-    pivots = states.map(function(state) { return findPivot.call(self, state); });
+    paths  = Z.Array.create(arguments).flatten().map(function(s) { return s.split('.'); });
+    states = paths.map(function(path) { return resolvePath.call(root, path); });
+    pivots = this.superstate ?
+      states.map(function(state) { return findPivot.call(self, state); }) :
+      Z.A(this);
 
     if (pivots.uniq().size() > 1) {
       throw new Error(Z.fmt("Z.State.goto: multiple pivot states found between state %@ and paths %@", this, paths.map(function(p) { return p.join('.'); }).join(', ')));
@@ -235,7 +237,8 @@ Z.State = Z.Object.extend(function() {
 
     pivot = pivots.at(0);
 
-    paths = paths.map(function(path) {
+    // trim the pivot state's path from the destination paths
+    paths = !this.superstate ? paths : paths.map(function(path) {
       return path.slice(pivot.path().split('.').length);
     });
 
