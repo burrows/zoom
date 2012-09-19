@@ -54,6 +54,23 @@ describe('Z.State', function() {
     });
   });
 
+  describe('.root', function() {
+    it('should return the root of the tree', function() {
+      var a = Z.State.create('a'),
+          b = Z.State.create('b'),
+          c = Z.State.create('c');
+          d = Z.State.create('d');
+
+      a.addSubstate(b);
+      a.addSubstate(c);
+      c.addSubstate(d);
+      expect(a.root()).toEq(a);;
+      expect(b.root()).toEq(a);;
+      expect(c.root()).toEq(a);;
+      expect(d.root()).toEq(a);;
+    });
+  });
+
   describe('.path', function() {
     it('should return a string of dot separated state names leading up to, but not including the root state', function() {
       var a = Z.State.create('a'),
