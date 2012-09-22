@@ -31,6 +31,8 @@
 
 (function() {
 
+var slice = Array.prototype.slice;
+
 Z.State = Z.Object.extend(function() {
   function pathArray() {
     return this.superstate ?
@@ -162,6 +164,24 @@ Z.State = Z.Object.extend(function() {
     return p;
   }
 
+  function queueTransition(pivot, paths) {
+    this.__transitions__ = this.__transitions__ || [];
+    this.__transitions__.push({pivot: pivot, paths: paths});
+  }
+
+  function transition() {
+    var t, i, len;
+
+    if (!this.__transitions__) { return; }
+
+    for (i = 0, len = this.__transitions__.length; i < len; i++) {
+      t = this.__transitions__[i];
+      enter.call(t.pivot, t.paths);
+    }
+
+    this.__transitions__ = [];
+  }
+
   this.def('init', function(name, opts) {
     opts = Z.defaults(opts || {}, {isConcurrent: false});
 
@@ -211,11 +231,12 @@ Z.State = Z.Object.extend(function() {
   });
 
   this.def('goto', function() {
-    var self  = this,
-        root  = this.root(),
+    var self   = this,
+        isRoot = !this.superstate,
+        root   = isRoot ? this : this.root(),
         paths, states, pivots, pivot;
 
-    if (!this.isCurrent && this.superstate) {
+    if (!this.isCurrent && !isRoot) {
       throw new Error(Z.fmt("Z.State.goto: state %@ is not current", this));
     }
 
@@ -229,20 +250,40 @@ Z.State = Z.Object.extend(function() {
       throw new Error(Z.fmt("Z.State.goto: multiple pivot states found between state %@ and paths %@", this, paths.map(function(p) { return p.join('.'); }).join(', ')));
     }
 
-    pivots.each(function(pivot, i) {
-      if (pivot.isConcurrent) {
-        throw new Error(Z.fmt("Z.State.goto: path '%@' is not reachable from state %@", paths.at(i).join('.'), self));
-      }
-    });
-
     pivot = pivots.at(0);
+
+    // if we're at a non-root state and the pivot is a concurrent state, then
+    // we're attempting to cross a concurrency boundary, which is not allowed
+    if (!isRoot && pivot.isConcurrent) {
+      throw new Error(Z.fmt("Z.State.goto: one or more of the given paths are not reachable from state %@: %@", this, paths.map(function(p) { return p.join('.'); }).join(', ')));
+    }
 
     // trim the pivot state's path from the destination paths
     paths = !this.superstate ? paths : paths.map(function(path) {
       return path.slice(pivot.path().split('.').length);
     });
 
-    enter.call(pivot, paths.toNative());
+    queueTransition.call(root, pivot, paths.toNative());
+
+    if (!this.__isSending__) { transition.call(root); }
+
+    return this;
+  });
+
+  this.def('send', function() {
+    var args = slice.call(arguments), isRoot = !this.superstate;
+
+    this.substates.each(function(tuple) {
+      if (tuple[1].isCurrent) { tuple[1].send.apply(tuple[1], args); }
+    });
+
+    if (this.respondTo(args[0])) {
+      this.__isSending__ = true;
+      this[args[0]].apply(this, args.slice(1));
+      this.__isSending__ = false;
+    }
+
+    if (isRoot) { transition.call(this); }
 
     return this;
   });

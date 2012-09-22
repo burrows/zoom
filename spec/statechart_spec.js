@@ -1,5 +1,7 @@
 (function() {
 
+var slice = Array.prototype.slice;
+
 if (!this.Z) { require('./helper'); }
 
 describe('Z.State', function() {
@@ -208,7 +210,7 @@ describe('Z.State', function() {
       root.goto('a.e.g.h.i');
       expect(function() {
         i.goto('a.e.g.k.l');
-      }).toThrow(Z.fmt("Z.State.goto: path 'a.e.g.k.l' is not reachable from state %@", i));
+      }).toThrow(Z.fmt("Z.State.goto: one or more of the given paths are not reachable from state %@: a.e.g.k.l", i));
     });
 
     it('should raise an exception when given an invalid path', function() {
@@ -282,6 +284,74 @@ describe('Z.State', function() {
       m.goto('a.e.g.k.l');
       expect(exits).toEq([m]);
       expect(enters).toEq([l]);
+    });
+  });
+
+  describe('.send', function() {
+    var calls, root, a, b, c, d, e, f;
+
+    beforeEach(function() {
+      calls = Z.A();
+      root  = Z.State.create('root', {isConcurrent: true});
+      a     = Z.State.create('a');
+      b     = Z.State.create('b');
+      c     = Z.State.create('c');
+      d     = Z.State.create('d');
+      e     = Z.State.create('e');
+      f     = Z.State.create('f');
+
+      root.addSubstate(a);
+      a.addSubstate(b);
+      a.addSubstate(c);
+      root.addSubstate(d);
+      d.addSubstate(e);
+      d.addSubstate(f);
+
+      root.def('someAction', function() { calls.push(this); });
+      a.def('someAction', function() { calls.push(this); });
+      b.def('someAction', function() { calls.push(this); });
+      c.def('someAction', function() { calls.push(this); });
+      d.def('someAction', function() { calls.push(this); });
+      e.def('someAction', function() { calls.push(this); });
+      f.def('someAction', function() { calls.push(this); });
+
+      root.goto();
+      expect(root.currentPaths()).toEq(['a.b', 'd.e']);
+    });
+
+    it('should send the action to all current states', function() {
+      root.send('someAction');
+      expect(calls.contains(root)).toBe(true);
+      expect(calls.contains(a)).toBe(true);
+      expect(calls.contains(b)).toBe(true);
+      expect(calls.contains(d)).toBe(true);
+      expect(calls.contains(e)).toBe(true);
+    });
+
+    it('should pass additional arguments to the action handler', function() {
+      var bArgs;
+
+      b.def('someAction', function() { bArgs = slice.call(arguments); });
+
+      root.send('someAction', 1, 2, 'foo');
+      expect(bArgs).toEq([1, 2, 'foo']);
+    });
+
+    it("should bubble the action up each current state's superstate chain", function() {
+      root.send('someAction');
+      expect(calls).toEq(Z.A(b, a, e, d, root));
+    });
+
+    it('should not perform transitions made in an action handler until all current states have received the action', function() {
+      var eCurrent;
+
+      b.def('someAction', function() { this.goto('a.c'); });
+      e.def('someAction', function() { eCurrent = root.currentPaths(); });
+
+      root.send('someAction');
+
+      expect(root.currentPaths()).toEq(['a.c', 'd.e']);
+      expect(eCurrent).toEq(['a.b', 'd.e']);
     });
   });
 });
