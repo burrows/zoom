@@ -70,7 +70,7 @@ Z.State = Z.Object.extend(function() {
 
     if (!this.isCurrent) {
       this.isCurrent = true;
-      this.didEnterState();
+      this.enter();
     }
 
     if (next) { enter.call(next, paths); }
@@ -83,7 +83,7 @@ Z.State = Z.Object.extend(function() {
 
     if (!this.isCurrent) {
       this.isCurrent = true;
-      this.didEnterState();
+      this.enter();
     }
 
     for (i = 0, len = paths.length; i < len; i++) {
@@ -115,7 +115,7 @@ Z.State = Z.Object.extend(function() {
 
     if (substate) { exit.call(substate); }
 
-    this.willExitState();
+    this.exit();
     this.isCurrent = false;
 
     return this;
@@ -123,7 +123,7 @@ Z.State = Z.Object.extend(function() {
 
   function exitConcurrent() {
     this.substates.values().each(function(s) { exit.call(s); });
-    this.willExitState();
+    this.exit();
     this.isCurrent = false;
 
     return this;
@@ -288,8 +288,8 @@ Z.State = Z.Object.extend(function() {
     return this;
   });
 
-  this.def('didEnterState', Z.identity);
-  this.def('willExitState', Z.identity);
+  this.def('enter', Z.identity);
+  this.def('exit', Z.identity);
 });
 
 }());

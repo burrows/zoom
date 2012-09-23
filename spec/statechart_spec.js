@@ -176,8 +176,8 @@ describe('Z.State', function() {
       root.goto();
 
       Z.A(root, a, b, c, d, e, f, g, h, i, j, k, l, m).each(function(s) {
-        s.def('didEnterState', function() { enters.push(this); });
-        s.def('willExitState', function() { exits.push(this); });
+        s.def('enter', function() { enters.push(this); });
+        s.def('exit', function() { exits.push(this); });
       });
     });
 
