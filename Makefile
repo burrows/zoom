@@ -11,7 +11,7 @@ SRCS := util.js         \
         hash.js         \
         mapper.js       \
         model.js        \
-        statechart.js   \
+        state.js        \
         event.js        \
         run_loop.js     \
         view.js         \
