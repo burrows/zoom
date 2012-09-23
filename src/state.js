@@ -233,6 +233,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.superstate   = null;
     this.isConcurrent = opts.isConcurrent;
     this.isCurrent    = false;
+    this.__cache__    = {};
   });
 
   this.def('toStringProperties', function() {
@@ -247,11 +248,20 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('addSubstate', function(state) {
     this.substates.at(state.name, state);
+    state.each(function(s) { s.__cache__ = {}; });
     state.superstate = this;
     return this;
   });
 
-  this.def('path', function() { return pathArray.call(this).join('.'); });
+  this.def('root', function() {
+    return this.__cache__.root = this.__cache__.root ||
+      (this.superstate ? this.superstate.root() : this);
+  });
+
+  this.def('path', function() {
+    return this.__cache__.path = this.__cache__.path ||
+      pathArray.call(this).join('.');
+  });
 
   this.def('current', function() {
     var substates = this.substates.values();
@@ -273,10 +283,6 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     }
 
     return paths;
-  });
-
-  this.def('root', function() {
-    return this.superstate ? this.superstate.root() : this;
   });
 
   this.def('goto', function() {

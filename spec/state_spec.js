@@ -90,10 +90,10 @@ describe('Z.State', function() {
       a.addSubstate(b);
       a.addSubstate(c);
       c.addSubstate(d);
-      expect(a.root()).toEq(a);;
-      expect(b.root()).toEq(a);;
-      expect(c.root()).toEq(a);;
-      expect(d.root()).toEq(a);;
+      expect(a.root()).toEq(a);
+      expect(b.root()).toEq(a);
+      expect(c.root()).toEq(a);
+      expect(d.root()).toEq(a);
     });
   });
 
