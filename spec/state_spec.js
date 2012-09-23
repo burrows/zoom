@@ -32,6 +32,30 @@ describe('Z.State', function() {
     });
   });
 
+  describe('.each', function() {
+    it("should yield each state in the receiver's hierarchy", function() {
+      var a    = Z.State.create('a'),
+          b    = Z.State.create('b'),
+          c    = Z.State.create('c'),
+          d    = Z.State.create('d'),
+          e    = Z.State.create('e'),
+          f    = Z.State.create('f'),
+          g    = Z.State.create('g'),
+          test = [];
+
+      a.addSubstate(b);
+      a.addSubstate(c);
+      a.addSubstate(d);
+      b.addSubstate(e);
+      b.addSubstate(f);
+      f.addSubstate(g);
+
+      a.each(function(s) { test.push(s); });
+
+      expect(test).toEq([a, b, e, f, g, c, d]);
+    });
+  });
+
   describe('.addSubstate', function() {
     it('should add the given state to the substates hash', function() {
       var a = Z.State.create('a'),

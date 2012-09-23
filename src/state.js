@@ -33,7 +33,7 @@
 
 var slice = Array.prototype.slice;
 
-Z.State = Z.Object.extend(function() {
+Z.State = Z.Object.extend(Z.Enumerable, function() {
   function pathArray() {
     return this.superstate ?
       pathArray.call(this.superstate).concat(this.name) : [];
@@ -237,6 +237,12 @@ Z.State = Z.Object.extend(function() {
 
   this.def('toStringProperties', function() {
     return this.supr().concat('path', 'isCurrent', 'isConcurrent');
+  });
+
+  this.def('each', function(f) {
+    f(this);
+    this.substates.each(function(tuple) { tuple[1].each(f); });
+    return this;
   });
 
   this.def('addSubstate', function(state) {
