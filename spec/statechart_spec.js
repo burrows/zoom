@@ -354,6 +354,47 @@ describe('Z.State', function() {
       expect(eCurrent).toEq(['a.b', 'd.e']);
     });
   });
+
+  describe('.define', function() {
+    it('should create a root state with the name "__root__"', function() {
+      var s = Z.State.define(function() {});
+      expect(s.superstate).toBeNull();
+      expect(s.name).toBe('__root__');
+    });
+
+    it('should pass the options to the `Z.State` constructor', function() {
+      var s = Z.State.define({isConcurrent: true}, function() {});
+      expect(s.isConcurrent).toBe(true);
+    });
+
+    it('should call the given function in the context of the newly created state', function() {
+      var context, s = Z.State.define(function() { context = this; });
+      expect(context).toBe(s);
+    });
+  });
+
+  describe('.state', function() {
+    var root;
+
+    beforeEach(function() { root = Z.State.define(); });
+
+    it('should create a substate with the given name on the receiver', function() {
+      var x = root.state('x');
+      expect(x.isA(Z.State)).toBe(true);
+      expect(root.substates.size()).toBe(1);
+      expect(root.substates.at('x')).toBe(x);
+    });
+
+    it('should pass the options to the `Z.State` constructor', function() {
+      var x = root.state('x', {isConcurrent: true});
+      expect(x.isConcurrent).toBe(true);
+    });
+
+    it('should call the given function in the context of the newly created state', function() {
+      var context, x = root.state('x', function() { context = this; });
+      expect(context).toBe(x);
+    });
+  });
 });
 
 }());

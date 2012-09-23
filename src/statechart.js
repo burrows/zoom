@@ -182,6 +182,49 @@ Z.State = Z.Object.extend(function() {
     this.__transitions__ = [];
   }
 
+  this.def('define', function() {
+    var opts = {}, f = null, s;
+
+    if (arguments.length === 2) {
+      opts = arguments[0];
+      f    = arguments[1];
+    }
+    else if (arguments.length === 1) {
+      if (typeof arguments[0] === 'function') {
+        f = arguments[0];
+      }
+      else {
+        opts = arguments[0];
+      }
+    }
+
+    s = this.create('__root__', opts);
+    if (f) { f.call(s); }
+    return s;
+  });
+
+  this.def('state', function(name) {
+    var opts = {}, f = null, s;
+
+    if (arguments.length === 3) {
+      opts = arguments[1];
+      f    = arguments[2];
+    }
+    else if (arguments.length === 2) {
+      if (typeof arguments[1] === 'function') {
+        f = arguments[1];
+      }
+      else {
+        opts = arguments[1];
+      }
+    }
+
+    s = Z.State.create(name, opts);
+    this.addSubstate(s);
+    if (f) { f.call(s); }
+    return s;
+  });
+
   this.def('init', function(name, opts) {
     opts = Z.defaults(opts || {}, {isConcurrent: false});
 
