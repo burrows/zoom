@@ -70,7 +70,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     if (!this.isCurrent) {
       this.isCurrent = true;
-      this.enter();
+      if (this.respondTo('enter')) { this.enter(); }
     }
 
     if (next) { enter.call(next, paths); }
@@ -83,7 +83,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     if (!this.isCurrent) {
       this.isCurrent = true;
-      this.enter();
+      if (this.respondTo('enter')) { this.enter(); }
     }
 
     for (i = 0, len = paths.length; i < len; i++) {
@@ -115,7 +115,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     if (substate) { exit.call(substate); }
 
-    this.exit();
+    if (this.respondTo('exit')) { this.exit(); }
     this.isCurrent = false;
 
     return this;
@@ -123,7 +123,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
   function exitConcurrent() {
     this.substates.values().each(function(s) { exit.call(s); });
-    this.exit();
+    if (this.respondTo('exit')) { this.exit(); }
     this.isCurrent = false;
 
     return this;
@@ -342,9 +342,6 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     return this;
   });
-
-  this.def('enter', Z.identity);
-  this.def('exit', Z.identity);
 });
 
 }());
