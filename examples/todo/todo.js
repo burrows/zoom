@@ -242,7 +242,7 @@ Todo.InputView = Z.View.extend(function() {
   this.def('keyDown', function(e) {
     var input = this.node.firstChild;
     if (input && document.activeElement !== input) { input.focus(); }
-    if (e.key() === 13) { Todo.controller.createTodo(this.value()); }
+    if (e.key === 13) { Todo.controller.createTodo(this.value()); }
     return true;
   });
 
@@ -282,7 +282,7 @@ Todo.TodoView = Z.View.extend(function() {
   });
 
   this.def('mouseDown', function(e) {
-    var elem = e.node();
+    var elem = e.node;
 
     if (elem.nodeName === 'INPUT') {
       Todo.controller.toggleIsDone(this.content());
