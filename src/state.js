@@ -63,7 +63,15 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     cur = this.substates.values().find(function(s) { return s.isCurrent; });
 
     if (this.substates.size() > 0) {
-      next = heads[0] ? this.substates.at(heads[0]) : this.substates.first()[1];
+      if (heads[0]) {
+        next = this.substates.at(heads[0]);
+      }
+      else if (this.hasHistory) {
+        next = this.__previous__ || this.substates.first()[1];
+      }
+      else {
+        next = this.substates.first()[1];
+      }
     }
 
     if (cur && cur !== next) { exit.call(cur); }
@@ -108,10 +116,18 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   }
 
+  function enter(paths) {
+    return this.isConcurrent ?
+      enterConcurrent.call(this, paths) : enterClustered.call(this, paths);
+  }
+
+
   function exitClustered() {
     var substate = this.substates.values().find(function(s) {
       return s.isCurrent;
     });
+
+    if (this.hasHistory) { this.__previous__ = substate; }
 
     if (substate) { exit.call(substate); }
 
@@ -127,11 +143,6 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.isCurrent = false;
 
     return this;
-  }
-
-  function enter(paths) {
-    return this.isConcurrent ?
-      enterConcurrent.call(this, paths) : enterClustered.call(this, paths);
   }
 
   function exit() {
@@ -226,12 +237,17 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   });
 
   this.def('init', function(name, opts) {
-    opts = Z.defaults(opts || {}, {isConcurrent: false});
+    opts = Z.defaults(opts || {}, {isConcurrent: false, hasHistory: false});
+
+    if (opts.isConcurrent && opts.hasHistory) {
+      throw new Error('Z.State.init: history states are not allowed on concurrent states');
+    }
 
     this.name         = name;
     this.substates    = Z.H();
     this.superstate   = null;
     this.isConcurrent = opts.isConcurrent;
+    this.hasHistory   = opts.hasHistory;
     this.isCurrent    = false;
     this.__cache__    = {};
   });

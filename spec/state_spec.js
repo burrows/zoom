@@ -30,6 +30,22 @@ describe('Z.State', function() {
       var s = Z.State.create('a', {isConcurrent: true});
       expect(s.isConcurrent).toBe(true);
     });
+
+    it('should default `hasHistory` to `false`', function() {
+      var s = Z.State.create('a');
+      expect(s.hasHistory).toBe(false);
+    });
+
+    it('should allow setting `hasHistory` to `true`', function() {
+      var s = Z.State.create('a', {hasHistory: true});
+      expect(s.hasHistory).toBe(true);
+    });
+
+    it('should raise an exception if `isConcurrent` and `hasHistory` are set', function() {
+      expect(function() {
+        Z.State.create('a', {isConcurrent: true, hasHistory: true});
+      }).toThrow('Z.State.init: history states are not allowed on concurrent states');
+    });
   });
 
   describe('.each', function() {
@@ -170,7 +186,7 @@ describe('Z.State', function() {
 
       root = Z.State.create('root');
       a    = Z.State.create('a');
-      b    = Z.State.create('b');
+      b    = Z.State.create('b', {hasHistory: true});
       c    = Z.State.create('c');
       d    = Z.State.create('d');
       e    = Z.State.create('e');
@@ -308,6 +324,16 @@ describe('Z.State', function() {
       m.goto('a.e.g.k.l');
       expect(exits).toEq([m]);
       expect(enters).toEq([l]);
+    });
+
+    it('should enter the most recently exited substate when the path is not specified and the state has history tracking', function() {
+      expect(root.currentPaths()).toEq(['a.b.c']);
+      c.goto('a.b.d');
+      expect(root.currentPaths()).toEq(['a.b.d']);
+      d.goto('a.e.f');
+      expect(root.currentPaths()).toEq(['a.e.f']);
+      f.goto('a.b');
+      expect(root.currentPaths()).toEq(['a.b.d']);
     });
   });
 
