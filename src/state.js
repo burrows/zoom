@@ -1,34 +1,3 @@
-// Z.State
-//   raw properties:
-//     name               - string, set at init
-//     isConcurrent       - boolean, set at init
-//     isCurrent          - boolean, set by enter/exit
-//     substates          - hash mapping name to state object
-//     superstate         - reference to parent
-//   public methods:
-//     root()             - returns the root state
-//     path()             - dot separated string of state names leading to state
-//     current()          - returns array of current state objects
-//     currentPaths()     - returns the paths of each current state
-//     send(action, args) - bubbles the action up each current state
-//     goto(states)       - checks to make sure that transitions are valid, invokes enter on pivot
-//   private methods:
-//     enter(paths)       - enters the node, calls exit on current substate if its not on the path
-//     exit()             - recursively exits the state bottom up
-//     transition()       - executes queued transitions
-//
-// `goto` must queue transitions until all current states have had an
-// opportunity to handle an action
-//
-// actions are sent to all current states with the `send` method called on the root state
-//
-// cache the following:
-//   path
-//   root
-//   ancestorStates
-//
-// addSubstate must clear the cache for each state in the given tree
-
 (function() {
 
 var slice = Array.prototype.slice;
@@ -330,9 +299,11 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     }
 
     // trim the pivot state's path from the destination paths
-    paths = !this.superstate ? paths : paths.map(function(path) {
-      return path.slice(pivot.path().split('.').length);
-    });
+    if (pivot.superstate) {
+      paths = !this.superstate ? paths : paths.map(function(path) {
+        return path.slice(pivot.path().split('.').length);
+      });
+    }
 
     queueTransition.call(root, pivot, paths.toNative());
 
