@@ -1,0 +1,161 @@
+* {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+body, #app, .z-main-window {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.calculator-view {
+  position: absolute;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  top: 50%;
+  left: 50%;
+  height: 294px;
+  width: 302px;
+  margin-left: -151px;
+  margin-top: -147px;
+  font-family: "Helvetica Neue", arial, sans-serif;
+}
+
+.calculator-view .display, .calculator-view button {
+  position: absolute;
+  font-size: 22px;
+}
+
+.calculator-view .display {
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  height: 40px;
+  border: 1px solid #ccc;
+  line-height: 30px;
+}
+
+.calculator-view .display .result {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 25px;
+  bottom: 0;
+  padding: 5px 0;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calculator-view .display .operator {
+  position: absolute;
+  left: 254px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  padding: 5px 0;
+  text-align: center;
+}
+
+.calculator-view button {
+  bottom: 0;
+  width: 66px;
+  height: 40px;
+}
+
+.calculator-view button.clear {
+  top: 64px;
+  left: 12px;
+}
+
+.calculator-view button.negate {
+  top: 64px;
+  left: 82px;
+}
+
+.calculator-view button.divide {
+  top: 64px;
+  left: 152px;
+}
+
+.calculator-view button.multiply {
+  top: 64px;
+  left: 222px;
+}
+
+.calculator-view button.seven {
+  top: 108px;
+  left: 12px;
+}
+
+.calculator-view button.eight {
+  top: 108px;
+  left: 82px;
+}
+
+.calculator-view button.nine {
+  top: 108px;
+  left: 152px;
+}
+
+.calculator-view button.subtract {
+  top: 108px;
+  left: 222px;
+}
+
+.calculator-view button.four {
+  top: 152px;
+  left: 12px;
+}
+
+.calculator-view button.five {
+  top: 152px;
+  left: 82px;
+}
+
+.calculator-view button.six {
+  top: 152px;
+  left: 152px;
+}
+
+.calculator-view button.add {
+  top: 152px;
+  left: 222px;
+}
+
+.calculator-view button.one {
+  top: 196px;
+  left: 12px;
+}
+
+.calculator-view button.two {
+  top: 196px;
+  left: 82px;
+}
+
+.calculator-view button.three {
+  top: 196px;
+  left: 152px;
+}
+
+.calculator-view button.compute {
+  top: 196px;
+  left: 222px;
+  height: 84px;
+}
+
+.calculator-view button.zero {
+  top: 240px;
+  left: 12px;
+  width: 136px;
+}
+
+.calculator-view button.decimal {
+  top: 240px;
+  left: 152px;
+}
+
