@@ -1,4 +1,4 @@
-(function() {
+(function(undefined) {
 
 var slice = Array.prototype.slice;
 
@@ -18,7 +18,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return path.length === 1 ? state : resolvePath.call(state, path.slice(1));
   }
 
-  function enterClustered(paths) {
+  function enterClustered(paths, ctx) {
     var heads = [], next, cur, i, len;
 
     for (i = 0, len = paths.length; i < len; i++) {
@@ -43,24 +43,32 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
       }
     }
 
-    if (cur && cur !== next) { exit.call(cur); }
+    if (cur && cur !== next) { exit.call(cur, ctx); }
 
     if (!this.isCurrent) {
+      if (this.root().trace && this !== this.root()) {
+        console.log(Z.fmt("Z.State.enter: entering state '%@'", this.path()));
+      }
+
       this.isCurrent = true;
-      if (this.respondTo('enter')) { this.enter(); }
+      if (this.respondTo('enter')) { this.enter(ctx); }
     }
 
-    if (next) { enter.call(next, paths); }
+    if (next) { enter.call(next, paths, ctx); }
 
     return this;
   }
 
-  function enterConcurrent(paths) {
+  function enterConcurrent(paths, ctx) {
     var heads = {}, substates = this.substates, head, i, len;
 
     if (!this.isCurrent) {
+      if (this.root().trace && this !== this.root()) {
+        console.log(Z.fmt("Z.State.enter: entering state '%@'", this.path()));
+      }
+
       this.isCurrent = true;
-      if (this.respondTo('enter')) { this.enter(); }
+      if (this.respondTo('enter')) { this.enter(ctx); }
     }
 
     for (i = 0, len = paths.length; i < len; i++) {
@@ -79,44 +87,52 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     }
 
     substates.each(function(tuple) {
-      enter.call(tuple[1], heads[tuple[0]] || []);
+      enter.call(tuple[1], heads[tuple[0]] || [], ctx);
     });
 
     return this;
   }
 
-  function enter(paths) {
+  function enter(paths, ctx) {
     return this.isConcurrent ?
-      enterConcurrent.call(this, paths) : enterClustered.call(this, paths);
+      enterConcurrent.call(this, paths, ctx) :
+      enterClustered.call(this, paths, ctx);
   }
 
-
-  function exitClustered() {
+  function exitClustered(ctx) {
     var substate = this.substates.values().find(function(s) {
       return s.isCurrent;
     });
 
     if (this.hasHistory) { this.__previous__ = substate; }
 
-    if (substate) { exit.call(substate); }
+    if (substate) { exit.call(substate, ctx); }
 
-    if (this.respondTo('exit')) { this.exit(); }
+    if (this.respondTo('exit')) { this.exit(ctx); }
     this.isCurrent = false;
+
+    if (this.root().trace && this !== this.root()) {
+      console.log(Z.fmt("Z.State.exit: exiting state '%@'", this.path()));
+    }
 
     return this;
   }
 
-  function exitConcurrent() {
-    this.substates.values().each(function(s) { exit.call(s); });
-    if (this.respondTo('exit')) { this.exit(); }
+  function exitConcurrent(ctx) {
+    this.substates.values().each(function(s) { exit.call(s, ctx); });
+    if (this.respondTo('exit')) { this.exit(ctx); }
     this.isCurrent = false;
+
+    if (this.root().trace && this !== this.root()) {
+      console.log(Z.fmt("Z.State.exit: exiting state '%@'", this.path()));
+    }
 
     return this;
   }
 
-  function exit() {
+  function exit(ctx) {
     return this.isConcurrent ?
-      exitConcurrent.call(this) : exitClustered.call(this);
+      exitConcurrent.call(this, ctx) : exitClustered.call(this, ctx);
   }
 
   function ancestors() {
@@ -144,9 +160,9 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return p;
   }
 
-  function queueTransition(pivot, paths) {
+  function queueTransition(pivot, paths, ctx) {
     this.__transitions__ = this.__transitions__ || [];
-    this.__transitions__.push({pivot: pivot, paths: paths});
+    this.__transitions__.push({pivot: pivot, paths: paths, ctx: ctx});
   }
 
   function transition() {
@@ -156,7 +172,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     for (i = 0, len = this.__transitions__.length; i < len; i++) {
       t = this.__transitions__[i];
-      enter.call(t.pivot, t.paths);
+      enter.call(t.pivot, t.paths, t.ctx);
     }
 
     this.__transitions__ = [];
@@ -219,6 +235,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.hasHistory   = opts.hasHistory;
     this.isCurrent    = false;
     this.__cache__    = {};
+    this.trace        = false;
   });
 
   this.def('toStringProperties', function() {
@@ -274,13 +291,19 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     var self   = this,
         isRoot = !this.superstate,
         root   = isRoot ? this : this.root(),
-        paths, states, pivots, pivot;
+        paths, states, pivots, pivot, ctx;
+
+    if (root.trace) {
+      console.log(Z.fmt("Z.State.goto: transitioning to states %@", Z.inspect(arguments)));
+    }
 
     if (!this.isCurrent && !isRoot) {
       throw new Error(Z.fmt("Z.State.goto: state %@ is not current", this));
     }
 
-    paths  = Z.Array.create(arguments).flatten().map(function(s) { return s.split('.'); });
+    paths  = Z.Array.create(arguments).flatten();
+    ctx    = typeof paths.last() !== 'string' ? paths.pop() : undefined;
+    paths  = paths.map(function(s) { return s.split('.'); });
     states = paths.map(function(path) { return resolvePath.call(root, path); });
     pivots = this.superstate ?
       states.map(function(state) { return findPivot.call(self, state); }) :
@@ -305,7 +328,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
       });
     }
 
-    queueTransition.call(root, pivot, paths.toNative());
+    queueTransition.call(root, pivot, paths.toNative(), ctx);
 
     if (!this.__isSending__) { transition.call(root); }
 
@@ -314,6 +337,10 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('send', function() {
     var args = slice.call(arguments), isRoot = !this.superstate;
+
+    if (isRoot && this.trace) {
+      console.log(Z.fmt("Z.State.send: processing action '%@' with arguments %@", args[0], Z.inspect(args.slice(1))));
+    }
 
     this.substates.each(function(tuple) {
       if (tuple[1].isCurrent) { tuple[1].send.apply(tuple[1], args); }

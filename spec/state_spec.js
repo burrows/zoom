@@ -335,6 +335,30 @@ describe('Z.State', function() {
       f.goto('a.b');
       expect(root.currentPaths()).toEq(['a.b.d']);
     });
+
+    it("should pass along its final argument if its not a string to each entered state's `enter` method", function() {
+      var ectx, fctx;
+
+      e.def('enter', function(ctx) { ectx = ctx; });
+      f.def('enter', function(ctx) { fctx = ctx; });
+
+      c.goto('a.e.f', {foo: 'bar'});
+
+      expect(ectx).toEq({foo: 'bar'});
+      expect(fctx).toEq({foo: 'bar'});
+    });
+
+    it("should pass along its final argument if its not a string to each exited state's `exit` method", function() {
+      var bctx, cctx;
+
+      b.def('exit', function(ctx) { bctx = ctx; });
+      c.def('exit', function(ctx) { cctx = ctx; });
+
+      c.goto('a.e.f', {foo: 'bar'});
+
+      expect(bctx).toEq({foo: 'bar'});
+      expect(cctx).toEq({foo: 'bar'});
+    });
   });
 
   describe('.send', function() {
