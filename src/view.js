@@ -145,6 +145,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     views[this.objectId()] = this;
 
     this.node = this.buildNode();
+    this.__rendered__ = false;
 
     if (subviewTypes) {
       subviewTypes.each(function(tuple) {
@@ -214,12 +215,15 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
-  // Public: Displays the receiver by invoking the `render` method and
-  // recursively calling `display` on all subviews.
+  // Public: Displays the receiver by invoking the `render` or `update` method
+  // and recursively calling `display` on all subviews. The `render` method is
+  // called the first time `display` is called on the view. On subsequent calls
+  // to `display` the `update` method will be called if it exists, otherwise the
+  // `render` method is called again.
   //
   // This method is where all DOM modification actually occurs and should
   // rarely, if ever, need to be called directly. Instead, view displays are
-  // triggered by `Z.RunLoop`.
+  // triggered by the application's `Z.RunLoop`.
   //
   // Returns the receiver.
   this.def('display', function() {
@@ -227,7 +231,16 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
     subviews.invoke('display');
 
-    this.render();
+    // if this is the first time the view has been displayed, invoke the
+    // `render` method, other wise invoke the `update` method if it exists,
+    // falling back to the `render` method if it doesn't
+    if (!this.__rendered__) {
+      this.render();
+      this.__rendered__ = true;
+    }
+    else {
+      if (this.respondTo('update')) { this.update(); } else { this.render(); }
+    }
 
     // ensure that all removed subviews have had their nodes removed
     if (removed = this.__removedSubviews__) {

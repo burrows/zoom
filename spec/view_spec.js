@@ -434,6 +434,23 @@ describe('Z.View', function() {
       expect(v.node.querySelector('.test-view-1')).not.toEqual(null);
     });
 
+    it('should invoke the `update` method if it exists and the view has already been rendered', function() {
+      var v = TestView1.create();
+
+      v.def('update', function() {});
+
+      spyOn(v, 'render').andCallThrough();
+      spyOn(v, 'update').andCallThrough();
+
+      v.display();
+      expect(v.render.callCount).toBe(1);
+      expect(v.update.callCount).toBe(0);
+
+      v.display();
+      expect(v.render.callCount).toBe(1);
+      expect(v.update.callCount).toBe(1);
+    });
+
     it('should render the subviews', function() {
       var v = TestCompoundView.create();
 
