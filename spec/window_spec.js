@@ -12,32 +12,32 @@ TestView = Z.View.extend(function() {
 
 describe('Z.Window', function() {
   describe('.init', function() {
-    it('should create a concrete instance of the given view type and set it as the `contentView`', function() {
-      var w = Z.Window.create(TestView), cv = w.contentView();
+    it('should create a concrete instance of the given view type and set it as the `mainView`', function() {
+      var w = Z.Window.create(TestView), cv = w.mainView();
       expect(cv.isType).toBe(false);
       expect(cv.isA(TestView)).toBe(true);
     });
 
-    it('should assign the given concrete view instance as the `contentView`', function() {
+    it('should assign the given concrete view instance as the `mainView`', function() {
       var cv = TestView.create(), w = Z.Window.create(cv);
-      expect(w.contentView()).toBe(cv);
+      expect(w.mainView()).toBe(cv);
     });
 
-    it('should add the `contentView` as a subview', function() {
-      var w = Z.Window.create(TestView), cv = w.contentView();
+    it('should add the `mainView` as a subview', function() {
+      var w = Z.Window.create(TestView), cv = w.mainView();
       expect(cv.superview()).toBe(w);
       expect(w.subviews().contains(cv)).toBe(true);
     });
 
     it('should set the `window` property on each view in the content view hierarchy', function() {
-      var ContentView = Z.View.extend(function() {
+      var MainView = Z.View.extend(function() {
         this.subview('sv1', Z.View);
         this.subview('sv2', Z.View);
-      }), w = Z.Window.create(ContentView);
+      }), w = Z.Window.create(MainView);
 
-      expect(w.get('contentView.window')).toBe(w);
-      expect(w.get('contentView.sv1.window')).toBe(w);
-      expect(w.get('contentView.sv2.window')).toBe(w);
+      expect(w.get('mainView.window')).toBe(w);
+      expect(w.get('mainView.sv1.window')).toBe(w);
+      expect(w.get('mainView.sv2.window')).toBe(w);
     });
   });
 
@@ -63,8 +63,8 @@ describe('Z.Window', function() {
         this.subview('sv2', TestView);
       }));
 
-      sv1 = w.get('contentView.sv1');
-      sv2 = w.get('contentView.sv2');
+      sv1 = w.get('mainView.sv1');
+      sv2 = w.get('mainView.sv2');
 
       w.keyView(sv1);
     });
@@ -163,7 +163,7 @@ describe('Z.Window', function() {
           this.subview('sv', TestView.extend(function() {
             this.def('acceptsKeyView', function() { return true; });
           }));
-        })), sv = w.get('contentView.sv');
+        })), sv = w.get('mainView.sv');
 
         w.initialKeyView(sv);
 
@@ -177,7 +177,7 @@ describe('Z.Window', function() {
           this.subview('sv', TestView.extend(function() {
             this.def('acceptsKeyView', function() { return false; });
           }));
-        })), sv = w.get('contentView.sv');
+        })), sv = w.get('mainView.sv');
 
         w.initialKeyView(sv);
         w.display();
@@ -197,8 +197,8 @@ describe('Z.Window', function() {
           this.subview('sv2', TestView);
         }));
 
-        sv1 = w.get('contentView.sv1');
-        sv2 = w.get('contentView.sv2');
+        sv1 = w.get('mainView.sv1');
+        sv2 = w.get('mainView.sv2');
 
         w.initialKeyView(sv1);
         w.keyView(sv1);
@@ -224,8 +224,8 @@ describe('Z.Window', function() {
         this.subview('sv2', TestView);
       }));
 
-      sv1 = w.get('contentView.sv1');
-      sv2 = w.get('contentView.sv2');
+      sv1 = w.get('mainView.sv1');
+      sv2 = w.get('mainView.sv2');
     });
 
     it('should set `isKey` to `false` and `needsDisplay` to `true`', function() {
@@ -252,9 +252,9 @@ describe('Z.Window', function() {
         this.subview('sv3', TestView);
       }));
 
-      sv1 = w.get('contentView.sv1');
-      sv2 = w.get('contentView.sv2');
-      sv3 = w.get('contentView.sv3');
+      sv1 = w.get('mainView.sv1');
+      sv2 = w.get('mainView.sv2');
+      sv3 = w.get('mainView.sv3');
 
       sv1.nextKeyView = function() { return null; };
       sv2.nextKeyView = function() { return null; };
@@ -310,9 +310,9 @@ describe('Z.Window', function() {
         this.subview('sv3', TestView);
       }));
 
-      sv1 = w.get('contentView.sv1');
-      sv2 = w.get('contentView.sv2');
-      sv3 = w.get('contentView.sv3');
+      sv1 = w.get('mainView.sv1');
+      sv2 = w.get('mainView.sv2');
+      sv3 = w.get('mainView.sv3');
 
       sv1.previousKeyView = function() { return null; };
       sv2.previousKeyView = function() { return null; };
@@ -374,10 +374,10 @@ describe('Z.Window', function() {
 
     beforeEach(function() {
       win  = Z.Window.create(ParentView);
-      cv   = win.get('contentView');
-      sv1  = win.get('contentView.sv1');
-      sv11 = win.get('contentView.sv1.sv11');
-      sv12 = win.get('contentView.sv1.sv12');
+      cv   = win.get('mainView');
+      sv1  = win.get('mainView.sv1');
+      sv11 = win.get('mainView.sv1.sv11');
+      sv12 = win.get('mainView.sv1.sv12');
 
       win.initialKeyView(sv11);
       win.becomeKeyWindow();

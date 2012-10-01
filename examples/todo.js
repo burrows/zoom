@@ -126,7 +126,7 @@ Todo.controller = {
 
     Z.log(todo, todo.errors());
 
-    Todo.app.set('mainWindow.contentView.contentView.inputView.value', null)
+    Todo.app.set('mainWindow.mainView.contentView.inputView.value', null)
   },
 
   deleteTodo: function(todo) {
@@ -151,7 +151,7 @@ Todo.controller = {
   },
 
   filterTodos: function() {
-    var todoListView = Todo.app.get('mainWindow.contentView.contentView.todoListView'),
+    var todoListView = Todo.app.get('mainWindow.mainView.contentView.todoListView'),
         oldQuery     = todoListView.content(),
         newQuery;
 
@@ -242,7 +242,7 @@ Todo.InputView = Z.View.extend(function() {
   this.def('keyDown', function(e) {
     var input = this.node.firstChild;
     if (input && document.activeElement !== input) { input.focus(); }
-    if (e.key() === 13) { Todo.controller.createTodo(this.value()); }
+    if (e.key === 13) { Todo.controller.createTodo(this.value()); }
     return true;
   });
 
@@ -282,7 +282,7 @@ Todo.TodoView = Z.View.extend(function() {
   });
 
   this.def('mouseDown', function(e) {
-    var elem = e.node();
+    var elem = e.node;
 
     if (elem.nodeName === 'INPUT') {
       Todo.controller.toggleIsDone(this.content());
@@ -319,8 +319,8 @@ Todo.MainView = Z.View.extend(function() {
 
 document.addEventListener('DOMContentLoaded', function() {
   Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
-  Todo.app.set('mainWindow.contentView.sidebarView.tagListView.content', Todo.allTags);
-  Todo.app.set('mainWindow.contentView.contentView.todoListView.content', Todo.allTodos);
+  Todo.app.set('mainWindow.mainView.sidebarView.tagListView.content', Todo.allTags);
+  Todo.app.set('mainWindow.mainView.contentView.todoListView.content', Todo.allTodos);
   Todo.app.run();
 });
 

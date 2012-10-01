@@ -60,7 +60,7 @@ describe('Z.App', function() {
     it('should create the `mainWindow` property', function() {
       expect(app.mainWindow()).not.toBeNull();
       expect(app.get('mainWindow.app')).toBe(app);
-      expect(app.get('mainWindow.contentView').isA(Parent)).toBe(true);
+      expect(app.get('mainWindow.mainView').isA(Parent)).toBe(true);
       expect(app.get('mainWindow.isMain')).toBe(true);
       expect(app.get('mainWindow.isKey')).toBe(true);
     });
@@ -144,14 +144,14 @@ describe('Z.App', function() {
 
     it('should notify the window and all of its subviews that their node has been attached', function() {
       expect(app.get('mainWindow.isNodeAttached')).toBe(false);
-      expect(app.get('mainWindow.contentView.isNodeAttached')).toBe(false);
-      expect(app.get('mainWindow.contentView.subviews').at(0).isNodeAttached()).toBe(false);
-      expect(app.get('mainWindow.contentView.subviews').at(1).isNodeAttached()).toBe(false);
+      expect(app.get('mainWindow.mainView.isNodeAttached')).toBe(false);
+      expect(app.get('mainWindow.mainView.subviews').at(0).isNodeAttached()).toBe(false);
+      expect(app.get('mainWindow.mainView.subviews').at(1).isNodeAttached()).toBe(false);
       app.displayWindows();
       expect(app.get('mainWindow.isNodeAttached')).toBe(true);
-      expect(app.get('mainWindow.contentView.isNodeAttached')).toBe(true);
-      expect(app.get('mainWindow.contentView.subviews').at(0).isNodeAttached()).toBe(true);
-      expect(app.get('mainWindow.contentView.subviews').at(1).isNodeAttached()).toBe(true);
+      expect(app.get('mainWindow.mainView.isNodeAttached')).toBe(true);
+      expect(app.get('mainWindow.mainView.subviews').at(0).isNodeAttached()).toBe(true);
+      expect(app.get('mainWindow.mainView.subviews').at(1).isNodeAttached()).toBe(true);
     });
 
     it("should attach window nodes to its container for windows added since the last time `displayWindows` was called", function() {
@@ -171,11 +171,11 @@ describe('Z.App', function() {
       app.addWindow(w);
       expect(app.get('mainWindow.isNodeAttached')).toBe(true);
       expect(w.isNodeAttached()).toBe(false);
-      expect(w.get('contentView.isNodeAttached')).toBe(false);
+      expect(w.get('mainView.isNodeAttached')).toBe(false);
 
       app.displayWindows();
       expect(w.isNodeAttached()).toBe(true);
-      expect(w.get('contentView.isNodeAttached')).toBe(true);
+      expect(w.get('mainView.isNodeAttached')).toBe(true);
     });
 
     it("should remove window nodes for windows removed since the last time `displayWindows` was called", function() {
@@ -199,13 +199,13 @@ describe('Z.App', function() {
 
       expect(app.get('mainWindow.isNodeAttached')).toBe(true);
       expect(w.isNodeAttached()).toBe(true);
-      expect(w.get('contentView.isNodeAttached')).toBe(true);
+      expect(w.get('mainView.isNodeAttached')).toBe(true);
 
       app.displayWindows();
 
       expect(app.get('mainWindow.isNodeAttached')).toBe(true);
       expect(w.isNodeAttached()).toBe(false);
-      expect(w.get('contentView.isNodeAttached')).toBe(false);
+      expect(w.get('mainView.isNodeAttached')).toBe(false);
     });
   });
 
@@ -333,8 +333,8 @@ describe('Z.App', function() {
         var e = Z.MouseEvent.create({
           kind   : Z.LeftMouseDown,
           window : win1,
-          view   : win1.contentView(),
-          node   : win1.get('contentView.sv1').node
+          view   : win1.mainView(),
+          node   : win1.get('mainView.sv1').node
         });
 
         expect(app.keyWindow()).toBe(mainWin);
@@ -350,8 +350,8 @@ describe('Z.App', function() {
         var e = Z.MouseEvent.create({
           kind   : Z.LeftMouseDown,
           window : mainWin,
-          view   : mainWin.contentView(),
-          node   : mainWin.get('contentView.sv1').node
+          view   : mainWin.mainView(),
+          node   : mainWin.get('mainView.sv1').node
         });
 
         spyOn(mainWin, 'dispatchEvent');

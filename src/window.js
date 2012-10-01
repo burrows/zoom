@@ -8,7 +8,7 @@ Z.Window = Z.View.extend(function() {
   this.prop('isMain', { def: false });
 
   // Public: A property that returns the window's content view.
-  this.prop('contentView');
+  this.prop('mainView');
 
   // Public: The window's current key view. Keyboard events sent to this window
   // will be first sent to the value of this property.
@@ -33,15 +33,15 @@ Z.Window = Z.View.extend(function() {
 
   this.def('acceptsMouseMoveEvents', function() { return false; });
 
-  // Public: The `Z.Window` constructor. Creates the window's content view.
+  // Public: The `Z.Window` constructor. Creates the window's main view.
   //
   // view - A `Z.View` sub-type or instance.
   // opts - An optional native object of properties to set (default: `{}`).
   this.def('init', function(view, opts) {
     var self = this;
     this.supr(opts);
-    this.contentView(this.addSubview(view.isType ? view.create() : view));
-    this.contentView().each(function(v) { v.window(self); });
+    this.mainView(this.addSubview(view.isType ? view.create() : view));
+    this.mainView().each(function(v) { v.window(self); });
   });
 
   // Public: Called by the window's `app` when it determines that it should
