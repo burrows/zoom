@@ -262,7 +262,7 @@ Calc.CalculatorView = Z.View.extend(function() {
 
 document.addEventListener('DOMContentLoaded', function() {
   Calc.app = Z.App.create(Calc.CalculatorView, document.getElementById('app'));
-  Calc.app.run();
+  Calc.app.start();
 });
 
 }());

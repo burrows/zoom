@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
   Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
   Todo.app.set('mainWindow.mainView.sidebarView.tagListView.content', Todo.allTags);
   Todo.app.set('mainWindow.mainView.contentView.todoListView.content', Todo.allTodos);
-  Todo.app.run();
+  Todo.app.start();
 });
 
 }());
