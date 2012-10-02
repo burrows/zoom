@@ -590,8 +590,13 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     }
 
     // attempt to allow the view's delegate to handle the action
-    if (!handled && del && del.respondTo(action)) {
-      handled = del[action].apply(del, args.slice(1)) === true;
+    if (!handled && del) {
+      if (typeof del[action] === 'function') {
+        handled = del[action].apply(del, args.slice(1)) === true;
+      }
+      else if (typeof del.send === 'function') {
+        handled = del.send.apply(del, args) === true;
+      }
     }
 
     if (handled) { return true; }

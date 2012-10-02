@@ -806,6 +806,24 @@ describe('Z.View', function() {
       expect(b.delegate().someAction).toHaveBeenCalledWith(1, 2);
       expect(a.delegate().someAction).not.toHaveBeenCalled();
     });
+
+    it("should send the action to each view's delegate via the `send` method if the delegate doesn't implement the action but does implement `send`", function() {
+      var a = Z.View.create({delegate: Z.Object.create()}),
+          b = Z.View.create(),
+          c = Z.View.create(),
+          d = Z.View.create();
+
+      a.delegate().def('send', function() {});
+
+      spyOn(a.delegate(), 'send');
+
+      a.addSubview(b);
+      b.addSubview(c);
+      c.addSubview(d);
+
+      d.send('someAction', 1, 2);
+      expect(a.delegate().send).toHaveBeenCalledWith('someAction', 1, 2);
+    });
   });
 
   describe('.each', function() {
