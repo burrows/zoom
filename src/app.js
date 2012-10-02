@@ -48,11 +48,11 @@ Z.App = Z.Object.extend(function() {
     this.container = container || document.body;
   });
 
-  // Public: Begins running the app by creating a run loop and rendering all
+  // Public: Starts running the app by creating a run loop and rendering all
   // windows.
   //
   // Returns the receiver.
-  this.def('run', function() {
+  this.def('start', function() {
     if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
       this.mainWindow().becomeKeyWindow();
@@ -75,6 +75,12 @@ Z.App = Z.Object.extend(function() {
       this.runLoop.destroy();
     }
 
+    return this;
+  });
+
+  // Public: Perform a single run of the app's run loop.
+  this.def('run', function() {
+    if (this.runLoop) { this.runLoop.run(); }
     return this;
   });
 

@@ -72,29 +72,29 @@ describe('Z.App', function() {
     });
   });
 
-  describe('.run', function() {
+  describe('.start', function() {
     it('should set `keyWindow` to `mainWindow`', function() {
       expect(app.keyWindow()).toBeNull();
-      app.run();
+      app.start();
       expect(app.keyWindow()).toBe(app.mainWindow());
     });
 
     it('should invoke `becomeKeyWindow` on the `mainWindow`', function() {
       spyOn(app.mainWindow(), 'becomeKeyWindow');
-      app.run();
+      app.start();
       expect(app.mainWindow().becomeKeyWindow).toHaveBeenCalled();
     });
 
     it('should attach `mainWindow` to `container`', function() {
       expect(document.querySelector('#test-container > .z-main-window')).toEqual(null);
-      app.run();
+      app.start();
       expect(document.querySelector('#test-container > .z-main-window')).not.toEqual(null);
     });
 
     it('should attach all `windows` to `container`', function() {
       expect(container.querySelector('.child1')).toEqual(null);
       expect(container.querySelector('.child2')).toEqual(null);
-      app.run();
+      app.start();
       expect(container.querySelector('.child1')).not.toEqual(null);
       expect(container.querySelector('.child2')).not.toEqual(null);
     });
@@ -102,14 +102,14 @@ describe('Z.App', function() {
 
   describe('.destroy', function() {
     it('should set `keyWindow` to `null`', function() {
-      app.run();
+      app.start();
       expect(app.keyWindow()).toBe(app.mainWindow());
       app.destroy();
       expect(app.keyWindow()).toBeNull();
     });
 
     it('should detach `mainWindow` from `container`', function() {
-      app.run();
+      app.start();
       expect(document.querySelector('#test-container > .z-main-window')).not.toEqual(null);
       app.destroy();
       expect(document.querySelector('#test-container > .z-main-window')).toEqual(null);
@@ -120,7 +120,7 @@ describe('Z.App', function() {
 
       app.addWindow(window);
 
-      app.run();
+      app.start();
       expect(container.querySelector('.child1')).not.toEqual(null);
       expect(container.querySelector('.child2')).not.toEqual(null);
       expect(container.querySelector('.child3')).not.toEqual(null);
@@ -269,7 +269,7 @@ describe('Z.App', function() {
     beforeEach(function() {
       mainWindow = app.mainWindow();
       window1    = app.addWindow(Z.Window.create(Child3));
-      app.run();
+      app.start();
     });
 
     it('should set the main window to key window upon starting', function() {
@@ -322,7 +322,7 @@ describe('Z.App', function() {
 
     beforeEach(function() {
       app.addWindow(Z.Window.create(Parent));
-      app.run();
+      app.start();
 
       mainWin = app.mainWindow();
       win1 = app.windows().at(1);
