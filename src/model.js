@@ -341,7 +341,7 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('load', function(attrs) {
     var associations = this.associationDescriptors(), associated = {},
-        model, other, key, type, data, i, len;
+        model, others, other, assoc, key, type, data, i, len;
 
     if (Z.isUndefined(attrs.id)) {
       throw new Error(Z.fmt("%@.load: an `id` attribute is required",
@@ -375,11 +375,19 @@ Z.Model = Z.Object.extend(function() {
         setState.call(other, {dirty: false});
       }
       else if (associations[key].type === 'hasMany') {
+        others = [];
+        assoc  = model.get(key);
+
         for (i = 0, len = data.length; i < len; i++) {
           other = Z.isObject(data[i]) ? type.load(data[i]) :
             repo.retrieve(type, data[i]) || type.empty(data[i]);
-          model.get(key).push(other);
-          setState.call(other, {dirty: false});
+          others.push(other);
+        }
+
+        assoc.push.apply(assoc, others);
+
+        for (i = 0, len = others.length; i < len; i++) {
+          setState.call(others[i], {dirty: false});
         }
       }
     }
