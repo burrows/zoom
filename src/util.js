@@ -555,7 +555,7 @@ Z.resolve = function(path, ctx) {
 
   ctx  = ctx || Z.global;
 
-  if (ctx.isZObject) { return ctx.get(path); }
+  if (Z.isZObject(ctx)) { return ctx.get(path); }
 
   path = path.split('.');
   head = path[0];
