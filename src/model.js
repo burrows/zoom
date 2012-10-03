@@ -395,7 +395,7 @@ Z.Model = Z.Object.extend(function() {
       if (associations[key].type === 'hasOne') {
         other = Z.isObject(data) ? type.load(data) :
           repo.retrieve(type, data) || type.empty(data);
-        model.set(key, other);
+        if (model.get(key) !== other) { model.set(key, other); }
         setState.call(other, {dirty: false});
       }
       else if (associations[key].type === 'hasMany') {
@@ -405,7 +405,7 @@ Z.Model = Z.Object.extend(function() {
         for (i = 0, len = data.length; i < len; i++) {
           other = Z.isObject(data[i]) ? type.load(data[i]) :
             repo.retrieve(type, data[i]) || type.empty(data[i]);
-          others.push(other);
+          if (!assoc.contains(other)) { others.push(other); }
         }
 
         assoc.push.apply(assoc, others);

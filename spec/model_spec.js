@@ -429,6 +429,20 @@ describe('Z.Model.load', function() {
       Z.del(Test, 'A');
       Z.del(Test, 'B');
     });
+
+    it('should not add a model to the hasMany association more than once', function() {
+      var p = Test.Post.load({
+        id: 127, title: 'the title', body: 'the body',
+        tags: [{id: 1, name: 'tag a'}]
+      });
+
+      expect(p.get('tags.id')).toEq(Z.A(1));
+      Test.Post.load({
+        id: 127, title: 'the title', body: 'the body',
+        tags: [{id: 1, name: 'tag a'}]
+      });
+      expect(p.get('tags.id')).toEq(Z.A(1));
+    });
   });
 
   describe('given attributes containing a list of id refereces to a `hasMany` association', function() {
