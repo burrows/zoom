@@ -8,6 +8,7 @@ Test.BasicModel = Z.Model.extend(function() {
   this.attr('foo', 'string');
   this.attr('bar', 'number');
   this.attr('baz', 'boolean');
+  this.attr('bang', 'date');
 });
 
 Test.ValidatedModel = Z.Model.extend(function() {
@@ -150,6 +151,63 @@ describe('Z.Model.attr', function() {
       x.set('baz', null);
       expect(x.get('baz')).toBe(null);
     });
+  });
+
+  describe('`date` type', function() {
+    var m;
+
+    beforeEach(function() { m = Test.BasicModel.create(); });
+
+    it('should convert valid ISO 8601 strings to a Date object', function() {
+      m.bang('2012-10-03');
+      expect(m.bang()).toEq(new Date(2012, 9, 3));
+      m.bang('1998-01-05');
+      expect(m.bang()).toEq(new Date(1998, 0, 5));
+    });
+
+    it('should throw an exception if given a string that is not ISO 8601 formatted', function() {
+      expect(function() {
+        m.bang('Oct 1, 2012');
+      }).toThrow('Z.DateAttr.toRaw: could not convert string `Oct 1, 2012` to a Date');
+
+      expect(function() {
+        m.bang('2012-10-1');
+      }).toThrow('Z.DateAttr.toRaw: could not convert string `2012-10-1` to a Date');
+
+      expect(function() {
+        m.bang('2012/10/01');
+      }).toThrow('Z.DateAttr.toRaw: could not convert string `2012/10/01` to a Date');
+    });
+
+    it('should set the raw attribute to a ISO 8601 string', function() {
+      m.bang(new Date(2012, 4, 18));
+      expect(m.rawAttrs()['bang']).toBe('2012-05-18');
+    });
+
+    it('should convert numbers to a Date', function() {
+      var s = new Date(2012, 6, 4).valueOf();
+
+      m.bang(s);
+      expect(m.bang()).toEq(new Date(2012, 6, 4));
+    });
+  });
+});
+
+describe('Z.Model.attrNames', function() {
+  it('should return the names of all attributes defined on the model', function() {
+    expect(Test.BasicModel.attrNames().sort()).toEq(['bang', 'bar', 'baz', 'foo']);
+  });
+});
+
+describe('Z.Model.attrs', function() {
+  it('should return a raw object containing the values of each attribute', function() {
+    var m = Test.BasicModel.create({foo: 'something', bar: 3.14, baz: false, bang: '2012-01-01'});
+    expect(m.attrs()).toEq({foo: 'something', bar: 3.14, baz: false, bang: new Date(2012, 0, 1)});
+  });
+});
+
+describe('Z.Model.attrs', function() {
+  it('should return a raw object containing the values of each raw attribute', function() {
   });
 });
 

@@ -2,7 +2,7 @@
 
 var slice = Array.prototype.slice, repo, NEW, EMPTY, LOADED, DESTROYED;
 
-repo = Z.Object.extend(function() {
+repo = Z.Object.create().open(function() {
   function dependentPathDidChange(notification) {
     var query = notification.context, model = notification.observee;
     query.check(model);
@@ -24,10 +24,8 @@ repo = Z.Object.extend(function() {
     }
   }
 
-  this.def('init', function() {
-    this.idMap   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-    this.queries = Z.H();
-  });
+  this.idMap   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+  this.queries = Z.H();
 
   this.def('insert', function(model) {
     var baseType = model.baseType(),
@@ -100,7 +98,7 @@ repo = Z.Object.extend(function() {
       detachQueryObservers(tuple[1], query);
     });
   });
-}).create();
+});
 
 function setState(state) {
   var source = false, dirty = false, invalid = false, busy = false;
@@ -142,7 +140,7 @@ function isEditable(model) {
 }
 
 Z.Model = Z.Object.extend(function() {
-  var attributeTypes = {};
+  var attrTypes = {};
 
   this.mapper = Z.Mapper.create();
 
@@ -153,13 +151,13 @@ Z.Model = Z.Object.extend(function() {
   this.DESTROYED = DESTROYED = 'destroyed';
 
   function getHasOne(descriptor) {
-    return this[Z.fmt("__%@__", descriptor.name)] || null;
+    return this['__' + descriptor.name + '__'] || null;
   }
 
   function _setHasOne(descriptor, val) {
     var name   = descriptor.name,
         owner  = descriptor.owner,
-        key    = Z.fmt("__%@__", name),
+        key    = '__' + name + '__',
         state  = this.sourceState();
 
     if (owner) {
@@ -177,7 +175,7 @@ Z.Model = Z.Object.extend(function() {
 
   function setHasOne(descriptor, val) {
     var name    = descriptor.name,
-        key     = Z.fmt("__%@__", name),
+        key     = '__' + name + '__',
         prev    = this[key],
         type    = Z.resolve(descriptor.modelType),
         inverse = descriptor.inverse,
@@ -197,13 +195,13 @@ Z.Model = Z.Object.extend(function() {
   }
 
   function getHasMany(descriptor) {
-    var key = Z.fmt("__%@__", descriptor.name);
+    var key = '__' + descriptor.name + '__';
 
     return this[key] = this[key] || Z.HasManyArray.create(this, descriptor);
   }
 
   function setHasMany(descriptor, v) {
-    var key = Z.fmt("__%@__", descriptor.name),
+    var key = '__' + descriptor.name + '__',
         a   = getHasMany.call(this, descriptor);
 
     a.splice.apply(a, [0, a.size()].concat(Z.isA(v, Z.Array) ? v.toNative() : v));
@@ -247,26 +245,41 @@ Z.Model = Z.Object.extend(function() {
     return a.join('-');
   });
 
-  this.def('attr', function(name, type, opts) {
-    var privateProp   = Z.fmt("__z_%@__", name),
-        attributeType = attributeTypes[type];
+  this.def('registerAttrType', function(name, converter) {
+    if (attrTypes[name]) {
+      throw new Error(Z.fmt("Z.Model.registerAttrType: an attribute type with the name `%@` has already been defined", name));
+    }
 
-    if (!attributeType) {
+    attrTypes[name] = converter;
+    return this;
+  });
+
+  this.def('attr', function(name, type, opts) {
+    var converter = attrTypes[type],
+        def       = Z.del(opts || {}, 'def') || null,
+        nameKey, valueKey;
+
+    if (!converter) {
       throw new Error(Z.fmt("%@.attr: unknown type: %@", this.typeName(), type));
     }
 
-    this[Z.fmt("__z_attribute_%@__", name)] = opts;
+    converter = converter.create(opts);
+    nameKey   = '__z_attribute_' + name + '__';
+    valueKey  = '__' + name + '__';
 
-    this.prop(name, Z.merge({
+    // records the existence of an attribute with the given name
+    this[nameKey] = true;
+
+    this.prop(name, {
+      def: def,
       get: function() {
         if (this.sourceState() === EMPTY) {
           setState.call(this, {busy: true});
           this.mapper.fetchModel(this);
         }
 
-        return attributeType.fromRawFn(this[privateProp]);
+        return converter.fromRaw(this[valueKey]);
       },
-
       set: function(v) {
         var state = this.sourceState(), changes;
 
@@ -281,32 +294,14 @@ Z.Model = Z.Object.extend(function() {
             setState.call(this, {dirty: true});
           }
 
-          changes = changes || this.changes();
+          changes = this.changes();
 
           if (!changes.hasKey(name)) { changes.at(name, this.get(name)); }
         }
 
-        return this[privateProp] = attributeType.toRawFn(v);
+        return this[valueKey] = converter.toRaw(v);
       }
-    }, opts));
-  });
-
-  // Returns a list of `Z.Model` sub-prototypes that are in the reciever's
-  // inheritance chain.
-  this.def('modelAncestors', function() {
-    var ancestors = this.ancestors(), a = [], i, len;
-
-    for (i = 0, len = ancestors.length; i < len; i++) {
-      if (ancestors[i] === Z.Model) { break; }
-      if (!ancestors[i].isA(Z.Module)) { a.push(ancestors[i]); }
-    }
-
-    return a;
-  });
-
-  this.def('baseType', function() {
-    var a = this.modelAncestors();
-    return a[a.length - 1];
+    });
   });
 
   this.def('attrNames', function() {
@@ -321,13 +316,43 @@ Z.Model = Z.Object.extend(function() {
     return names;
   });
 
-  this.def('registerAttributeType', function(name, toRawFn, fromRawFn) {
-    attributeTypes[name] = {
-      toRawFn: toRawFn || Z.identity,
-      fromRawFn: fromRawFn || Z.identity
-    };
+  this.def('rawAttrs', function() {
+    var names = this.attrNames(), attrs = {}, i, len;
 
-    return this;
+    for (i = 0, len = names.length; i < len; i++) {
+      attrs[names[i]] = this['__' + names[i] + '__'];
+    }
+
+    return attrs;
+  });
+
+  this.def('attrs', function() {
+    var names = this.attrNames(), attrs = {}, i, len;
+
+    for (i = 0, len = names.length; i < len; i++) {
+      attrs[names[i]] = this.get(names[i]);
+    }
+
+    return attrs;
+  });
+
+
+  // Returns a list of `Z.Model` sub-types that are in the receiver's prototype
+  // chain.
+  this.def('modelAncestors', function() {
+    var ancestors = this.ancestors(), a = [], i, len;
+
+    for (i = 0, len = ancestors.length; i < len; i++) {
+      if (ancestors[i] === Z.Model) { break; }
+      if (!ancestors[i].isA(Z.Module)) { a.push(ancestors[i]); }
+    }
+
+    return a;
+  });
+
+  this.def('baseType', function() {
+    var a = this.modelAncestors();
+    return a[a.length - 1];
   });
 
   this.def('reset', function() { repo.reset(); });
@@ -587,7 +612,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('hasOne', function(name, modelType, opts) {
-    var assocKey = Z.fmt("__z_association_%@__", name), descriptor;
+    var assocKey = '__z_association_' + name + '__', descriptor;
 
     this[assocKey] = descriptor = Z.merge(Z.dup(opts), {
       type: 'hasOne', name: name, modelType: modelType
@@ -601,7 +626,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('hasMany', function(name, modelType, opts) {
-    var assocKey = Z.fmt("__z_association_%@__", name), descriptor;
+    var assocKey = '__z_association_' + name + '__', descriptor;
 
     this[assocKey] = descriptor = Z.merge(Z.dup(opts), {
       type: 'hasMany', name: name, modelType: modelType
@@ -626,7 +651,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('associationDescriptorFor', function(name) {
-    return this[Z.fmt('__z_association_%@__', name)];
+    return this['__z_association_' + name + '__'];
   });
 
   this.def('init', function(attributes) {
@@ -711,20 +736,6 @@ Z.Model = Z.Object.extend(function() {
     repo.registerQuery(q);
     return q;
   });
-
-  function stringToRaw(v) { return v ? v.toString() : v; }
-
-  this.registerAttributeType('string', stringToRaw);
-
-  function numberToRaw(v) {
-    if (typeof v === 'string') { return parseFloat(v, 19); }
-    else { return v; }
-  }
-
-  this.registerAttributeType('number', numberToRaw);
-
-  function booleanToRaw(v) { return Z.isNull(v) ? v : !!v; }
-  this.registerAttributeType('boolean', booleanToRaw);
 });
 
 Z.HasManyArray = Z.Array.extend(function() {
@@ -836,5 +847,85 @@ Z.Query = Z.SortedArray.extend(function() {
 
   this.def('destroy', function() { repo.deregisterQuery(this); });
 });
+
+//------------------------------------------------------------------------------
+// Attribute Converters
+//------------------------------------------------------------------------------
+
+Z.StringAttr = Z.Object.extend(function() {
+  this.def('toRaw', function(v) {
+    return v ? v.toString() : v;
+  });
+
+  this.def('fromRaw', Z.identity);
+});
+
+Z.Model.registerAttrType('string', Z.StringAttr);
+
+Z.NumberAttr = Z.Object.extend(function() {
+  this.def('toRaw', function(v) {
+    if (typeof v === 'string') { return parseFloat(v, 10); }
+    else if (typeof v === 'number') { return v; }
+    else { return null; }
+  });
+
+  this.def('fromRaw', Z.identity);
+});
+
+Z.Model.registerAttrType('number', Z.NumberAttr);
+
+Z.BooleanAttr = Z.Object.extend(function() {
+  this.def('toRaw', function(v) {
+    return Z.isNull(v) ? v : !!v;
+  });
+
+  this.def('fromRaw', Z.identity);
+});
+
+Z.Model.registerAttrType('boolean', Z.BooleanAttr);
+
+Z.DateAttr = Z.Object.extend(function() {
+  this.def('toRaw', function(v) {
+    var date = v, y, m, d;
+
+    if (typeof date === 'string') {
+      date = this.fromRaw(date);
+
+      if (!date) {
+        throw new Error(Z.fmt("Z.DateAttr.toRaw: could not convert string `%@` to a Date", v));
+      }
+    }
+    else if (typeof date === 'number') {
+      date = new Date(date);
+    }
+
+    if (!date instanceof Date) {
+      throw new Error(Z.fmt("Z.DateAttr.toRaw: %@ is not a Date", date));
+    }
+
+    y = date.getFullYear().toString();
+    m = (date.getMonth() + 1).toString();
+    d = date.getDate().toString();
+
+    m = m.length === 1 ? '0' + m : m;
+    d = d.length === 1 ? '0' + d : d;
+
+    return y + '-' + m + '-' + d;
+  });
+
+  this.def('fromRaw', function(s) {
+    var parts;
+
+    if (typeof s !== 'string') { return null; }
+
+    parts = s.match(/^(\d\d\d\d)-(\d\d)-(\d\d)$/);
+
+    if (!parts) { return null; }
+
+    return new Date(parseInt(parts[1], 10), parseInt(parts[2], 10) - 1, parseInt(parts[3], 10));
+  });
+});
+
+Z.Model.registerAttrType('date', Z.DateAttr);
 
 }());
