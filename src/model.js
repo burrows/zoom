@@ -713,15 +713,17 @@ Z.Model = Z.Object.extend(function() {
   });
 
   function stringToRaw(v) { return v ? v.toString() : v; }
-  function integerToRaw(v) {
-    if (typeof v === 'number') { return Math.round(v); }
-    else if (typeof v === 'string') { return Math.round(parseFloat(v)); }
-    return v;
-  }
-  function booleanToRaw(v) { return Z.isNull(v) ? v : !!v; }
 
   this.registerAttributeType('string', stringToRaw);
-  this.registerAttributeType('integer', integerToRaw);
+
+  function numberToRaw(v) {
+    if (typeof v === 'string') { return parseFloat(v, 19); }
+    else { return v; }
+  }
+
+  this.registerAttributeType('number', numberToRaw);
+
+  function booleanToRaw(v) { return Z.isNull(v) ? v : !!v; }
   this.registerAttributeType('boolean', booleanToRaw);
 });
 

@@ -6,13 +6,13 @@ beforeEach(function() { Z.Model.reset(); });
 
 Test.BasicModel = Z.Model.extend(function() {
   this.attr('foo', 'string');
-  this.attr('bar', 'integer');
+  this.attr('bar', 'number');
   this.attr('baz', 'boolean');
 });
 
 Test.ValidatedModel = Z.Model.extend(function() {
   this.attr('foo', 'string');
-  this.attr('bar', 'integer');
+  this.attr('bar', 'number');
   this.registerValidator('validatePresenceOfFoo');
   this.registerValidator('validateBarIsOver20');
 
@@ -57,8 +57,8 @@ describe('Z.Model.attr', function() {
   describe('generated property', function() {
     it('should return the value given by the `def` option is the attribute has not previously been set', function() {
       var Model = Z.Model.extend(function() {
-        this.attr('foo', 'integer', {def: 9});
-        this.attr('bar', 'integer');
+        this.attr('foo', 'number', {def: 9});
+        this.attr('bar', 'number');
       });
 
       expect(Model.create().foo()).toBe(9);
@@ -97,21 +97,16 @@ describe('Z.Model.attr', function() {
     });
   });
 
-  describe('`integer` type', function() {
+  describe('`number` type', function() {
     var x;
 
     beforeEach(function() { x = Test.BasicModel.create(); });
 
-    it('should not transform integer values', function() {
+    it('should not transform number values', function() {
       x.set('bar', 9);
       expect(x.get('bar')).toBe(9);
-    });
-
-    it('should round float values', function() {
       x.set('bar', 9.12);
-      expect(x.get('bar')).toBe(9);
-      x.set('bar', 9.88);
-      expect(x.get('bar')).toBe(10);
+      expect(x.get('bar')).toBe(9.12);
     });
 
     it('should allow setting `null`', function() {
@@ -121,11 +116,11 @@ describe('Z.Model.attr', function() {
       expect(x.get('bar')).toBe(null);
     });
 
-    it('should convert string values using `parseInt`', function() {
+    it('should convert string values using `parseFloat`', function() {
       x.set('bar', '1234');
       expect(x.get('bar')).toBe(1234);
       x.set('bar', '88.88');
-      expect(x.get('bar')).toBe(89);
+      expect(x.get('bar')).toBe(88.88);
     });
   });
 
@@ -1187,7 +1182,7 @@ describe('Z.Model.validate', function() {
 
       this.prop('shouldValidate');
       this.prop('shouldntValidate');
-      this.attr('foo', 'integer');
+      this.attr('foo', 'number');
 
       this.def('validatorA', function() {});
       this.def('validatorB', function() {});
