@@ -1,6 +1,7 @@
 (function(undefined) {
 
-var slice = Array.prototype.slice, repo, NEW, EMPTY, LOADED, DESTROYED;
+var slice = Array.prototype.slice, attrTypes = [],
+    repo, NEW, EMPTY, LOADED, DESTROYED;
 
 repo = Z.Object.create().open(function() {
   function dependentPathDidChange(notification) {
@@ -140,8 +141,6 @@ function isEditable(model) {
 }
 
 Z.Model = Z.Object.extend(function() {
-  var attrTypes = {};
-
   this.mapper = Z.Mapper.create();
 
   // source state
@@ -852,39 +851,40 @@ Z.Query = Z.SortedArray.extend(function() {
 // Attribute Converters
 //------------------------------------------------------------------------------
 
-Z.StringAttr = Z.Object.extend(function() {
+Z.BaseAttr = Z.Object.extend(function() {
+  this.def('toRaw', Z.identity);
+  this.def('fromRaw', Z.identity);
+});
+
+Z.Model.registerAttrType('identity', Z.BaseAttr);
+
+Z.StringAttr = Z.BaseAttr.extend(function() {
   this.def('toRaw', function(v) {
     return v ? v.toString() : v;
   });
-
-  this.def('fromRaw', Z.identity);
 });
 
 Z.Model.registerAttrType('string', Z.StringAttr);
 
-Z.NumberAttr = Z.Object.extend(function() {
+Z.NumberAttr = Z.BaseAttr.extend(function() {
   this.def('toRaw', function(v) {
     if (typeof v === 'string') { return parseFloat(v, 10); }
     else if (typeof v === 'number') { return v; }
     else { return null; }
   });
-
-  this.def('fromRaw', Z.identity);
 });
 
 Z.Model.registerAttrType('number', Z.NumberAttr);
 
-Z.BooleanAttr = Z.Object.extend(function() {
+Z.BooleanAttr = Z.BaseAttr.extend(function() {
   this.def('toRaw', function(v) {
     return Z.isNull(v) ? v : !!v;
   });
-
-  this.def('fromRaw', Z.identity);
 });
 
 Z.Model.registerAttrType('boolean', Z.BooleanAttr);
 
-Z.DateAttr = Z.Object.extend(function() {
+Z.DateAttr = Z.BaseAttr.extend(function() {
   this.def('toRaw', function(v) {
     var date = v, y, m, d;
 
@@ -927,5 +927,55 @@ Z.DateAttr = Z.Object.extend(function() {
 });
 
 Z.Model.registerAttrType('date', Z.DateAttr);
+
+Z.ArrayAttr = Z.BaseAttr.extend(function() {
+  this.def('init', function(opts) {
+    if (opts && opts.itemType && !attrTypes[opts.itemType]) {
+      throw new Error(Z.fmt("Z.ArrayAttr.init: unknown attribute type: `%@`", opts.itemType));
+    }
+
+    this.itemConverter = opts.itemType ?
+      attrTypes[opts.itemType].create(opts.itemOpts) : null;
+  });
+
+  this.def('toRaw', function(v) {
+    var array = v, newArray, i, len;
+
+    if (Z.isA(array, Z.Array)) {
+      array = array.toNative();
+    }
+    else if (Z.isArguments(array)) {
+      array = slice.call(array);
+    }
+    else if (!Z.isArray(array)) {
+      array = [array];
+    }
+
+    if (!this.itemConverter) { return array; }
+
+    newArray = [];
+
+    for (i = 0, len = array.length; i < len; i++) {
+      newArray.push(this.itemConverter.toRaw(array[i]));
+    }
+
+    return newArray;
+  });
+
+  this.def('fromRaw', function(v) {
+    var array, i, len;
+
+    if (!v || !this.itemConverter) { return v; }
+
+    array = [];
+    for (i = 0, len = v.length; i < len; i++) {
+      array.push(this.itemConverter.fromRaw(v[i]));
+    }
+
+    return array;
+  });
+});
+
+Z.Model.registerAttrType('array', Z.ArrayAttr);
 
 }());

@@ -191,6 +191,35 @@ describe('Z.Model.attr', function() {
       expect(m.bang()).toEq(new Date(2012, 6, 4));
     });
   });
+
+  describe('`array` type', function() {
+    var M = Z.Model.extend(function() {
+      this.attr('numberArray', 'array', {itemType: 'number'})
+      this.attr('dateArray', 'array', {itemType: 'date'})
+    });
+
+    it('should convert non-array values into one item arrays', function() {
+      var m = M.create({numberArray: 4});
+      expect(m.numberArray()).toEq([4]);
+    });
+
+    it('should convert Z.Array values into native arrays', function() {
+      var m = M.create({numberArray: Z.A(1,2,3,4)});
+      expect(m.numberArray()).toEq([1,2,3,4]);
+    });
+
+    it('should convert array items using the `itemType` converter', function() {
+      var m = M.create({dateArray: ['2012-01-01', '2012-01-02', new Date(2012, 0, 3)]});
+      expect(m.dateArray()).toEq([new Date(2012, 0, 1), new Date(2012, 0, 2), new Date(2012, 0, 3)]);
+      expect(m.rawAttrs()['dateArray']).toEq(['2012-01-01', '2012-01-02', '2012-01-03']);
+    });
+
+    it('should throw an exception when given an invalid `itemType` name', function() {
+      expect(function() {
+        M.attr('foo', 'array', {itemType: 'foobar'});
+      }).toThrow('Z.ArrayAttr.init: unknown attribute type: `foobar`');
+    });
+  });
 });
 
 describe('Z.Model.attrNames', function() {
