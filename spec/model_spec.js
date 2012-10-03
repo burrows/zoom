@@ -6,13 +6,14 @@ beforeEach(function() { Z.Model.reset(); });
 
 Test.BasicModel = Z.Model.extend(function() {
   this.attr('foo', 'string');
-  this.attr('bar', 'integer');
+  this.attr('bar', 'number');
   this.attr('baz', 'boolean');
+  this.attr('bang', 'date');
 });
 
 Test.ValidatedModel = Z.Model.extend(function() {
   this.attr('foo', 'string');
-  this.attr('bar', 'integer');
+  this.attr('bar', 'number');
   this.registerValidator('validatePresenceOfFoo');
   this.registerValidator('validateBarIsOver20');
 
@@ -57,8 +58,8 @@ describe('Z.Model.attr', function() {
   describe('generated property', function() {
     it('should return the value given by the `def` option is the attribute has not previously been set', function() {
       var Model = Z.Model.extend(function() {
-        this.attr('foo', 'integer', {def: 9});
-        this.attr('bar', 'integer');
+        this.attr('foo', 'number', {def: 9});
+        this.attr('bar', 'number');
       });
 
       expect(Model.create().foo()).toBe(9);
@@ -97,21 +98,16 @@ describe('Z.Model.attr', function() {
     });
   });
 
-  describe('`integer` type', function() {
+  describe('`number` type', function() {
     var x;
 
     beforeEach(function() { x = Test.BasicModel.create(); });
 
-    it('should not transform integer values', function() {
+    it('should not transform number values', function() {
       x.set('bar', 9);
       expect(x.get('bar')).toBe(9);
-    });
-
-    it('should round float values', function() {
       x.set('bar', 9.12);
-      expect(x.get('bar')).toBe(9);
-      x.set('bar', 9.88);
-      expect(x.get('bar')).toBe(10);
+      expect(x.get('bar')).toBe(9.12);
     });
 
     it('should allow setting `null`', function() {
@@ -121,11 +117,11 @@ describe('Z.Model.attr', function() {
       expect(x.get('bar')).toBe(null);
     });
 
-    it('should convert string values using `parseInt`', function() {
+    it('should convert string values using `parseFloat`', function() {
       x.set('bar', '1234');
       expect(x.get('bar')).toBe(1234);
       x.set('bar', '88.88');
-      expect(x.get('bar')).toBe(89);
+      expect(x.get('bar')).toBe(88.88);
     });
   });
 
@@ -155,6 +151,92 @@ describe('Z.Model.attr', function() {
       x.set('baz', null);
       expect(x.get('baz')).toBe(null);
     });
+  });
+
+  describe('`date` type', function() {
+    var m;
+
+    beforeEach(function() { m = Test.BasicModel.create(); });
+
+    it('should convert valid ISO 8601 strings to a Date object', function() {
+      m.bang('2012-10-03');
+      expect(m.bang()).toEq(new Date(2012, 9, 3));
+      m.bang('1998-01-05');
+      expect(m.bang()).toEq(new Date(1998, 0, 5));
+    });
+
+    it('should throw an exception if given a string that is not ISO 8601 formatted', function() {
+      expect(function() {
+        m.bang('Oct 1, 2012');
+      }).toThrow('Z.DateAttr.toRaw: could not convert string `Oct 1, 2012` to a Date');
+
+      expect(function() {
+        m.bang('2012-10-1');
+      }).toThrow('Z.DateAttr.toRaw: could not convert string `2012-10-1` to a Date');
+
+      expect(function() {
+        m.bang('2012/10/01');
+      }).toThrow('Z.DateAttr.toRaw: could not convert string `2012/10/01` to a Date');
+    });
+
+    it('should set the raw attribute to a ISO 8601 string', function() {
+      m.bang(new Date(2012, 4, 18));
+      expect(m.rawAttrs()['bang']).toBe('2012-05-18');
+    });
+
+    it('should convert numbers to a Date', function() {
+      var s = new Date(2012, 6, 4).valueOf();
+
+      m.bang(s);
+      expect(m.bang()).toEq(new Date(2012, 6, 4));
+    });
+  });
+
+  describe('`array` type', function() {
+    var M = Z.Model.extend(function() {
+      this.attr('numberArray', 'array', {itemType: 'number'})
+      this.attr('dateArray', 'array', {itemType: 'date'})
+    });
+
+    it('should convert non-array values into one item arrays', function() {
+      var m = M.create({numberArray: 4});
+      expect(m.numberArray()).toEq([4]);
+    });
+
+    it('should convert Z.Array values into native arrays', function() {
+      var m = M.create({numberArray: Z.A(1,2,3,4)});
+      expect(m.numberArray()).toEq([1,2,3,4]);
+    });
+
+    it('should convert array items using the `itemType` converter', function() {
+      var m = M.create({dateArray: ['2012-01-01', '2012-01-02', new Date(2012, 0, 3)]});
+      expect(m.dateArray()).toEq([new Date(2012, 0, 1), new Date(2012, 0, 2), new Date(2012, 0, 3)]);
+      expect(m.rawAttrs()['dateArray']).toEq(['2012-01-01', '2012-01-02', '2012-01-03']);
+    });
+
+    it('should throw an exception when given an invalid `itemType` name', function() {
+      expect(function() {
+        M.attr('foo', 'array', {itemType: 'foobar'});
+      }).toThrow('Z.ArrayAttr.init: unknown attribute type: `foobar`');
+    });
+  });
+});
+
+describe('Z.Model.attrNames', function() {
+  it('should return the names of all attributes defined on the model', function() {
+    expect(Test.BasicModel.attrNames().sort()).toEq(['bang', 'bar', 'baz', 'foo']);
+  });
+});
+
+describe('Z.Model.attrs', function() {
+  it('should return a raw object containing the values of each attribute', function() {
+    var m = Test.BasicModel.create({foo: 'something', bar: 3.14, baz: false, bang: '2012-01-01'});
+    expect(m.attrs()).toEq({foo: 'something', bar: 3.14, baz: false, bang: new Date(2012, 0, 1)});
+  });
+});
+
+describe('Z.Model.attrs', function() {
+  it('should return a raw object containing the values of each raw attribute', function() {
   });
 });
 
@@ -1187,7 +1269,7 @@ describe('Z.Model.validate', function() {
 
       this.prop('shouldValidate');
       this.prop('shouldntValidate');
-      this.attr('foo', 'integer');
+      this.attr('foo', 'number');
 
       this.def('validatorA', function() {});
       this.def('validatorB', function() {});
