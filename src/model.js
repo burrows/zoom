@@ -934,7 +934,7 @@ Z.ArrayAttr = Z.BaseAttr.extend(function() {
       throw new Error(Z.fmt("Z.ArrayAttr.init: unknown attribute type: `%@`", opts.itemType));
     }
 
-    this.itemConverter = opts.itemType ?
+    this.itemConverter = opts && opts.itemType ?
       attrTypes[opts.itemType].create(opts.itemOpts) : null;
   });
 
