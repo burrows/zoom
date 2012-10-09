@@ -190,6 +190,13 @@ describe('Z.Model.attr', function() {
       m.bang(s);
       expect(m.bang()).toEq(new Date(2012, 6, 4));
     });
+
+    it('should allow setting `null`', function() {
+      expect(function() {
+        m.bang(null);
+      }).not.toThrow();
+      expect(m.bang()).toBeNull();
+    });
   });
 
   describe('`array` type', function() {
@@ -218,6 +225,14 @@ describe('Z.Model.attr', function() {
       expect(function() {
         M.attr('foo', 'array', {itemType: 'foobar'});
       }).toThrow('Z.ArrayAttr.init: unknown attribute type: `foobar`');
+    });
+
+    it('should allow setting `null`', function() {
+      var m = M.create();
+      expect(function() {
+        m.numberArray(null);
+      }).not.toThrow();
+      expect(m.numberArray()).toBeNull();
     });
   });
 });
