@@ -888,6 +888,8 @@ Z.DateAttr = Z.BaseAttr.extend(function() {
   this.def('toRaw', function(v) {
     var date = v, y, m, d;
 
+    if (Z.isNull(v) || Z.isUndefined(v)) { return null; }
+
     if (typeof date === 'string') {
       date = this.fromRaw(date);
 
@@ -899,7 +901,7 @@ Z.DateAttr = Z.BaseAttr.extend(function() {
       date = new Date(date);
     }
 
-    if (!date instanceof Date) {
+    if (!(date instanceof Date)) {
       throw new Error(Z.fmt("Z.DateAttr.toRaw: %@ is not a Date", date));
     }
 
@@ -941,6 +943,9 @@ Z.ArrayAttr = Z.BaseAttr.extend(function() {
   this.def('toRaw', function(v) {
     var array = v, newArray, i, len;
 
+    if (Z.isNull(array) || Z.isUndefined(array)) {
+      return null;
+    }
     if (Z.isA(array, Z.Array)) {
       array = array.toNative();
     }
