@@ -29,23 +29,23 @@ Calc.CalculatorView = Z.View.extend(function() {
           });
 
           this.def('op', function(type) {
-            this.goto('operatorEntered', {type: type});
+            this.goto('/operatorEntered', {context: type});
           });
         });
 
         this.def('number', function(n) {
-          this.goto('operand1.beforeDecimalPoint', {n: n});
+          this.goto('/operand1/beforeDecimalPoint', {context: n});
         });
 
         this.def('decimalPoint', function() {
-          this.goto('operand1.afterDecimalPoint');
+          this.goto('/operand1/afterDecimalPoint');
         });
       });
 
       this.state('operand1', function() {
-        this.def('enter', function(ctx) {
+        this.def('enter', function(n) {
           view.operand1(null);
-          if (ctx) { view.operand1Number(ctx.n); }
+          if (Z.isNumber(n)) { view.operand1Number(n); }
         });
 
         this.state('beforeDecimalPoint', function() {
@@ -54,7 +54,7 @@ Calc.CalculatorView = Z.View.extend(function() {
           });
 
           this.def('decimalPoint', function() {
-            this.goto('operand1.afterDecimalPoint');
+            this.goto('/operand1/afterDecimalPoint');
           });
         });
 
@@ -69,30 +69,30 @@ Calc.CalculatorView = Z.View.extend(function() {
         });
 
         this.def('op', function(type) {
-          this.goto('operatorEntered', {type: type});
+          this.goto('/operatorEntered', {context: type});
         });
       });
 
       this.state('operatorEntered', function() {
-        this.def('enter', function(ctx) {
+        this.def('enter', function(type) {
           if (view.operand1() !== null && view.operand2() !== null) {
             view.compute();
           }
-          view.operator(ctx.type);
+          view.operator(type);
         });
 
         this.def('number', function(n) {
-          this.goto('operand2.beforeDecimalPoint', {n: n});
+          this.goto('/operand2/beforeDecimalPoint', {context: n});
         });
 
         this.def('decimalPoint', function() {
-          this.goto('operand2.afterDecimalPoint');
+          this.goto('/operand2/afterDecimalPoint');
         });
       });
 
       this.state('operand2', {hasHistory: true}, function() {
-        this.def('enter', function(ctx) {
-          if (ctx) { view.operand2Number(ctx.n); }
+        this.def('enter', function(n) {
+          if (Z.isNumber(n)) { view.operand2Number(n); }
         });
 
         this.state('beforeDecimalPoint', function() {
@@ -101,7 +101,7 @@ Calc.CalculatorView = Z.View.extend(function() {
           });
 
           this.def('decimalPoint', function() {
-            this.goto('operand2.afterDecimalPoint');
+            this.goto('/operand2/afterDecimalPoint');
           });
         });
 
@@ -116,16 +116,16 @@ Calc.CalculatorView = Z.View.extend(function() {
         });
 
         this.def('op', function(type) {
-          this.goto('operatorEntered', {type: type});
+          this.goto('/operatorEntered', {context: type});
         });
 
         this.def('compute', function() {
-          this.goto('start.result');
+          this.goto('/start/result');
         });
       });
 
       this.def('clear', function() {
-        this.goto('start.empty');
+        this.goto('/start/empty');
       });
     });
 
