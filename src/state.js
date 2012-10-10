@@ -313,7 +313,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
         pivot  = pivots.first() || this;
 
     if (root.trace) {
-      console.log(Z.fmt("Z.State: transitioning to states %@", Z.inspect(arguments)));
+      console.log(Z.fmt("Z.State: transitioning to states %@", Z.inspect(paths.toNative())));
     }
 
     if (!this.isCurrent && this.superstate) {
