@@ -1,4 +1,4 @@
-(function(undefined) {
+(function() {
 
 Z.State = Z.Object.extend(Z.Enumerable, function() {
   function _path() {
@@ -82,6 +82,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
   function enterClustered(states, ctx) {
     var self    = this,
+        root    = this.root(),
         selflen = _path.call(this).length,
         cur     = this.substates.values().find(function(s) { return s.isCurrent; }),
         nexts   = states.map(function(s) { return _path.call(s)[selflen]; }),
@@ -109,6 +110,10 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     if (cur && cur !== next) { exit.call(cur, ctx); }
 
     if (!this.isCurrent) {
+      if (root.trace && this !== root) {
+        console.log(Z.fmt("Z.State: entering state '%@'", this.path()));
+      }
+
       this.isCurrent = true;
       if (this.respondTo('enter')) { this.enter(ctx); }
     }
@@ -119,9 +124,13 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   }
 
   function enterConcurrent(states, ctx) {
-    var self = this;
+    var self = this, root = this.root();
 
     if (!this.isCurrent) {
+      if (root.trace && this !== root) {
+        console.log(Z.fmt("Z.State: entering state '%@'", this.path()));
+      }
+
       this.isCurrent = true;
       if (this.respondTo('enter')) { this.enter(ctx); }
     }
@@ -143,7 +152,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   }
 
   function exitClustered(ctx) {
-    var cur = this.substates.values().find(function(s) {
+    var root = this.root(), cur = this.substates.values().find(function(s) {
       return s.isCurrent;
     });
 
@@ -154,13 +163,23 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     if (this.respondTo('exit')) { this.exit(ctx); }
     this.isCurrent = false;
 
+    if (root.trace && this !== root) {
+      console.log(Z.fmt("Z.State: exiting state '%@'", this.path()));
+    }
+
     return this;
   }
 
   function exitConcurrent(ctx) {
+    var root = this.root();
+
     this.substates.values().each(function(s) { exit.call(s, ctx); });
     if (this.respondTo('exit')) { this.exit(ctx); }
     this.isCurrent = false;
+
+    if (root.trace && this !== root) {
+      console.log(Z.fmt("Z.State: exiting state '%@'", this.path()));
+    }
 
     return this;
   }
@@ -243,6 +262,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.hasHistory   = opts.hasHistory;
     this.isCurrent    = false;
     this.__cache__    = {};
+    this.trace        = false;
   });
 
   this.def('each', function(f) {
@@ -292,6 +312,10 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
         pivots = states.map(function(s) { return findPivot.call(self, s); }),
         pivot  = pivots.first() || this;
 
+    if (root.trace) {
+      console.log(Z.fmt("Z.State: transitioning to states %@", Z.inspect(arguments)));
+    }
+
     if (!this.isCurrent && this.superstate) {
       throw new Error(Z.fmt("Z.State.goto: state %@ is not current", this));
     }
@@ -315,6 +339,10 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
   this.def('send', function() {
     var args = Array.prototype.slice.call(arguments);
+
+    if (!this.superstate && this.trace) {
+      console.log(Z.fmt("Z.State: processing action '%@' with arguments %@", args[0], Z.inspect(args.slice(1))));
+    }
 
     this.substates.each(function(tuple) {
       if (tuple[1].isCurrent) { tuple[1].send.apply(tuple[1], args); }
