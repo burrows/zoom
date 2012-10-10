@@ -264,6 +264,18 @@ describe('Z.State.goto', function() {
     }).toThrow(Z.fmt("Z.State.enterClustered: attempted to enter multiple substates of %@: f, g", e));
   });
 
+  it('should handle directory-like relative paths', function() {
+    expect(root.current()).toEq(['/a/b/c']);
+    c.goto('../d');
+    expect(root.current()).toEq(['/a/b/d']);
+    d.goto('../../e/f');
+    expect(root.current()).toEq(['/a/e/f']);
+    f.goto('./../../b/./d/../c');
+    expect(root.current()).toEq(['/a/b/c']);
+    c.goto('../../e/g/h/j/../i', '../../e/g/k');
+    expect(root.current()).toEq(['/a/e/g/h/i', '/a/e/g/k/l']);
+  });
+
   it('should exit the states leading up to the pivot state and enter the states leading to the destination states', function() {
     c.goto('/a/e/f');
     expect(exits).toEq([c, b]);
