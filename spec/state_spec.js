@@ -372,6 +372,76 @@ describe('Z.State.goto', function() {
   });
 });
 
+describe('Z.State condition states', function() {
+  var root, a, b, c, d;
+
+  beforeEach(function() {
+    root = Z.State.create('root');
+    x    = Z.State.create('x');
+    a    = Z.State.create('a');
+    b    = Z.State.create('b');
+    c    = Z.State.create('c', {isConcurrent: true});
+    d    = Z.State.create('d');
+    e    = Z.State.create('e');
+    f    = Z.State.create('f');
+    g    = Z.State.create('g');
+    h    = Z.State.create('h');
+    i    = Z.State.create('i');
+
+    root.addSubstate(x);
+    root.addSubstate(a);
+    a.addSubstate(b);
+    a.addSubstate(c);
+    c.addSubstate(d);
+    c.addSubstate(e);
+    d.addSubstate(f);
+    d.addSubstate(g);
+    e.addSubstate(h);
+    e.addSubstate(i);
+
+    root.goto();
+    expect(root.current()).toEq(['/x']);
+  });
+
+  it('should throw an exception when a condition state is defined on a state with history', function() {
+    var s = Z.State.create('x', {hasHistory: true});
+
+    expect(function() {
+      s.C(function() {});
+    }).toThrow(Z.fmt("Z.State.C: a state may not have both condition and history states: %@", s));
+  });
+
+  it('should throw an exception when a condition state is defined on concurrent state', function() {
+    var s = Z.State.create('x', {isConcurrent: true});
+
+    expect(function() {
+      s.C(function() {});
+    }).toThrow(Z.fmt("Z.State.C: a concurrent state may not have a condition state: %@", s));
+  });
+
+  it('should cause goto to enter the the state returned by the condition function', function() {
+    a.C(function() { return './b'; });
+    root.goto('/a');
+    expect(root.current()).toEq(['/a/b']);
+  });
+
+  it('should cause goto to enter the states returned by the condition function', function() {
+    a.C(function() { return ['./c/d/g', '/a/c/e/i']; });
+    root.goto('/a');
+    expect(root.current()).toEq(['/a/c/d/g', '/a/c/e/i']);
+  });
+
+  it('should not be called when destination states are given', function() {
+    var called = false;
+
+    a.C(function() { called = true; return ['./c/d/g', './c/e/h'] });
+    root.goto('/a/b');
+
+    expect(called).toBe(false);
+    expect(root.current()).toEq(['/a/b']);
+  });
+});
+
 describe('Z.State.define', function() {
   it('should create a root state with the name "__root__"', function() {
     var s = Z.State.define(function() {});

@@ -92,7 +92,13 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     }
 
     if (!next && this.substates.size() > 0) {
-      if (this.hasHistory) {
+      if (this.__condition__) {
+        states = Z.Array.create([this.__condition__.call(this)]).flatten().map(function(p) {
+          return resolve.call(self, p);
+        });
+        return enterClustered.call(this, states, ctx);
+      }
+      else if (this.hasHistory) {
         next = this.__previous__ || this.substates.first()[1];
       }
       else {
@@ -205,6 +211,18 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.addSubstate(s);
     if (f) { f.call(s); }
     return s;
+  });
+
+  this.def('C', function(f) {
+    if (this.hasHistory) {
+      throw new Error(Z.fmt("Z.State.C: a state may not have both condition and history states: %@", this));
+    }
+
+    if (this.isConcurrent) {
+      throw new Error(Z.fmt("Z.State.C: a concurrent state may not have a condition state: %@", this));
+    }
+
+    this.__condition__ = f;
   });
 
   this.def('toStringProperties', function() {
