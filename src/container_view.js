@@ -45,6 +45,10 @@ Z.ContainerView = Z.View.extend(function() {
   // Its value is identical to the property path `subviews.first`.
   this.prop('contentView');
 
+  // Public: Set this property to `false` to prevent the container view from
+  // destroying views that get swapped out.
+  this.prop('destroyOnRemove', {def: true});
+
   // Internal: The container view constructor - sets up observers on the
   // `nowShowing` and `contentView` properties.
   this.def('init', function(props) {
@@ -62,17 +66,20 @@ Z.ContainerView = Z.View.extend(function() {
   });
 
   // Public: Swaps out the old subview with the new subview. The default
-  // implementation here simply removes the previous subview (if it exists) and
-  // destroys it and then adds the new subview. This method may be overridden to
-  // implement custom behavior for swaping the currently displayed view (e.g. to
-  // add an animation).
+  // implementation here simply removes the previous subview (if it exists),
+  // destroys it if the `destroyOnRemove` property is set, and then adds the new
+  // subview. This method may be overridden to implement custom behavior for
+  // swaping the currently displayed view (e.g. to add an animation).
   //
   // oldView - The view being swapped out, may be `null`.
   // newView - The view being swapped in, may be `null`.
   //
   // Returns nothing.
   this.def('swapContentView', function(oldView, newView) {
-    if (oldView) { oldView.remove().destroy(); }
+    if (oldView) {
+      oldView.remove();
+      if (this.destroyOnRemove()) { oldView.destroy(); }
+    }
     if (newView) { this.addSubview(newView); }
   });
 });

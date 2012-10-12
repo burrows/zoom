@@ -504,7 +504,7 @@ Z.Object.open(function() {
   //
   // Returns nothing.
   this.def('prop', function(name, opts) {
-    opts = Z.defaults(opts || {}, defaultPropertyOpts);
+    opts = Z.merge({}, defaultPropertyOpts, opts);
 
     this[Z.fmt("__z_property_%@__", name)] = opts;
 
