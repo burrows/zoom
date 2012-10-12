@@ -757,14 +757,14 @@ describe('Z.View', function() {
   });
 
   describe('.send', function() {
-    it('should send the action up the superview chain until a view implements the action and returns true', function() {
+    it('should send the action up the superview chain until a view implements the action and returns a truthy value', function() {
       var a = Z.View.create(),
           b = Z.View.create(),
           c = Z.View.create(),
           d = Z.View.create();
 
       a.def('someAction', function() {});
-      b.def('someAction', function() { return true; });
+      b.def('someAction', function() { return 1; });
       d.def('someAction', function() {});
 
       spyOn(a, 'someAction').andCallThrough();
