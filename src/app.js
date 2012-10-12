@@ -33,8 +33,7 @@ Z.App = Z.Object.extend(function() {
   //
   // mainView  - A sub-type of `Z.App` to use as the root view of the
   //             application's main window.
-  // container - A DOM node to contain the app (default: `document.body`).
-  this.def('init', function(mainView, container) {
+  this.def('init', function(mainView) {
     if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
       throw new Error(Z.fmt("%@.init: must provide a sub-type of `Z.View` as the main view type",
                             this.typeName()));
@@ -44,15 +43,17 @@ Z.App = Z.Object.extend(function() {
     this.windows().push(Z.Window.create(mainView, {
       app: this, isMain: true, isKey: true
     }));
-
-    this.container = container || document.body;
   });
 
   // Public: Starts running the app by creating a run loop and rendering all
   // windows.
   //
+  // container - A DOM node to contain the app (default: `document.body`).
+  //
   // Returns the receiver.
-  this.def('start', function() {
+  this.def('start', function(container) {
+    this.container = container || document.body;
+
     if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
       this.mainWindow().becomeKeyWindow();
