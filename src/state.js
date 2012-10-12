@@ -228,9 +228,16 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
       }
     }
 
-    s = Z.State.create(name, opts);
-    this.addSubstate(s);
-    if (f) { f.call(s); }
+    if (Z.isA(name, Z.State)) {
+      s = name;
+      this.addSubstate(s);
+    }
+    else {
+      s = Z.State.create(name, opts);
+      this.addSubstate(s);
+      if (f) { f.call(s); }
+    }
+
     return s;
   });
 

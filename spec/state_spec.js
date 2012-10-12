@@ -481,6 +481,17 @@ describe('Z.State.state', function() {
     var context, x = root.state('x', function() { context = this; });
     expect(context).toBe(x);
   });
+
+  describe('when given a `Z.State` object', function() {
+    it('should add the given state as a substate', function() {
+      var s = Z.State.create('s');
+
+      root.state(s);
+
+      expect(root.substates.at('s')).toBe(s);
+      expect(s.superstate).toBe(root);
+    });
+  });
 });
 
 describe('Z.State.send', function() {
