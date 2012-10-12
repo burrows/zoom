@@ -317,11 +317,12 @@ Todo.MainView = Z.View.extend(function() {
   this.subview('contentView', Todo.ContentView);
 });
 
+Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
+
 document.addEventListener('DOMContentLoaded', function() {
-  Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
   Todo.app.set('mainWindow.mainView.sidebarView.tagListView.content', Todo.allTags);
   Todo.app.set('mainWindow.mainView.contentView.todoListView.content', Todo.allTodos);
-  Todo.app.start();
+  Todo.app.start(document.getElementById('app'));
 });
 
 }());
