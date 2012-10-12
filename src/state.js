@@ -1,5 +1,7 @@
 (function() {
 
+var slice = Array.prototype.slice;
+
 Z.State = Z.Object.extend(Z.Enumerable, function() {
   function _path() {
     return this.__cache__._path = this.__cache__._path ||
@@ -337,26 +339,45 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
-  this.def('send', function() {
-    var args = Array.prototype.slice.call(arguments);
+  function sendClustered() {
+    var handled = false, cur;
 
-    if (!this.superstate && this.trace) {
-      console.log(Z.fmt("Z.State: processing action '%@' with arguments %@", args[0], Z.inspect(args.slice(1))));
-    }
+    cur = this.substates.values().find(function(s) { return s.isCurrent; });
 
-    this.substates.each(function(tuple) {
-      if (tuple[1].isCurrent) { tuple[1].send.apply(tuple[1], args); }
+    if (cur) { handled = !!cur.send.apply(cur, slice.call(arguments)); }
+
+    return handled;
+  }
+
+  function sendConcurrent() {
+    var args = slice.call(arguments),handled = true;
+
+    this.substates.values().each(function(s) {
+      handled = !!s.send.apply(s, args) && handled;
     });
 
-    if (this.respondTo(args[0])) {
+    return handled;
+  }
+
+  this.def('send', function() {
+    var args = slice.call(arguments), handled;
+
+    if (!this.isCurrent) {
+      throw new Error(Z.fmt("Z.State.send: attempted to send an action to a state that is not current: %@", this));
+    }
+
+    handled = this.isConcurrent ? sendConcurrent.apply(this, arguments) :
+      sendClustered.apply(this, arguments);
+
+    if (!handled && this.respondTo(args[0])) {
       this.__isSending__ = true;
-      this[args[0]].apply(this, args.slice(1));
+      handled = !!this[args[0]].apply(this, args.slice(1));
       this.__isSending__ = false;
     }
 
     if (!this.superstate) { transition.call(this); }
 
-    return this;
+    return handled;
   });
 });
 

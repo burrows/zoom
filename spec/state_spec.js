@@ -538,6 +538,45 @@ describe('Z.State.send', function() {
     expect(calls).toEq(Z.A(b, a, e, d, root));
   });
 
+  it('should stop bubbling when a handler on a clustered substate returns a truthy value', function() {
+    var r = Z.State.create('root'),
+        a = Z.State.create('a'),
+        b = Z.State.create('b'),
+        calls = [];
+
+    r.addSubstate(a);
+    a.addSubstate(b);
+    r.goto();
+
+    r.def('someAction', function() { calls.push(this); });
+    a.def('someAction', function() { calls.push(this); return 1; });
+    b.def('someAction', function() { calls.push(this); });
+
+    r.send('someAction');
+    expect(calls).toEq([b, a]);
+
+    calls = [];
+    b.def('someAction', function() { calls.push(this); return true; });
+
+    r.send('someAction');
+    expect(calls).toEq([b]);
+  });
+
+  it('should stop bubbling when all handlers on a concurrent state return a truthy value', function() {
+    a.def('someAction', function() { calls.push(this); return 1; });
+
+    root.send('someAction');
+    expect(calls).toEq(Z.A(b, a, e, d, root));
+
+    root.goto();
+    calls = Z.A();
+
+    d.def('someAction', function() { calls.push(this); return 1; });
+
+    root.send('someAction');
+    expect(calls).toEq(Z.A(b, a, e, d));
+  });
+
   it('should not perform transitions made in an action handler until all current states have received the action', function() {
     var eCurrent;
 
