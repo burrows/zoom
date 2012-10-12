@@ -1,10 +1,44 @@
-// The `Z.App` type is the root of the Zoom window/view hierarchy. Instances
-// are responsible for setting up and initially rendering all of an
-// application's windows and views. In order to create a concrete instance of
-// `Z.App`, a view type to use as the applications main view must be provided.
-// Additionally, a container node can be optionally specified to use for
+// The `Z.App` type is the glue that brings most of the other components of Zoom
+// together. `Z.App` instances do the following:
+//
+// * provide a root to the window/view hierarchy
+// * setup and perform initial rendering of all windows and views
+// * creates a `Z.EventListener` object to listen for native events
+// * dispatches events to the appropriate window
+// * triggers run loops when events occur
+//
+// In order to create a concrete instance of `Z.App` a `Z.View` sub-type to use
+// as the applications main view must be provided. When the app is started via
+// the `start` method, a container node can optionally be specified to use for
 // rendering the application (by default `document.body` is used).
+//
+// `Z.App` instances also provide something called a run loop. A run loop is
+// simply something that waits for events to occur and dispatches them for
+// handling to the program. In addition to doing this, the `Z.App` run loop also
+// triggers view updates after it has dispatched an event. The reason it does
+// this is because the Zoom view system is designed to buffer all DOM
+// modifications - manipulating a view's `subviews` array for instance does not
+// actually make any immediate changes to the DOM structure the view is
+// managing. The DOM is not actually updated until the `Z.View.display` method
+// is later invoked. But when does the `display` method get invoked? Every time
+// our run loop observes an event. The reason for this indirection is that
+// manipulating the DOM is expensive and we want to avoid doing it as much as
+// possible. We minimize interaction with the DOM by allowing changes to "batch
+// up" and then update the DOM all in one go after an event (which triggered the
+// view changes in the first place) has been fully processed.
+//
+// For the most part, run loops are transparent to the developer and just happen
+// automatically when an event occurs. But there may be times where you want to
+// trigger a view update manually (e.g. after an ajax request completes and your
+// models have been updated). In these situations you can simply invoke the
+// app's `run` method to trigger a run of the run loop.
 Z.App = Z.Object.extend(function() {
+  // Private: Handles events observed on the event listener by dispatching them
+  // to the appropriate window and triggering a run loop if they are handled.
+  //
+  // n - A notification object.
+  //
+  // Returns nothing.
   function processEvent(n) { if (this.dispatchEvent(n.current)) { this.run();} }
 
   // Public: A regular property that holds the container DOM node. All DOM
@@ -52,8 +86,8 @@ Z.App = Z.Object.extend(function() {
     this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
   });
 
-  // Public: Starts running the app by creating a run loop and rendering all
-  // windows.
+  // Public: Starts running the app by creating an event listener and rendering
+  // all windows.
   //
   // container - A DOM node to contain the app (default: `document.body`).
   //
@@ -88,7 +122,8 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
-  // Public: Execute a run loop.
+  // Public: Perform a run of the run loop. This involes updating any views that
+  // need updating and executing any methods queued up by the `once` method.
   this.def('run', function() {
     this.displayWindows();
 
@@ -102,7 +137,7 @@ Z.App = Z.Object.extend(function() {
   });
 
   // Public: Queues up a method to invoke on the given object at the end of the
-  // next run loop.
+  // next run of the run loop.
   //
   // `o` - A `Z.Object` instance.
   // `m` - A string representing the method to invoke on `o`.
@@ -114,8 +149,7 @@ Z.App = Z.Object.extend(function() {
   // `displayIfNeeded` method and attaching their nodes to the `container` node
   // if necessary.
   //
-  // This method is invoked by `Z.RunLoop` during each run after all bindings
-  // have been flushed..
+  // This method is invoked by the `run` method.
   //
   // Returns the receiver.
   this.def('displayWindows', function() {
@@ -223,9 +257,9 @@ Z.App = Z.Object.extend(function() {
   // down event occurs over a window that is not the key window, it is first
   // made the key window before the event is dispatched to it.
   //
-  // This method is called by the app's `runLoop` object and returns a boolean
-  // indicated whether it handled the event. The run loop object only triggers
-  // a run of the run loop if this method returns `true`.
+  // This method is called when the app is notified of an event by the event
+  // listener and returns a boolean indicating whether it handled the event. The
+  // app will only trigger a run of the run loop if this method returns `true`.
   //
   // e - A `Z.Event` object.
   //
