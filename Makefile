@@ -11,7 +11,6 @@ SRCS := util.js           \
         mapper.js         \
         model.js          \
         event.js          \
-        run_loop.js       \
         view.js           \
         window.js         \
         app.js            \
