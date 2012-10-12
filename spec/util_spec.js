@@ -14,17 +14,6 @@ describe('Z.merge', function() {
   });
 });
 
-describe('Z.defaults', function() {
-  it('should merge values from default objects that are not present in the given object', function() {
-    var r;
-
-    r = Z.defaults({ foo: 1, bar: 2 }, { bar: 9, baz: 3 });
-    expect(r).toEqual({ foo: 1, bar: 2, baz: 3 });
-    r = Z.defaults({ foo: 1, bar: 2 }, { bar: 9, baz: 3 }, { quux: 12 });
-    expect(r).toEqual({ foo: 1, bar: 2, baz: 3, quux: 12 });
-  });
-});
-
 describe('Z.type', function() {
   it("should return the string 'null' when passed `null`", function() {
     expect(Z.type(null)).toBe('null');

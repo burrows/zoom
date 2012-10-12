@@ -818,7 +818,7 @@ Z.Query = Z.SortedArray.extend(function() {
   this.def('init', function(type, opts) {
     var sortOpts = {};
 
-    opts = Z.defaults(Z.dup(opts), defaultOpts);
+    opts = Z.merge({}, defaultOpts, opts);
 
     this.modelType      = type;
     this.matchFn        = opts.matchFn;

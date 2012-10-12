@@ -136,24 +136,6 @@ Z.merge = function(o) {
   return o;
 };
 
-// Public: Takes a native javascript object and merges in properties from a list
-// of default objects if they are not already present in the first object.
-//
-// o           - The object to merge default values into
-// defaults... - One or more objects that contain default values.
-//
-// Returns `o`.
-Z.defaults = function(o) {
-  var defs = slice.call(arguments, 1), def, i, len, k, v;
-
-  for (i = 0, len = defs.length; i < len; i++) {
-    def = defs[i];
-    for (k in def) { if (!o.hasOwnProperty(k)) { o[k] = def[k]; } }
-  }
-
-  return o;
-};
-
 // Public: Creates a shallow copy of the given object.
 //
 // o - Any object.
