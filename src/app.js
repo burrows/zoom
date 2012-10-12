@@ -5,9 +5,14 @@
 // Additionally, a container node can be optionally specified to use for
 // rendering the application (by default `document.body` is used).
 Z.App = Z.Object.extend(function() {
+  function processEvent(n) { if (this.dispatchEvent(n.current)) { this.run();} }
+
   // Public: A regular property that holds the container DOM node. All DOM
   // modifications and mouse events observed happen within this container.
   this.container = null;
+
+  // Internal: A hash of function objects queued up with the `once` method.
+  this.queue = null;
 
   // Public: An array containing all of the application's `Z.Window` objects.
   // Every application has at least one window, the main window, which is always
@@ -43,6 +48,8 @@ Z.App = Z.Object.extend(function() {
     this.windows().push(Z.Window.create(mainView, {
       app: this, isMain: true, isKey: true
     }));
+
+    this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
   });
 
   // Public: Starts running the app by creating a run loop and rendering all
@@ -53,37 +60,55 @@ Z.App = Z.Object.extend(function() {
   // Returns the receiver.
   this.def('start', function(container) {
     this.container = container || document.body;
+    this.listener = Z.EventListener.create(this.container);
+    this.listener.observe('event', this, processEvent, {current: true});
 
     if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
       this.mainWindow().becomeKeyWindow();
     }
 
-    this.runLoop = Z.RunLoop.create(this);
-    this.runLoop.run();
+    this.run();
+    this.__started__ = true;
 
     return this;
   });
 
   // Public: Destroys the app by removing all windows from the DOM and
-  // destroying the app's run loop.
+  // destroying the app's event listener.
   //
   // Returns the receiver.
   this.def('destroy', function() {
-    if (this.runLoop) {
+    if (this.__started__) {
       this.set('keyWindow', null);
       this.removeWindows().displayWindows();
-      this.runLoop.destroy();
+      this.listener.destroy();
     }
 
     return this;
   });
 
-  // Public: Perform a single run of the app's run loop.
+  // Public: Execute a run loop.
   this.def('run', function() {
-    if (this.runLoop) { this.runLoop.run(); }
+    this.displayWindows();
+
+    this.queue.each(function(tuple) {
+      var o = tuple[0], methods = tuple[1];
+      methods.keys().each(function(method) { o[method](); });
+    });
+
+    this.queue.clear();
     return this;
   });
+
+  // Public: Queues up a method to invoke on the given object at the end of the
+  // next run loop.
+  //
+  // `o` - A `Z.Object` instance.
+  // `m` - A string representing the method to invoke on `o`.
+  //
+  // Returns `o`.
+  this.def('once', function(o, m) { this.queue.at(o).at(m, true); return o; });
 
   // Public: Display's the app's windows by invoking each window's
   // `displayIfNeeded` method and attaching their nodes to the `container` node

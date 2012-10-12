@@ -121,6 +121,13 @@ describe('Z.App', function() {
       expect(container.querySelector('.child2')).toEqual(null);
       expect(container.querySelector('.child3')).toEqual(null);
     });
+
+    it('should destroy the event listener', function() {
+      app.start(container);
+      spyOn(app.listener, 'destroy');
+      app.destroy();
+      expect(app.listener.destroy).toHaveBeenCalled();
+    });
   });
 
   describe('.displayWindows', function() {
@@ -363,6 +370,66 @@ describe('Z.App', function() {
         app.dispatchEvent(e);
         expect(win1.dispatchEvent).toHaveBeenCalledWith(e);
       });
+    });
+  });
+
+  describe('.run', function() {
+    var o1, o2;
+
+    beforeEach(function() {
+      o1 = Z.Object.create();
+      o2 = Z.Object.create();
+
+      o1.def('foo', function() {});
+      o2.def('foo', function() {});
+    });
+
+    it("should invoke the `displayWindows` method", function() {
+      spyOn(app, 'displayWindows');
+      app.run();
+      expect(app.displayWindows).toHaveBeenCalled();
+    });
+
+    it("should invoke all methods queued up with the once method", function() {
+      spyOn(o1, 'foo');
+      spyOn(o2, 'foo');
+
+      app.once(o1, 'foo');
+      app.once(o2, 'foo');
+
+      app.run();
+
+      expect(o1.foo).toHaveBeenCalled();
+      expect(o1.foo.callCount).toBe(1);
+    });
+
+    it("should invoke once methods one time even when they are queued multiple times", function() {
+      spyOn(o1, 'foo');
+
+      app.once(o1, 'foo');
+      app.once(o1, 'foo');
+      app.once(o1, 'foo');
+      app.once(o1, 'foo');
+
+      app.run();
+
+      expect(o1.foo).toHaveBeenCalled();
+      expect(o1.foo.callCount).toBe(1);
+    });
+
+    it("should clear the once queue", function() {
+      spyOn(o1, 'foo');
+
+      app.once(o1, 'foo');
+
+      app.run();
+
+      expect(o1.foo).toHaveBeenCalled();
+      expect(o1.foo.callCount).toBe(1);
+
+      app.run();
+
+      expect(o1.foo.callCount).toBe(1);
     });
   });
 });
