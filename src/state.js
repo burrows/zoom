@@ -2,6 +2,59 @@
 
 var slice = Array.prototype.slice;
 
+// The `Z.State` type provides an implementation of a
+// [Harel Statechart](http://en.wikipedia.org/wiki/State_diagram#Harel_statechart).
+//
+// Statecharts are an improvement over state machines because they elegantly
+// solve the state explosion problem that is common with state machines. They do
+// this by adding two additional features to state machines - state clustering
+// and concurrent states. State clustering provides an abstraction over lower
+// level states where actions can be handled and transitions made in one place
+// instead of many. Concurrent states essentially allow multiple statecharts to
+// operate independently. The presence of concurrent states means that the
+// current state of a statechart is actually a vector of states whose length is
+// not fixed.
+//
+// More information on statecharts is available here:
+//
+// * http://www.wisdom.weizmann.ac.il/~harel/papers/Statecharts.pdf
+// * http://www.wisdom.weizmann.ac.il/~harel/papers/Statecharts.History.pdf
+// * http://www.amazon.com/Constructing-User-Interface-Statecharts-Horrocks/dp/0201342782
+//
+// Examples
+//
+//   var door = Z.State.define(function() {
+//     this.state('closed', function() {
+//       this.state('locked', function() {
+//         this.def('unlockDoor', function() { this.goto('../unlocked'); });
+//       });
+//
+//       this.state('unlocked', function() {
+//         this.def('lockDoor', function() { this.goto('../locked'); });
+//         this.def('openDoor', function() { this.goto('/opened'); });
+//       });
+//
+//       this.def('knock', function() { console.log('*knock knock*'); });
+//     });
+//
+//     this.state('opened', function() {
+//       this.def('closeDoor', function() { this.goto('/closed/unlocked'); });
+//     });
+//   });
+//
+//   door.goto();
+//   door.current();          // => [ '/closed/locked' ]
+//   door.send('knock');      // *knock knock*
+//   door.current();          // => [ '/closed/locked' ]
+//   door.send('unlockDoor');
+//   door.current();          // => [ '/closed/unlocked' ]
+//   door.send('knock');      // *knock knock*
+//   door.send('openDoor');
+//   door.current();          // => [ '/opened' ]
+//   door.send('closeDoor');
+//   door.current();          // => [ '/closed/unlocked' ]
+//   door.send('lockDoor');
+//   door.current();          // => [ '/closed/locked' ]
 Z.State = Z.Object.extend(Z.Enumerable, function() {
   function _path() {
     return this.__cache__._path = this.__cache__._path ||
@@ -70,14 +123,17 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   }
 
   function transition() {
-    var t, i, len;
+    var ts = this.__transitions__, i, len;
 
-    if (!this.__transitions__) { return; }
+    if (!ts || ts.length === 0) { return; }
 
-    for (i = 0, len = this.__transitions__.length; i < len; i++) {
-      t = this.__transitions__[i];
-      enter.call(t.pivot, t.states, t.opts);
+    this.willChangeProperty('current');
+
+    for (i = 0, len = ts.length; i < len; i++) {
+      enter.call(ts[i].pivot, ts[i].states, ts[i].opts);
     }
+
+    this.didChangeProperty('current');
 
     this.__transitions__ = [];
   }
@@ -255,6 +311,19 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.__condition__ = f;
   });
 
+  this.prop('current', {
+    readonly: true,
+    get: function() {
+      var states = _current.call(this), paths = [], i, len;
+
+      for (i = 0, len = states.length; i < len; i++) {
+        paths.push(states[i].path());
+      }
+
+      return paths;
+    }
+  });
+
   this.def('toStringProperties', function() {
     return this.supr().concat('path', 'isCurrent', 'isConcurrent');
   });
@@ -302,16 +371,6 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     }
 
     return '/' + names.join('/');
-  });
-
-  this.def('current', function() {
-    var states = _current.call(this), paths = [], i, len;
-
-    for (i = 0, len = states.length; i < len; i++) {
-      paths.push(states[i].path());
-    }
-
-    return paths;
   });
 
   this.def('goto', function() {

@@ -14,7 +14,7 @@ Calc.CalculatorView = Z.View.extend(function() {
     this.supr();
 
     this.sc = Z.State.define(function() {
-      this.trace = true;
+      //this.trace = true;
 
       this.state('start', function() {
         this.state('empty', function() {
@@ -128,6 +128,8 @@ Calc.CalculatorView = Z.View.extend(function() {
         this.goto('/start/empty');
       });
     });
+
+    this.sc.observe('current', null, Z.log, {current: true, previous: true});
 
     this.sc.goto();
   });
