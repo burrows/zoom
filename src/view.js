@@ -223,7 +223,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // This method is where all DOM modification actually occurs and should
   // rarely, if ever, need to be called directly. Instead, view displays are
-  // triggered by the application's `Z.RunLoop`.
+  // triggered by the app's run loop.
   //
   // Returns the receiver.
   this.def('display', function() {

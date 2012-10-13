@@ -13,7 +13,6 @@ SRCS := util.js           \
         model.js          \
         state.js          \
         event.js          \
-        run_loop.js       \
         view.js           \
         window.js         \
         app.js            \
