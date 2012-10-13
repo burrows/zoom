@@ -4,6 +4,7 @@
 // * provide a root to the window/view hierarchy
 // * setup and perform initial rendering of all windows and views
 // * creates a `Z.EventListener` object to listen for native events
+// * creates a statechart for modeling your app's state
 // * dispatches events to the appropriate window
 // * triggers run loops when events occur
 //
@@ -84,17 +85,20 @@ Z.App = Z.Object.extend(function() {
     }));
 
     this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+    this.statechart = Z.State.define();
   });
 
-  // Public: Starts running the app by creating an event listener and rendering
-  // all windows.
+  // Public: Starts running the app by creating an event listener, rendering all
+  // windows, intializing the statechart, and performing a run loop.
   //
   // container - A DOM node to contain the app (default: `document.body`).
+  // states    - An array of state paths to initialize the statechart with
+  //             (default: `[]`).
   //
   // Returns the receiver.
-  this.def('start', function(container) {
+  this.def('start', function(container, states) {
     this.container = container || document.body;
-    this.listener = Z.EventListener.create(this.container);
+    this.listener  = Z.EventListener.create(this.container);
     this.listener.observe('event', this, processEvent, {current: true});
 
     if (!this.keyWindow()) {
@@ -102,6 +106,7 @@ Z.App = Z.Object.extend(function() {
       this.mainWindow().becomeKeyWindow();
     }
 
+    this.statechart.goto(states || []);
     this.run();
     this.__started__ = true;
 
@@ -134,6 +139,42 @@ Z.App = Z.Object.extend(function() {
 
     this.queue.clear();
     return this;
+  });
+
+  // Public: Delegates to the `statechart`'s `state` method. Use this method to
+  // add states to the app's statechart.
+  //
+  // Examples
+  //
+  //   Foo.app = Z.App.create(MainView);
+  //   Foo.app.open(function() {
+  //     this.state('a', function() {
+  //       this.def('enter', function() { Z.log('entering state /a'); });
+  //
+  //       this.state('b', function() {
+  //         this.def('enter', function() { Z.log('entering state /a/b'); });
+  //       });
+  //
+  //       this.state('c', function() {
+  //         this.def('enter', function() { Z.log('entering state /a/c'); });
+  //       });
+  //     });
+  //   });
+  //   Foo.app.start();
+  this.def('state', function() {
+    this.statechart.state.apply(this.statechart, arguments);
+  });
+
+  // Public: Delegates to the `statechart`'s `send` method. Use this method to
+  // send actions to the app's statechart.
+  this.def('send', function() {
+    return this.statechart.send.apply(this.statechart, arguments);
+  });
+
+  // Public: Delegates to the `statechart`'s `current` method. Use this method
+  // to get the current states of the app's statechart.
+  this.def('current', function() {
+    return this.statechart.current.apply(this.statechart, arguments);
   });
 
   // Public: Queues up a method to invoke on the given object at the end of the

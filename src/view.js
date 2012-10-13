@@ -570,11 +570,13 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   });
 
   // Public: Sends an action up the superview chain until a view is found that
-  // both implements a method with the given action name and returns `true`.
-  // Each view's delegate will also get an opportunity to handle the action.
+  // both implements a method with the given action name and returns a truthy
+  // value. Each view's `delegate` will also get an opportunity to handle the
+  // action.
   //
   // action  - A string containing the action name.
-  // args... - An additional list of arguments to send to the action method(s).
+  // args... - An additional list of arguments to send to the action method(s)
+  //           (default: `[]`).
   //
   // Returns `true` if the action was handled and `false` otherwise.
   this.def('send', function() {

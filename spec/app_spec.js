@@ -56,6 +56,11 @@ describe('Z.App', function() {
       expect(app.get('mainWindow.isMain')).toBe(true);
       expect(app.get('mainWindow.isKey')).toBe(true);
     });
+
+    it('should create the root state of a statechart', function() {
+      expect(app.statechart.isA(Z.State)).toBe(true);
+      expect(app.statechart.superstate).toBeNull();
+    });
   });
 
   describe('.start', function() {
@@ -89,6 +94,18 @@ describe('Z.App', function() {
       app.start(container);
       expect(container.querySelector('.child1')).not.toEqual(null);
       expect(container.querySelector('.child2')).not.toEqual(null);
+    });
+
+    it('should call `goto` on the statechart with an empty array when not given any initial states', function() {
+      spyOn(app.statechart, 'goto');
+      app.start(container);
+      expect(app.statechart.goto).toHaveBeenCalledWith([]);
+    });
+
+    it('should call `goto` on the statechart with the given list of initial states', function() {
+      spyOn(app.statechart, 'goto');
+      app.start(container, ['/foo/bar', '/foo/baz/stuff']);
+      expect(app.statechart.goto).toHaveBeenCalledWith(['/foo/bar', '/foo/baz/stuff']);
     });
   });
 
@@ -430,6 +447,26 @@ describe('Z.App', function() {
       app.run();
 
       expect(o1.foo.callCount).toBe(1);
+    });
+  });
+
+  describe('.send', function() {
+    it('should delegate to the statechart', function() {
+      var app = Z.App.create(Parent);
+
+      spyOn(app.statechart, 'send');
+      app.send('foo', 1, 2);
+      expect(app.statechart.send).toHaveBeenCalledWith('foo', 1, 2);
+    });
+  });
+
+  describe('.current', function() {
+    it('should delegate to the statechart', function() {
+      var app = Z.App.create(Parent);
+
+      spyOn(app.statechart, 'current');
+      app.current();
+      expect(app.statechart.current).toHaveBeenCalled();
     });
   });
 });

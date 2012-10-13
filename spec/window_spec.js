@@ -508,6 +508,27 @@ describe('Z.Window', function() {
       });
     });
   });
+
+  describe('.send', function() {
+    var app = {send: Z.identity}, w;
+
+    beforeEach(function() {
+      w = Z.Window.create(TestView, {app: app});
+    });
+
+    it("should call send on the window's `app` when the window does not handle the action", function() {
+      spyOn(app, 'send');
+      w.send('foobar', 1, 2);
+      expect(app.send).toHaveBeenCalledWith('foobar', 1, 2);
+    });
+
+    it("should not call send on the window's `app` when the window does handle the action", function() {
+      spyOn(app, 'send');
+      w.def('foobar', function() { return true; });
+      w.send('foobar', 1, 2);
+      expect(app.send).not.toHaveBeenCalled();
+    });
+  });
 });
 
 }());

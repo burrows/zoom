@@ -184,5 +184,24 @@ Z.Window = Z.View.extend(function() {
 
     return handled;
   });
+
+  // Public: Overrides the default implementation of `Z.View.send` to forward
+  // the action on to the window's `app` if the action is not handled by the
+  // window.
+  //
+  // action  - A string containing the action name.
+  // args... - An additional list of arguments to send to the action method(s)
+  //           (default: `[]`).
+  //
+  // Returns `true` if the action was handled and `false` otherwise.
+  this.def('send', function() {
+    var app = this.app(), handled = this.supr.apply(this, arguments);
+
+    if (!handled && app) {
+      handled = !!app.send.apply(app, arguments);
+    }
+
+    return handled;
+  });
 });
 
