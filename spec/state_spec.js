@@ -321,7 +321,7 @@ describe('Z.State.goto', function() {
     expect(exits).toEq([j, h, l, k, g, e]);
   });
 
-  it('should enter all substates when concurrent superstate is entered', function() {
+  it('should enter all substates when a concurrent superstate is entered', function() {
     c.goto('/a/e/g')
     expect(enters).toEq([e, g, h, i, k, l]);
   });
@@ -369,6 +369,18 @@ describe('Z.State.goto', function() {
 
     expect(bctx).toEq('bar');
     expect(cctx).toEq('bar');
+  });
+
+  it('should invoke `enter` methods on states that are already current when the `force` option is given', function() {
+    c.goto('/a/e/f');
+    expect(enters).toEq([e, f]);
+
+    enters = [];
+    root.goto('/a/e/f');
+    expect(enters).toEq([]);
+
+    root.goto('/a/e/f', {force: true});
+    expect(enters).toEq([root, a, e, f]);
   });
 });
 
