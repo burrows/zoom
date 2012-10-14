@@ -58,8 +58,8 @@ describe('Z.App', function() {
     });
 
     it('should create the root state of a statechart', function() {
-      expect(app.statechart.isA(Z.State)).toBe(true);
-      expect(app.statechart.superstate).toBeNull();
+      expect(app.statechart().isA(Z.State)).toBe(true);
+      expect(app.statechart().superstate).toBeNull();
     });
   });
 
@@ -97,15 +97,15 @@ describe('Z.App', function() {
     });
 
     it('should call `goto` on the statechart with an empty array when not given any initial states', function() {
-      spyOn(app.statechart, 'goto');
+      spyOn(app.statechart(), 'goto');
       app.start(container);
-      expect(app.statechart.goto).toHaveBeenCalledWith([]);
+      expect(app.statechart().goto).toHaveBeenCalledWith([]);
     });
 
     it('should call `goto` on the statechart with the given list of initial states', function() {
-      spyOn(app.statechart, 'goto');
+      spyOn(app.statechart(), 'goto');
       app.start(container, ['/foo/bar', '/foo/baz/stuff']);
-      expect(app.statechart.goto).toHaveBeenCalledWith(['/foo/bar', '/foo/baz/stuff']);
+      expect(app.statechart().goto).toHaveBeenCalledWith(['/foo/bar', '/foo/baz/stuff']);
     });
   });
 
@@ -454,19 +454,22 @@ describe('Z.App', function() {
     it('should delegate to the statechart', function() {
       var app = Z.App.create(Parent);
 
-      spyOn(app.statechart, 'send');
+      spyOn(app.statechart(), 'send');
       app.send('foo', 1, 2);
-      expect(app.statechart.send).toHaveBeenCalledWith('foo', 1, 2);
+      expect(app.statechart().send).toHaveBeenCalledWith('foo', 1, 2);
     });
   });
 
   describe('.current', function() {
     it('should delegate to the statechart', function() {
-      var app = Z.App.create(Parent);
+      var app = Z.App.create(Parent).open(function() {
+        this.state('a');
+        this.state('b');
+      });
 
-      spyOn(app.statechart, 'current');
-      app.current();
-      expect(app.statechart.current).toHaveBeenCalled();
+      app.start(container, ['/b']);
+      expect(app.get('statechart.current')).toEq(['/b']);
+      expect(app.get('current')).toEq(['/b']);
     });
   });
 });

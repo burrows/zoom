@@ -64,6 +64,16 @@ Z.App = Z.Object.extend(function() {
     get: function() { return this.get('windows.first'); }
   });
 
+  // Public: The application's statechart.
+  this.prop('statechart');
+
+  // Public: The current states of the application's statechart.
+  this.prop('current', {
+    readonly: true,
+    dependsOn: ['statechart.current'],
+    get: function() { return this.get('statechart.current'); }
+  });
+
   // Public: The window that currently has keyboard focus. All keyboard events
   // observed by the application will be sent to the window pointed to by this
   // property.
@@ -85,7 +95,7 @@ Z.App = Z.Object.extend(function() {
     }));
 
     this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-    this.statechart = Z.State.define();
+    this.statechart(Z.State.define());
   });
 
   // Public: Starts running the app by creating an event listener, rendering all
@@ -106,7 +116,7 @@ Z.App = Z.Object.extend(function() {
       this.mainWindow().becomeKeyWindow();
     }
 
-    this.statechart.goto(states || []);
+    this.statechart().goto(states || []);
     this.run();
     this.__started__ = true;
 
@@ -162,19 +172,15 @@ Z.App = Z.Object.extend(function() {
   //   });
   //   Foo.app.start();
   this.def('state', function() {
-    this.statechart.state.apply(this.statechart, arguments);
+    var sc = this.statechart();
+    return sc.state.apply(sc, arguments);
   });
 
   // Public: Delegates to the `statechart`'s `send` method. Use this method to
   // send actions to the app's statechart.
   this.def('send', function() {
-    return this.statechart.send.apply(this.statechart, arguments);
-  });
-
-  // Public: Delegates to the `statechart`'s `current` method. Use this method
-  // to get the current states of the app's statechart.
-  this.def('current', function() {
-    return this.statechart.current.apply(this.statechart, arguments);
+    var sc = this.statechart();
+    return sc.send.apply(sc, arguments);
   });
 
   // Public: Queues up a method to invoke on the given object at the end of the
