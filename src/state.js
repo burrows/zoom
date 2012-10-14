@@ -56,11 +56,16 @@ var slice = Array.prototype.slice;
 //   door.send('lockDoor');
 //   door.current();          // => [ '/closed/locked' ]
 Z.State = Z.Object.extend(Z.Enumerable, function() {
+  // Internal: Calculates and caches the path from the root state to the
+  // receiver state. Subsequent calls will return the cached path array.
+  //
+  // Returns an array of `Z.State` objects.
   function _path() {
     return this.__cache__._path = this.__cache__._path ||
       (this.superstate ? _path.call(this.superstate).concat(this) : [this]);
   }
 
+  // Internal: Returns an array of all current leaf states.
   function _current() {
     var substates = this.substates.values();
 
@@ -73,6 +78,20 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     });
   }
 
+  // Internal: Resolves a string path into an actual `Z.State` object. Paths not
+  // starting with a '/' are resolved relative to the receiver state, paths that
+  // do start with a '/' are resolved relative to the root state.
+  //
+  // path      - A string containing the path to resolve or an array of path
+  //             segments.
+  // origPath  - A string containing the original path that we're attempting to
+  //             resolve. Multiple recursive calls are made to this method so we
+  //             need to pass along the original string path for error messages
+  //             in the case where the path cannot be resolved.
+  // origState - The state where path resolution was originally attempted from.
+  //
+  // Returns the `Z.State` object the path represents.
+  // Throws `Error` if the path cannot be resolved.
   function resolve(path, origPath, origState) {
     var head, next;
 
@@ -103,6 +122,11 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
       resolve.call(next, path, origPath, origState);
   }
 
+  // Internal: Finds the pivot state between the receiver and the given state.
+  // The pivot state is the first common ancestor between the two states.
+  //
+  // Returns a `Z.State` object.
+  // Throws `Error` if the two states do not belong to the same statechart.
   function findPivot(other) {
     var p1 = _path.call(this), p2 = _path.call(other), i, len, p;
 
@@ -117,11 +141,22 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return p;
   }
 
+  // Internal: Queues up a transition for later processing. Transitions are
+  // queued instead of happening immediately because we need to allow all
+  // current states to receive an action before any transitions actually occur.
+  //
+  // pivot  - The pivot state between the start state and destination states.
+  // states - An array of destination states.
+  // opts   - The options object passed to the `goto` method.
+  //
+  // Returns nothing.
   function queueTransition(pivot, states, opts) {
     (this.__transitions__ = this.__transitions__ || []).push({
       pivot: pivot, states: states, opts: opts});
   }
 
+  // Internal: Performs all queued transitions. This is the method that actually
+  // takes the statechart from one set of current states to another.
   function transition() {
     var ts = this.__transitions__, i, len;
 
@@ -138,6 +173,26 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.__transitions__ = [];
   }
 
+  // Internal: Enters a clustered state. Entering a clustered state involves
+  // exiting the current substate (if one exists and is not a destination
+  // state), invoking the `enter` method on the receiver state, and recursively
+  // calling entering the new destination substate. The new destination substate
+  // is determined as follows:
+  //
+  // 1. the substate indicated in the `states` argument if its not empty
+  // 2. the result of invoking the condition function defined with the `C`
+  //    method if it exists
+  // 3. the most recently exited substate if the state was defined with the
+  //    `hasHistory` option and has been previously entered
+  // 4. the first substate
+  //
+  // states - A `Z.Array` of destination states (may be empty to indicate that
+  //          a condition, history, or default substate should be entered).
+  // opts   - The options passed to `goto`.
+  //
+  // Returns the receiver.
+  // Throws an `Error` if the given destination states include multiple
+  //   substates.
   function enterClustered(states, opts) {
     var self    = this,
         root    = this.root(),
@@ -182,6 +237,14 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   }
 
+  // Internal: Enters a concurrent state. Entering a concurrent state simply
+  // involves calling the `enter` method on the receiver and recursively
+  // entering each substate.
+  //
+  // states - A `Z.Array` of destination states.
+  // opts   - The options passed to `goto`.
+  //
+  // Returns the receiver.
   function enterConcurrent(states, opts) {
     var self = this, root = this.root();
 
@@ -205,12 +268,26 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   }
 
+  // Internal: Enters the receiver state. The actual entering logic is in the
+  // `enterClustered` and `enterConcurrent` methods.
+  //
+  // states - A `Z.Array` of destination states.
+  // opts   - The options passed to `goto`.
+  //
+  // Returns the receiver.
   function enter(states, opts) {
     return this.isConcurrent ?
       enterConcurrent.call(this, states, opts) :
       enterClustered.call(this, states, opts);
   }
 
+  // Internal: Exits a clustered state. Exiting happens bottom to top, so we
+  // recursively exit the current substate and then invoke the `exit` method on
+  // each state as the stack unwinds.
+  //
+  // opts - The options passed to `goto`.
+  //
+  // Returns the receiver.
   function exitClustered(opts) {
     var root = this.root(), cur = this.substates.values().find(function(s) {
       return s.isCurrent;
@@ -230,6 +307,13 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   }
 
+  // Internal: Exits a concurrent state. Similiar to `exitConcurrent` we
+  // recursively exit each substate and invoke the `exit` method as the stack
+  // unwinds.
+  //
+  // opts - The options passed to `goto`.
+  //
+  // Returnst he receiver.
   function exitConcurrent(opts) {
     var root = this.root();
 
@@ -244,11 +328,63 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   }
 
+  // Internal: Exits the receiver state. The actual exiting logic is in the
+  // `exitClustered` and `exitConcurrent` methods.
+  //
+  // states - A `Z.Array` of destination states.
+  // opts   - The options passed to `goto`.
+  //
+  // Returns the receiver.
   function exit(opts) {
     return this.isConcurrent ?
       exitConcurrent.call(this, opts) : exitClustered.call(this, opts);
   }
 
+  // Internal: Sends an action to a clustered state.
+  //
+  // Returns a boolean indicating whether or not the action was handled by the
+  //   current substate.
+  function sendClustered() {
+    var handled = false, cur;
+
+    cur = this.substates.values().find(function(s) { return s.isCurrent; });
+
+    if (cur) { handled = !!cur.send.apply(cur, slice.call(arguments)); }
+
+    return handled;
+  }
+
+  // Internal: Sends an action to a concurrent state.
+  //
+  // Returns a boolean indicating whether or not the action was handled by all
+  //   substates.
+  function sendConcurrent() {
+    var args = slice.call(arguments),handled = true;
+
+    this.substates.values().each(function(s) {
+      handled = !!s.send.apply(s, args) && handled;
+    });
+
+    return handled;
+  }
+
+  // Public: Convenience method for creating a new statechart. Simply creates a
+  // root state and invokes the given function in the context of that state.
+  //
+  // opts - An object of options to pass the to `Z.State` constructor (default:
+  //        `null`).
+  // f    - A function object to invoke in the context of the newly created root
+  //        state (default: `null`).
+  //
+  // Examples
+  //
+  //   var sc = Z.State.define({isConcurrent: true}, function() {
+  //     this.state('a');
+  //     this.state('b');
+  //     this.state('c');
+  //   });
+  //
+  // Returns the newly created root state.
   this.def('define', function() {
     var opts = {}, f = null, s;
 
@@ -406,26 +542,6 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     return this;
   });
-
-  function sendClustered() {
-    var handled = false, cur;
-
-    cur = this.substates.values().find(function(s) { return s.isCurrent; });
-
-    if (cur) { handled = !!cur.send.apply(cur, slice.call(arguments)); }
-
-    return handled;
-  }
-
-  function sendConcurrent() {
-    var args = slice.call(arguments),handled = true;
-
-    this.substates.values().each(function(s) {
-      handled = !!s.send.apply(s, args) && handled;
-    });
-
-    return handled;
-  }
 
   this.def('send', function() {
     var args = slice.call(arguments), handled;
