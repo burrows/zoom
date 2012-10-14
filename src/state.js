@@ -406,6 +406,36 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return s;
   });
 
+  // Public: Creates a substate with the given name and adds it as a substate to
+  // the receiver state. If a `Z.State` object is given, then it simply adds the
+  // state as a substate. This allows you to split up the definition of your
+  // states instead of defining everything in one place.
+  //
+  // name - A string containing the name of the state or a `Z.State` object.
+  // opts - An object of options to pass to the `Z.State` constructor
+  //        (default: `null`).
+  // f    - A function to invoke in the context of the newly created state
+  //        (default: `null`).
+  //
+  // Examples
+  //
+  //   var s2 = Z.State.create('s2').open(function() {
+  //     this.state('s21);
+  //     this.state('s22);
+  //   });
+  //
+  //   var sc = Z.State.define(function() {
+  //     this.state('s', function() {
+  //       this.state('s1', function() {
+  //         this.state('s11);
+  //         this.state('s12);
+  //       });
+  //
+  //       this.state(s2);
+  //     });
+  //   });
+  //
+  // Returns the newly created state.
   this.def('state', function(name) {
     var opts = {}, f = null, s;
 
@@ -435,6 +465,29 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return s;
   });
 
+  // Public: Defines a condition state on the receiver state. Condition states
+  // are consulted when entering a clustered state without specified destination
+  // states. The given function should return a path to some substate of the
+  // state that the condition state is defined on.
+  //
+  // f - The condition function.
+  //
+  // Examples
+  //
+  //   var sc = Z.State.define(function() {
+  //     this.state('a', function() {
+  //       this.C(function() {
+  //         if (shouldGoToB) { return './b'; }
+  //         if (shouldGoToC) { return './c'; }
+  //         if (shouldGoToD) { return './d'; }
+  //       });
+  //       this.state('b');
+  //       this.state('c');
+  //       this.state('d');
+  //     });
+  //   });
+  //
+  // Returns nothing.
   this.def('C', function(f) {
     if (this.hasHistory) {
       throw new Error(Z.fmt("Z.State.C: a state may not have both condition and history states: %@", this));
@@ -447,6 +500,8 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.__condition__ = f;
   });
 
+  // Public: An observable property containing an array of the paths to all
+  // current leaft states.
   this.prop('current', {
     readonly: true,
     get: function() {
@@ -460,10 +515,22 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     }
   });
 
+  // Internal: Specifies the properties for the `toString` method to display.
   this.def('toStringProperties', function() {
     return this.supr().concat('path', 'isCurrent', 'isConcurrent');
   });
 
+  // Public: The `Z.State` constructor.
+  //
+  // name - A string containing the name of the state.
+  // opts - An objection containing zero or more of the following keys (default:
+  //        `null`).
+  //        isConcurrent - Makes the state's substates concurrent.
+  //        hasHistory   - Causes the state to keep track of its history state.
+  //
+  // Returns nothing.
+  // Throws `Error` if both the `isConcurrent` and `hasHistory` options are
+  //   specified.
   this.def('init', function(name, opts) {
     opts = Z.merge({}, {isConcurrent: false, hasHistory: false}, opts);
 
@@ -481,12 +548,22 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.trace        = false;
   });
 
+  // Public: The `Z.State` iterator - invokes the given function once for each
+  // state in the statechart. The states are traversed in a preorder depth-first
+  // manner.
+  //
+  // f - A function object, it will be invoked once for each state.
+  //
+  // Returns the receiver.
   this.def('each', function(f) {
     f(this);
     this.substates.each(function(tuple) { tuple[1].each(f); });
     return this;
   });
 
+  // Public: Adds the given state as a substate of the receiver state.
+  //
+  // Returns the receiver.
   this.def('addSubstate', function(state) {
     this.substates.at(state.name, state);
     state.each(function(s) { s.__cache__ = {}; });
@@ -494,11 +571,30 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
+  // Public: Returns the root state.
   this.def('root', function() {
     return this.__cache__.root = this.__cache__.root ||
       (this.superstate ? this.superstate.root() : this);
   });
 
+  // Public: Returns a string containing the full path from the root state to
+  // the receiver state. State paths are very similar to unix directory paths.
+  //
+  // Examples
+  //
+  //   var r = Z.State.create('root'),
+  //       a = Z.State.create('a'),
+  //       b = Z.State.create('b'),
+  //       c = Z.State.create('c');
+  //
+  //   r.addSubstate(a);
+  //   a.addSubstate(b);
+  //   b.addSubstate(c);
+  //
+  //   r.path(); // => "/"
+  //   a.path(); // => "/a"
+  //   b.path(); // => "/a/b"
+  //   c.path(); // => "/a/b/c"
   this.def('path', function() {
     var states = _path.call(this), names = [], i, len;
 
@@ -509,6 +605,48 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return '/' + names.join('/');
   });
 
+  // Public: Sets up a transition from the receiver state to the given
+  // destination states. Transitions are usually triggered during action methods
+  // called by the `send` method. This method should be called on the root state
+  // to send the statechart into its initial set of current states.
+  //
+  // paths - Zero or more strings representing destination state paths (default:
+  //         `[]`).
+  // opts  - An object containing zero or more of the following keys:
+  //         context - An object to pass along to the `exit` and `enter` methods
+  //                   invoked during the actual transistion.
+  //         force   - Forces `enter` methods to be called during the transition
+  //                   on states that are already current.
+  //
+  // Examples
+  //
+  //   var sc = Z.State.define(function() {
+  //     this.state('a', function() {
+  //       this.state('b', function() {
+  //         this.def('foo', function() {
+  //           this.goto('../c');
+  //         });
+  //       });
+  //       this.state('c', function() {
+  //         this.def('bar', function() {
+  //           this.goto('../b');
+  //         });
+  //       });
+  //     });
+  //   });
+  //
+  //   sc.goto();
+  //   sc.current();   // => ['/a/b']
+  //   sc.send('foo');
+  //   sc.current();   // => ['/a/c']
+  //   sc.send('bar');
+  //   sc.current();   // => ['/a/b']
+  //
+  // Returns the receiver.
+  // Throws an `Error` if called on a non-current non-root state.
+  // Throws an `Error` if multiple pivot states are found between the receiver
+  //   and destination states.
+  // Throws an `Error` if a destination path is not reachable from the receiver.
   this.def('goto', function() {
     var self   = this,
         root   = this.root(),
@@ -543,6 +681,17 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     return this;
   });
 
+  // Public: Sends an action to the statechart. A statechart handles an action
+  // by giving each current leaf state an opportunity to handle the action.
+  // Actions bubble up superstate chains as long as handler methods do not
+  // return a truthy value. When a handler does return a truthy value the
+  // bubbling is canceled. A handler method is simply a method who's name
+  // matches the name passed to `send`.
+  //
+  // action  - A string containing the action name.
+  // args... - Zero or more arguments that get passed on to the handler methods.
+  //
+  // Returns a boolean indicating whether or not the action was handled.
   this.def('send', function() {
     var args = slice.call(arguments), handled;
 
