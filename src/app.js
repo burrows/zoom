@@ -34,13 +34,13 @@
 // models have been updated). In these situations you can simply invoke the
 // app's `run` method to trigger a run of the run loop.
 Z.App = Z.Object.extend(function() {
-  // Private: Handles events observed on the event listener by dispatching them
+  // Private: Handles events observed by the event listener by dispatching them
   // to the appropriate window and triggering a run loop if they are handled.
   //
-  // n - A notification object.
+  // e - A `Z.Event` object..
   //
   // Returns nothing.
-  function processEvent(n) { if (this.dispatchEvent(n.current)) { this.run();} }
+  function processEvent(e) { if (this.dispatchEvent(e)) { this.run(); } }
 
   // Public: A regular property that holds the container DOM node. All DOM
   // modifications and mouse events observed happen within this container.
@@ -107,9 +107,11 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('start', function(container, states) {
+    var self = this;
+
     this.container = container || document.body;
-    this.listener  = Z.EventListener.create(this.container);
-    this.listener.observe('event', this, processEvent, {current: true});
+    this.listener  = Z.EventListener.create(this.container,
+                                            Z.bind(processEvent, this));
 
     if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
