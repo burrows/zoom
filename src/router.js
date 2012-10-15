@@ -92,7 +92,7 @@ Z.Route = Z.Object.extend(function() {
   });
 
   this.def('matchParams', function(names) {
-    return Z.eq(this.params.sort(), names.sort());
+    return Z.eq(this.params.slice().sort(), names.slice().sort());
   });
 
   this.def('generate', function(params) {
