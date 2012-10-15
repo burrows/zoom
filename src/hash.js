@@ -358,6 +358,18 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     return r;
   });
 
+  // Public: Converts the `Z.Hash` object to a native javascript object. The
+  // keys in the native object will be the `toString` representation of key hash
+  // key objects.
+  //
+  // Returns a native object.
+  this.def('toNative', function() {
+    return this.inject({}, function(acc, tuple) {
+      acc[tuple[0] ? tuple[0].toString() : ''] = tuple[1];
+      return acc;
+    });
+  });
+
   // Internal: Overrides the default `getUnknownProperty` implementation to
   // convert gets of unknown keys to simple hash references.
   //

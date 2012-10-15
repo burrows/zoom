@@ -632,6 +632,22 @@ describe('Z.Hash.clear', function() {
   });
 });
 
+describe('Z.Hash.toNative', function() {
+  it("should return a native object with toString'd representation of the hash keys as the keys and values", function() {
+    var o1 = Z.Object.create(), o;
+
+    expect(Z.H().toNative()).toEq({});
+    expect(Z.H('foo', 1, 'bar', 2).toNative()).toEq({foo: 1, bar: 2});
+    expect(Z.H(2, 'foo', 'bar', 9).toNative()).toEq({'2': 'foo', bar: 9});
+    expect(Z.H(null, 1).toNative()).toEq({'': 1});
+    expect(Z.H(undefined, 2).toNative()).toEq({'': 2});
+
+    o = {};
+    o[o1.toString()] = 'hello';
+    expect(Z.H(o1, 'hello').toNative()).toEq(o);
+  });
+});
+
 describe('Z.Hash.hasProperty', function() {
   it('should return `true` for all property names', function() {
     var h = Z.H();
