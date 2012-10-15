@@ -141,7 +141,7 @@ describe('Z.App', function() {
 
     it('should destroy the event listener', function() {
       app.start(container);
-      spyOn(app.listener, 'destroy');
+      spyOn(app.listener, 'destroy').andCallThrough();
       app.destroy();
       expect(app.listener.destroy).toHaveBeenCalled();
     });
