@@ -463,8 +463,8 @@ describe('Z.App', function() {
   describe('.current', function() {
     it('should delegate to the statechart', function() {
       var app = Z.App.create(Parent).open(function() {
-        this.state('a');
-        this.state('b');
+        this.statechart().state('a');
+        this.statechart().state('b');
       });
 
       app.start(container, ['/b']);

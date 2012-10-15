@@ -151,31 +151,6 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
-  // Public: Delegates to the `statechart`'s `state` method. Use this method to
-  // add states to the app's statechart.
-  //
-  // Examples
-  //
-  //   Foo.app = Z.App.create(MainView);
-  //   Foo.app.open(function() {
-  //     this.state('a', function() {
-  //       this.def('enter', function() { Z.log('entering state /a'); });
-  //
-  //       this.state('b', function() {
-  //         this.def('enter', function() { Z.log('entering state /a/b'); });
-  //       });
-  //
-  //       this.state('c', function() {
-  //         this.def('enter', function() { Z.log('entering state /a/c'); });
-  //       });
-  //     });
-  //   });
-  //   Foo.app.start();
-  this.def('state', function() {
-    var sc = this.statechart();
-    return sc.state.apply(sc, arguments);
-  });
-
   // Public: Delegates to the `statechart`'s `send` method. Use this method to
   // send actions to the app's statechart.
   this.def('send', function() {
