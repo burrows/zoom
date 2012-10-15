@@ -16,6 +16,7 @@ SRCS := util.js           \
         view.js           \
         window.js         \
         app.js            \
+        router.js         \
         container_view.js \
         list_view.js
 
