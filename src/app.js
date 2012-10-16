@@ -62,22 +62,20 @@ Z.App = Z.Object.extend(function() {
 
   // Public: An array containing all of the app's `Z.Window` objects. Every app
   // has at least one window, the main window, which is always at index `0`.
-  this.prop('windows', {
-    readonly: true,
-    get: function() { return this.__windows__ = this.__windows__ || Z.A(); }
-  });
+  this.prop('windows');
 
   // Public: The app's main window. Every app has one and only one main window.
-  this.prop('mainWindow', {
-    readonly: true,
-    get: function() { return this.get('windows.first'); }
-  });
+  this.prop('mainWindow');
 
-  // Public: The app's statechart (see `Z.State`).
-  this.prop('statechart');
+  // Public: The window that currently has keyboard focus. All keyboard events
+  // observed by the app will be sent to the window pointed to by this property.
+  this.prop('keyWindow');
 
   // Public: The app's router (see `Z.Router`).
   this.prop('router');
+
+  // Public: The app's statechart (see `Z.State`).
+  this.prop('statechart');
 
   // Public: The current states of the app's statechart.
   this.prop('current', {
@@ -85,10 +83,6 @@ Z.App = Z.Object.extend(function() {
     dependsOn: ['statechart.current'],
     get: function() { return this.get('statechart.current'); }
   });
-
-  // Public: The window that currently has keyboard focus. All keyboard events
-  // observed by the app will be sent to the window pointed to by this property.
-  this.prop('keyWindow');
 
   // Public: The `Z.App` constructor.
   //
@@ -101,9 +95,11 @@ Z.App = Z.Object.extend(function() {
     }
 
     // create the app's main window
-    this.windows().push(Z.Window.create(mainView, {
+    this.mainWindow(Z.Window.create(mainView, {
       app: this, isMain: true, isKey: true
     }));
+
+    this.windows(Z.A(this.mainWindow()));
 
     // sets up the queue for "once" methods
     this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
@@ -125,11 +121,15 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('start', function(container, states) {
-    var self = this;
-
     this.container = container || document.body;
     this.listener  = Z.EventListener.create(this.container,
                                             Z.bind(processEvent, this));
+
+    // ensure that the main window is in the windows array, it won't be there
+    // in the case that we're restarting the app after previously stopping it
+    if (this.get('windows.first') !== this.mainWindow()) {
+      this.windows().push(this.mainWindow());
+    }
 
     if (!this.keyWindow()) {
       this.keyWindow(this.mainWindow());
@@ -144,16 +144,19 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
-  // Public: Destroys the app by removing all windows from the DOM and
-  // destroying the app's event listener.
+  // Public: Stops the app by removing all windows from the DOM and destroying
+  // the app's event listener. The app may be started over again by invoking the
+  // `start` method.
   //
   // Returns the receiver.
-  this.def('destroy', function() {
+  this.def('stop', function() {
     if (this.__started__) {
       this.set('keyWindow', null);
       this.removeWindows().displayWindows();
       this.listener.destroy();
       this.router().stop();
+      this.statechart().reset();
+      this.__started__ = false;
     }
 
     return this;

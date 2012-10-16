@@ -38,7 +38,7 @@ describe('Z.App', function() {
   });
 
   afterEach(function() {
-    app.destroy();
+    app.stop();
     document.body.removeChild(container);
   });
 
@@ -121,18 +121,18 @@ describe('Z.App', function() {
     });
   });
 
-  describe('.destroy', function() {
+  describe('.stop', function() {
     it('should set `keyWindow` to `null`', function() {
       app.start(container);
       expect(app.keyWindow()).toBe(app.mainWindow());
-      app.destroy();
+      app.stop();
       expect(app.keyWindow()).toBeNull();
     });
 
     it('should detach `mainWindow` from `container`', function() {
       app.start(container);
       expect(document.querySelector('#test-container > .z-main-window')).not.toEqual(null);
-      app.destroy();
+      app.stop();
       expect(document.querySelector('#test-container > .z-main-window')).toEqual(null);
     });
 
@@ -145,7 +145,7 @@ describe('Z.App', function() {
       expect(container.querySelector('.child1')).not.toEqual(null);
       expect(container.querySelector('.child2')).not.toEqual(null);
       expect(container.querySelector('.child3')).not.toEqual(null);
-      app.destroy();
+      app.stop();
       expect(container.querySelector('.child1')).toEqual(null);
       expect(container.querySelector('.child2')).toEqual(null);
       expect(container.querySelector('.child3')).toEqual(null);
@@ -154,15 +154,22 @@ describe('Z.App', function() {
     it('should destroy the event listener', function() {
       app.start(container);
       spyOn(app.listener, 'destroy').andCallThrough();
-      app.destroy();
+      app.stop();
       expect(app.listener.destroy).toHaveBeenCalled();
     });
 
     it('should stop the router', function() {
       app.start(container);
       spyOn(app.router(), 'stop').andCallThrough();
-      app.destroy();
+      app.stop();
       expect(app.router().stop).toHaveBeenCalled();
+    });
+
+    it('should reset the statechart', function() {
+      app.start(container);
+      spyOn(app.statechart(), 'reset').andCallThrough();
+      app.stop();
+      expect(app.statechart().reset).toHaveBeenCalled();
     });
   });
 
@@ -247,6 +254,8 @@ describe('Z.App', function() {
   });
 
   describe('.addWindow', function() {
+    beforeEach(function() { app.start(container); });
+
     it('should throw an exception when not given a `Z.Window` object', function() {
       var o = Z.Object.create();
 
@@ -284,6 +293,8 @@ describe('Z.App', function() {
   });
 
   describe('.removeWindow', function() {
+    beforeEach(function() { app.start(container); });
+
     it('should throw an exception if the given window is not currently in the `windows` array', function() {
       var w = Z.Window.create(Child3);
       expect(function() {
@@ -476,7 +487,7 @@ describe('Z.App', function() {
       spyOn(a.statechart(), 'send');
       a.send('foo', 1, 2);
       expect(a.statechart().send).toHaveBeenCalledWith('foo', 1, 2);
-      a.destroy();
+      a.stop();
     });
   });
 
@@ -490,7 +501,7 @@ describe('Z.App', function() {
       a.start(container, ['/b']);
       expect(a.get('statechart.current')).toEq(['/b']);
       expect(a.get('current')).toEq(['/b']);
-      a.destroy();
+      a.stop();
     });
   });
 
