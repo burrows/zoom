@@ -5,6 +5,7 @@
 // * setup and perform initial rendering of all windows and views
 // * creates a `Z.EventListener` object to listen for native events
 // * creates a statechart for modeling your app's state
+// * creates a `Z.Router` for processing URL hash changes
 // * dispatches events to the appropriate window
 // * triggers run loops when events occur
 //
@@ -42,6 +43,11 @@ Z.App = Z.Object.extend(function() {
   // Returns nothing.
   function processEvent(e) { if (this.dispatchEvent(e)) { this.run(); } }
 
+  function processRouteChange(name, params) {
+    this.statechart().send('didRoute', name, params);
+    this.run();
+  }
+
   // Public: A regular property that holds the container DOM node. All DOM
   // modifications and mouse events observed happen within this container.
   this.container = null;
@@ -66,6 +72,8 @@ Z.App = Z.Object.extend(function() {
 
   // Public: The application's statechart.
   this.prop('statechart');
+
+  this.prop('router');
 
   // Public: The current states of the application's statechart.
   this.prop('current', {
@@ -94,8 +102,14 @@ Z.App = Z.Object.extend(function() {
       app: this, isMain: true, isKey: true
     }));
 
+    // sets up the queue for "once" methods
     this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+
+    // create an empty statechart
     this.statechart(Z.State.define());
+
+    // create an empty router
+    this.router(Z.Router.create(Z.bind(processRouteChange, this)));
   });
 
   // Public: Starts running the app by creating an event listener, rendering all
@@ -119,6 +133,7 @@ Z.App = Z.Object.extend(function() {
     }
 
     this.statechart().goto(states || []);
+    this.router().start();
     this.run();
     this.__started__ = true;
 
@@ -134,6 +149,7 @@ Z.App = Z.Object.extend(function() {
       this.set('keyWindow', null);
       this.removeWindows().displayWindows();
       this.listener.destroy();
+      this.router().stop();
     }
 
     return this;
@@ -143,6 +159,7 @@ Z.App = Z.Object.extend(function() {
   // need updating and executing any methods queued up by the `once` method.
   this.def('run', function() {
     this.displayWindows();
+    this.router().updateHash();
 
     this.queue.each(function(tuple) {
       var o = tuple[0], methods = tuple[1];

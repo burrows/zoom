@@ -38,7 +38,6 @@
 //   hashFor(route, params)
 //    -> returns a string generated from the given route name and params
 //
-//
 // Route
 //   name - string
 //   matcher - regex
@@ -46,6 +45,10 @@
 //   matches(hash) - returns a boolean
 //   generate(params) - returns a url hash
 //
+//
+// Router
+//   updateHash - generates a url based on current and params and sets window.location.hash
+//     - invoked by the app at the end of a run loop
 (function() {
 
 Z.Route = Z.Object.extend(function() {
@@ -73,10 +76,15 @@ Z.Route = Z.Object.extend(function() {
     return params;
   }
 
-  this.def('init', function(pattern) {
+  this.def('init', function(name, pattern) {
+    this.name    = name;
     this.pattern = pattern;
     this.matcher = buildRegex(pattern);
     this.params  = extractParams(pattern);
+  });
+
+  this.def('toStringProperties', function() {
+    return this.supr().concat('name', 'pattern');
   });
 
   this.def('matchHash', function(hash) {
@@ -99,6 +107,87 @@ Z.Route = Z.Object.extend(function() {
     return this.pattern.replace(paramRe, function(match, name) {
       return params[name] || '';
     });
+  });
+});
+
+Z.Router = Z.Object.extend(function() {
+  function processHashChange() {
+    var hash, match;
+
+    if (this.__updatingHash__) { return this.__updatingHash__ = false; }
+
+    hash  = this.location.hash.replace(/^#/, '');
+    match = this.recognize(hash);
+
+    if (match) { this.callback(match.route.name, match.params); }
+  }
+
+  this.prop('routes');
+  this.prop('current');
+  this.prop('params');
+
+  this.prop('hash', {
+    readonly: true,
+    dependsOn: ['routes.@', 'current', 'params.@'],
+    get: function() {
+      var routes  = this.routes().toNative(),
+          current = this.current(),
+          params  = this.params(),
+          names   = params.keys().toNative(),
+          route, i, len;
+
+      if (!current) { return null; }
+
+      for (i = 0, len = routes.length; i < len; i++) {
+        if (routes[i].name !== current) { continue; }
+        if (routes[i].matchParams(names)) { route = routes[i]; break; }
+      }
+
+      if (!route) { return null; }
+
+      return route.generate(params.toNative());
+    }
+  });
+
+  this.def('init', function(callback, opts) {
+    this.routes(Z.A());
+    this.params(Z.H());
+    this.callback = callback;
+    this.location = (opts && opts.location) || window.location;
+  });
+
+  this.def('start', function() {
+    this.__hashChangeListener__ = Z.bind(processHashChange, this);
+    window.addEventListener('hashchange', this.__hashChangeListener__, false);
+    this.__hashChangeListener__();
+  });
+
+  this.def('stop', function() {
+    window.removeEventListener('hashchange', this.__hashChangeListener__, false);
+  });
+
+  this.def('route', function(name, pattern) {
+    this.routes().push(Z.Route.create(name, pattern));
+  });
+
+  this.def('recognize', function(hash) {
+    var routes = this.routes().toNative(), i, len, params;
+
+    for (i = 0, len = routes.length; i < len; i++) {
+      if ((params = routes[i].matchHash(hash))) {
+        return {route: routes[i], params: params};
+      }
+    }
+
+    return null;
+  });
+
+  this.def('updateHash', function() {
+    var oldhash = this.location.hash.replace(/^#/, ''), newhash = this.hash();
+    if (newhash && newhash !== oldhash) {
+      this.__updatingHash__ = true;
+      this.location.hash = newhash;
+    }
   });
 });
 

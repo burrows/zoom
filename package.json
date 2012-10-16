@@ -6,6 +6,6 @@
     "jasmine-node": "~1.0",
     "benchmark": "~0.3",
     "watch": "~0.5",
-    "domino": "1.0.2"
+    "domino": "1.0.5"
   }
 }

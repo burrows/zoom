@@ -61,6 +61,11 @@ describe('Z.App', function() {
       expect(app.statechart().isA(Z.State)).toBe(true);
       expect(app.statechart().superstate).toBeNull();
     });
+
+    it('should create an empty router', function() {
+      expect(app.router().isA(Z.Router)).toBe(true);
+      expect(app.router().routes()).toEq(Z.A());
+    });
   });
 
   describe('.start', function() {
@@ -107,6 +112,12 @@ describe('Z.App', function() {
       app.start(container, ['/foo/bar', '/foo/baz/stuff']);
       expect(app.statechart().goto).toHaveBeenCalledWith(['/foo/bar', '/foo/baz/stuff']);
     });
+
+    it('should start the router', function() {
+      spyOn(app.router(), 'start');
+      app.start(container);
+      expect(app.router().start).toHaveBeenCalled();
+    });
   });
 
   describe('.destroy', function() {
@@ -144,6 +155,13 @@ describe('Z.App', function() {
       spyOn(app.listener, 'destroy').andCallThrough();
       app.destroy();
       expect(app.listener.destroy).toHaveBeenCalled();
+    });
+
+    it('should stop the router', function() {
+      app.start(container);
+      spyOn(app.router(), 'stop').andCallThrough();
+      app.destroy();
+      expect(app.router().stop).toHaveBeenCalled();
     });
   });
 
@@ -452,24 +470,42 @@ describe('Z.App', function() {
 
   describe('.send', function() {
     it('should delegate to the statechart', function() {
-      var app = Z.App.create(Parent);
+      var a = Z.App.create(Parent);
 
-      spyOn(app.statechart(), 'send');
-      app.send('foo', 1, 2);
-      expect(app.statechart().send).toHaveBeenCalledWith('foo', 1, 2);
+      spyOn(a.statechart(), 'send');
+      a.send('foo', 1, 2);
+      expect(a.statechart().send).toHaveBeenCalledWith('foo', 1, 2);
+      a.destroy();
     });
   });
 
   describe('.current', function() {
     it('should delegate to the statechart', function() {
-      var app = Z.App.create(Parent).open(function() {
+      var a = Z.App.create(Parent).open(function() {
         this.statechart().state('a');
         this.statechart().state('b');
       });
 
-      app.start(container, ['/b']);
-      expect(app.get('statechart.current')).toEq(['/b']);
-      expect(app.get('current')).toEq(['/b']);
+      a.start(container, ['/b']);
+      expect(a.get('statechart.current')).toEq(['/b']);
+      expect(a.get('current')).toEq(['/b']);
+      a.destroy();
+    });
+  });
+
+  describe('route changes', function() {
+    it('should invoke `send` on the statechart with the action `didRoute` and the route name and params', function() {
+      app.start(container);
+      spyOn(app.statechart(), 'send');
+      app.router().callback('someRouteName', {foo: '1', bar: 'two'});
+      expect(app.statechart().send).toHaveBeenCalledWith('didRoute', 'someRouteName', {foo: '1', bar: 'two'});
+    });
+
+    it('should trigger a run loop', function() {
+      app.start(container);
+      spyOn(app, 'run');
+      app.router().callback('someRouteName', {foo: '1', bar: 'two'});
+      expect(app.run).toHaveBeenCalled();
     });
   });
 });
