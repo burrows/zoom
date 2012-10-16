@@ -15,9 +15,9 @@ describe('Z.State.init', function() {
     expect(s.substates).toEq(Z.H());
   });
 
-  it('should set `isCurrent` to `false`', function() {
+  it('should set `__isCurrent__` to `false`', function() {
     var s = Z.State.create('a');
-    expect(s.isCurrent).toBe(false);
+    expect(s.__isCurrent__).toBe(false);
   });
 
   it('should default `isConcurrent` to `false`', function() {
@@ -166,7 +166,7 @@ describe('Z.State.current', function() {
   });
 
   it('should return an empty array when the state is not current', function() {
-    expect(s12.isCurrent).toBe(false);
+    expect(s12.__isCurrent__).toBe(false);
     expect(s12.current()).toEq([]);
   });
 
@@ -308,20 +308,20 @@ describe('Z.State.goto', function() {
     expect(enters).toEq([g, h, i, k, m]);
   });
 
-  it('should set `isCurrent` to `true` on all states entered and to `false` on all states exited', function() {
-    expect(a.isCurrent).toBe(true);
-    expect(b.isCurrent).toBe(true);
-    expect(c.isCurrent).toBe(true);
-    expect(e.isCurrent).toBe(false);
-    expect(f.isCurrent).toBe(false);
+  it('should set `__isCurrent__` to `true` on all states entered and to `false` on all states exited', function() {
+    expect(a.__isCurrent__).toBe(true);
+    expect(b.__isCurrent__).toBe(true);
+    expect(c.__isCurrent__).toBe(true);
+    expect(e.__isCurrent__).toBe(false);
+    expect(f.__isCurrent__).toBe(false);
 
     c.goto('/a/e/f');
 
-    expect(a.isCurrent).toBe(true);
-    expect(b.isCurrent).toBe(false);
-    expect(c.isCurrent).toBe(false);
-    expect(e.isCurrent).toBe(true);
-    expect(f.isCurrent).toBe(true);
+    expect(a.__isCurrent__).toBe(true);
+    expect(b.__isCurrent__).toBe(false);
+    expect(c.__isCurrent__).toBe(false);
+    expect(e.__isCurrent__).toBe(true);
+    expect(f.__isCurrent__).toBe(true);
   });
 
   it('should enter the default substate when a path to a leaf state is not given', function() {
@@ -643,10 +643,34 @@ describe('Z.State.reset', function() {
 
     sc.goto();
     expect(sc.current()).toEq(['/x/y']);
-    expect(sc.isCurrent).toBe(true);
+    expect(sc.__isCurrent__).toBe(true);
     sc.reset();
     expect(sc.current()).toEq([]);
-    expect(sc.isCurrent).toBe(false);
+    expect(sc.__isCurrent__).toBe(false);
+  });
+});
+
+describe('Z.State.isCurrent', function() {
+  it('return true if the state at the given relative path is current and false otherwise', function() {
+    var r = Z.State.create(''),
+        x = Z.State.create('x'),
+        y = Z.State.create('y'),
+        z = Z.State.create('z');
+
+    r.addSubstate(x);
+    x.addSubstate(y);
+    x.addSubstate(z);
+
+    r.goto();
+
+    expect(r.isCurrent('./x/y')).toBe(true);
+    expect(r.isCurrent('./x/z')).toBe(false);
+    expect(y.isCurrent('.')).toBe(true);
+    expect(y.isCurrent('..')).toBe(true);
+    expect(z.isCurrent('..')).toBe(true);
+    expect(z.isCurrent('.')).toBe(false);
+    expect(z.isCurrent('/x/y')).toBe(true);
+    expect(z.isCurrent('/x/z')).toBe(false);
   });
 });
 
