@@ -632,5 +632,23 @@ describe('Z.State.send', function() {
   });
 });
 
+describe('Z.State.reset', function() {
+  it('should exit all current states', function() {
+    var sc = Z.State.define(function() {
+      this.state('x', function() {
+        this.state('y');
+        this.state('z');
+      });
+    });
+
+    sc.goto();
+    expect(sc.current()).toEq(['/x/y']);
+    expect(sc.isCurrent).toBe(true);
+    sc.reset();
+    expect(sc.current()).toEq([]);
+    expect(sc.isCurrent).toBe(false);
+  });
+});
+
 }());
 

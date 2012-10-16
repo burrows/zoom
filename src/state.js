@@ -713,6 +713,8 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     return handled;
   });
+
+  this.def('reset', function() { exit.call(this); });
 });
 
 }());
