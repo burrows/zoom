@@ -44,7 +44,12 @@ Z.App = Z.Object.extend(function() {
   function processEvent(e) { if (this.dispatchEvent(e)) { this.run(); } }
 
   function processRouteChange(name, params) {
-    this.statechart().send('didRoute', name, params);
+    this.statechart().send('didRouteTo', name, params);
+    this.run();
+  }
+
+  function processUnknownRouteChange(hash) {
+    this.statechart().send('didRouteToUnknown', hash);
     this.run();
   }
 
@@ -55,27 +60,26 @@ Z.App = Z.Object.extend(function() {
   // Internal: A hash of function objects queued up with the `once` method.
   this.queue = null;
 
-  // Public: An array containing all of the application's `Z.Window` objects.
-  // Every application has at least one window, the main window, which is always
-  // at index `0`.
+  // Public: An array containing all of the app's `Z.Window` objects. Every app
+  // has at least one window, the main window, which is always at index `0`.
   this.prop('windows', {
     readonly: true,
     get: function() { return this.__windows__ = this.__windows__ || Z.A(); }
   });
 
-  // Public: The application's main window. Every application has one and only
-  // one main window.
+  // Public: The app's main window. Every app has one and only one main window.
   this.prop('mainWindow', {
     readonly: true,
     get: function() { return this.get('windows.first'); }
   });
 
-  // Public: The application's statechart.
+  // Public: The app's statechart (see `Z.State`).
   this.prop('statechart');
 
+  // Public: The app's router (see `Z.Router`).
   this.prop('router');
 
-  // Public: The current states of the application's statechart.
+  // Public: The current states of the app's statechart.
   this.prop('current', {
     readonly: true,
     dependsOn: ['statechart.current'],
@@ -83,21 +87,20 @@ Z.App = Z.Object.extend(function() {
   });
 
   // Public: The window that currently has keyboard focus. All keyboard events
-  // observed by the application will be sent to the window pointed to by this
-  // property.
+  // observed by the app will be sent to the window pointed to by this property.
   this.prop('keyWindow');
 
   // Public: The `Z.App` constructor.
   //
-  // mainView  - A sub-type of `Z.App` to use as the root view of the
-  //             application's main window.
+  // mainView  - A sub-type of `Z.App` to use as the root view of the app's main
+  //             window.
   this.def('init', function(mainView) {
     if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
       throw new Error(Z.fmt("%@.init: must provide a sub-type of `Z.View` as the main view type",
                             this.typeName()));
     }
 
-    // create the application's main window
+    // create the app's main window
     this.windows().push(Z.Window.create(mainView, {
       app: this, isMain: true, isKey: true
     }));
@@ -109,7 +112,8 @@ Z.App = Z.Object.extend(function() {
     this.statechart(Z.State.define());
 
     // create an empty router
-    this.router(Z.Router.create(Z.bind(processRouteChange, this)));
+    this.router(Z.Router.create(Z.bind(processRouteChange, this),
+                                Z.bind(processUnknownRouteChange, this)));
   });
 
   // Public: Starts running the app by creating an event listener, rendering all

@@ -64,7 +64,7 @@ describe('Z.App', function() {
 
     it('should create an empty router', function() {
       expect(app.router().isA(Z.Router)).toBe(true);
-      expect(app.router().routes()).toEq(Z.A());
+      expect(app.router().routes).toEq({});
     });
   });
 
@@ -102,15 +102,16 @@ describe('Z.App', function() {
     });
 
     it('should call `goto` on the statechart with an empty array when not given any initial states', function() {
-      spyOn(app.statechart(), 'goto');
+      spyOn(app.statechart(), 'goto').andCallThrough();
       app.start(container);
       expect(app.statechart().goto).toHaveBeenCalledWith([]);
     });
 
     it('should call `goto` on the statechart with the given list of initial states', function() {
-      spyOn(app.statechart(), 'goto');
-      app.start(container, ['/foo/bar', '/foo/baz/stuff']);
-      expect(app.statechart().goto).toHaveBeenCalledWith(['/foo/bar', '/foo/baz/stuff']);
+      app.statechart().state('a');
+      spyOn(app.statechart(), 'goto').andCallThrough();
+      app.start(container, ['/a']);
+      expect(app.statechart().goto).toHaveBeenCalledWith(['/a']);
     });
 
     it('should start the router', function() {
@@ -494,17 +495,29 @@ describe('Z.App', function() {
   });
 
   describe('route changes', function() {
-    it('should invoke `send` on the statechart with the action `didRoute` and the route name and params', function() {
+    beforeEach(function() {
+      app.router().route('home', /^$/, function() { return ''; });
+      app.router().route('foo', /^foos\/(\d+)$/, function(params) { return 'foos/' + params.id; });
+    });
+
+    it('should invoke `send` on the statechart with the action `didRouteTo` and the route name and params', function() {
       app.start(container);
       spyOn(app.statechart(), 'send');
-      app.router().callback('someRouteName', {foo: '1', bar: 'two'});
-      expect(app.statechart().send).toHaveBeenCalledWith('didRoute', 'someRouteName', {foo: '1', bar: 'two'});
+      app.router().routeHash('foos/13');
+      expect(app.statechart().send).toHaveBeenCalledWith('didRouteTo', 'foo', ['13']);
+    });
+
+    it('should invoke `send` on the statechart with the action `didRouteToUnknown` and hash when the route is not recognized', function() {
+      app.start(container);
+      spyOn(app.statechart(), 'send');
+      app.router().routeHash('bars/9');
+      expect(app.statechart().send).toHaveBeenCalledWith('didRouteToUnknown', 'bars/9');
     });
 
     it('should trigger a run loop', function() {
       app.start(container);
       spyOn(app, 'run');
-      app.router().callback('someRouteName', {foo: '1', bar: 'two'});
+      app.router().routeHash('foos/2');
       expect(app.run).toHaveBeenCalled();
     });
   });

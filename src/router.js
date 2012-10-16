@@ -1,194 +1,193 @@
-// Router
-//   routes - hash mapping names to [regex, params] tuples
-//   current - the name of the current route
-//   params - hash mapping param names to values
-//   hash - the current hash value of the window's url
+// The `Z.Router` type provides an object that can be used to add location hash
+// routing to an application. Instances observe changes to the browser's
+// location hash (`window.location.hash` via the `window`'s `hashchange` event),
+// match the new hash value against the defined routes, and trigger a callback
+// with the matching route name and any parameters extracted from the hash.
 //
-// Scenarios:
+// When an application decides that it wants to update the current hash, it can
+// set the `current` property of the router to the name of a defined route and
+// set any parameters necessary to generate the new hash. To actually modify the
+// browser's hash, the `updateHash` method must be used. This is typically done
+// during an application run loop. Calling the `updateHash` method will not
+// trigger the router's callback.
 //
-// 1. some event triggers a state change
-//   - when entering the new state, the enter method informs the router of the new route name
-//   - the enter method may also specify route params
-//   - the router observes changes to the current route and params, generates a new hash,
-//     and updates the url bar
-//   - entering further substates may specify additional params, which triggers the router
-//     to regenerate the hash and set the url bar again
-// 2. user changes the hash
-//   - router listens for hashchange events
-//   - router reads new hash and attempts to find a matching route
-//   - router extracts params
-//   - router sets new route
-//   - router sets new params
-//   - router sets new hash
-//   - app observes changes to route and sends action to statechart
-//     (didRouteTo<route name>), passing value of params
-//   - statechart handler converts route name and params to new set of destination states
-//   - statechart forcefully enters new destination states
-// 3. app starts with a non-empty location hash
-//   - when router is initialized, it reads the current hash value
-//   - app tells statechart to go to default states
-//   - app sends didRouteTo<route name> action to statechart based on current value of
-//     route
-//
-// take a hash and match it to a named route and extract params
-//   recognize(hash)
-//    -> returns null if no routes match
-//    -> return matching route name and params hash
-// take a route name and params and generate hash
-//   hashFor(route, params)
-//    -> returns a string generated from the given route name and params
-//
-// Route
-//   name - string
-//   matcher - regex
-//   params - array of parameter names
-//   matches(hash) - returns a boolean
-//   generate(params) - returns a url hash
-//
-//
-// Router
-//   updateHash - generates a url based on current and params and sets window.location.hash
-//     - invoked by the app at the end of a run loop
-(function() {
-
-Z.Route = Z.Object.extend(function() {
-  var namedRe  = /:\w+/g,
-      splatRe  = /\*\w+/g,
-      paramRe  = /[:*](\w+)/g,
-      escapeRe = new RegExp("[-{}[\\]+?.,\\\\^$|#\\s]", 'g');
-
-  function buildRegex(pattern) {
-    pattern = pattern.replace(escapeRe, '\\$&')
-                     .replace(namedRe, '([^\/]+)')
-                     .replace(splatRe, '(.*?)');
-    return new RegExp('^' + pattern + '$');
-  }
-
-  function extractParams(pattern) {
-    var params = pattern.match(paramRe), i, len;
-
-    if (!params) { return []; }
-
-    for (i = 0, len = params.length; i < len; i++) {
-      params[i] = params[i].slice(1);
-    }
-
-    return params;
-  }
-
-  this.def('init', function(name, pattern) {
-    this.name    = name;
-    this.pattern = pattern;
-    this.matcher = buildRegex(pattern);
-    this.params  = extractParams(pattern);
-  });
-
-  this.def('toStringProperties', function() {
-    return this.supr().concat('name', 'pattern');
-  });
-
-  this.def('matchHash', function(hash) {
-    var match = hash.match(this.matcher), params = {}, i, len;
-
-    if (!match) { return null; }
-
-    for (i = 1, len = match.length; i < len; i++) {
-      params[this.params[i - 1]] = match[i];
-    }
-
-    return params;
-  });
-
-  this.def('matchParams', function(names) {
-    return Z.eq(this.params.slice().sort(), names.slice().sort());
-  });
-
-  this.def('generate', function(params) {
-    return this.pattern.replace(paramRe, function(match, name) {
-      return params[name] || '';
-    });
-  });
-});
-
+// Routes are defined with a matcher regular expression and a generator
+// function. The regular expression may contain capturing parenthesis, the
+// captured values will be passed to the router's callback function along with
+// the route name when a matching route is found. The generator function is used
+// to construct a new hash when either the `current` or `params` properties
+// change.
 Z.Router = Z.Object.extend(function() {
-  function processHashChange() {
-    var hash, match;
+  // Internal: A regular expression that can be used to clean up a hash value.
+  var stripHash = /^#|\/?$/;
 
-    if (this.__updatingHash__) { return this.__updatingHash__ = false; }
+  // Internal: The `current` property observer - simply clears the `params` hash
+  // whenever `current` changes.
+  //
+  // Returns nothing.
+  function currentDidChange() { this.params().clear(); }
 
-    hash  = this.location.hash.replace(/^#/, '');
-    match = this.recognize(hash);
+  // Internal: The `hash` property observer - simply records that the location
+  // hash needs to be updated.
+  //
+  // Returns nothing.
+  function hashDidChange() { this.__needsUpdate__ = true; }
 
-    if (match) { this.callback(match.route.name, match.params); }
+  // Internal: The `hashchange` event handler.
+  //
+  // Returns nothing.
+  function processLocationHashChange() {
+    if (this.__updatingHash__) { this.__updatingHash__ = false; return; }
+    this.routeHash(this.location.hash);
   }
 
-  this.prop('routes');
+  // Public: The name of the current route. Updating this property an then
+  // calling the `updateHash` method will cause the browser's location hash to
+  // change.
   this.prop('current');
+
+  // Public: A `Z.Hash` containing the parameters to use to generate the hash.
   this.prop('params');
 
+  // Public: A computed property that returns a string to use as the browser's
+  // location hash. The `updateHash` method must be called after this property
+  // changes in order to actually update the browser's location hash.
   this.prop('hash', {
+    dependsOn: ['current', 'params.@'],
     readonly: true,
-    dependsOn: ['routes.@', 'current', 'params.@'],
     get: function() {
-      var routes  = this.routes().toNative(),
-          current = this.current(),
-          params  = this.params(),
-          names   = params.keys().toNative(),
-          route, i, len;
-
-      if (!current) { return null; }
-
-      for (i = 0, len = routes.length; i < len; i++) {
-        if (routes[i].name !== current) { continue; }
-        if (routes[i].matchParams(names)) { route = routes[i]; break; }
-      }
-
-      if (!route) { return null; }
-
-      return route.generate(params.toNative());
+      var current = this.current(), params  = this.params().toNative();
+      if (!current || !this.routes[current]) { return null; }
+      return this.generate(current, params);
     }
   });
 
-  this.def('init', function(callback, opts) {
-    this.routes(Z.A());
-    this.params(Z.H());
+  // Public: The `Z.Router` constructor.
+  //
+  // callback - A function to invoke whenever the user changes the browser's
+  //            location hash and a matching route is found. The name of the
+  //            route and params extracted from the hash will be passed to this
+  //            function.
+  // errback  - A function to invoke when the user changes the browser's
+  //            location hash to a value that does not match any routes. The
+  //            hash value will be passed to this function.
+  this.def('init', function(callback, errback,  opts) {
+    this.routes   = {};
     this.callback = callback;
+    this.errback  = errback;
     this.location = (opts && opts.location) || window.location;
+    this.params(Z.H());
   });
 
+  // Public: Defines a new route.
+  //
+  // name      - A string containing the name of the route.
+  // matcher   - A `RegExp` object that can be used to match against hash
+  //             values. Any captures made by the regex will be passed to the
+  //             router's callback function when a matching route is found.
+  // generator - A function that will generate a new hash for the route. A
+  //             native object created from the `params` property will be passed
+  //             to this function when the router needs to generate a new hash
+  //             when the `current` or `params` properties change.
+  //
+  // Returns the receiver.
+  // Throws `Error` if a route with the given name already exists.
+  this.def('route', function(name, matcher, generator) {
+    if (this.routes[name]) {
+      throw new Error(Z.fmt("Z.Router.route: a route with the name '%@' already exists", name));
+    }
+
+    this.routes[name] = {matcher: matcher, generator: generator};
+
+    return this;
+  });
+
+  // Public: Starts the rotuer by causing it to start observing `hashchange`
+  // events as well as changes to the `hash` property.
+  //
+  // Returns nothing.
   this.def('start', function() {
-    this.__hashChangeListener__ = Z.bind(processHashChange, this);
+    this.observe('current', this, currentDidChange);
+    this.observe('hash', this, hashDidChange);
+    this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
     window.addEventListener('hashchange', this.__hashChangeListener__, false);
     this.__hashChangeListener__();
   });
 
+  // Public: Stops the router by causing it to stop observing `hashchange`
+  // events and changes to the `hash` property.
+  //
+  // Returns nothing.
   this.def('stop', function() {
+    this.stopObserving('current', this, currentDidChange);
+    this.stopObserving('hash', this, hashDidChange);
     window.removeEventListener('hashchange', this.__hashChangeListener__, false);
   });
 
-  this.def('route', function(name, pattern) {
-    this.routes().push(Z.Route.create(name, pattern));
-  });
+  // Internal: Takes a hash value and attempts to find a matching route. When a
+  // match is found, the callback is invoked with the route name and params.
+  // When a match can't be found then the errback is invoked with the hash
+  // value.
+  //
+  // hash - A string containing the current value of the location hash.
+  //
+  // Returns `true` if a match was found and `false` otherwise.
+  this.def('routeHash', function(hash) {
+    var name, match;
 
-  this.def('recognize', function(hash) {
-    var routes = this.routes().toNative(), i, len, params;
+    hash = hash.replace(stripHash, '');
 
-    for (i = 0, len = routes.length; i < len; i++) {
-      if ((params = routes[i].matchHash(hash))) {
-        return {route: routes[i], params: params};
+    for (name in this.routes) {
+      if (!this.routes.hasOwnProperty(name)) { continue; }
+
+      if ((match = this.routes[name].matcher.exec(hash))) {
+        this.callback(name, match.slice(1));
+        return true;
       }
     }
 
-    return null;
+    this.errback(hash);
+    return false;
   });
 
+  // Public: Sets the browser's location hash to the value of the `hash`
+  // property if it has changed since the last time `updateHash` was called.
   this.def('updateHash', function() {
-    var oldhash = this.location.hash.replace(/^#/, ''), newhash = this.hash();
-    if (newhash && newhash !== oldhash) {
+    var oldhash, newhash;
+    if (!this.__needsUpdate__) { return; }
+
+    oldhash = this.location.hash;
+    newhash = this.hash();
+
+    if (oldhash.replace(stripHash, '') !== newhash.replace(stripHash, '')) {
       this.__updatingHash__ = true;
       this.location.hash = newhash;
     }
+
+    this.__needsUpdate__ = false;
+  });
+
+  // Public: Generates a new hash value for the given route name and params.
+  //
+  // name   - A string containing the name of the route to generate the hash
+  //          for.
+  // params - A native object containing params that the route's generator
+  //          function expects.
+  //
+  // Returns a string containing the generated hash.
+  // Throws `Error` if a route with the given name does not exist.
+  this.def('generate', function(name, params) {
+    var route = this.routes[name], hash;
+
+    if (!route) {
+      throw new Error(Z.fmt("Z.Router.generate: unknown route name: '%@'", name));
+    }
+
+    hash = route.generator(params);
+
+    if (hash[0] !== '#') { hash = '#' + hash; }
+
+    return hash;
   });
 });
 
-}());
