@@ -668,9 +668,10 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
       throw new Error(Z.fmt("Z.State.goto: multiple pivot states found between state %@ and paths %@", this, paths.join(', ')));
     }
 
-    // if we're at a non-root state and the pivot is a concurrent state, then
-    // we're attempting to cross a concurrency boundary, which is not allowed
-    if (this.superstate && pivot.isConcurrent) {
+    // if the pivot state is a concurrent state and is not also the starting
+    // state, then we're attempting to cross a concurrency boundary, which is
+    // not allowed
+    if (pivot.isConcurrent && pivot !== this) {
       throw new Error(Z.fmt("Z.State.goto: one or more of the given paths are not reachable from state %@: %@", this, paths.join(', ')));
     }
 

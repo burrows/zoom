@@ -40,7 +40,7 @@ describe('Z.State.init', function() {
     expect(s.hasHistory).toBe(true);
   });
 
-  it('should raise an exception if `isConcurrent` and `hasHistory` are set', function() {
+  it('should throw an exception if `isConcurrent` and `hasHistory` are set', function() {
     expect(function() {
       Z.State.create('a', {isConcurrent: true, hasHistory: true});
     }).toThrow('Z.State.init: history states are not allowed on concurrent states');
@@ -243,32 +243,41 @@ describe('Z.State.goto', function() {
     });
   });
 
-  it('should raise an exception when the receiver state is not current', function() {
+  it('should throw an exception when the receiver state is not current', function() {
     expect(function() {
       d.goto('/a/e/f');
     }).toThrow(Z.fmt("Z.State.goto: state %@ is not current", d));
   });
 
-  it('should raise an exception when multiple pivot states are found between the receiver and the given destination paths', function() {
+  it('should throw an exception when multiple pivot states are found between the receiver and the given destination paths', function() {
     expect(function() {
       c.goto('/a/b/d', '/a/e/f');
     }).toThrow(Z.fmt("Z.State.goto: multiple pivot states found between state %@ and paths /a/b/d, /a/e/f", c));
   });
 
-  it('should raise an exception if any given destination state is not reachable from the receiver', function() {
+  it('should throw an exception if any given destination state is not reachable from the receiver', function() {
     root.goto('/a/e/g/h/i');
     expect(function() {
       i.goto('/a/e/g/k/l');
     }).toThrow(Z.fmt("Z.State.goto: one or more of the given paths are not reachable from state %@: /a/e/g/k/l", i));
   });
 
-  it('should raise an exception when given an invalid path', function() {
+  it('should not throw an exception when the pivot state is the start state and is concurrent', function() {
+    root.goto('/a/e/g/h/i', '/a/e/g/k/l');
+    expect(root.current()).toEq(['/a/e/g/h/i', '/a/e/g/k/l']);
+    expect(function() {
+      g.goto('./h/j');
+    }).not.toThrow();
+    expect(root.current()).toEq(['/a/e/g/h/j', '/a/e/g/k/l']);
+  });
+
+  it('should throw an exception when given an invalid path', function() {
     expect(function() {
       c.goto('/a/b/x');
     }).toThrow(Z.fmt("Z.State.resolve: could not resolve path '/a/b/x' from state %@", c));
   });
 
-  it('should raise an exception when given paths to multiple clustered states', function() {
+  it('should throw an exception when given paths to multiple clustered states', function() {
     expect(function() {
       c.goto('/a/e/f', '/a/e/g');
     }).toThrow(Z.fmt("Z.State.enterClustered: attempted to enter multiple substates of %@: f, g", e));
