@@ -59,6 +59,14 @@ describe('Z.ListView', function() {
       expect(v.get('subviews.size')).toBe(3);
       expect(v.subviews().pluck('content')).toEq(Z.A(p1, p2, p3));
     });
+
+    it('should invoke the `createItemView` method to create the item view', function() {
+      var v = TestListView.create({content: Z.A()});
+
+      spyOn(v, 'createItemView').andCallThrough();
+      v.content().push(p1);
+      expect(v.createItemView).toHaveBeenCalledWith(p1);
+    });
   });
 
   describe('removing content items', function() {

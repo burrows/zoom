@@ -38,10 +38,10 @@ Z.ListView = Z.View.extend(function() {
   //
   // Returns nothing.
   function insertItemViews(items, idx) {
-    var itemViewType = this.itemViewType(), i, size;
+    var i, size;
 
     for (i = 0, size = items.size(); i < size; i++) {
-      this.addSubview(itemViewType.create({content: items.at(i)}), idx + i);
+      this.addSubview(this.createItemView(items.at(i)), idx + i);
     }
   }
 
@@ -115,6 +115,16 @@ Z.ListView = Z.View.extend(function() {
   // method must be overridden by subtypes.
   this.def('itemViewType', function() {
     throw new Error('Z.ListView.itemViewType: this method must be overridden by the sub-type');
+  });
+
+  // Public: Creates a new item view instance. Override this method if you want
+  // to customize how item views are created.
+  //
+  // content - The object to set as the `content` property on the item view.
+  //
+  // Returns the item view instance.
+  this.def('createItemView', function(content) {
+    return this.itemViewType().create({content: content});
   });
 });
 
