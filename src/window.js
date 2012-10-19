@@ -40,6 +40,7 @@ Z.Window = Z.View.extend(function() {
   this.def('init', function(view, opts) {
     var self = this;
     this.supr(opts);
+    this.window(this);
     this.mainView(this.addSubview(view.isType ? view.create() : view));
     this.mainView().each(function(v) { v.window(self); });
   });

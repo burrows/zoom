@@ -39,6 +39,11 @@ describe('Z.Window', function() {
       expect(w.get('mainView.sv1.window')).toBe(w);
       expect(w.get('mainView.sv2.window')).toBe(w);
     });
+
+    it('should set itself as its `window` property', function() {
+      var w = Z.Window.create(TestView);
+      expect(w.window()).toBe(w);
+    });
   });
 
   describe('node property', function() {

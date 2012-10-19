@@ -12,6 +12,8 @@ Z.RightMouseUp   = 'RightMouseUp';
 Z.OtherMouseDown = 'OtherMouseDown';
 Z.OtherMouseUp   = 'OtherMouseUp';
 Z.MouseMove      = 'MouseMove';
+Z.MouseEnter     = 'MouseEnter';
+Z.MouseExit      = 'MouseExit';
 
 // Public: Provides a `Z.Object` wrapper type for native browser event objects.
 Z.Event = Z.Object.extend(function() {
@@ -77,6 +79,11 @@ Z.MouseEvent = Z.Event.extend(function() {
   this.def('handler', function() {
     return this.supr().replace(/^leftM/, 'm');
   });
+
+  // Internal: Specifies the properties for the `toString` method to display.
+  this.def('toStringProperties', function() {
+    return this.supr().concat('kind', 'view');
+  });
 });
 
 // Public: A `Z.Event` wrapper for browser native key events.
@@ -98,13 +105,17 @@ Z.KeyEvent = Z.Event.extend(function() {
 //     console.log(n.current); // #<Z.MouseEvent:156>
 //   }, {current: true});
 Z.EventListener = Z.Object.extend(function() {
-  var keyEvents, mouseEvents;
+  var viewClassRe, keyEvents, mouseEvents;
+
+  // Internal: A regular expression for matching against a DOM element's
+  // `className` property to determine if the element is a view's node.
+  viewClassRe = /\bz-view\b/;
 
   // Internal: List of native key events to listen for.
   keyEvents = ['keydown', 'keyup'];
 
   // Internal: List of native mouse events to listen for.
-  mouseEvents = ['mousemove', 'mousedown', 'mouseup'];
+  mouseEvents = ['mousemove', 'mousedown', 'mouseup', 'mouseover', 'mouseout'];
 
   // Internal: Builds a `Z.KeyEvent` object from the given native key event.
   function keyEvent(native) {
@@ -129,6 +140,12 @@ Z.EventListener = Z.Object.extend(function() {
 
     if (type === 'mousemove') {
       kind = Z.MouseMove;
+    }
+    else if (type === 'mouseover') {
+      kind = Z.MouseEnter;
+    }
+    else if (type === 'mouseout') {
+      kind = Z.MouseExit;
     }
     else {
       button = {0: 'left', 2: 'right'}[native.button] || 'other';
@@ -159,7 +176,21 @@ Z.EventListener = Z.Object.extend(function() {
 
   // Internal: The mouse event listener - each native mouse event is converted to
   // a `Z.Event` object and set to the `event` property.
-  function processMouseEvent(e) { this.callback(mouseEvent.call(this, e)); }
+  function processMouseEvent(e) {
+    var target = e.target, related = e.relatedTarget;
+
+    // ignore mouseover and mouseout events where the target node is not a
+    // `Z.View` node and those where the mouseout is triggered upon entering a
+    // child node from a parent node or a mouseover is triggered upon entering a
+    // parent node from a child node
+    if ((e.type === 'mouseover' || e.type === 'mouseout') &&
+        ((!viewClassRe.test(target.className) ||
+        (related && target.contains(related))))) {
+      return;
+    }
+
+    this.callback(mouseEvent.call(this, e));
+  }
 
   // Internal: Registers key listeners on the `document` node.
   function addKeyListeners() {
