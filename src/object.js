@@ -9,8 +9,8 @@ var objectId = 1, slice = Array.prototype.slice;
 //
 // The KVC/KVO implementation is highly influenced by Cocoa:
 //
-// * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentati
-// * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#document
+// * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentation/cocoa/conceptual/KeyValueCoding/Articles/KeyValueCoding.html)
+// * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#documentation/cocoa/conceptual/KeyValueObserving/KeyValueObserving.html)
 //
 // Zoom uses a custom object system that leverages the prototypal nature of
 // javascript. There are no classes in Zoom, only type objects and concrete

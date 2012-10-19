@@ -302,11 +302,11 @@ describe('Z.H', function() {
     it('should throw an exception', function() {
       expect(function() {
         Z.H('blah');
-      }).toThrow('Z.H: given 1 arguments, expected 1 plain object or an even number of arguments');
+      }).toThrow('Z.H: given 1 arguments, expected 1 native object or an even number of arguments');
 
       expect(function() {
         Z.H(1,2,3);
-      }).toThrow('Z.H: given 3 arguments, expected 1 plain object or an even number of arguments');
+      }).toThrow('Z.H: given 3 arguments, expected 1 native object or an even number of arguments');
     });
   });
 });

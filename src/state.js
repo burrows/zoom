@@ -501,7 +501,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   });
 
   // Public: An observable property containing an array of the paths to all
-  // current leaft states.
+  // current leaf states.
   this.prop('current', {
     readonly: true,
     get: function() {
@@ -523,7 +523,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   // Public: The `Z.State` constructor.
   //
   // name - A string containing the name of the state.
-  // opts - An objection containing zero or more of the following keys (default:
+  // opts - An object containing zero or more of the following keys (default:
   //        `null`).
   //        isConcurrent - Makes the state's substates concurrent.
   //        hasHistory   - Causes the state to keep track of its history state.
@@ -693,6 +693,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   // args... - Zero or more arguments that get passed on to the handler methods.
   //
   // Returns a boolean indicating whether or not the action was handled.
+  // Throws `Error` if the state is not current.
   this.def('send', function() {
     var args = slice.call(arguments), handled;
 

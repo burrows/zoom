@@ -465,7 +465,7 @@ Z.hash = function(o) {
 
 // Public: A shortcut for constructing `Z.Hash` concrete instances from a list
 // of key/value pairs or a native object. When given an even number of
-// arguments, each odd argument is treated as a key and each odd argument the
+// arguments, each odd argument is treated as a key and each event argument the
 // corresponding value. If given a single native object argument, each key/value
 // pair in the native object are inserted into the hash.
 //
@@ -501,7 +501,7 @@ Z.H = function() {
     return h;
   }
   else {
-    throw new Error(Z.fmt("Z.H: given %@ arguments, expected 1 plain object or an even number of arguments", len));
+    throw new Error(Z.fmt("Z.H: given %@ arguments, expected 1 native object or an even number of arguments", len));
   }
 };
 
