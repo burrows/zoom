@@ -43,11 +43,27 @@ Z.App = Z.Object.extend(function() {
   // Returns nothing.
   function processEvent(e) { if (this.dispatchEvent(e)) { this.run(); } }
 
+  // Private: Handles location hash changes by sending the action `didRouteTo`
+  // to the app's statechart with the new route name and any params extracted
+  // from the hash.
+  //
+  // name   - The name of the route that matched the location hash.
+  // params - An array of parameters extracted from matching the route's regex
+  //          agains the location hash.
+  //
+  // Returns nothing.
   function processRouteChange(name, params) {
     this.statechart().send('didRouteTo', name, params);
     this.run();
   }
 
+  // Private: Handles location hash changes that cannot be matched to a defined
+  // route by sending the action `didRouteToUnknown` to the statechart with the
+  // current location hash.
+  //
+  // hash - The location hash value that could not be matched to a route.
+  //
+  // Returns nothing.
   function processUnknownRouteChange(hash) {
     this.statechart().send('didRouteToUnknown', hash);
     this.run();
