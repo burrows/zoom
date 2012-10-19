@@ -268,7 +268,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('removeSubviewNode', function(subview) {
-    var node = this.node, child = subview.node;
+    var node = this.subviewContainerNode(), child = subview.node;
 
     if (child.parentNode === node) {
       node.removeChild(child);
@@ -288,7 +288,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('insertSubviewNode', function(subview, idx) {
-    var node = this.node, child = subview.node;
+    var node = this.subviewContainerNode(), child = subview.node;
 
     if (child === node.childNodes[idx]) { return this; }
 
@@ -299,6 +299,27 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
     return this;
   });
+
+  // Public: Returns the node to use for attaching and detaching subview nodes.
+  // By default this simply returns the view's `node` property, but you may want
+  // to override this in order to place content around your view's subviews.
+  //
+  // Examples
+  //
+  //   MyView = Z.View.extend(function() {
+  //     this.def('render', function() {
+  //       this.node.innerHTML = '<div class="header"></div>' +
+  //                             '<div class="body"></div>' +
+  //                             '<div class="footer"></div>';
+  //     });
+  //
+  //     this.def('subviewContainerNode', function() {
+  //       return this.node.childNodes[1];
+  //     });
+  //   });
+  //
+  // Returns a DOM node object.
+  this.def('subviewContainerNode', function() { return this.node; });
 
   // Public: This method is called immediately before the receiver's `node` is
   // attached to its `superview`'s `node`. By default this method does nothing
