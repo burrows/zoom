@@ -105,11 +105,7 @@ Z.KeyEvent = Z.Event.extend(function() {
 //     console.log(n.current); // #<Z.MouseEvent:156>
 //   }, {current: true});
 Z.EventListener = Z.Object.extend(function() {
-  var viewClassRe, keyEvents, mouseEvents;
-
-  // Internal: A regular expression for matching against a DOM element's
-  // `className` property to determine if the element is a view's node.
-  viewClassRe = /\bz-view\b/;
+  var keyEvents, mouseEvents;
 
   // Internal: List of native key events to listen for.
   keyEvents = ['keydown', 'keyup'];
@@ -177,16 +173,16 @@ Z.EventListener = Z.Object.extend(function() {
   // Internal: The mouse event listener - each native mouse event is converted to
   // a `Z.Event` object and set to the `event` property.
   function processMouseEvent(e) {
-    var target = e.target, related = e.relatedTarget;
+    var target, related, view;
 
-    // ignore mouseover and mouseout events where the target node is not a
-    // `Z.View` node and those where the mouseout is triggered upon entering a
-    // child node from a parent node or a mouseover is triggered upon entering a
-    // parent node from a child node
-    if ((e.type === 'mouseover' || e.type === 'mouseout') &&
-        ((!viewClassRe.test(target.className) ||
-        (related && target.contains(related))))) {
-      return;
+    // ignore mouseover and mouseout events where the mouseout is triggered upon
+    // entering a child node from a parent node or a mouseover is triggered upon
+    // entering a parent node from a child node
+    if (e.type === 'mouseover' || e.type === 'mouseout') {
+      target  = e.target;
+      related = e.relatedTarget;
+      view    = Z.View.forNode(target);
+      if (!view || (related && view.node.contains(related))) { return; }
     }
 
     this.callback(mouseEvent.call(this, e));
