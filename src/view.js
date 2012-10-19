@@ -25,6 +25,19 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Internal: Observer callback for `displayProperties`.
   function displayPathObserver() { this.needsDisplay(true); }
 
+  // Internal: Builds and returns the view's DOM node but does not attach it to
+  // the document.
+  function buildNode() {
+    var id      = 'z-view-' + this.objectId(),
+        node    = document.createElement(this.tag),
+        classes = Z.A('z-view').concat(this.classes());
+
+    node.id = id;
+    node.className = classes.join(' ');
+
+    return node;
+  }
+
   // Public: A native property that indicates the HTML tag to use when building
   // the view's `node`. Set this property to generate a `node` that is something
   // other than a div.
@@ -144,7 +157,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     this.supr(props);
     views[this.objectId()] = this;
 
-    this.node = this.buildNode();
+    this.node = buildNode.call(this);
     this.__rendered__ = false;
 
     if (subviewTypes) {
@@ -177,24 +190,6 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     subviews.invoke('destroy');
 
     return this;
-  });
-
-  // Public: Builds the view's DOM node but does not attach it to the document.
-  // Creation of the node can be customized by overriding this method. Be sure
-  // to invoke `supr` when overriding to allow this method to actualy create the
-  // node as it adds `class` and `id` attributes the rest of the view system
-  // expects to be present.
-  //
-  // Returns the DOM node.
-  this.def('buildNode', function() {
-    var id      = 'z-view-' + this.objectId(),
-        node    = document.createElement(this.tag),
-        classes = Z.A('z-view').concat(this.classes());
-
-    node.id = id;
-    node.className = classes.join(' ');
-
-    return node;
   });
 
   // Public: Renders the view into its node. By default this method does
