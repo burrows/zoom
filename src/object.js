@@ -108,7 +108,8 @@ Z.Object.open(function() {
     get       : null,
     set       : null,
     readonly  : false,
-    def       : null
+    def       : null,
+    cache     : false
   };
 
   // Internal: Returns the current value of the property indicated by the given
@@ -120,13 +121,20 @@ Z.Object.open(function() {
   //
   // Returns the current value of the property.
   function getProperty(k) {
-    var desc = this[Z.fmt("__z_property_%@__", k)], prop = '__' + k + '__', v;
+    var desc  = this['__z_property_' + k + '__'],
+        prop  = '__' + k + '__',
+        cache = '__' + k + '_' + 'cached' + '__',
+        v;
 
     if (!desc) { return this.getUnknownProperty(k); }
+    if (desc.cache && this.hasOwnProperty(cache)) { return this[cache]; }
 
     v = desc.get ? desc.get.call(this) : this[prop];
+    v = (v === undefined || v === null) ? desc.def : v;
 
-    return v === undefined || v === null ? desc.def : v;
+    if (desc.cache) { this[cache] = v; }
+
+    return v;
   }
 
   // Internal: Sets the value for a property. If a property with the given name
@@ -479,7 +487,9 @@ Z.Object.open(function() {
   // opts - A native object containing zero or more of the following:
   //   dependsOn - Pass a list of keys or key paths that the property depends
   //               on. This should be used for computed properties to allow them
-  //               to be observed.
+  //               to be observed. Its especially important to declare all
+  //               dependent paths for cached properties in order to clear the
+  //               cache when any dependencies change.
   //   auto      - The key-value observing system will automatically notify
   //               observers of the property when it changes when this option is
   //               set. If set to `false`, you should use the
@@ -501,6 +511,9 @@ Z.Object.open(function() {
   //   readonly  - Prevents setting of the property. Any attempts to set the
   //               property will throw an exception.
   //   def       - Specify a default value for the property.
+  //   cache     - Caches the result the first time the property is computed and
+  //               returns the cached value on subsequent gets. The cache will
+  //               be cleared when any dependant paths change.
   //
   // Returns nothing.
   this.def('prop', function(name, opts) {
@@ -971,7 +984,10 @@ Z.Object.open(function() {
   // Returns the receiver.
   this.def('didChangeProperty', function(k, opts) {
     var registrations = (this.__z_registrations__ || {})[k],
+        cache = '__' + k + '_' + 'cached' + '__',
         type, i, len, r, val, notification;
+
+    delete this[cache];
 
     if (!registrations) { return; }
 

@@ -522,6 +522,56 @@ describe('Z.Object KVC support:', function() {
       p.get('doesntExist');
       expect(p.getUnknownProperty).toHaveBeenCalledWith('doesntExist');
     });
+
+    describe('for a cached property', function() {
+      var Foo = Z.Object.extend(function() {
+        this.prop('a');
+        this.prop('twicea', {
+          cache: true,
+          dependsOn: ['a'],
+          get: function() { called++; return this.a() * 2; }
+        });
+      }), called;
+
+      beforeEach(function() { called = 0; });
+
+      it('should call the getter function to initially compute the value', function() {
+        var f = Foo.create({a: 9});
+
+        expect(f.twicea()).toBe(18);
+        expect(called).toBe(1);
+      });
+
+      it('should return the cached value on subsequent gets after the first', function() {
+        var f = Foo.create({a: 7});
+
+        expect(f.twicea()).toBe(14);
+        expect(called).toBe(1);
+        expect(f.twicea()).toBe(14);
+        expect(called).toBe(1);
+        expect(f.get('twicea')).toBe(14);
+        expect(called).toBe(1);
+      });
+
+      it('should clear the cached value when a dependent path changes', function() {
+        var f = Foo.create({a: 3});
+
+        expect(f.twicea()).toBe(6);
+        expect(called).toBe(1);
+        expect(f.twicea()).toBe(6);
+        expect(called).toBe(1);
+        f.a(5)
+        expect(f.twicea()).toBe(10);
+        expect(called).toBe(2);
+        expect(f.get('twicea')).toBe(10);
+        expect(called).toBe(2);
+        f.set('a', 21);
+        expect(f.twicea()).toBe(42);
+        expect(called).toBe(3);
+        expect(f.get('twicea')).toBe(42);
+        expect(called).toBe(3);
+      });
+    });
   });
 
   describe('.getUnknownProperty', function() {
