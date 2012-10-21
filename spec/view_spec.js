@@ -553,21 +553,21 @@ describe('Z.View', function() {
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.body .test-view-1')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([sv1.node]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([sv1.node]);
 
       v.addSubview(sv2);
       v.display();
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.body .test-view-2')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([sv1.node, sv2.node]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([sv1.node, sv2.node]);
 
       v.addSubview(sv3);
       v.display();
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.body .test-view-3')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([sv1.node, sv2.node, sv3.node]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([sv1.node, sv2.node, sv3.node]);
     });
 
     it('should detach subview nodes from the node returned by the `subviewContainerNode` method', function() {
@@ -594,25 +594,25 @@ describe('Z.View', function() {
 
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([sv1.node, sv2.node, sv3.node]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([sv1.node, sv2.node, sv3.node]);
 
       v.removeSubview(sv2);
       v.display();
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([sv1.node, sv3.node]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([sv1.node, sv3.node]);
 
       v.removeSubview(sv1);
       v.display();
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([sv3.node]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([sv3.node]);
 
       v.removeSubview(sv3);
       v.display();
       expect(v.node.querySelector('.header')).not.toEqual(null);
       expect(v.node.querySelector('.footer')).not.toEqual(null);
-      expect(v.node.childNodes[1].childNodes).toEq([]);
+      expect(slice.call(v.node.childNodes[1].childNodes)).toEq([]);
     });
 
     it('should set `needsDisplay` property to `false`', function() {
