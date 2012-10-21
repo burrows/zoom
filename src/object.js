@@ -149,7 +149,7 @@ Z.Object.open(function() {
   // Returns `null`.
   // Throws `Error` if the property is marked as readonly.
   function setProperty(k, v) {
-    var prop = this[Z.fmt("__z_property_%@__", k)];
+    var prop = this['__z_property_' + k + '__'];
     if (!prop) { return this.setUnknownProperty(k, v); }
 
     if (prop.readonly) {
@@ -162,7 +162,7 @@ Z.Object.open(function() {
       prop.set.call(this, v);
     }
     else {
-      this[Z.fmt("__%@__", k)] = v;
+      this['__' + k + '__'] = v;
     }
 
     if (prop.auto) { this.didChangeProperty(k); }
@@ -519,7 +519,7 @@ Z.Object.open(function() {
   this.def('prop', function(name, opts) {
     opts = Z.merge({}, defaultPropertyOpts, opts);
 
-    this[Z.fmt("__z_property_%@__", name)] = opts;
+    this['__z_property_' + name + '__'] = opts;
 
     if (name.match(/^[\w$]+/)) {
       this.def(name, function(v) {
@@ -559,7 +559,7 @@ Z.Object.open(function() {
   // Returns `true` if the object has a property of the given name and `false`
   //   otherwise.
   this.def('hasProperty', function(name) {
-    return typeof this[Z.fmt("__z_property_%@__", name)] === 'object';
+    return typeof this['__z_property_' + name + '__'] === 'object';
   });
 
   // Public: The default `Z.Object` initializer. Takes a native object mapping
