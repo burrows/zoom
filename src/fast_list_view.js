@@ -51,27 +51,22 @@ Z.FastListView = Z.View.extend(function() {
         subviews  = this.subviews(),
         first, i, len, subview, items, item;
 
-    this.node.childNodes[0].style.height   = (nitems * rowHeight) + 'px';
-    this.node.childNodes[0].style.position = 'relative';
+    // ensure that the container is tall enough for all content items
+    this.node.childNodes[0].style.height = (nitems * rowHeight) + 'px';
 
+    // sync the scroll position with the `top` property
     if (this.node.scrollTop !== top) { this.node.scrollTop = top; }
 
+    // determine which content items to render
     first = Math.max(Math.floor(top / rowHeight) - (overflow / 2), 0);
     items = (content.slice(first, desired) || Z.A()).toNative();
 
+    // sync the content items we want to display with their appropriate subviews
     for (i = 0, len = items.length; i < len; i++) {
-      item    = items[i];
-      subview = subviews.at((i + first) % desired);
-
-      if (!subview) {
-        subview = this.addSubview(this.createItemView(item));
-        subview.display();
-      }
-
-      if (subview.content() !== item) {
-        subview.content(item);
-        subview.display();
-      }
+      subview = subviews.at((i + first) % desired) ||
+        this.addSubview(this.createItemView(items[i]));
+      if (subview.content() !== items[i]) { subview.content(items[i]); }
+      subview.displayIfNeeded();
 
       subview.node.style.display  = 'block';
       subview.node.style.position = 'absolute';
