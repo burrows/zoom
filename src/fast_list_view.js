@@ -1,22 +1,29 @@
 Z.FastListView = Z.View.extend(function() {
+  function resizeListener() { this.height(this.node.offsetHeight); this.display(); }
+  function scrollListener() { this.top(this.node.scrollTop); this.display(); }
+
   this.prop('content');
+  this.prop('height', {def: 0});
+  this.prop('top', {def: 0});
   this.prop('rowHeight', {def: 30});
   this.prop('overflow', {def: 10});
 
   this.def('displayPaths', function() {
-    return this.supr().concat('content.@', 'rowHeight', 'overflow');
+    return this.supr().concat('content.@', 'height', 'top', 'rowHeight', 'overflow');
   });
 
   this.def('init', function(props) {
     this.supr(props);
-    this.__display__ = Z.bind(this.display, this);
-    window.addEventListener('resize', this.__display__, false);
-    this.node.addEventListener('scroll', this.__display__, false);
+    this.__resizeListener__ = Z.bind(resizeListener, this);
+    this.__scrollListener__ = Z.bind(scrollListener, this);
+
+    window.addEventListener('resize', this.__resizeListener__, false);
+    this.node.addEventListener('scroll', this.__scrollListener__, false);
   });
 
   this.def('destroy', function() {
-    window.removeEventListener('resize', this.__display__, false);
-    this.node.removeEventListener('scroll', this.__display__, false);
+    window.removeEventListener('resize', this.__resizeListener__, false);
+    this.node.removeEventListener('scroll', this.__scrollListener__, false);
     return this.supr();
   });
 
@@ -36,9 +43,9 @@ Z.FastListView = Z.View.extend(function() {
   this.def('update', function() {
     var content   = this.content(),
         nitems    = content.size(),
-        height    = this.node.offsetHeight,
-        rowHeight = this.get('rowHeight'),
-        top       = this.node.scrollTop,
+        height    = this.height(),
+        rowHeight = this.rowHeight(),
+        top       = this.top(),
         overflow  = this.overflow(),
         desired   = Math.min(Math.floor(height / rowHeight + overflow), nitems),
         subviews  = this.subviews(),
@@ -46,6 +53,8 @@ Z.FastListView = Z.View.extend(function() {
 
     this.node.childNodes[0].style.height   = (nitems * rowHeight) + 'px';
     this.node.childNodes[0].style.position = 'relative';
+
+    if (this.node.scrollTop !== top) { this.node.scrollTop = top; }
 
     first = Math.max(Math.floor(top / rowHeight) - (overflow / 2), 0);
     items = (content.slice(first, desired) || Z.A()).toNative();
@@ -82,7 +91,14 @@ Z.FastListView = Z.View.extend(function() {
   });
 
   this.def('didAttachNode', function() {
+    this.height(this.node.offsetHeight);
+    this.top(this.node.scrollTop);
     this.display();
+  });
+
+  this.def('scrollTo', function(item) {
+    var i = Z.isNumber(item) ? item : (this.content().index(item) || 0);
+    this.top(this.rowHeight() * i);
   });
 });
 

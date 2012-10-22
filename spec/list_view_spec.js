@@ -19,7 +19,7 @@ TestItemView = Z.View.extend(function() {
 
   this.prop('content');
 
-  this.def('draw', function() {
+  this.def('render', function() {
     var p = this.content(),
         s = '<span class="first">%@</span><span class="last">%@</span>';
     this.node.innerHTML = Z.fmt(s, p.first(), p.last());
