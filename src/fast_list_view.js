@@ -122,7 +122,7 @@ Z.FastListView = Z.View.extend(function() {
         overflow  = this.overflow(),
         desired   = Math.min(Math.floor(height / rowHeight + overflow), nitems),
         subviews  = this.subviews(),
-        first, i, len, subview, items, item;
+        first, i, len, subview, items, display;
 
     // ensure that the container is tall enough for all content items
     this.node.childNodes[0].style.height = (nitems * rowHeight) + 'px';
@@ -136,17 +136,27 @@ Z.FastListView = Z.View.extend(function() {
 
     // sync the content items we want to display with their appropriate subviews
     for (i = 0, len = items.length; i < len; i++) {
-      subview = subviews.at((i + first) % desired) ||
-        this.addSubview(this.createItemView(items[i]));
-      if (subview.content() !== items[i]) { subview.content(items[i]); }
-      subview.displayIfNeeded();
+      display = false;
+      subview = subviews.at((i + first) % desired);
 
-      subview.node.style.display  = 'block';
-      subview.node.style.position = 'absolute';
-      subview.node.style.top      = (rowHeight * (i + first)) + 'px';
-      subview.node.style.height   = rowHeight;
-      subview.node.style.left     = 0;
-      subview.node.style.right    = 0;
+      if (!subview) {
+        subview = this.addSubview(this.createItemView(items[i]));
+        display = true;
+      }
+
+      if (subview.content() !== items[i]) {
+        subview.content(items[i]);
+        display = true;
+      }
+
+      if (display) {
+        subview.node.style.position = 'absolute';
+        subview.node.style.top      = (rowHeight * (i + first)) + 'px';
+        subview.node.style.height   = rowHeight;
+        subview.node.style.left     = 0;
+        subview.node.style.right    = 0;
+        subview.display();
+      }
     }
 
     if (subviews.size() > items.length) {
