@@ -22,7 +22,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // node. When views are destroyed they are removed from this cache.
   views = {};
 
-  // Internal: Observer callback for `displayProperties`.
+  // Internal: Observer callback for `displayPaths`.
   function displayPathObserver() { this.needsDisplay(true); }
 
   // Internal: Builds and returns the view's DOM node but does not attach it to
