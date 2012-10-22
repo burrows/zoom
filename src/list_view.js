@@ -91,7 +91,7 @@ Z.ListView = Z.View.extend(function() {
   // can set this property to use a tag other than `ul`.
   this.tag = 'ul';
 
-  // Public: A property pointing to an array of objects for the list view to
+  // Public: A property pointing to a `Z.Array` of objects for the list view to
   // display. The list view observes changes to this property and automatically
   // syncs any changes to its `subviews` array.
   this.prop('content');
