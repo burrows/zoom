@@ -18,7 +18,8 @@ SRCS := util.js           \
         app.js            \
         router.js         \
         container_view.js \
-        list_view.js
+        list_view.js      \
+        fast_list_view.js
 
 default: spec
 
