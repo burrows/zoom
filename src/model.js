@@ -823,6 +823,7 @@ Z.Query = Z.SortedArray.extend(function() {
     this.modelType      = type;
     this.matchFn        = opts.matchFn;
     this.matchDependsOn = opts.matchDependsOn;
+    this.objects        = {};
 
     if (opts.orderBy) { sortOpts.path = opts.orderBy; }
     if (opts.isDescending) { sortOpts.isDescending = true; }
@@ -835,12 +836,21 @@ Z.Query = Z.SortedArray.extend(function() {
   });
 
   this.def('check', function(model) {
+    var id;
+
     if (!model.isA(this.modelType)) { return; }
+
     if (this.matchFn(model)) {
-      if (!this.contains(model)) { this.insert(model); }
+      id = model.id().toString();
+
+      if (!this.objects[id]) {
+        this.objects[id] = 1;
+        this.insert(model);
+      }
     }
     else {
       this.remove(model);
+      delete this.objects[id];
     }
   });
 
