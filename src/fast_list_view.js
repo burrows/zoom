@@ -137,7 +137,7 @@ Z.FastListView = Z.View.extend(function() {
         overflow  = this.overflow(),
         desired   = Math.min(Math.floor(height / rowHeight + overflow), nitems),
         subviews  = this.subviews(),
-        first, i, len, subview, items, display;
+        first, last, i, n, item, subview, items, display;
 
     // ensure that the container is tall enough for all content items
     this.node.childNodes[0].style.height = (nitems * rowHeight) + 'px';
@@ -147,26 +147,29 @@ Z.FastListView = Z.View.extend(function() {
 
     // determine which content items to render
     first = Math.max(Math.floor(top / rowHeight) - (overflow / 2), 0);
-    items = (content.slice(first, desired) || Z.A()).toNative();
+    last  = Math.min(nitems - 1, first + desired - 1);
+    first = Math.max(0, last - desired + 1);
+    n     = last - first + 1;
 
     // sync the content items we want to display with their appropriate subviews
-    for (i = 0, len = items.length; i < len; i++) {
+    for (i = first; i <= last; i++) {
+      item    = content.at(i);
       display = false;
-      subview = subviews.at((i + first) % desired);
+      subview = subviews.at(i % n);
 
       if (!subview) {
-        subview = this.addSubview(this.createItemView(items[i]));
+        subview = this.addSubview(this.createItemView(item));
         display = true;
       }
 
-      if (subview.content() !== items[i]) {
-        subview.content(items[i]);
+      if (subview.content() !== item) {
+        subview.content(item);
         display = true;
       }
 
       if (display) {
         subview.node.style.position = 'absolute';
-        subview.node.style.top      = (rowHeight * (i + first)) + 'px';
+        subview.node.style.top      = (rowHeight * i) + 'px';
         subview.node.style.height   = rowHeight;
         subview.node.style.left     = 0;
         subview.node.style.right    = 0;
@@ -174,9 +177,7 @@ Z.FastListView = Z.View.extend(function() {
       }
     }
 
-    if (subviews.size() > items.length) {
-      subviews.slice(items.length).invoke('remove');
-    }
+    if (subviews.size() > n) { subviews.slice(n).invoke('remove'); }
   });
 
   // Internal: Tells the view system to use the container node to attach
