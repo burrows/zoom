@@ -21,7 +21,7 @@
 // positioned within the container such that it appears at the appropriate
 // offset.
 Z.FastListView = Z.View.extend(function() {
-  // Private: The callback function for the `window`'s `resize` event. Resizing
+  // Internal: The callback function for the `window`'s `resize` event. Resizing
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
   function resizeListener() {
@@ -31,20 +31,29 @@ Z.FastListView = Z.View.extend(function() {
     }
   }
 
-  // Private: The callback function for the `node`'s `scroll` event. When the
+  // Internal: The callback function for the `node`'s `scroll` event. When the
   // view is scrolled we must adjust the `top` property and re-render the
   // subviews.
   function scrollListener() { this.top(this.node.scrollTop); this.display(); }
+
+  // Internal: Observes changes to the `itemViewType` property and replaces all
+  // existing subviews with instances of the new item view type.
+  function itemViewTypeDidChange() {
+    var self = this;
+    this.subviews().each(function(sv) {
+      self.replaceSubview(sv, self.createItemView(sv.content()));
+    });
+  }
 
   // Public: A property pointing to a `Z.Array` of objects for the list view to
   // display.
   this.prop('content');
 
-  // Private: The height of the list view. This property is managed by the view
+  // Internal: The height of the list view. This property is managed by the view
   // itself and should not be set by client code.
   this.prop('height', {def: 0});
 
-  // Private: The current scroll offset. This property is managed by the view
+  // Internal: The current scroll offset. This property is managed by the view
   // itslef and should not be set by client code. You can programtically adjust
   // the scroll position however with the `scrollTo` method.
   this.prop('top', {def: 0});
@@ -58,13 +67,17 @@ Z.FastListView = Z.View.extend(function() {
   // overflow views allow scrolling to look smooth.
   this.prop('overflow', {def: 10});
 
-  // Private: Returns a list of property paths that trigger this view to update
+  // Public: The `Z.View` subtype to use for content item views. This must be
+  // specified in sub-types and must have a `content` property.
+  this.prop('itemViewType');
+
+  // Internal: Returns a list of property paths that trigger this view to update
   // itself.
   this.def('displayPaths', function() {
     return this.supr().concat('content.@', 'height', 'top', 'rowHeight', 'overflow');
   });
 
-  // Private: The `Z.FastListView` constructor. This is overridden in order to
+  // Internal: The `Z.FastListView` constructor. This is overridden in order to
   // setup the `resize` and `scroll` event listeners.
   this.def('init', function(props) {
     this.supr(props);
@@ -73,20 +86,16 @@ Z.FastListView = Z.View.extend(function() {
 
     window.addEventListener('resize', this.__resizeListener__, false);
     this.node.addEventListener('scroll', this.__scrollListener__, false);
+    this.observe('itemViewType', this, itemViewTypeDidChange);
   });
 
-  // Private: The `Z.FastListView` destructor. This is overridden in order to
+  // Internal: The `Z.FastListView` destructor. This is overridden in order to
   // remove the event listeners setup in `init`.
   this.def('destroy', function() {
     window.removeEventListener('resize', this.__resizeListener__, false);
     this.node.removeEventListener('scroll', this.__scrollListener__, false);
+    this.stopObserving('itemViewType', this, itemViewTypeDidChange);
     return this.supr();
-  });
-
-  // Public: Returns the `Z.View` subtype to use for content item views. This
-  // method must be overridden by subtypes.
-  this.def('itemViewType', function() {
-    throw new Error('Z.FastListView.itemViewType: this method must be overridden by the sub-type');
   });
   
   // Public: Creates a new item view instance. Override this method if you want
@@ -96,10 +105,16 @@ Z.FastListView = Z.View.extend(function() {
   //
   // Returns the item view instance.
   this.def('createItemView', function(content) {
-    return this.itemViewType().create({content: content});
+    var type = this.itemViewType();
+
+    if (!type) {
+      throw new Error(Z.fmt("Z.FastListView.createItemView: `itemViewType` is not defined: %@", this));
+    }
+
+    return type.create({content: content});
   });
 
-  // Private: Renders the view by creating the container div and then invoking
+  // Internal: Renders the view by creating the container div and then invoking
   // the `update` method to setup the subviews.
   //
   // Returns nothing.
@@ -108,7 +123,7 @@ Z.FastListView = Z.View.extend(function() {
     this.update();
   });
 
-  // Private: Updates the view by syncing the `subviews` area to the list of
+  // Internal: Updates the view by syncing the `subviews` area to the list of
   // content items that should be displayed based on the views current `height`,
   // `rowHeight`, `top`, and `overflow` properties.
   //
@@ -164,13 +179,13 @@ Z.FastListView = Z.View.extend(function() {
     }
   });
 
-  // Private: Tells the view system to use the container node to attach subviews
-  // instead of `node`.
+  // Internal: Tells the view system to use the container node to attach
+  // subviews instead of `node`.
   this.def('subviewContainerNode', function() {
     return this.node.childNodes[0];
   });
 
-  // Private: The height of the view may not be known until its actually
+  // Internal: The height of the view may not be known until its actually
   // attached to the page, so we override this method in order to first set the
   // view's `height` and `top` properties and trigger a display.
   this.def('didAttachNode', function() {

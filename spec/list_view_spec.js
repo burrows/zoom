@@ -27,7 +27,7 @@ TestItemView = Z.View.extend(function() {
 });
 
 TestListView = Z.ListView.extend(function() {
-  this.def('itemViewType', function() { return TestItemView; })
+  this.itemViewType(TestItemView);
 });
 
 describe('Z.ListView', function() {
@@ -66,6 +66,18 @@ describe('Z.ListView', function() {
       spyOn(v, 'createItemView').andCallThrough();
       v.content().push(p1);
       expect(v.createItemView).toHaveBeenCalledWith(p1);
+    });
+  });
+
+  describe('.createItemView', function() {
+    it('should throw an exception when `itemViewType` is `null`', function() {
+      var v = TestListView.create({content: Z.A()});
+
+      v.itemViewType(null);
+
+      expect(function() {
+        v.createItemView(p1);
+      }).toThrow(Z.fmt("Z.ListView.createItemView: `itemViewType` is not defined: %@", v));
     });
   });
 
@@ -160,6 +172,21 @@ describe('Z.ListView', function() {
       expect(v.get('subviews.size')).toBe(0);
 
       expect(function() { v.content().push(p3); }).not.toThrow();
+    });
+  });
+
+  describe('changing `itemViewType` property', function() {
+    it('should replace all current subviews with instances of the new item view type', function() {
+      var v   = TestListView.create({content: Z.A(p1, p2)}),
+          ivt = Z.View.extend(function() {
+            this.prop('content');
+          });
+
+      expect(v.get('subviews.size')).toBe(2);
+      expect(v.get('subviews.type')).toEq(Z.A(TestItemView, TestItemView));
+      v.itemViewType(ivt);
+      expect(v.get('subviews.size')).toBe(2);
+      expect(v.get('subviews.type')).toEq(Z.A(ivt, ivt));
     });
   });
 });

@@ -19,7 +19,7 @@ describe('Z.FastListView', function() {
 
   beforeEach(function() {
     view = Z.FastListView.extend(function() {
-      this.def('itemViewType', function() { return ItemView; });
+      this.itemViewType(ItemView);
     }).create({content: items, height: 50, rowHeight: 10, overflow: 2});
 
     view.display();
@@ -190,6 +190,28 @@ describe('Z.FastListView', function() {
         view.scrollTo(items.at(8));
         expect(view.top()).toBe(80);
       });
+    });
+  });
+
+  describe('.createItemView', function() {
+    it('should throw an exception when `itemViewType` is `null`', function() {
+      var v = Z.FastListView.create({itemViewType: null, content: Z.A({})});
+
+      expect(function() {
+        v.createItemView({});
+      }).toThrow(Z.fmt("Z.FastListView.createItemView: `itemViewType` is not defined: %@", v));
+    });
+  });
+
+  describe('changing `itemViewType` property', function() {
+    it('should replace all current subviews with instances of the new item view type', function() {
+      var ivt = Z.View.extend(function() { this.prop('content'); });
+
+      expect(view.get('subviews.size')).toBe(7);
+      expect(view.get('subviews.type').uniq()).toEq(Z.A(ItemView));
+      view.itemViewType(ivt);
+      expect(view.get('subviews.size')).toBe(7);
+      expect(view.get('subviews.type').uniq()).toEq(Z.A(ivt));
     });
   });
 });
