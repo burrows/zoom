@@ -345,9 +345,9 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Returns nothing.
   this.def('didDetachNode', function() {});
 
-  // Private: This method is called when this view's `node` has been attached to
-  // the DOM. It sets the `isNodeAttached` property, calls `didAttachNode` and
-  // then recursively calls itself on all `subviews`.
+  // Internal: This method is called when this view's `node` has been attached
+  // to the DOM. It sets the `isNodeAttached` property, calls `didAttachNode`
+  // and then recursively calls itself on all `subviews`.
   //
   // Returns nothing.
   this.def('notifyDidAttachNode', function() {
@@ -356,7 +356,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     this.subviews().invoke('notifyDidAttachNode');
   });
 
-  // Private: This method is called when this view's `node` has been detached
+  // Internal: This method is called when this view's `node` has been detached
   // from the DOM. It unsets the `isNodeAttached` property, calls
   // `didAttachNode` and then recursively calls itself on all `subviews`.
   //

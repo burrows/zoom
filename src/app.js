@@ -35,7 +35,7 @@
 // models have been updated). In these situations you can simply invoke the
 // app's `run` method to trigger a run of the run loop.
 Z.App = Z.Object.extend(function() {
-  // Private: Handles events observed by the event listener by dispatching them
+  // Internal: Handles events observed by the event listener by dispatching them
   // to the appropriate window and triggering a run loop if they are handled.
   //
   // e - A `Z.Event` object..
@@ -43,7 +43,7 @@ Z.App = Z.Object.extend(function() {
   // Returns nothing.
   function processEvent(e) { if (this.dispatchEvent(e)) { this.run(); } }
 
-  // Private: Handles location hash changes by sending the action `didRouteTo`
+  // Internal: Handles location hash changes by sending the action `didRouteTo`
   // to the app's statechart with the new route name and any params extracted
   // from the hash.
   //
@@ -57,7 +57,7 @@ Z.App = Z.Object.extend(function() {
     this.run();
   }
 
-  // Private: Handles location hash changes that cannot be matched to a defined
+  // Internal: Handles location hash changes that cannot be matched to a defined
   // route by sending the action `didRouteToUnknown` to the statechart with the
   // current location hash.
   //
