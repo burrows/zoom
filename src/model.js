@@ -440,7 +440,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('refresh', function() {
-    var state = this.sourceState();
+    var state = this.sourceState(), args = [this].concat(slice.call(arguments));
 
     if (state !== LOADED || this.isBusy()) {
       throw new Error(Z.fmt("%@.refresh: can't refresh a model in the %@ state: %@",
@@ -448,7 +448,7 @@ Z.Model = Z.Object.extend(function() {
     }
 
     setState.call(this, {busy: true});
-    this.mapper.fetchModel(this);
+    this.mapper.fetchModel.apply(this.mapper, args);
     return this;
   });
 
@@ -461,7 +461,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('save', function() {
-    var state = this.sourceState();
+    var state = this.sourceState(), args = [this].concat(slice.call(arguments));
 
     if ((state !== NEW && state !== LOADED) || this.isBusy()) {
       throw new Error(Z.fmt("%@.save: can't save a model in the %@ state: %@",
@@ -474,11 +474,11 @@ Z.Model = Z.Object.extend(function() {
 
     if (state === NEW) {
       setState.call(this, {busy: true});
-      this.mapper.createModel(this);
+      this.mapper.createModel.apply(this.mapper, args);
     }
     else if (this.isDirty()) {
       setState.call(this, {busy: true});
-      this.mapper.updateModel(this);
+      this.mapper.updateModel.apply(this.mapper, args);
     }
 
     return this;
@@ -503,7 +503,7 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('destroy', function() {
-    var state = this.sourceState();
+    var state = this.sourceState(), args = [this].concat(slice.call(arguments));
 
     if (state === DESTROYED) { return this; }
 
@@ -517,7 +517,7 @@ Z.Model = Z.Object.extend(function() {
     }
     else {
       setState.call(this, {busy: true});
-      this.mapper.destroyModel(this);
+      this.mapper.destroyModel.apply(this.mapper, args);
     }
 
     return this;
