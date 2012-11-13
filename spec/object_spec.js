@@ -375,7 +375,7 @@ describe('Z.Object.property', function() {
     it('should set a private property when passed an argument', function() {
       var p = Person.create();
       expect(p.__firstName__).toBeUndefined();
-      expect(p.firstName('Corey')).toBeNull();
+      expect(p.firstName('Corey')).toBe('Corey');
       expect(p.__firstName__).toEqual('Corey');
     });
 
@@ -444,10 +444,10 @@ describe('Z.Object KVC support:', function() {
       });
     });
 
-    it('should return null', function() {
+    it('should return the value', function() {
       var p = Person.create();
-      expect(p.set('firstName', 'Bob')).toBeNull();
-      expect(p.set('points', 9)).toBeNull();
+      expect(p.set('firstName', 'Bob')).toBe('Bob');
+      expect(p.set('points', 9)).toBe(9);
     });
 
     it('should set all of the properties when given a hash', function() {

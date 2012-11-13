@@ -146,7 +146,7 @@ Z.Object.open(function() {
   // k - The name of the key to set.
   // v - The value to set.
   //
-  // Returns `null`.
+  // Returns `v`.
   // Throws `Error` if the property is marked as readonly.
   function setProperty(k, v) {
     var prop = this['__z_property_' + k + '__'];
@@ -167,7 +167,7 @@ Z.Object.open(function() {
 
     if (prop.auto) { this.didChangeProperty(k); }
 
-    return null;
+    return v;
   }
 
   // Internal: Observer function that gets invoked when a dependent property
@@ -683,7 +683,8 @@ Z.Object.open(function() {
   //   p.set('last', 'Jordan');
   //   p.set({first: 'Scottie', last: 'Pippen'});
   //
-  // Returns `null`.
+  // Returns `value` with given a key and value.
+  // Returns the object when given a native object.
   this.def('set', function(path, value) {
     var k, o, init, last;
 
@@ -694,7 +695,7 @@ Z.Object.open(function() {
         }
       }
 
-      return null;
+      return path;
     }
 
     path = path.split('.');
@@ -708,7 +709,7 @@ Z.Object.open(function() {
       setProperty.call(this, last, value);
     }
 
-    return null;
+    return value;
   });
 
   // Public: Registers an observer on the given path. Whenever some segment in
