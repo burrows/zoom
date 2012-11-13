@@ -288,13 +288,8 @@ Z.Model = Z.Object.extend(function() {
         }
 
         if (state === LOADED) {
-          if (!this.isDirty()) {
-            changes = this.set('changes', Z.H());
-            setState.call(this, {dirty: true});
-          }
-
-          changes = this.changes();
-
+          changes = this.changes() || this.changes(Z.H());
+          if (!this.isDirty()) { setState.call(this, {dirty: true}); }
           if (!changes.hasKey(name)) { changes.at(name, this.get(name)); }
         }
 
