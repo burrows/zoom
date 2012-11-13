@@ -361,7 +361,7 @@ describe('Z.Object.toString', function() {
   });
 });
 
-describe('Z.Object.property', function() {
+describe('Z.Object.prop', function() {
   var Person = Z.Object.extend(function() {
     this.prop('firstName');
   });
@@ -696,7 +696,7 @@ describe('Z.Object KVO support:', function() {
     this.prop('street');
   });
 
-  describe('#observe with a simple key', function() {
+  describe('.observe with a simple key', function() {
     var user;
 
     beforeEach(function() { user = User.create({ name: 'Joe' }); });
@@ -858,7 +858,7 @@ describe('Z.Object KVO support:', function() {
     });
   });
 
-  describe('#stopObserving with a simple key', function() {
+  describe('.stopObserving with a simple key', function() {
     it('should prevent the registered observer from being notified of further changes', function() {
       var observer1, observer2, user;
       user = User.create({ name: 'Joe' });
@@ -892,7 +892,7 @@ describe('Z.Object KVO support:', function() {
     });
   });
 
-  describe('#observe with a key path', function() {
+  describe('.observe with a key path', function() {
     it('should cause a notification to be delivered to the observer when any segment in the path changes', function() {
       var observer = { called: 0, action: function() { this.called++; } },
           user = User.create({ address: Address.create({ street: 'main' }) });
@@ -1083,7 +1083,7 @@ describe('Z.Object KVO support:', function() {
     });
   });
 
-  describe('#stopObserving with a key path', function() {
+  describe('.stopObserving with a key path', function() {
     it('should prevent the registered observer from being notified of further changes to any segment in the path', function() {
       var observer = { called: 0, action: function() { this.called++; } },
           user = User.create({ address: Address.create({ street: 'main' }) });
@@ -1102,7 +1102,48 @@ describe('Z.Object KVO support:', function() {
     });
   });
 
-  describe('#observe with an unknown key', function() {
+  describe('.observe with the `*` key', function() {
+    it('should trigger notifications for any property that changes', function() {
+      var notifications = [],
+          observer = { action: function(n) { notifications.push(n); } },
+          u = User.create();
+
+      u.observe('*', observer, 'action');
+      u.name('Homer');
+      expect(notifications.length).toBe(1);
+      expect(notifications[0].type).toBe('change');
+      expect(notifications[0].path).toBe('name');
+      u.address(Address.create({street: '123 Fake St.'}));
+      expect(notifications.length).toBe(2);
+      expect(notifications[1].type).toBe('change');
+      expect(notifications[1].path).toBe('address');
+    });
+
+    it('should throw an exception when `*` is used in the middle of a key path', function() {
+      var u = User.create();
+
+      expect(function() {
+        u.observe('*.street', {}, 'action');
+      }).toThrow("Z.Object.registerObserver: observing `*` in the middle of a property path is not supported: '*.street'");
+    });
+  });
+
+  describe('.stopObserving with the `*` key', function() {
+    it('should stop triggering notifications for any property that changes', function() {
+      var notifications = [],
+          observer = { action: function(n) { notifications.push(n); } },
+          u = User.create();
+
+      u.observe('*', observer, 'action');
+      u.name('Homer');
+      expect(notifications.length).toBe(1);
+      u.stopObserving('*', observer, 'action');
+      u.name('Marge');
+      expect(notifications.length).toBe(1);
+    });
+  });
+
+  describe('.observe with an unknown key', function() {
     it("should thrown an exception", function() {
       var observer = { action: function() {} },
           o        = Z.Object.create();
@@ -1113,7 +1154,7 @@ describe('Z.Object KVO support:', function() {
     });
   });
 
-  describe('#stopObserving with an unknown key', function() {
+  describe('.stopObserving with an unknown key', function() {
     it("should thrown an exception", function() {
       var observer = { action: function() {} },
           o        = Z.Object.create();

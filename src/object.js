@@ -719,6 +719,10 @@ Z.Object.open(function() {
   // container objects support other types of notifications), the object being
   // observed, and the path being observed.
   //
+  // If you wish to be notified when any property on an object changes, the
+  // special key `'*'` may be observed. This will cause notifications to be sent
+  // to the observer when any property on the object changes.
+  //
   // path     - A string containing the path to observe.
   // observer - The object to be notified when the path changes. This may be
   //            `null` if the action given in the third argument is a function.
@@ -810,8 +814,12 @@ Z.Object.open(function() {
   this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
     var head = rpath[0], tail = rpath.slice(1), registration, regs, val;
 
-    if (!this.hasProperty(head)) {
+    if (!this.hasProperty(head) && head !== '*') {
       throw new Error(Z.fmt("Z.Object.registerObserver: undefined key `%@` for %@", head, this));
+    }
+
+    if (head === '*' && tail.length > 0) {
+      throw new Error(Z.fmt("Z.Object.registerObserver: observing `*` in the middle of a property path is not supported: '%@'", opath));
     }
 
     registration = {
@@ -857,7 +865,7 @@ Z.Object.open(function() {
   this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
     var head = rpath[0], tail = rpath.slice(1), registrations, i, r, val;
 
-    if (!this.hasProperty(head)) {
+    if (!this.hasProperty(head) && head !== '*') {
       throw new Error(Z.fmt("Z.Object.deregisterObserver: undefined key `%@` for %@", head, this));
     }
 
@@ -915,16 +923,22 @@ Z.Object.open(function() {
   //
   // Returns the receiver.
   this.def('willChangeProperty', function(k, opts) {
-    var registrations = (this.__z_registrations__ || {})[k],
-        type, i, len, r, val, notification;
+    var regs, star, type, i, len, r, val, notification;
 
-    if (!registrations) { return; }
+    if (!this.__z_registrations__) { return this; }
+
+    regs = this.__z_registrations__[k];
+    star = this.__z_registrations__['*'];
+
+    if (star) { regs = regs ? regs.concat(star) : star; }
+
+    if (!regs) { return this; }
 
     opts = opts ? Z.dup(opts) : {};
     type = Z.del(opts, 'type') || 'change';
 
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
+    for (i = 0, len = regs.length; i < len; i++) {
+      r = regs[i];
 
       if (r.opts.previous) {
         if (opts.hasOwnProperty('previous')) {
@@ -943,7 +957,7 @@ Z.Object.open(function() {
         notification = {
           type     : type,
           isPrior  : true,
-          path     : r.path,
+          path     : r.head === '*' ? r.path.replace('*', k) : r.path,
           observee : r.observee
         };
 
@@ -984,21 +998,31 @@ Z.Object.open(function() {
   //
   // Returns the receiver.
   this.def('didChangeProperty', function(k, opts) {
-    var registrations = (this.__z_registrations__ || {})[k],
-        cache = '__' + k + '_' + 'cached' + '__',
-        type, i, len, r, val, notification;
+    var cache = '__' + k + '_' + 'cached' + '__',
+        regs, star, type, i, len, r, val, notification;
 
     delete this[cache];
 
-    if (!registrations) { return; }
+    if (!this.__z_registrations__) { return this; }
+
+    regs = this.__z_registrations__[k];
+    star = this.__z_registrations__['*'];
+
+    if (star) { regs = regs ? regs.concat(star) : star; }
+
+    if (!regs) { return this; }
 
     opts = opts ? Z.dup(opts) : {};
     type = Z.del(opts, 'type') || 'change';
 
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
+    for (i = 0, len = regs.length; i < len; i++) {
+      r = regs[i];
 
-      notification = { type: type, path: r.path, observee: r.observee };
+      notification = {
+        type     : type,
+        path     : r.head === '*' ? r.path.replace('*', k) : r.path,
+        observee : r.observee
+      };
 
       if (r.opts.previous) { notification.previous = Z.del(r.previous, type); }
       if (r.opts.context) { notification.context = r.opts.context; }
