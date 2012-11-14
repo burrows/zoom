@@ -26,7 +26,7 @@ Z.FastListView = Z.View.extend(function() {
   // event and adjust the `height` property if necessary.
   function resizeListener() {
     if (this.node.offsetHeight !== this.height()) {
-      this.height(this.node.offsetHeight);
+      this.scrollHeight(this.node.offsetHeight);
       this.display();
     }
   }
@@ -34,7 +34,10 @@ Z.FastListView = Z.View.extend(function() {
   // Internal: The callback function for the `node`'s `scroll` event. When the
   // view is scrolled we must adjust the `top` property and re-render the
   // subviews.
-  function scrollListener() { this.top(this.node.scrollTop); this.display(); }
+  function scrollListener() {
+    this.scrollOffset(this.node.scrollTop);
+    this.display();
+  }
 
   // Internal: Observes changes to the `itemViewType` property and replaces all
   // existing subviews with instances of the new item view type.
@@ -45,18 +48,33 @@ Z.FastListView = Z.View.extend(function() {
     });
   }
 
+  function heightFor(i) {
+    return this.rowHeight();
+  }
+
+  function offsetFor(i) {
+    return this.rowHeight() * i;
+  }
+
   // Public: A property pointing to a `Z.Array` of objects for the list view to
   // display.
   this.prop('content');
 
-  // Internal: The height of the list view. This property is managed by the view
-  // itself and should not be set by client code.
-  this.prop('height', {def: 0});
+  // Internal: The height of the scrollable container. This property is managed
+  // by the view itself and should not be set by client code.
+  this.prop('scrollHeight', {def: 0});
+
+  this.prop('totalHeight', {
+    dependsOn: ['content.size', 'rowHeight'],
+    readonly: true,
+    cache: true,
+    get: function() { return this.get('content.size') * this.rowHeight(); }
+  });
 
   // Internal: The current scroll offset. This property is managed by the view
-  // itslef and should not be set by client code. You can programtically adjust
+  // itself and should not be set by client code. You can programtically adjust
   // the scroll position however with the `scrollTo` method.
-  this.prop('top', {def: 0});
+  this.prop('scrollOffset', {def: 0});
 
   // Public: The height of each item view.
   this.prop('rowHeight', {def: 30});
@@ -65,7 +83,36 @@ Z.FastListView = Z.View.extend(function() {
   // the visibile area. The overflow items will be evenly distributed before the
   // first displayed item and after the last displayed item when possible. The
   // overflow views allow scrolling to look smooth.
-  this.prop('overflow', {def: 10});
+  this.prop('overflow', {def: 60});
+
+  this.prop('displayRange', {
+    readonly: true,
+    cache: true,
+    dependsOn: [
+      'content.size', 'totalHeight', 'scrollHeight', 'scrollOffset',
+      'rowHeight', 'overflow'
+    ],
+    get: function() {
+      var n        = this.get('content.size'),
+          theight  = this.totalHeight(),
+          sheight  = this.scrollHeight(),
+          soffset  = this.scrollOffset(),
+          rheight  = this.rowHeight(),
+          overflow = this.overflow(),
+          top      = Math.max(soffset - overflow, 0),
+          bottom   = Math.min(soffset + sheight + overflow, theight),
+          nviews   = Math.min(Math.ceil((sheight + 2 * overflow) / rheight), n),
+          first    = Math.max(Math.floor(top / rheight), 0),
+          last;
+
+      while (offsetFor.call(this, first) > top) { first--; }
+      last  = Math.min(first + nviews, n - 1);
+      while (last < n - 1 && offsetFor.call(this, last) < bottom) { last++; }
+      first = Math.max(0, last - nviews);
+
+      return [first, last];
+    }
+  });
 
   // Public: The `Z.View` subtype to use for content item views. This must be
   // specified in sub-types and must have a `content` property.
@@ -74,7 +121,7 @@ Z.FastListView = Z.View.extend(function() {
   // Internal: Returns a list of property paths that trigger this view to update
   // itself.
   this.def('displayPaths', function() {
-    return this.supr().concat('content.@', 'height', 'top', 'rowHeight', 'overflow');
+    return this.supr().concat('displayRange');
   });
 
   // Internal: The `Z.FastListView` constructor. This is overridden in order to
@@ -129,30 +176,23 @@ Z.FastListView = Z.View.extend(function() {
   //
   // Returns nothing.
   this.def('update', function() {
-    var content   = this.content(),
-        nitems    = content.size(),
-        height    = this.height(),
-        rowHeight = this.rowHeight(),
-        top       = this.top(),
-        overflow  = this.overflow(),
-        desired   = Math.min(Math.floor(height / rowHeight + overflow), nitems),
-        subviews  = this.subviews(),
-        first, last, i, n, item, subview, items, display;
+    var content  = this.content(),
+        soffset  = this.scrollOffset(),
+        rheight  = this.rowHeight(),
+        theight  = this.totalHeight(),
+        subviews = this.subviews(),
+        range    = this.displayRange(),
+        n        = range[1] - range[0] + 1,
+        i, item, subview, items, display;
 
     // ensure that the container is tall enough for all content items
-    this.node.childNodes[0].style.height = (nitems * rowHeight) + 'px';
+    this.node.childNodes[0].style.height = theight + 'px';
 
     // sync the scroll position with the `top` property
-    if (this.node.scrollTop !== top) { this.node.scrollTop = top; }
-
-    // determine which content items to render
-    first = Math.max(Math.floor(top / rowHeight) - (overflow / 2), 0);
-    last  = Math.min(nitems - 1, first + desired - 1);
-    first = Math.max(0, last - desired + 1);
-    n     = last - first + 1;
+    if (this.node.scrollTop !== soffset) { this.node.scrollTop = soffset; }
 
     // sync the content items we want to display with their appropriate subviews
-    for (i = first; i <= last; i++) {
+    for (i = range[0]; i <= range[1]; i++) {
       item    = content.at(i);
       display = false;
       subview = subviews.at(i % n);
@@ -169,8 +209,8 @@ Z.FastListView = Z.View.extend(function() {
 
       if (display) {
         subview.node.style.position = 'absolute';
-        subview.node.style.top      = (rowHeight * i) + 'px';
-        subview.node.style.height   = rowHeight;
+        subview.node.style.top      = offsetFor.call(this, i) + 'px';
+        subview.node.style.height   = heightFor.call(this, i);
         subview.node.style.left     = 0;
         subview.node.style.right    = 0;
         subview.display();
@@ -190,8 +230,8 @@ Z.FastListView = Z.View.extend(function() {
   // attached to the page, so we override this method in order to first set the
   // view's `height` and `top` properties and trigger a display.
   this.def('didAttachNode', function() {
-    this.height(this.node.offsetHeight);
-    this.top(this.node.scrollTop);
+    this.scrollHeight(this.node.offsetHeight);
+    this.scrollOffset(this.node.scrollTop);
     this.display();
   });
 
@@ -202,7 +242,7 @@ Z.FastListView = Z.View.extend(function() {
   // Returns the receiver.
   this.def('scrollTo', function(item) {
     var i = Z.isNumber(item) ? item : (this.content().index(item) || 0);
-    this.top(this.rowHeight() * i);
+    this.top(this.offsetFor(i));
     return this;
   });
 });
