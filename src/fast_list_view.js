@@ -25,7 +25,7 @@ Z.FastListView = Z.View.extend(function() {
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
   function resizeListener() {
-    if (this.node.offsetHeight !== this.height()) {
+    if (this.node.offsetHeight !== this.scrollHeight()) {
       this.scrollHeight(this.node.offsetHeight);
       this.display();
     }
@@ -49,11 +49,14 @@ Z.FastListView = Z.View.extend(function() {
   }
 
   function heightFor(i) {
-    return this.rowHeight();
+    var customHeights = this.customHeights();
+    return customHeights && customHeights.hasOwnProperty(i) ?
+      customHeights[i] : this.rowHeight();
   }
 
   function offsetFor(i) {
-    return this.rowHeight() * i;
+    var offsets = this.offsets();
+    return offsets ? offsets[i] : this.rowHeight() * i;
   }
 
   // Public: A property pointing to a `Z.Array` of objects for the list view to
@@ -65,10 +68,18 @@ Z.FastListView = Z.View.extend(function() {
   this.prop('scrollHeight', {def: 0});
 
   this.prop('totalHeight', {
-    dependsOn: ['content.size', 'rowHeight'],
+    dependsOn: ['content.size', 'rowHeight', 'offsets'],
     readonly: true,
     cache: true,
-    get: function() { return this.get('content.size') * this.rowHeight(); }
+    get: function() {
+      var n         = this.get('content.size'),
+          offsets   = this.offsets(),
+          rowHeight = this.rowHeight();
+
+      if (!offsets) { return n * rowHeight; }
+
+      return offsets[n - 1] + heightFor.call(this, n - 1);
+    }
   });
 
   // Internal: The current scroll offset. This property is managed by the view
@@ -85,12 +96,16 @@ Z.FastListView = Z.View.extend(function() {
   // overflow views allow scrolling to look smooth.
   this.prop('overflow', {def: 60});
 
+  this.prop('customRowHeightIndexes', {
+    cache: true, get: function() { return Z.A(); }
+  });
+
   this.prop('displayRange', {
     readonly: true,
     cache: true,
     dependsOn: [
       'content.size', 'totalHeight', 'scrollHeight', 'scrollOffset',
-      'rowHeight', 'overflow'
+      'rowHeight', 'overflow', 'customHeights'
     ],
     get: function() {
       var n        = this.get('content.size'),
@@ -111,6 +126,43 @@ Z.FastListView = Z.View.extend(function() {
       first = Math.max(0, last - nviews);
 
       return [first, last];
+    }
+  });
+
+  this.prop('customHeights', {
+    readonly: true,
+    cache: true,
+    dependsOn: ['customRowHeightIndexes.@'],
+    get: function() {
+      var indexes = this.customRowHeightIndexes(), self = this;
+
+      if (!indexes || indexes.size() === 0) { return null; }
+
+      return indexes.inject({}, function(acc, i) {
+        acc[i] = self.customRowHeightFor(i);
+        return acc;
+      });
+    }
+  });
+
+  this.prop('offsets', {
+    readonly: true,
+    cache: true,
+    dependsOn: ['content.size', 'customHeights', 'rowHeight'],
+    get: function() {
+      var customHeights = this.customHeights(), offsets, i, n;
+
+      if (!customHeights) { return null; }
+
+      offsets = new Array(n);
+      n       = this.get('content.size');
+
+      offsets[0] = 0;
+      for (i = 1; i < n; i++) {
+        offsets[i] = offsets[i - 1] + heightFor.call(this, i - 1);
+      }
+
+      return offsets;
     }
   });
 
@@ -207,17 +259,20 @@ Z.FastListView = Z.View.extend(function() {
         display = true;
       }
 
-      if (display) {
-        subview.node.style.position = 'absolute';
-        subview.node.style.top      = offsetFor.call(this, i) + 'px';
-        subview.node.style.height   = heightFor.call(this, i);
-        subview.node.style.left     = 0;
-        subview.node.style.right    = 0;
-        subview.display();
-      }
+      subview.node.style.position = 'absolute';
+      subview.node.style.top      = offsetFor.call(this, i) + 'px';
+      subview.node.style.height   = heightFor.call(this, i) + 'px';
+      subview.node.style.left     = 0;
+      subview.node.style.right    = 0;
+
+      if (display) { subview.display(); }
     }
 
     if (subviews.size() > n) { subviews.slice(n).each('remove'); }
+  });
+
+  this.def('customRowHeightFor', function(i) {
+    throw new Error("Z.FastListView.customRowHeightFor: must be overridden in sub-types when customRowHeightIndexes is used");
   });
 
   // Internal: Tells the view system to use the container node to attach
@@ -242,7 +297,7 @@ Z.FastListView = Z.View.extend(function() {
   // Returns the receiver.
   this.def('scrollTo', function(item) {
     var i = Z.isNumber(item) ? item : (this.content().index(item) || 0);
-    this.top(this.offsetFor(i));
+    this.top(offsetFor.call(this, i));
     return this;
   });
 });
