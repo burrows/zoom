@@ -54,9 +54,20 @@ Z.FastListView = Z.View.extend(function() {
       customHeights[i] : this.rowHeight();
   }
 
-  function offsetFor(i) {
-    var offsets = this.offsets();
-    return offsets ? offsets[i] : this.rowHeight() * i;
+  function offsetFor(idx) {
+    var adjustments = this.offsetAdjustments(),
+        offset      = this.rowHeight() * idx,
+        i, len;
+
+    if (!adjustments) { return offset; }
+
+    for (i = 0, len = adjustments.length; i < len; i++) {
+      if (adjustments[i][0] <= idx && idx <= adjustments[i][1]) {
+        return offset + adjustments[i][2];
+      }
+    }
+
+    throw new Error("Z.FastListView.offsetFor: BUG");
   }
 
   // Public: A property pointing to a `Z.Array` of objects for the list view to
@@ -68,17 +79,18 @@ Z.FastListView = Z.View.extend(function() {
   this.prop('scrollHeight', {def: 0});
 
   this.prop('totalHeight', {
-    dependsOn: ['content.size', 'rowHeight', 'offsets'],
+    dependsOn: ['content.size', 'rowHeight', 'offsetAdjustments'],
     readonly: true,
     cache: true,
     get: function() {
-      var n         = this.get('content.size'),
-          offsets   = this.offsets(),
-          rowHeight = this.rowHeight();
+      var size        = this.get('content.size'),
+          rowHeight   = this.rowHeight(),
+          adjustments = this.offsetAdjustments(),
+          height      = size * rowHeight;
 
-      if (!offsets) { return n * rowHeight; }
+      if (!adjustments) { return height; }
 
-      return offsets[n - 1] + heightFor.call(this, n - 1);
+      return height + adjustments[adjustments.length - 1][2];
     }
   });
 
@@ -145,24 +157,29 @@ Z.FastListView = Z.View.extend(function() {
     }
   });
 
-  this.prop('offsets', {
+  this.prop('offsetAdjustments', {
     readonly: true,
     cache: true,
-    dependsOn: ['content.size', 'customHeights', 'rowHeight'],
+    dependsOn: ['content.size', 'customRowHeightIndexes.@', 'rowHeight'],
     get: function() {
-      var customHeights = this.customHeights(), offsets, i, n;
+      var size        = this.get('content.size'),
+          indexes     = this.customRowHeightIndexes().sort().toNative(),
+          rowHeight   = this.rowHeight(),
+          adjustments, i, len;
 
-      if (!customHeights) { return null; }
+      if (!indexes || indexes.length === 0) { return null; }
 
-      offsets = new Array(n);
-      n       = this.get('content.size');
+      adjustments = [[0, indexes[0], 0]];
 
-      offsets[0] = 0;
-      for (i = 1; i < n; i++) {
-        offsets[i] = offsets[i - 1] + heightFor.call(this, i - 1);
+      for (i = 1, len = indexes.length; i <= len; i++) {
+        adjustments.push([
+          indexes[i - 1] + 1,
+          indexes[i] || size - 1,
+          adjustments[i - 1][2] + heightFor.call(this, indexes[i - 1]) - rowHeight
+        ]);
       }
 
-      return offsets;
+      return adjustments;
     }
   });
 
@@ -297,7 +314,7 @@ Z.FastListView = Z.View.extend(function() {
   // Returns the receiver.
   this.def('scrollTo', function(item) {
     var i = Z.isNumber(item) ? item : (this.content().index(item) || 0);
-    this.top(offsetFor.call(this, i));
+    this.scrollOffset(offsetFor.call(this, i));
     return this;
   });
 });
