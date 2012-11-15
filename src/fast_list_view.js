@@ -1,12 +1,13 @@
 // Public: `Z.FastListView` provides a vertical list view that utilizes virtual
 // scrolling in order to handle many content items efficiently. The `Z.ListView`
 // type simply syncs all of its content items to its `subviews` array. This
-// works fine as long as you don't have too many items to display, but starts to
-// cause performance issues when you have a lot of items. `Z.FastListView` can
-// handle many more items because it only creates subviews for the content items
-// that are currently visible. It can do this because it imposes the restriction
-// that the view must have a defined height and each item view must have the
-// same height.
+// works fine as long as you don't have too many items to display, but can lead
+// to performance issues when you have a lot of items to render.
+// `Z.FastListView` can handle many more items because it only creates subviews
+// for the content items that are currently visible (plus a few overflow items).
+// It can do this because it imposes the restriction that the view must have a
+// specified height and all item views must also have a consistent specified
+// height.
 //
 // The virtual scrolling technique works by creating a container div with an
 // explicit height set to the `rowHeight` property times the number of content
@@ -15,11 +16,18 @@
 // scrollable div that is large enough to contain all of our items. Instead of
 // creating subviews for each content item though, we instead only create enough
 // to fill the visible area of our view. Then based on the view's node's
-// `scrollTop` property we can determine which content items should should
-// currently be displayed. The displayed content items are set as the `content`
-// properties on the subviews and each subview's `node` property is absolutely
-// positioned within the container such that it appears at the appropriate
-// offset.
+// `scrollOffset` property we can determine which content items should currently
+// be displayed. The displayed content items are set as the `content` properties
+// on the subviews and each subview's `node` property is absolutely positioned
+// within the container such that it appears at the appropriate offset.
+//
+// If you would like to have some views in your list have a height that is
+// different than the rest, you can accomplish this by adding their indexes to
+// the `customRowHeightIndexes` property and overriding the
+// `customRowHeightForIndex` method to return their custom heights. Note that
+// there is a performance cost when you have custom heights since the offset
+// calculations are no longer a simple multiplication of the item index and
+// default row height.
 Z.FastListView = Z.View.extend(function() {
   // Internal: The callback function for the `window`'s `resize` event. Resizing
   // the window may change the height of the view so we need to listen for that
@@ -52,31 +60,6 @@ Z.FastListView = Z.View.extend(function() {
   // display.
   this.prop('content');
 
-  // Internal: The height of the scrollable container. This property is managed
-  // by the view itself and should not be set by client code.
-  this.prop('scrollHeight', {def: 0});
-
-  this.prop('totalHeight', {
-    dependsOn: ['content.size', 'rowHeight', 'offsetAdjustments'],
-    readonly: true,
-    cache: true,
-    get: function() {
-      var size        = this.get('content.size'),
-          rowHeight   = this.rowHeight(),
-          adjustments = this.offsetAdjustments(),
-          height      = size * rowHeight;
-
-      if (!adjustments) { return height; }
-
-      return height + adjustments[adjustments.length - 1][2];
-    }
-  });
-
-  // Internal: The current scroll offset. This property is managed by the view
-  // itself and should not be set by client code. You can programtically adjust
-  // the scroll position however with the `scrollTo` method.
-  this.prop('scrollOffset', {def: 0});
-
   // Public: The height of each item view. See the `customRowHeightIndexes`
   // property if any items in your list need to be rendered with a height that
   // is something other than this value.
@@ -88,26 +71,30 @@ Z.FastListView = Z.View.extend(function() {
   // overflow views allow scrolling to look smooth.
   this.prop('overflow', {def: 10});
 
+  // Public: This property can be used to tell the list view which content items
+  // need to be rendered with a height that is different from the `rowHeight`
+  // property. Either set it to a `Z.Array` of indexes or simply push indexes on
+  // to the default empty array.
+  //
+  // When using this property you must also implement the `customRowHeightFor`
+  // method in your sub-type.
   this.prop('customRowHeightIndexes', {
     cache: true, get: function() { return Z.A(); }
   });
 
-  this.prop('customRowHeights', {
-    readonly: true,
-    cache: true,
-    dependsOn: ['customRowHeightIndexes.@'],
-    get: function() {
-      var indexes = this.customRowHeightIndexes(), self = this;
+  // Internal: The height of the scrollable container. This property is managed
+  // by the view itself and should not be set by client code.
+  this.prop('scrollHeight', {def: 0});
 
-      if (!indexes || indexes.size() === 0) { return null; }
+  // Internal: The current scroll offset. This property is managed by the view
+  // itself and should not be set by client code. You can programtically adjust
+  // the scroll position however with the `scrollTo` method.
+  this.prop('scrollOffset', {def: 0});
 
-      return indexes.inject({}, function(acc, i) {
-        acc[i] = self.customRowHeightFor(i);
-        return acc;
-      });
-    }
-  });
-
+  // Internal: Returns an array of triples, each of which contain an inclusive
+  // range and the offset adjustment that needs to be applied to the default
+  // offset for items in that range. This property is only used when there are
+  // custom row heights.
   this.prop('offsetAdjustments', {
     readonly: true,
     cache: true,
@@ -134,6 +121,50 @@ Z.FastListView = Z.View.extend(function() {
     }
   });
 
+  // Internal: The total height necessary to accomodate all items. This value is
+  // used to set the height of the scrollable container node. When there are no
+  // custom row heights, then this is simply the number of content items times
+  // the `rowHeight` property. When there are custom row heights, then the
+  // `offsetAdjustments` property is used to determine the total height.
+  this.prop('totalHeight', {
+    dependsOn: ['content.size', 'rowHeight', 'offsetAdjustments'],
+    readonly: true,
+    cache: true,
+    get: function() {
+      var size        = this.get('content.size'),
+          rowHeight   = this.rowHeight(),
+          adjustments = this.offsetAdjustments(),
+          height      = size * rowHeight;
+
+      if (!adjustments) { return height; }
+
+      return height + adjustments[adjustments.length - 1][2];
+    }
+  });
+
+  // Internal: Returns a native object that maps the index of each custom row
+  // to the return value of `customRowHeightFor`.
+  this.prop('customRowHeights', {
+    readonly: true,
+    cache: true,
+    dependsOn: ['customRowHeightIndexes.@'],
+    get: function() {
+      var indexes = this.customRowHeightIndexes(), self = this;
+
+      if (!indexes || indexes.size() === 0) { return null; }
+
+      return indexes.inject({}, function(acc, i) {
+        acc[i] = self.customRowHeightFor(i);
+        return acc;
+      });
+    }
+  });
+
+  // Internal: Returns a two element native array containing an inclusive range
+  // of the item views that should currently be displayed. The range will
+  // contain enough views to fill the visible display plus the number of
+  // overflow views evenly distributed between the top and bottom where
+  // possible.
   this.prop('displayRange', {
     readonly: true,
     cache: true,
@@ -237,8 +268,8 @@ Z.FastListView = Z.View.extend(function() {
   });
 
   // Internal: Updates the view by syncing the `subviews` area to the list of
-  // content items that should be displayed based on the views current `height`,
-  // `rowHeight`, `top`, and `overflow` properties.
+  // content items indicated by the `displayRange` property and sets the
+  // appropriate offsets and heights.
   //
   // Returns nothing.
   this.def('update', function() {
@@ -287,15 +318,22 @@ Z.FastListView = Z.View.extend(function() {
     if (subviews.size() > n) { subviews.slice(n).each('remove'); }
   });
 
+  // Public: This method must be overridden when indexes are added to the
+  // `customRowHeightIndexes` property. It should return the custom height of
+  // the view at the given index.
   this.def('customRowHeightFor', function(i) {
     throw new Error("Z.FastListView.customRowHeightFor: must be overridden in sub-types when customRowHeightIndexes is used");
   });
 
+  // Internal: Returns the height that should be applied to the item view at the
+  // given index.
   this.def('rowHeightFor', function(i) {
     var custom = this.customRowHeights();
     return custom && custom.hasOwnProperty(i) ? custom[i] : this.rowHeight();
   });
 
+  // Internal: Returns the offset that should be applied to the item view at the
+  // given index.
   this.def('rowOffsetFor', function(idx) {
     var adjustments = this.offsetAdjustments(),
         offset      = this.rowHeight() * idx,
