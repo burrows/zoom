@@ -82,11 +82,11 @@ Z.FastListView = Z.View.extend(function() {
   // is something other than this value.
   this.prop('rowHeight', {def: 30});
 
-  // Public: The number of overflow pixels to render above and below the scroll
-  // window. The list view will attempt to render enough additional item views
-  // in order to ensure that there are at least this many pixels rendered both
-  // above an below the scrollable area.
-  this.prop('overflow', {def: 60});
+  // Public: The number of item views to render over what is necessary to fill
+  // the visibile area. The overflow items will be evenly distributed before the
+  // first displayed item and after the last displayed item when possible. The
+  // overflow views allow scrolling to look smooth.
+  this.prop('overflow', {def: 10});
 
   this.prop('customRowHeightIndexes', {
     cache: true, get: function() { return Z.A(); }
@@ -142,44 +142,41 @@ Z.FastListView = Z.View.extend(function() {
       'rowHeight', 'overflow', 'customRowHeights'
     ],
     get: function() {
-      var n        = this.get('content.size'),
+      var size     = this.get('content.size'),
           custom   = this.customRowHeights(),
           theight  = this.totalHeight(),
           sheight  = this.scrollHeight(),
           soffset  = this.scrollOffset(),
           rheight  = this.rowHeight(),
           overflow = this.overflow(),
-          dheight  = sheight + overflow * 2,
-          nviews   = Math.min(Math.ceil(dheight / rheight), n),
-          top, bottom, first, last;
+          nviews   = Math.min(Math.ceil(sheight / rheight), size),
+          first, last, ofirst, olast;
 
-      if (n === 0) { return null; }
+      if (size === 0) { return null; }
 
-      top    = Math.max(soffset - overflow, 0);
-      bottom = Math.min(top + dheight - 1, theight);
-      top    = Math.max(0, bottom - dheight + 1);
-      first  = Math.min(Math.floor(top / rheight), n - 1);
+      first = Math.min(Math.floor(soffset / rheight), size - 1);
+      last  = Math.min(first + nviews - 1, size - 1);
 
-      // custom row heights that are less than the default may cause us to
-      // overshoot the first item to display, so we backtrack here if necessary
-      if (custom) { while (this.rowOffsetFor(first) > top) { first--; } }
-
-      last = Math.max(Math.min(first + nviews - 1, n - 1), 0);
-
+      // if we have custom row heights we may need to adjust the first and last
+      // views to display to ensure that we're inside the visible area and we
+      // have enough views to fill the visible area
       if (custom) {
-        // again, custom heights that are less than the default may mean that
-        // our guess at the number of views will not be enough to fill our
-        // desired display area, so we add views on here until we're sure we
-        // have enough to cover the display area
-        while (last < n - 1 && (this.rowOffsetFor(last) + this.rowHeightFor(last)) < bottom) { last++; }
-      }
-      else {
-        // ensure that we're always displaying the same number of views, even
-        // when we hit the end of the list
-        first = Math.max(0, last - nviews + 1);
+        while (this.rowOffsetFor(first) > soffset) { first--; last--; }
+
+        while (last < size - 1 && (this.rowOffsetFor(last) +
+          this.rowHeightFor(last)) < (soffset + sheight)) {
+          last++;
+        }
+
+        nviews = last - first + 1;
       }
 
-      return [first, last];
+      // add in the overflow views
+      ofirst = Math.max(first - Math.floor(overflow / 2), 0);
+      olast  = Math.min(last + (overflow - (first - ofirst)), size - 1);
+      ofirst = Math.max(0, olast - (nviews + overflow) + 1);
+
+      return [ofirst, olast];
     }
   });
 

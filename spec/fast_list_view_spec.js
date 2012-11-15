@@ -20,7 +20,7 @@ describe('Z.FastListView', function() {
   beforeEach(function() {
     view = Z.FastListView.extend(function() {
       this.itemViewType(ItemView);
-    }).create({content: items, scrollHeight: 50, rowHeight: 10, overflow: 20});
+    }).create({content: items, scrollHeight: 50, rowHeight: 10, overflow: 4});
 
     view.display();
   });
@@ -101,9 +101,9 @@ describe('Z.FastListView', function() {
       it('should update when the rowHeight property changes', function() {
         expect(view.displayRange()).toEq([0, 8]);
         view.rowHeight(20);
-        expect(view.displayRange()).toEq([0, 4]);
+        expect(view.displayRange()).toEq([0, 6]);
         view.rowHeight(5);
-        expect(view.displayRange()).toEq([0, 17]);
+        expect(view.displayRange()).toEq([0, 13]);
       });
 
       it('should update when the scrollHeight property changes', function() {
@@ -114,7 +114,7 @@ describe('Z.FastListView', function() {
 
       it('should update when the overflow property changes', function() {
         expect(view.displayRange()).toEq([0, 8]);
-        view.overflow(10);
+        view.overflow(2);
         expect(view.displayRange()).toEq([0, 6]);
       });
 
