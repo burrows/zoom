@@ -280,7 +280,7 @@ Z.FastListView = Z.View.extend(function() {
         subviews = this.subviews(),
         range    = this.displayRange(),
         n        = range ? range[1] - range[0] + 1 : 0,
-        i, item, subview, items, display;
+        i, item, subview, items, display, offset, height;
 
     // ensure that the container is tall enough for all content items
     this.node.childNodes[0].style.height = theight + 'px';
@@ -306,10 +306,16 @@ Z.FastListView = Z.View.extend(function() {
         }
 
         subview.node.style.position = 'absolute';
-        subview.node.style.top      = this.rowOffsetFor(i) + 'px';
-        subview.node.style.height   = this.rowHeightFor(i) + 'px';
         subview.node.style.left     = 0;
         subview.node.style.right    = 0;
+
+        offset = this.rowOffsetFor(i);
+        height = this.rowHeightFor(i);
+
+        if (subview.node.style.top !== offset + 'px' ||
+            subview.node.style.height !== height + 'px') {
+          this.positionSubview(subview, offset, height);
+        }
 
         if (display) { subview.display(); }
       }
@@ -318,15 +324,39 @@ Z.FastListView = Z.View.extend(function() {
     if (subviews.size() > n) { subviews.slice(n).each('remove'); }
   });
 
+  // Public: Positions the given subview's node using the given offset and
+  // height values by setting the `top` and `height` css properties. You may
+  // want to override this method in order to animate these properties.
+  //
+  // subview - The `Z.View` to position.
+  // offset  - A number indicating the top offset that the view should be
+  //           positioned at.
+  // height  - The height the view should have.
+  //
+  // Returns the receiver.
+  this.def('positionSubview', function(subview, offset, height) {
+    subview.node.style.top    = offset + 'px';
+    subview.node.style.height = height + 'px';
+    return this;
+  });
+
   // Public: This method must be overridden when indexes are added to the
   // `customRowHeightIndexes` property. It should return the custom height of
   // the view at the given index.
+  //
+  // i - The content item index to return the custom height for.
+  //
+  // Returns an integer.
   this.def('customRowHeightFor', function(i) {
     throw new Error("Z.FastListView.customRowHeightFor: must be overridden in sub-types when customRowHeightIndexes is used");
   });
 
   // Internal: Returns the height that should be applied to the item view at the
   // given index.
+  //
+  // i - The content item index to return the height for.
+  //
+  // Returns an integer.
   this.def('rowHeightFor', function(i) {
     var custom = this.customRowHeights();
     return custom && custom.hasOwnProperty(i) ? custom[i] : this.rowHeight();
@@ -334,6 +364,10 @@ Z.FastListView = Z.View.extend(function() {
 
   // Internal: Returns the offset that should be applied to the item view at the
   // given index.
+  //
+  // idx - The content item index to return the offset for.
+  //
+  // Returns an integer.
   this.def('rowOffsetFor', function(idx) {
     var adjustments = this.offsetAdjustments(),
         offset      = this.rowHeight() * idx,
