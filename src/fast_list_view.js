@@ -368,17 +368,21 @@ Z.FastListView = Z.View.extend(function() {
   this.def('rowOffsetForIndex', function(idx) {
     var adjustments = this.offsetAdjustments(),
         offset      = this.rowHeight() * idx,
-        i, len;
+        ai;
 
     if (!adjustments) { return offset; }
 
-    for (i = 0, len = adjustments.length; i < len; i++) {
-      if (adjustments[i][0] <= idx && idx <= adjustments[i][1]) {
-        return offset + adjustments[i][2];
-      }
+    ai = Z.binsearch(idx, adjustments, function(adj, i) {
+      if (adj[0] <= i && i <= adj[1]) { return 0; }
+      else if (adj[1] < i ) { return -1; }
+      return 1;
+    });
+
+    if (ai === null) {
+      throw new Error("Z.FastListView.rowOffsetForIndex: BUG: " + idx);
     }
 
-    throw new Error("Z.FastListView.rowOffsetForIndex: BUG: " + idx);
+    return offset + adjustments[ai][2];
   });
 
   // Public: Returns the subview that is currently displaying the content item

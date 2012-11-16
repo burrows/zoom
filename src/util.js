@@ -375,6 +375,36 @@ Z.murmur = function(key, seed) {
   return h1 >>> 0;
 };
 
+// Public: Performs a binary search on the items in the given array for the
+// given object. It assumes that the given array is already sorted.
+//
+// o     - The object to search for.
+// array - The pre-sorted array to search. This can be a `Z.Array` or a native
+//         array.
+// cmp   - The comparison function to use to determine a match (default:
+//         `Z.cmp`).
+//
+// Returns the index of the object when found and `false` otherwise.
+Z.binsearch = function(o, array, cmp) {
+  var imin, imax, imid, r;
+
+  array = Z.isA(array, Z.Array) ? array.toNative() : array;
+  cmp   = cmp || Z.cmp;
+  imin  = 0;
+  imax  = array.length - 1;
+
+  while (imax >= imin) {
+    imid = Math.floor((imin + imax) / 2);
+    r    = cmp(array[imid], o);
+
+    if (r < 0)      { imin = imid + 1; }
+    else if (r > 0) { imax = imid - 1; }
+    else            { return imid; }
+  }
+
+  return null;
+};
+
 // Public: Returns a string indicating the type of the given object. This can be
 // considered an enhanced version of the javascript `typeof` operator.
 //

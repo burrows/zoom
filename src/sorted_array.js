@@ -26,38 +26,6 @@ Z.SortedArray = Z.Array.extend(function() {
     this.insert(n.observee);
   }
 
-  // Internal: Performs a binary search on the items in the array for the given
-  // object. Since the array is always maintained in sorted order we can perform
-  // a binary search for an object instead of a linear search as is done in the
-  // parent `Z.Array` type.
-  //
-  // o    - The object to search for.
-  // imin - The minimum index to consider.
-  // imax - The maximum index to consider.
-  //
-  // Returns the index of `o` when its present in the array and `null`
-  //   otherwise.
-  function binarySearch(o, imin, imax) {
-    var imid, r;
-
-    while (imax >= imin) {
-      imid = Math.floor((imin + imax) / 2);
-      r    = Z.cmp(this.at(imid), o);
-
-      if (r < 0) {
-        imin = imid + 1;
-      }
-      else if (r > 0) {
-        imax = imid - 1;
-      }
-      else {
-        return imid;
-      }
-    }
-
-    return null;
-  }
-
   // Public: The `Z.SortedArray` constructor. The sorting behavior can be
   // specified several ways. By default, `Z.cmp` is used to sort the items in
   // ascending order, but the `isDescending` option can be set to reverse this
@@ -158,9 +126,7 @@ Z.SortedArray = Z.Array.extend(function() {
   // o - The object to find the index of.
   //
   // Returns the index of the object or `null` if its not present.
-  this.def('index', function(o) {
-    return binarySearch.call(this, o, 0, this.size() - 1);
-  });
+  this.def('index', function(o) { return Z.binsearch(o, this); });
 
   // Internal: General array manipulations are not allowed in a sorted array.
   this.def('push', function() {
