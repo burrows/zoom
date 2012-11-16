@@ -133,28 +133,28 @@ describe('Z.FastListView', function() {
       });
     });
 
-    describe('.rowHeightFor', function() {
+    describe('.rowHeightForIndex', function() {
       it('should return the rowHeight property', function() {
-        expect(view.rowHeightFor(0)).toBe(10);
-        expect(view.rowHeightFor(5)).toBe(10);
-        expect(view.rowHeightFor(25)).toBe(10);
-        expect(view.rowHeightFor(49)).toBe(10);
+        expect(view.rowHeightForIndex(0)).toBe(10);
+        expect(view.rowHeightForIndex(5)).toBe(10);
+        expect(view.rowHeightForIndex(25)).toBe(10);
+        expect(view.rowHeightForIndex(49)).toBe(10);
       });
     });
 
-    describe('.rowOffsetFor', function() {
+    describe('.rowOffsetForIndex', function() {
       it('should return the index times the rowHeight property', function() {
-        expect(view.rowOffsetFor(0)).toBe(0);
-        expect(view.rowOffsetFor(5)).toBe(50);
-        expect(view.rowOffsetFor(25)).toBe(250);
-        expect(view.rowOffsetFor(49)).toBe(490);
+        expect(view.rowOffsetForIndex(0)).toBe(0);
+        expect(view.rowOffsetForIndex(5)).toBe(50);
+        expect(view.rowOffsetForIndex(25)).toBe(250);
+        expect(view.rowOffsetForIndex(49)).toBe(490);
       });
     });
   });
 
   describe('with custom row heights', function() {
     beforeEach(function() {
-      view.def('customRowHeightFor', function(i) {
+      view.def('customRowHeightForIndex', function(i) {
         return i === 25 ? 5 : i * 10;
       });
       view.customRowHeightIndexes().push(5, 25, 40);
@@ -223,28 +223,28 @@ describe('Z.FastListView', function() {
       });
     });
 
-    describe('.rowHeightFor', function() {
+    describe('.rowHeightForIndex', function() {
       it('should return the rowHeight property for non-custom rows', function() {
-        expect(view.rowHeightFor(0)).toBe(10);
-        expect(view.rowHeightFor(49)).toBe(10);
+        expect(view.rowHeightForIndex(0)).toBe(10);
+        expect(view.rowHeightForIndex(49)).toBe(10);
       });
 
       it('should return the return value of `customRowHeightForIndex` for custom rows', function() {
-        expect(view.rowHeightFor(5)).toBe(50);
-        expect(view.rowHeightFor(25)).toBe(5);
-        expect(view.rowHeightFor(40)).toBe(400);
+        expect(view.rowHeightForIndex(5)).toBe(50);
+        expect(view.rowHeightForIndex(25)).toBe(5);
+        expect(view.rowHeightForIndex(40)).toBe(400);
       });
     });
 
-    describe('.rowOffsetFor', function() {
+    describe('.rowOffsetForIndex', function() {
       it('should return the index times the rowHeight property plus the adjustment for the range the given index falls in', function() {
-        expect(view.rowOffsetFor(0)).toBe(0);
-        expect(view.rowOffsetFor(5)).toBe(50);
-        expect(view.rowOffsetFor(6)).toBe(60 + 40);
-        expect(view.rowOffsetFor(7)).toBe(70 + 40);
-        expect(view.rowOffsetFor(25)).toBe(250 + 40);
-        expect(view.rowOffsetFor(26)).toBe(260 + 35);
-        expect(view.rowOffsetFor(42)).toBe(420 + 425);
+        expect(view.rowOffsetForIndex(0)).toBe(0);
+        expect(view.rowOffsetForIndex(5)).toBe(50);
+        expect(view.rowOffsetForIndex(6)).toBe(60 + 40);
+        expect(view.rowOffsetForIndex(7)).toBe(70 + 40);
+        expect(view.rowOffsetForIndex(25)).toBe(250 + 40);
+        expect(view.rowOffsetForIndex(26)).toBe(260 + 35);
+        expect(view.rowOffsetForIndex(42)).toBe(420 + 425);
       });
     });
   });
@@ -288,7 +288,7 @@ describe('Z.FastListView', function() {
       expect(view.subviews().at(8).content()).toBe(items.at(44));
     });
 
-    it('should set the `top` style properties of each item view based on the return value of rowOffsetFor', function() {
+    it('should set the `top` style properties of each item view based on the return value of rowOffsetForIndex', function() {
       expect(view.subviews().at(0).node.style.top).toBe('0px');
       expect(view.subviews().at(1).node.style.top).toBe('10px');
       expect(view.subviews().at(2).node.style.top).toBe('20px');
