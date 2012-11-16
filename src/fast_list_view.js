@@ -301,6 +301,7 @@ Z.FastListView = Z.View.extend(function() {
           display = true;
         }
 
+        subview.__z_contentIndex__  = i;
         subview.node.style.position = 'absolute';
         subview.node.style.left     = 0;
         subview.node.style.right    = 0;
@@ -378,6 +379,28 @@ Z.FastListView = Z.View.extend(function() {
     }
 
     throw new Error("Z.FastListView.rowOffsetForIndex: BUG: " + idx);
+  });
+
+  // Public: Returns the subview that is currently displaying the content item
+  // at the given index.
+  //
+  // i - An index in the content array.
+  //
+  // Returns a subview or `null` if the subview can't be found.
+  this.def('subviewForIndex', function(i) {
+    return this.subviews().find(function(v) {
+      return v.__z_contentIndex__ === i;
+    });
+  });
+
+  // Public: Returns the content index that the given subview is currently
+  // displaying.
+  //
+  // v - A subview.
+  //
+  // Returns an integer or `null` if `v` is not a subview.
+  this.def('indexForSubview', function(v) {
+    return v.hasOwnProperty('__z_contentIndex__') ? v.__z_contentIndex__ : null;
   });
 
   // Internal: Tells the view system to use the container node to attach

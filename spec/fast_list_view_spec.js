@@ -329,6 +329,34 @@ describe('Z.FastListView', function() {
       });
     });
   });
+
+  describe('.subviewForIndex', function() {
+    it('should return the subview that is currently displaying the content item at the given index', function() {
+      expect(view.subviewForIndex(0)).toBe(view.subviews().at(0));
+      expect(view.subviewForIndex(1)).toBe(view.subviews().at(1));
+      expect(view.subviewForIndex(25)).toBe(null);
+
+      view.scrollOffset(450);
+      view.display();
+
+      expect(view.subviewForIndex(41)).toBe(view.subviews().at(5));
+      expect(view.subviewForIndex(42)).toBe(view.subviews().at(6));
+    });
+  });
+
+  describe('.indexForSubview', function() {
+    it('should return the content index that the given subview is currently displaying', function() {
+      expect(view.indexForSubview(view.subviews().at(0))).toBe(0);
+      expect(view.indexForSubview(view.subviews().at(1))).toBe(1);
+      expect(view.indexForSubview(Z.View.create())).toBe(null);
+
+      view.scrollOffset(450);
+      view.display();
+
+      expect(view.indexForSubview(view.subviews().at(5))).toBe(41);
+      expect(view.indexForSubview(view.subviews().at(6))).toBe(42);
+    });
+  });
 });
 
 }());
