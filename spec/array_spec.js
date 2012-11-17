@@ -763,6 +763,18 @@ describe('Z.Array.each', function() {
     a.each(function(item, idx) { test.push(idx); });
     expect(test).toEqual([0, 1, 2, 3]);
   });
+
+  it('should invoke the method on each item when given a string', function() {
+    var o1 = Z.Object.create(),
+        o2 = Z.Object.create(),
+        a  = Z.A(o1, o2);
+
+    spyOn(o1, 'toString')
+    spyOn(o2, 'toString')
+    a.each('toString');
+    expect(o1.toString).toHaveBeenCalled();
+    expect(o2.toString).toHaveBeenCalled();
+  });
 });
 
 describe('Z.Array.getUnknownProperty', function() {

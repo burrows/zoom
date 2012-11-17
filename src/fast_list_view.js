@@ -177,7 +177,7 @@ Z.FastListView = Z.View.extend(function() {
       }
     }
 
-    if (subviews.size() > n) { subviews.slice(n).invoke('remove'); }
+    if (subviews.size() > n) { subviews.slice(n).each('remove'); }
   });
 
   // Internal: Tells the view system to use the container node to attach

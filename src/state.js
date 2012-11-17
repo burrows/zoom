@@ -556,6 +556,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('each', function(f) {
+    f = this.s2f(f);
     f(this);
     this.substates.each(function(tuple) { tuple[1].each(f); });
     return this;

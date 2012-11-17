@@ -315,7 +315,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   //
   // Returns the receiver.
   this.def('each', function(f) {
-    var items = this.__z_items__, i, len;
+    var items = this.__z_items__, m, i, len;
+    f = this.s2f(f);
     for (i = 0, len = items.length; i < len; i++) { f(items[i], i); }
     return this;
   });

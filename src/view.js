@@ -187,7 +187,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
     delete views[this.objectId()];
     this.remove();
-    subviews.invoke('destroy');
+    subviews.each('destroy');
 
     return this;
   });
@@ -205,7 +205,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Returns the receiver.
   this.def('displayIfNeeded', function() {
     if (this.needsDisplay()) { this.display(); }
-    else { this.subviews().invoke('displayIfNeeded'); }
+    else { this.subviews().each('displayIfNeeded'); }
     return this;
   });
 
@@ -223,7 +223,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('display', function() {
     var subviews = this.subviews(), removed, i, size;
 
-    this.subviews().invoke('displayIfNeeded');
+    this.subviews().each('displayIfNeeded');
 
     // if this is the first time the view has been displayed, invoke the
     // `render` method, other wise invoke the `update` method if it exists,
@@ -353,7 +353,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('notifyDidAttachNode', function() {
     this.isNodeAttached(true);
     this.didAttachNode();
-    this.subviews().invoke('notifyDidAttachNode');
+    this.subviews().each('notifyDidAttachNode');
   });
 
   // Internal: This method is called when this view's `node` has been detached
@@ -364,7 +364,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('notifyDidDetachNode', function() {
     this.isNodeAttached(false);
     this.didAttachNode();
-    this.subviews().invoke('notifyDidDetachNode');
+    this.subviews().each('notifyDidDetachNode');
   });
 
   // Public: Indicates whether the receiver is a descendant of the given view.
@@ -629,6 +629,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns the receiver.
   this.def('each', function(f) {
+    f = this.s2f(f);
     f(this);
     this.subviews().each(function(subview) { subview.each(f); });
     return this;

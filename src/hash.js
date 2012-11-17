@@ -295,6 +295,8 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
   this.def('each', function(f) {
     var entry = this.__z_head__;
 
+    f = this.s2f(f);
+
     while (entry) {
       f([entry.key, entry.value]);
       entry = entry.next;

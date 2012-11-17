@@ -15,6 +15,28 @@ f = Foo.create();
 a = Z.A(1,2,3,4,5,6,7,8,9,10);
 h = Z.H('foo', 1, 'bar', 2, 'baz', 3);
 
+describe('Z.Enumerable.s2f', function() {
+  describe('when passed a function', function() {
+    it('should return the function', function() {
+      var f = function() {};
+      expect(Z.Enumerable.s2f(f)).toBe(f);
+    });
+  });
+
+  describe('when passed a string', function() {
+    it('should return a function that invokes the given method name on its argument', function() {
+      var o = Z.Object.create().open(function() {
+        this.def('foo', function() { return 'foo!'; });
+      }), f;
+
+      f = Z.Enumerable.s2f('foo');
+
+      expect(typeof f).toBe('function');
+      expect(f(o)).toBe('foo!');
+    });
+  });
+});
+
 describe('Z.Enumerable.inject', function() {
   it('should reduce the enumerable using the given initial object and function', function() {
     expect(f.inject('', function(acc, x) { return acc + x; })).toEqual('foobarbazquux');
@@ -31,6 +53,10 @@ describe('Z.Enumerable.map', function() {
   it('should return a Z.Array containing the result of applying the given function to each item in the enumerable', function() {
     expect(f.map(function(x) { return x.toUpperCase(); })).toEq(Z.A('FOO', 'BAR', 'BAZ', 'QUUX'));
     expect(a.map(function(x) { return x * 10; })).toEq(Z.A(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
+  });
+
+  it('should invoke the method indicated by the given string on each item and return an array containing the return values', function() {
+    expect(f.map('toUpperCase')).toEq(Z.A('FOO', 'BAR', 'BAZ', 'QUUX'));
   });
 });
 
@@ -66,14 +92,6 @@ describe('Z.Enumerable.groupBy', function() {
   it('should return a Z.Hash mapping the results of the given function to arrays containing the corresponding enumerable items', function() {
     expect(f.groupBy(function(x) { return x[0]; })).toEq(Z.H('f', Z.A('foo'), 'b', Z.A('bar', 'baz'), 'q', Z.A('quux')));
     expect(a.groupBy(function(x) { return x % 2})).toEq(Z.H(0, Z.A(2,4,6,8,10), 1, Z.A(1,3,5,7,9)));
-  });
-});
-
-describe('Z.Enumerable.invoke', function() {
-  it('should call the given method on each item in the array and return a new array contain the results', function() {
-    var o1 = Z.Object.create(), o2 = Z.Object.create(), o3 = Z.Object.create(),
-        a = Z.A(o1, o2, o3);
-    expect(a.invoke('objectId')).toEq(Z.A(o1.objectId(), o2.objectId(), o3.objectId()));
   });
 });
 
@@ -161,7 +179,7 @@ describe('Z.Enumerable.all', function() {
   });
 });
 
-describe('Z.Enumerable.all', function() {
+describe('Z.Enumerable.any', function() {
   it('should return `true` if the given function returns `true` for any item and false otherwise', function() {
     expect(Z.A().any(function(x) { return true; })).toBe(false);
     expect(f.any(function(x) { return x === 'bar'; })).toBe(true);

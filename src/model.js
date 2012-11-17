@@ -70,7 +70,7 @@ repo = Z.Object.create().open(function() {
 
   this.def('reset', function(query) {
     this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-    this.queries.each(function(tuple) { tuple[1].invoke('clear'); });
+    this.queries.each(function(tuple) { tuple[1].each('clear'); });
   });
 
   this.def('registerQuery', function(query) {

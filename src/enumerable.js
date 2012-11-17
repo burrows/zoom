@@ -31,13 +31,31 @@ Z.Enumerable = Z.Module.create(function() {
   // `each` iteration.
   function EarlyExit(value) { this.value = value; }
 
+  // Public: Converts a string into a function that will invoke the method
+  // matching the given string on its argument.
+  //
+  // s - A string. If a function is passed then it will be returned immediately.
+  //
+  // Returns a function.
+  this.def('s2f', function(s) {
+    if (typeof s === 'function') { return s; }
+    return function(x) { return x[s](); };
+  });
+
   // Public: Returns a new array containing the results of invoking the given
   // function once for each item in the enumerable.
   //
-  // f - A function that operates on an individual item in the enumerable.
+  // f - A function that operates on an individual item in the enumerable or a
+  //     string representing a method to invoke on each item.
   //
-  // Returns nothing.
+  // Examples
+  //
+  //   Z.A(1,2,3).map(function(x) { return x * 2; }); // => #<Z.Array:35 [2, 4, 6]>
+  //   Z.A('foo', 'bar').map('toUpperCase');          // => #<Z.Array:42 ['FOO', 'BAR']>
+  //
+  // Returns a new `Z.Array`.
   this.def('map', function(f) {
+    f = this.s2f(f);
     return this.inject(Z.A(), function(acc, item) {
       acc.push(f(item));
       return acc;
@@ -63,7 +81,8 @@ Z.Enumerable = Z.Module.create(function() {
   // notfound - A default value to return if `f` never returns `true` (default:
   //           `null`).
   // f        - A function that takes an item from the enumerable and returns a
-  //            boolean.
+  //            boolean or a string representing a method to invoke on each
+  //            item.
   //
   // Returns the first item for which `f` returns true or `notfound` if it never
   //   returns `true`.
@@ -72,6 +91,8 @@ Z.Enumerable = Z.Module.create(function() {
       f = notfound;
       notfound = null;
     }
+
+    f = this.s2f(f);
 
     try {
       this.each(function(item) { if (f(item)) { throw new EarlyExit(item); } });
@@ -90,7 +111,8 @@ Z.Enumerable = Z.Module.create(function() {
   // initial - The initial value of the accumulator (default: first item in the
   //           eumerable).
   // f       - A function that takes the current accumulator value and an item
-  //           in the enumerable and returns a new accumulator value.
+  //           in the enumerable and returns a new accumulator value or a string
+  //           representing a method to invoke on each item .
   //
   // Examples
   //
@@ -116,6 +138,7 @@ Z.Enumerable = Z.Module.create(function() {
     }
 
     acc = initial;
+    f   = this.s2f(f);
 
     this.each(function(item) {
       if (skip) { skip = false; return; }
@@ -128,7 +151,8 @@ Z.Enumerable = Z.Module.create(function() {
   // Public: Returns a `Z.Array` containing all items of the enumerable for
   // which the given function returns `true`.
   //
-  // f - A function that takes a item of the enumerable and returns a boolean.
+  // f - A function that takes a item of the enumerable and returns a boolean
+  //     or a string representing a method to invoke on each item.
   //
   // Examples
   //
@@ -136,6 +160,7 @@ Z.Enumerable = Z.Module.create(function() {
   //
   // Returns a `Z.Array` instance.
   this.def('select', function(f) {
+    f = this.s2f(f);
     return this.inject(Z.A(), function(acc, item) {
       if (f(item)) { acc.push(item); }
       return acc;
@@ -145,7 +170,8 @@ Z.Enumerable = Z.Module.create(function() {
   // Public: Returns a `Z.Array` containing all items of the enumerable for
   // which the given function returns `false`.
   //
-  // f - A function that takes a item of the enumerable and returns a boolean.
+  // f - A function that takes a item of the enumerable and returns a boolean or
+  //     a string representing a method to invoke on each item.
   //
   // Examples
   //
@@ -153,6 +179,7 @@ Z.Enumerable = Z.Module.create(function() {
   //
   // Returns a `Z.Array` instance.
   this.def('reject', function(f) {
+    f = this.s2f(f);
     return this.inject(Z.A(), function(acc, item) {
       if (!f(item)) { acc.push(item); }
       return acc;
@@ -162,7 +189,8 @@ Z.Enumerable = Z.Module.create(function() {
   // Public: Returns a `Z.Hash` that maps the results of the given function to
   // `Z.Array`s containing the coresponding items that produced the result.
   //
-  // f - A function that takes an item of the enumerable and returns any value.
+  // f - A function that takes an item of the enumerable and returns any value
+  //     or a string representing a method to invoke on each item.
   //
   // Examples
   //
@@ -171,6 +199,7 @@ Z.Enumerable = Z.Module.create(function() {
   //
   // Returns a `Z.Hash` instance.
   this.def('groupBy', function(f) {
+    f = this.s2f(f);
     return this.inject(Z.H(), function(acc, item) {
       var k = f(item);
       if (!acc.at(k)) { acc.at(k, Z.A()); }
@@ -182,7 +211,8 @@ Z.Enumerable = Z.Module.create(function() {
   // Public: Returns `true` if the given fuction returns `true` for every item
   // in the enumerable and `false` otherwise.
   //
-  // f - A function that takes a item of the enumerable and returns a boolean.
+  // f - A function that takes a item of the enumerable and returns a boolean
+  //     or a string representing a method to invoke on each item.
   //
   // Examples
   //
@@ -191,6 +221,7 @@ Z.Enumerable = Z.Module.create(function() {
   //
   // Returns a boolean.
   this.def('all', function(f) {
+    f = this.s2f(f);
     try {
       this.each(function(item) { if (!f(item)) { throw new EarlyExit(); } });
     }
@@ -204,7 +235,8 @@ Z.Enumerable = Z.Module.create(function() {
   // Public: Returns `true` if the given fuction returns `true` for any item in
   // the enumerable and `false` otherwise.
   //
-  // f - A function that takes a item of the enumerable and returns a boolean.
+  // f - A function that takes a item of the enumerable and returns a boolean
+  //     or a string representing a method to invoke on each item.
   //
   // Examples
   //
@@ -213,6 +245,7 @@ Z.Enumerable = Z.Module.create(function() {
   //
   // Returns a boolean.
   this.def('any', function(f) {
+    f = this.s2f(f);
     try {
       this.each(function(item) { if (f(item)) { throw new EarlyExit(); } });
     }
@@ -221,20 +254,6 @@ Z.Enumerable = Z.Module.create(function() {
     }
 
     return false;
-  });
-
-  // Public: Invokes the given method name on each item of the enumerable and
-  // returns a `Z.Array` containing the results.
-  //
-  // name - The name of a method that each item in the enumerable responds to.
-  //
-  // Examples
-  //
-  //   Z.A(Z.A(2,3,1), Z.A(5,3,7)).invoke('sort'); // => #<Z.Array:20 [#<Z.Array:21 [1, 2, 3]>, #<Z.Array:23 [3, 5, 7]>]>
-  //
-  // Returns a `Z.Array` instance.
-  this.def('invoke', function(name) {
-    return this.map(function(item) { return item[name](); });
   });
 
   // Public: Gets the given property path from each item in the enumerable and
