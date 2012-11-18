@@ -436,5 +436,27 @@ Z.FastListView = Z.View.extend(function() {
     this.scrollOffset(this.rowOffsetForIndex(i));
     return this;
   });
+
+  // Public: Returns the index of the first content item that is at least
+  // partially visible.
+  this.def('firstVisibleIndex', function() {
+    var soffset = this.scrollOffset(), range = this.displayRange(), i;
+
+    if (!range) { return null; }
+
+    for (i = range[0]; i <= range[1]; i++) {
+      if (this.rowOffsetForIndex(i) + this.rowHeightForIndex(i) > soffset) {
+        return i;
+      }
+    }
+
+    return null;
+  });
+
+  // Public: Returns the first subview that is at least partially visible.
+  this.def('firstVisibleSubview', function() {
+    var idx = this.firstVisibleIndex();
+    return idx === null ? null : this.subviewForIndex(idx);
+  });
 });
 

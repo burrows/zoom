@@ -357,6 +357,30 @@ describe('Z.FastListView', function() {
       expect(view.indexForSubview(view.subviews().at(6))).toBe(42);
     });
   });
+
+  describe('.firstVisibleIndex', function() {
+    it('should return the index of the first content item that is at least paritally visible', function() {
+      expect(view.firstVisibleIndex()).toBe(0);
+      view.scrollOffset(10);
+      view.display();
+      expect(view.firstVisibleIndex()).toBe(1);
+      view.scrollOffset(25);
+      view.display();
+      expect(view.firstVisibleIndex()).toBe(2);
+    });
+  });
+
+  describe('.firstVisibleIndex', function() {
+    it('should return the first subview that is at least paritally visible', function() {
+      expect(view.firstVisibleSubview()).toBe(view.subviewForIndex(0));
+      view.scrollOffset(10);
+      view.display();
+      expect(view.firstVisibleSubview()).toBe(view.subviewForIndex(1));
+      view.scrollOffset(25);
+      view.display();
+      expect(view.firstVisibleSubview()).toBe(view.subviewForIndex(2));
+    });
+  });
 });
 
 }());
