@@ -79,7 +79,11 @@ Z.FastListView = Z.View.extend(function() {
   // When using this property you must also implement the
   // `customRowHeightForIndex` method in your sub-type.
   this.prop('customRowHeightIndexes', {
-    cache: true, get: function() { return Z.A(); }
+    get: function() {
+      return this.__customRowHeightIndexes__ =
+        this.__customRowHeightIndexes__ || Z.A();
+    },
+    set: function(a) { return this.__customRowHeightIndexes__ = a; }
   });
 
   // Internal: The height of the scrollable container. This property is managed
@@ -179,7 +183,7 @@ Z.FastListView = Z.View.extend(function() {
           nviews   = Math.min(Math.ceil(sheight / rheight), size),
           first, last, ofirst, olast;
 
-      if (size === 0) { return null; }
+      if (size === 0 || nviews === 0) { return null; }
 
       first = Math.min(Math.floor(soffset / rheight), size - 1);
       last  = Math.min(first + nviews - 1, size - 1);
@@ -379,7 +383,7 @@ Z.FastListView = Z.View.extend(function() {
     });
 
     if (ai === null) {
-      throw new Error("Z.FastListView.rowOffsetForIndex: BUG: " + idx);
+      throw new Error(Z.fmt("Z.FastListView.rowOffsetForIndex: BUG: %@: %@", idx, adjustments));
     }
 
     return offset + adjustments[ai][2];
