@@ -35,7 +35,6 @@ describe('Z.View', function() {
       expect(node instanceof window.HTMLElement).toBe(true);
       expect(node.parentNode).toBeNull();
       expect(node.id).toBe('z-view-' + v.objectId());
-      expect(node.className).toBe('z-view');
       expect(node.innerHTML).toBe('');
       v.destroy();
     });

@@ -10,11 +10,11 @@ var slice = Array.prototype.slice;
 // The `Z.View` type itself is abstract, applications are made up of sub-types
 // that inherit from `Z.View` and override many of its methods.
 Z.View = Z.Object.extend(Z.Enumerable, function() {
-  var viewClassRe, views;
+  var viewIdRe, views;
 
-  // Internal: A regular expression for matching against a DOM element's
-  // `className` property to determine if the element is a view's node.
-  viewClassRe = /\bz-view\b/;
+  // Internal: A regular expression for matching against a DOM element's `id`
+  // property to determine if the element is a view's node.
+  viewIdRe = /^z-view-\d+$/;
   
   // Internal: A cache of concrete view instances. Every `Z.View` object that
   // gets created is added to this cache keyed by its `objectId`. This cache is
@@ -30,7 +30,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   function buildNode() {
     var id      = 'z-view-' + this.objectId(),
         node    = document.createElement(this.tag),
-        classes = Z.A('z-view').concat(this.classes());
+        classes = this.classes() || [];
 
     node.id = id;
     node.className = classes.join(' ');
@@ -141,10 +141,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Returns a `Z.View` instance or `null` if the node doesn't belong to a
   //   view.
   this.def('forNode', function(node) {
-    while (node && !viewClassRe.test(node.className)) {
-      node = node.parentNode;
-    }
-
+    while (node && !viewIdRe.test(node.id)) { node = node.parentNode; }
     return node ? (views[node.id.replace('z-view-', '')] || null) : null;
   });
 
