@@ -276,11 +276,10 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
   // Public: Attaches the given subview's `node` to the receiver's `node`. This
   // method is called by `display` and should never be called directly unless
-  // you are overriding the `display` method. The `willAttachNode` and
-  // `didAttachNode` methods will be called on the given subview before and
-  // after the node is actually attached.
+  // you are overriding the `display` method.
   //
   // subview - The subview whose node should be attached.
+  // idx     - The index at which to insert the subview node.
   //
   // Returns the receiver.
   this.def('insertSubviewNode', function(subview, idx) {
@@ -316,15 +315,6 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns a DOM node object.
   this.def('subviewContainerNode', function() { return this.node; });
-
-  // Public: This method is called immediately before the receiver's `node` is
-  // attached to its `superview`'s `node`. By default this method does nothing
-  // and is designed to be overridden by subtypes.
-  //
-  // superview - The view that the receiver's `node` is about to be attached to.
-  //
-  // Returns nothing.
-  this.def('willAttachNode', function(superview) {});
 
   // Public: This method is called just after the receiver's `node` has been
   // been attached to the DOM. By default this method does nothing and is
