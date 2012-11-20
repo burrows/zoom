@@ -64,18 +64,6 @@ describe('Z.View', function() {
   });
 
   describe('.destroy', function() {
-    it('should remove the view from its superview', function() {
-      var v1 = TestCompoundView.create(),
-          v2 = TestCompoundView.create();
-
-      v1.addSubview(v2);
-      expect(v2.superview()).toBe(v1);
-      expect(v1.subviews()).toEq(Z.A(v2));
-      v2.destroy()
-      expect(v2.superview()).toBeNull();
-      expect(v1.subviews()).toEq(Z.A());
-    });
-
     it('should remove the view from the cache that `forNode` uses', function() {
       var v = TestCompoundView.create();
 

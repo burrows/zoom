@@ -183,7 +183,6 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     });
 
     delete views[this.objectId()];
-    this.remove();
     subviews.each('destroy');
 
     return this.supr();
