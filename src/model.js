@@ -515,7 +515,7 @@ Z.Model = Z.Object.extend(function() {
       this.mapper.destroyModel.apply(this.mapper, args);
     }
 
-    return this;
+    return this.supr();
   });
 
   this.def('destroyModelDidSucceed', function() {
