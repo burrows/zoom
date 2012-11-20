@@ -322,7 +322,9 @@ Z.FastListView = Z.View.extend(function() {
       }
     }
 
-    if (subviews.size() > n) { subviews.slice(n).each('remove'); }
+    if (subviews.size() > n) {
+      subviews.slice(n).each(function(v) { v.remove().destroy(); });
+    }
   });
 
   // Public: Positions the given subview's node using the given offset and

@@ -312,6 +312,14 @@ describe('Z.FastListView', function() {
       expect(view.subviews().at(7).node.style.top).toBe('430px');
       expect(view.subviews().at(8).node.style.top).toBe('440px');
     });
+
+    it('should destroy removed subviews', function() {
+      var subview = view.subviews().at(0);
+      spyOn(subview, 'destroy');
+      view.content(Z.A());
+      view.display();
+      expect(subview.destroy).toHaveBeenCalled();
+    });
   });
 
   describe('.scrollTo', function() {
