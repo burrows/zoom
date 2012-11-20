@@ -432,7 +432,7 @@ Z.FastListView = Z.View.extend(function() {
 
   // Internal: The height of the view may not be known until its actually
   // attached to the page, so we override this method in order to first set the
-  // view's `height` and `top` properties and trigger a display.
+  // view's `height` and `top` properties.
   this.def('didAttachNode', function() {
     var node = this.overflowNode();
 
@@ -440,11 +440,10 @@ Z.FastListView = Z.View.extend(function() {
     this.__scrollListener__ = Z.bind(scrollListener, this);
 
     window.addEventListener('resize', this.__resizeListener__, false);
-    this.overflowNode().addEventListener('scroll', this.__scrollListener__, false);
+    node.addEventListener('scroll', this.__scrollListener__, false);
 
     this.scrollHeight(node.offsetHeight);
     this.scrollOffset(node.scrollTop);
-    this.display();
   });
 
   // Public: Cause the view to scroll to a particular content item.
