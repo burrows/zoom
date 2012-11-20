@@ -189,7 +189,7 @@ Z.Object.open(function() {
   // `dependsOn` option.
   //
   // Returns nothing.
-  function setupDependsOnObservers() {
+  function registerDependsOnObservers() {
     var descs = this.propertyDescriptors(), desc, k, path, i, len;
 
     for (k in descs) {
@@ -197,6 +197,23 @@ Z.Object.open(function() {
       for (i = 0, len = desc.dependsOn.length; i < len; i++) {
         this.observe(desc.dependsOn[i], this, dependentPropertyObserver, {
           prior: true, context: k
+        });
+      }
+    }
+  }
+
+  // Internal: Deregisters observers for all properties defined with the
+  // `dependsOn` option.
+  //
+  // Returns nothing.
+  function deregisterDependsOnObservers() {
+    var descs = this.propertyDescriptors(), desc, k, path, i, len;
+
+    for (k in descs) {
+      desc = descs[k];
+      for (i = 0, len = desc.dependsOn.length; i < len; i++) {
+        this.stopObserving(desc.dependsOn[i], this, dependentPropertyObserver, {
+          context: k
         });
       }
     }
@@ -266,9 +283,16 @@ Z.Object.open(function() {
       o.init.apply(o, slice.call(arguments));
     }
 
-    setupDependsOnObservers.call(o);
+    registerDependsOnObservers.call(o);
 
     return o;
+  });
+
+  // Public: Destroys the object by removing any observers created for dependent
+  // properties.
+  this.def('destroy', function() {
+    deregisterDependsOnObservers.call(this);
+    return this;
   });
 
   // Public: Returns the type of a concrete object. This is not necessarily the
@@ -513,7 +537,7 @@ Z.Object.open(function() {
   //   def       - Specify a default value for the property.
   //   cache     - Caches the result the first time the property is computed and
   //               returns the cached value on subsequent gets. The cache will
-  //               be cleared when any dependant paths change.
+  //               be cleared when any dependent paths change.
   //
   // Returns nothing.
   this.def('prop', function(name, opts) {
