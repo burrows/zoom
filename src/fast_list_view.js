@@ -33,8 +33,9 @@ Z.FastListView = Z.View.extend(function() {
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
   function resizeListener() {
-    if (this.node.offsetHeight !== this.scrollHeight()) {
-      this.scrollHeight(this.node.offsetHeight);
+    var node = this.overflowNode();
+    if (node.offsetHeight !== this.scrollHeight()) {
+      this.scrollHeight(node.offsetHeight);
       this.display();
     }
   }
@@ -43,7 +44,8 @@ Z.FastListView = Z.View.extend(function() {
   // view is scrolled we must adjust the `top` property and re-render the
   // subviews.
   function scrollListener() {
-    this.scrollOffset(this.node.scrollTop);
+    var node = this.overflowNode();
+    this.scrollOffset(node.scrollTop);
     this.display();
   }
 
@@ -225,11 +227,6 @@ Z.FastListView = Z.View.extend(function() {
   // setup the `resize` and `scroll` event listeners.
   this.def('init', function(props) {
     this.supr(props);
-    this.__resizeListener__ = Z.bind(resizeListener, this);
-    this.__scrollListener__ = Z.bind(scrollListener, this);
-
-    window.addEventListener('resize', this.__resizeListener__, false);
-    this.node.addEventListener('scroll', this.__scrollListener__, false);
     this.observe('itemViewType', this, itemViewTypeDidChange);
   });
 
@@ -241,6 +238,24 @@ Z.FastListView = Z.View.extend(function() {
     this.stopObserving('itemViewType', this, itemViewTypeDidChange);
     return this.supr();
   });
+
+  // Public: Returns the node that has its `overflow-y` property set. By default
+  // this is the view's `node` property, but you may want to override this if
+  // you would rather use a node higher the in hierarchy as the scrollable
+  // window.
+  this.def('overflowNode', function() { return this.node; });
+
+  // Public: Returns the node that contains all of the item view nodes. This is
+  // the node whose height will be set to accomodate all items in the content
+  // array. By default this returns the node created by the default
+  // implementation of the `render` method but you may want to override if you'd
+  // prefer to use a superview's node as the `overflowNode` and this view's
+  // `node` as the `contentNode`.
+  this.def('contentNode', function() { return this.node.childNodes[0]; });
+
+  // Internal: Tells the view system to use the `contentNode` node to attach
+  // subviews to instead of `node`.
+  this.def('subviewContainerNode', function() { return this.contentNode(); });
   
   // Public: Creates a new item view instance. Override this method if you want
   // to customize how item views are created.
@@ -279,14 +294,16 @@ Z.FastListView = Z.View.extend(function() {
         theight  = this.totalHeight(),
         subviews = this.subviews(),
         range    = this.displayRange(),
+        onode    = this.overflowNode(),
+        cnode    = this.contentNode(),
         n        = range ? range[1] - range[0] + 1 : 0,
         i, item, subview, items, display, offset, height;
 
     // ensure that the container is tall enough for all content items
-    this.node.childNodes[0].style.height = theight + 'px';
+    cnode.style.height = theight + 'px';
 
     // sync the scroll position with the `top` property
-    if (this.node.scrollTop !== soffset) { this.node.scrollTop = soffset; }
+    if (onode.scrollTop !== soffset) { onode.scrollTop = soffset; }
 
     // sync the content items we want to display with their appropriate subviews
     if (n > 0) {
@@ -413,18 +430,20 @@ Z.FastListView = Z.View.extend(function() {
     return v.hasOwnProperty('__z_contentIndex__') ? v.__z_contentIndex__ : null;
   });
 
-  // Internal: Tells the view system to use the container node to attach
-  // subviews instead of `node`.
-  this.def('subviewContainerNode', function() {
-    return this.node.childNodes[0];
-  });
-
   // Internal: The height of the view may not be known until its actually
   // attached to the page, so we override this method in order to first set the
   // view's `height` and `top` properties and trigger a display.
   this.def('didAttachNode', function() {
-    this.scrollHeight(this.node.offsetHeight);
-    this.scrollOffset(this.node.scrollTop);
+    var node = this.overflowNode();
+
+    this.__resizeListener__ = Z.bind(resizeListener, this);
+    this.__scrollListener__ = Z.bind(scrollListener, this);
+
+    window.addEventListener('resize', this.__resizeListener__, false);
+    this.overflowNode().addEventListener('scroll', this.__scrollListener__, false);
+
+    this.scrollHeight(node.offsetHeight);
+    this.scrollOffset(node.scrollTop);
     this.display();
   });
 
