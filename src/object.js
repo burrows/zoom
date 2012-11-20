@@ -212,7 +212,9 @@ Z.Object.open(function() {
     for (k in descs) {
       desc = descs[k];
       for (i = 0, len = desc.dependsOn.length; i < len; i++) {
-        this.stopObserving(desc.dependsOn[i], this, dependentPropertyObserver);
+        this.stopObserving(desc.dependsOn[i], this, dependentPropertyObserver, {
+          context: k
+        });
       }
     }
   }
