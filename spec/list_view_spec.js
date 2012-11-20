@@ -169,9 +169,8 @@ describe('Z.ListView', function() {
 
       expect(v.get('subviews.size')).toBe(2);
       v.destroy();
-      expect(v.get('subviews.size')).toBe(0);
-
-      expect(function() { v.content().push(p3); }).not.toThrow();
+      v.content().push(p3)
+      expect(v.get('subviews.size')).toBe(2);
     });
   });
 
