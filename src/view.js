@@ -186,7 +186,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     this.remove();
     subviews.each('destroy');
 
-    return this;
+    return this.supr();
   });
 
   // Public: Renders the view into its node. By default this method does

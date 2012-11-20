@@ -245,10 +245,11 @@ Z.EventListener = Z.Object.extend(function() {
   // Public: The `Z.EventListener` destructor. This removes all event listeners
   // setup by the `init` method.
   //
-  // Returns nothing.
+  // Returns the receiver..
   this.def('destroy', function() {
     removeKeyListeners.call(this);
     removeMouseListeners.call(this);
+    return this.supr();
   });
 });
 
