@@ -285,6 +285,8 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('insertSubviewNode', function(subview, idx) {
     var node = this.subviewContainerNode(), child = subview.node;
 
+    idx = idx + this.subviewIndexOffset();
+
     if (child === node.childNodes[idx]) { return this; }
 
     if (idx === node.childNodes.length) { node.appendChild(child); }
@@ -315,6 +317,31 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   //
   // Returns a DOM node object.
   this.def('subviewContainerNode', function() { return this.node; });
+
+  // Public: Returns the offset to use when inserting subview nodes into the
+  // DOM. By default subview nodes appear in the DOM at the same index that
+  // their managing view appears in its superview's `subviews` array. This may
+  // not always be desirable though when the superview also has some rendered
+  // content. To ensure that subviews are inserted into the DOM where you
+  // expect, you can override this method to adjust the index offset to account
+  // for other nodes inserted by the `render` method.
+  //
+  // Examples
+  //
+  //   MyView = Z.View.extend(function() {
+  //     this.def('render', function() {
+  //       this.node.innerHTML = '<div class="header"></div><div class="footer"></div>';
+  //     });
+  //
+  //     this.subview('sv1', SomeView);
+  //     this.subview('sv2', SomeOtherView);
+  //
+  //     // Causes subviews to be inserted between header and footer divs.
+  //     this.def('subviewOffsetIndex', function() { return 1; });
+  //   });
+  //
+  // Returns an integer.
+  this.def('subviewIndexOffset', function() { return 0; });
 
   // Public: This method is called just after the receiver's `node` has been
   // been attached to the DOM. By default this method does nothing and is
