@@ -614,6 +614,43 @@ describe('Z.View', function() {
       expect(slice.call(v.node.childNodes[1].childNodes)).toEq([]);
     });
 
+    it('should insert subview nodes at the offset index indicated by `subviewIndexOffset`', function() {
+      var v, sv1, sv2, sv3;
+
+      v = Z.View.extend(function() {
+        this.def('render', function() {
+          this.node.innerHTML = '<div class="foo1"></div><div class="foo2"></div><div class="foo3"></div>';
+        });
+
+        this.def('subviewIndexOffset', function() { return 2; });
+      }).create();
+
+      sv1 = TestView1.create();
+      sv2 = TestView2.create();
+      sv3 = TestView3.create();
+
+      v.addSubview(sv1);
+      v.addSubview(sv2);
+      v.addSubview(sv3);
+      v.display();
+
+      expect(v.node.childNodes[0].className).toEq('foo1');
+      expect(v.node.childNodes[1].className).toEq('foo2');
+      expect(v.node.childNodes[2]).toEq(sv1.node);
+      expect(v.node.childNodes[3]).toEq(sv2.node);
+      expect(v.node.childNodes[4]).toEq(sv3.node);
+      expect(v.node.childNodes[5].className).toEq('foo3');
+
+      v.removeSubview(sv2);
+      v.display();
+
+      expect(v.node.childNodes[0].className).toEq('foo1');
+      expect(v.node.childNodes[1].className).toEq('foo2');
+      expect(v.node.childNodes[2]).toEq(sv1.node);
+      expect(v.node.childNodes[3]).toEq(sv3.node);
+      expect(v.node.childNodes[4].className).toEq('foo3');
+    });
+
     it('should set `needsDisplay` property to `false`', function() {
       var v = TestView1.create();
 
