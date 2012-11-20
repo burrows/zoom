@@ -377,7 +377,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Returns nothing.
   this.def('notifyDidDetachNode', function() {
     this.isNodeAttached(false);
-    this.didAttachNode();
+    this.didDetachNode();
     this.subviews().each('notifyDidDetachNode');
   });
 
