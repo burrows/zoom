@@ -273,6 +273,19 @@ Z.FastListView = Z.View.extend(function() {
     return type.create({content: content});
   });
 
+  // Public: Notifies the view that a row with a custom height has changed its
+  // height. This will trigger an `update` call to adjust positioning to
+  // accomodate the new height.
+  //
+  // *indexes - Zero or more indexes that have had their height change.
+  //
+  // Returns the receiver.
+  this.def('customRowHeightDidChange', function() {
+    this.willChangeProperty('customRowHeights');
+    this.didChangeProperty('customRowHeights');
+    return this;
+  });
+
   // Internal: Renders the view by creating the container div and then invoking
   // the `update` method to setup the subviews.
   //

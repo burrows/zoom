@@ -33,13 +33,13 @@ describe('Z.FastListView', function() {
     expect(view.node.childNodes[0].style.height).toBe('500px');
   });
 
-  describe('overflowNode', function() {
+  describe('.overflowNode', function() {
     it('should return the views node', function() {
       expect(view.overflowNode()).toBe(view.node);
     });
   });
 
-  describe('contentNode', function() {
+  describe('.contentNode', function() {
     it('should return the node created by the render method', function() {
       expect(view.contentNode()).toBe(view.node.childNodes[0]);
     });
@@ -179,6 +179,17 @@ describe('Z.FastListView', function() {
     describe('.customRowHeights', function() {
       it('should return a native object mapping each custom index to its custom height', function() {
         expect(view.customRowHeights()).toEq({5: 50, 25: 5, 40: 400});
+      });
+    });
+
+    describe('.customRowHeightDidChange', function() {
+      it('should cause `customRowHeights` to update', function() {
+        expect(view.customRowHeights()).toEq({5: 50, 25: 5, 40: 400});
+        view.def('customRowHeightForIndex', function(i) {
+          return i === 25 ? 6 : i * 10;
+        });
+        view.customRowHeightDidChange(25);
+        expect(view.customRowHeights()).toEq({5: 50, 25: 6, 40: 400});
       });
     });
 
