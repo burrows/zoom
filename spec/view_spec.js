@@ -639,6 +639,21 @@ describe('Z.View', function() {
       expect(v.node.childNodes[4].className).toEq('foo3');
     });
 
+    it('should throw an exception when `subviewIndexOffset` is greater than the current number of child nodes', function() {
+      var v, sv1;
+
+      v = Z.View.extend(function() {
+        this.def('subviewIndexOffset', function() { return 2; });
+      }).create();
+
+      sv1 = TestView1.create();
+
+      expect(function() {
+        v.addSubview(sv1);
+        v.display();
+      }).toThrow(Z.fmt("Z.View.insertSubviewNode: index 2 is greater than the number of current child nodes (0): %@", v));
+    });
+
     it('should set `needsDisplay` property to `false`', function() {
       var v = TestView1.create();
 
