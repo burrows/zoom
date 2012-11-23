@@ -25,9 +25,9 @@ var slice = Array.prototype.slice;
 //   });
 //
 //   var txns = Z.A(
-//     Demo.Transaction.create({payee: 'Power Co', amount: 120}),
-//     Demo.Transaction.create({payee: 'Car Loan', amount: 250}),
-//     Demo.Transaction.create({payee: 'Cable Co', amount: 50})
+//     App.Transaction.create({payee: 'Power Co', amount: 120}),
+//     App.Transaction.create({payee: 'Car Loan', amount: 250}),
+//     App.Transaction.create({payee: 'Cable Co', amount: 50})
 //   );
 //
 //   txns.get('size');  // => 3

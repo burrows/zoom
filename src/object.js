@@ -958,6 +958,7 @@ Z.Object.open(function() {
 
     if (!regs) { return this; }
 
+    regs = regs.slice();
     opts = opts ? Z.dup(opts) : {};
     type = Z.del(opts, 'type') || 'change';
 
@@ -1036,6 +1037,7 @@ Z.Object.open(function() {
 
     if (!regs) { return this; }
 
+    regs = regs.slice();
     opts = opts ? Z.dup(opts) : {};
     type = Z.del(opts, 'type') || 'change';
 
