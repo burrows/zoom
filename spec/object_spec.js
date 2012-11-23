@@ -1164,6 +1164,29 @@ describe('Z.Object KVO support:', function() {
       }).toThrow("Z.Object.deregisterObserver: undefined key `foobar` for " + (o.toString()));
     });
   });
+
+  describe('removing an observer from another observer', function() {
+    it('should not raise an exception when done before the property changes', function() {
+      var u   = User.create({name: 'Ed'}),
+          cb2 = function() {},
+          cb1 = function() { this.stopObserving('name', this, cb2); };
+
+      u.observe('name', u, cb1, {prior: true});
+      u.observe('name', u, cb2);
+
+      expect(function() { u.name('Bob'); }).not.toThrow();
+    });
+    it('should not raise an exception when done after the property changes', function() {
+      var u   = User.create({name: 'Ed'}),
+          cb2 = function() {},
+          cb1 = function() { this.stopObserving('name', this, cb2); };
+
+      u.observe('name', u, cb1);
+      u.observe('name', u, cb2);
+
+      expect(function() { u.name('Bob'); }).not.toThrow();
+    });
+  });
 });
 
 describe('Z.Object dependent properties:', function() {
