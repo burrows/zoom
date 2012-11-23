@@ -286,6 +286,10 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
 
     idx = idx + this.subviewIndexOffset();
 
+    if (idx > node.childNodes.length) {
+      throw new Error(Z.fmt("Z.View.insertSubviewNode: index %@ is greater than the number of current child nodes (%@): %@", idx, node.childNodes.length, this));
+    }
+
     if (child === node.childNodes[idx]) { return this; }
 
     if (idx === node.childNodes.length) { node.appendChild(child); }
