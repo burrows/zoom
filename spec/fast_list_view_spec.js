@@ -234,6 +234,27 @@ describe('Z.FastListView', function() {
           [41, 49, 515]
         ]);
       });
+
+      it('should update when the customRowHeights property changes', function() {
+        expect(view.offsetAdjustments()).toEq([
+          [0,   5,   0],
+          [6,  25,  40],
+          [26, 40,  35],
+          [41, 49, 425]
+        ]);
+
+        view.def('customRowHeightForIndex', function(i) {
+          return i === 25 ? 6 : i * 10;
+        });
+        view.customRowHeightDidChange(25);
+
+        expect(view.offsetAdjustments()).toEq([
+          [0,   5,   0],
+          [6,  25,  40],
+          [26, 40,  36],
+          [41, 49, 426]
+        ]);
+      });
     });
 
     describe('.displayRange', function() {

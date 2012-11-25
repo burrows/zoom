@@ -103,7 +103,7 @@ Z.FastListView = Z.View.extend(function() {
   // custom row heights.
   this.prop('offsetAdjustments', {
     readonly: true, cache: true,
-    dependsOn: ['content.size', 'customRowHeightIndexes.@', 'rowHeight'],
+    dependsOn: ['content.size', 'customRowHeights', 'rowHeight'],
     get: function() {
       var size        = this.get('content.size'),
           indexes     = this.customRowHeightIndexes().sort().toNative(),
