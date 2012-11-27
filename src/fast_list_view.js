@@ -173,6 +173,8 @@ Z.FastListView = Z.ListView.extend(function() {
 
     // sync the scroll position with the `top` property
     if (onode.scrollTop !== soffset) { onode.scrollTop = soffset; }
+
+    (this.__z_subview2index__ = this.__subview2index__ || Z.H()).clear();
     
     // sync the content items we want to display with their appropriate subviews
     if (n > 0) {
@@ -180,10 +182,11 @@ Z.FastListView = Z.ListView.extend(function() {
         item    = content.at(i);
         subview = subviews.at(i % n) ||
           this.addSubview(this.createItemView(itemView, item));
+
+        this.__z_subview2index__.at(subview, i);
     
         if (subview.content() !== item) { subview.content(item); }
     
-        subview.__z_contentIndex__  = i;
         subview.node.style.position = 'absolute';
         subview.node.style.left     = 0;
         subview.node.style.right    = 0;
@@ -362,18 +365,6 @@ Z.FastListView = Z.ListView.extend(function() {
     return [ofirst, olast];
   });
 
-  // Public: Returns the subview that is currently displaying the content item
-  // at the given index.
-  //
-  // i - An index in the content array.
-  //
-  // Returns a subview or `null` if the subview can't be found.
-  this.def('subviewForContentIndex', function(i) {
-    return this.subviews().find(function(v) {
-      return v.__z_contentIndex__ === i;
-    });
-  });
-
   // Public: Positions the given subview's node using the given offset and
   // height values by setting the `top` and `height` css properties. You may
   // want to override this method in order to animate these properties.
@@ -401,6 +392,20 @@ Z.FastListView = Z.ListView.extend(function() {
     return this;
   });
 
+  // Public: Returns the subview that is currently displaying the content item
+  // at the given index.
+  //
+  // i - An index in the content array.
+  //
+  // Returns a subview or `null` if the subview can't be found.
+  this.def('subviewForContentIndex', function(i) {
+    var tuple = this.__z_subview2index__.find(function(tuple) {
+      return tuple[1] === i;
+    });
+
+    return tuple ? tuple[0] : null;
+  });
+
   // Public: Returns the content index that the given subview is currently
   // displaying.
   //
@@ -408,7 +413,8 @@ Z.FastListView = Z.ListView.extend(function() {
   //
   // Returns an integer or `null` if `v` is not a subview.
   this.def('indexForSubview', function(v) {
-    return v.hasOwnProperty('__z_contentIndex__') ? v.__z_contentIndex__ : null;
+    if (!this.__z_subview2index__) { return null; }
+    return this.__z_subview2index__.at(v);
   });
 
   // Public: Returns the index of the first content item that is at least
