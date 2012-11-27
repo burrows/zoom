@@ -18,6 +18,7 @@ TestItemView = Z.View.extend(function() {
   this.tag = 'li';
 
   this.prop('content');
+  this.prop('isSelected', {def: false});
 
   this.def('render', function() {
     var p = this.content(),
@@ -184,6 +185,62 @@ describe('Z.ListView', function() {
       v.itemViewType(ivt);
       expect(v.get('subviews.size')).toBe(2);
       expect(v.get('subviews.type')).toEq(Z.A(ivt, ivt));
+    });
+  });
+
+  describe('.subviewForContentIndex', function() {
+    it('should return the subview at the given index', function() {
+      var v = TestListView.create({content: Z.A(p1, p2, p3, p4)});
+
+      expect(v.subviewForContentIndex(0)).toBe(v.subviews().at(0));
+      expect(v.subviewForContentIndex(1)).toBe(v.subviews().at(1));
+      expect(v.subviewForContentIndex(2)).toBe(v.subviews().at(2));
+      expect(v.subviewForContentIndex(3)).toBe(v.subviews().at(3));
+      expect(v.subviewForContentIndex(4)).toBe(null);
+    });
+  });
+
+  describe('.selectionIndexes', function() {
+    it('should default to an empty array', function() {
+      var v = TestListView.create();
+      expect(v.selectionIndexes()).toEq(Z.A());
+    });
+
+    it('should mark the view as needing an update when modified', function() {
+      var v = TestListView.create({content: Z.A(p1, p2)});
+      v.display();
+      expect(v.needsDisplay()).toBe(false)
+      v.selectionIndexes().push(0);
+      expect(v.needsDisplay()).toBe(true)
+    });
+  });
+
+  describe('.update', function() {
+    var view;
+
+    beforeEach(function() {
+      view = TestListView.create({content: Z.A(p1, p2, p3, p4)});
+      view.display();
+    });
+
+    it('should apply current selections by setting the `isSelected` property on the subviews indicated by `selectionIndexes`', function() {
+      expect(view.get('subviews.isSelected')).toEq(Z.A(false, false, false, false));
+      view.selectionIndexes(Z.A(1, 3));
+      view.display();
+      expect(view.get('subviews.isSelected')).toEq(Z.A(false, true, false, true));
+    });
+
+    it('should unset the `isSelected` property on subviews that are no longer selected', function() {
+      expect(view.get('subviews.isSelected')).toEq(Z.A(false, false, false, false));
+      view.selectionIndexes(Z.A(0, 1));
+      view.display();
+      expect(view.get('subviews.isSelected')).toEq(Z.A(true, true, false, false));
+      view.selectionIndexes(Z.A(1, 2));
+      view.display();
+      expect(view.get('subviews.isSelected')).toEq(Z.A(false, true, true, false));
+      view.selectionIndexes().clear();
+      view.display();
+      expect(view.get('subviews.isSelected')).toEq(Z.A(false, false, false, false));
     });
   });
 });

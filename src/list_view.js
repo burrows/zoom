@@ -61,7 +61,7 @@ Z.ListView = Z.View.extend(function() {
 
   // Internal: Observes changes to the `itemViewType` property and replaces all
   // existing subviews with instances of the new item view type.
-  function itemViewTypeDidChange() {
+  function itemViewTypeObserver() {
     var _this = this, type = this.itemViewType();
     this.subviews().each(function(sv) {
       _this.replaceSubview(sv, _this.createItemView(type, sv.content()));
@@ -81,21 +81,41 @@ Z.ListView = Z.View.extend(function() {
   // specified in sub-types and must have a `content` property.
   this.prop('itemViewType');
 
+  // Public: A property holding an array of the indexes of the view's currently
+  // selected content items.
+  this.prop('selectionIndexes', {
+    get: function() {
+      return this.__selectionIndexes__ = this.__selectionIndexes__ || Z.A();
+    },
+    set: function(v) {  return this.__selectionIndexes__ = v; }
+  });
+
   // Internal: The list view constructor - adds an observer to the `content`
   // property and fires that observer in order to setup the initial state of the
   // `subviews` array.
   this.def('init', function(props) {
     this.supr(props);
     this.observe('content.@', this, contentObserver, {fire: true});
-    this.observe('itemViewType', this, itemViewTypeDidChange);
+    this.observe('itemViewType', this, itemViewTypeObserver);
   });
 
   // Public: Overrides the default implementation of `destroy` to remove the
   // content observer.
   this.def('destroy', function() {
     this.stopObserving('content.@', this, contentObserver);
-    this.stopObserving('itemViewType', this, itemViewTypeDidChange);
+    this.stopObserving('itemViewType', this, itemViewTypeObserver);
     this.supr();
+  });
+
+  // Internal: Returns a list of property paths that trigger this view to update
+  // itself.
+  this.def('displayPaths', function() {
+    return this.supr().concat('selectionIndexes.@');
+  });
+
+  // Internal: Updates the list view by marking the currently selected subviews.
+  this.def('update', function() {
+    this.applySelections(this.selectionIndexes());
   });
 
   // Public: Creates a new item view instance. Override this method if you want
@@ -139,6 +159,34 @@ Z.ListView = Z.View.extend(function() {
   this.def('contentItemsRemoved', function(idx, n) {
     var i;
     for (i = idx + n - 1; i >= idx; i--) { this.removeSubview(i).destroy(); }
+    return this;
+  });
+
+  // Public: Returns the subview that is managing the content item at the given
+  // index.
+  //
+  // idx - An integer representing a content item index.
+  //
+  // Returns a subview if one exists for the given index and `null` otherwise.
+  this.def('subviewForContentIndex', function(idx) {
+    return this.subviews().at(idx);
+  });
+
+  // Internal: Syncs each subview's `isSelected` property with the given
+  // selection indexes.
+  //
+  // selectionIndexes - The indexes of the currently selected content items.
+  //
+  // Returns the receiver.
+  this.def('applySelections', function(selectionIndexes) {
+    var _this = this;
+
+    this.subviews().set('isSelected', false);
+    selectionIndexes.each(function(idx) {
+      var sv = _this.subviewForContentIndex(idx);
+      if (sv) { sv.isSelected(true); }
+    });
+
     return this;
   });
 });
