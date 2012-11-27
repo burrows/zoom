@@ -29,8 +29,6 @@
 // calculations are no longer a simple multiplication of the item index and
 // default row height.
 Z.FastListView = Z.ListView.extend(function() {
-  var slice = Array.prototype.slice;
-
   // Internal: The callback function for the `window`'s `resize` event. Resizing
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
