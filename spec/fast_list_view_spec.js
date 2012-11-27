@@ -51,16 +51,6 @@ describe('Z.FastListView', function() {
     });
   });
 
-  describe('.createItemView', function() {
-    it('should throw an exception when `itemViewType` is `null`', function() {
-      var v = Z.FastListView.create({itemViewType: null, content: Z.A({})});
-
-      expect(function() {
-        v.createItemView({});
-      }).toThrow(Z.fmt("Z.FastListView.createItemView: `itemViewType` is not defined: %@", v));
-    });
-  });
-
   describe('changing `itemViewType` property', function() {
     it('should replace all current subviews with instances of the new item view type', function() {
       var ivt = Z.View.extend(function() { this.prop('content'); });
@@ -74,24 +64,12 @@ describe('Z.FastListView', function() {
   });
 
   describe('with no custom row heights', function() {
-    describe('.customRowHeights', function() {
-      it('should return null', function() {
-        expect(view.customRowHeights()).toBe(null);
-      });
-    });
-
-    describe('.offsetAdjustments', function() {
-      it('should return null', function() {
-        expect(view.offsetAdjustments()).toBe(null);
-      });
-    });
-
     describe('.displayRange', function() {
-      it('should return the first and list index of the items to render based on the current scrollOffset, rowHeight, and overflow properties', function() {
+      it('should return the first and last index of the items to render based on the current scrollOffset, rowHeight, and overflow properties', function() {
         expect(view.displayRange()).toEq([0, 8]);
       });
 
-      it('should update when the scrollOffset property changes', function() {
+      it('should change when the scrollOffset property changes', function() {
         view.scrollOffset(10);
         expect(view.displayRange()).toEq([0, 8]);
         view.scrollOffset(20);
@@ -110,7 +88,7 @@ describe('Z.FastListView', function() {
         expect(view.displayRange()).toEq([41, 49]);
       });
 
-      it('should update when the rowHeight property changes', function() {
+      it('should change when the rowHeight property changes', function() {
         expect(view.displayRange()).toEq([0, 8]);
         view.rowHeight(20);
         expect(view.displayRange()).toEq([0, 6]);
@@ -118,19 +96,19 @@ describe('Z.FastListView', function() {
         expect(view.displayRange()).toEq([0, 13]);
       });
 
-      it('should update when the scrollHeight property changes', function() {
+      it('should change when the scrollHeight property changes', function() {
         expect(view.displayRange()).toEq([0, 8]);
         view.scrollHeight(100);
         expect(view.displayRange()).toEq([0, 13]);
       });
 
-      it('should update when the overflow property changes', function() {
+      it('should change when the overflow property changes', function() {
         expect(view.displayRange()).toEq([0, 8]);
         view.overflow(2);
         expect(view.displayRange()).toEq([0, 6]);
       });
 
-      it('should update when the content changes', function() {
+      it('should change when the content changes', function() {
         var content = view.content().slice();
 
         view.content(content);
@@ -176,84 +154,12 @@ describe('Z.FastListView', function() {
       view.customRowHeightIndexes().clear();
     });
 
-    describe('.customRowHeights', function() {
-      it('should return a native object mapping each custom index to its custom height', function() {
-        expect(view.customRowHeights()).toEq({5: 50, 25: 5, 40: 400});
-      });
-    });
-
     describe('.customRowHeightDidChange', function() {
-      it('should cause `customRowHeights` to update', function() {
-        expect(view.customRowHeights()).toEq({5: 50, 25: 5, 40: 400});
-        view.def('customRowHeightForIndex', function(i) {
-          return i === 25 ? 6 : i * 10;
-        });
+      it('should mark the view as needing display', function() {
+        view.display();
+        expect(view.needsDisplay()).toBe(false);
         view.customRowHeightDidChange(25);
-        expect(view.customRowHeights()).toEq({5: 50, 25: 6, 40: 400});
-      });
-    });
-
-    describe('.offsetAdjustments', function() {
-      it('should return a list of ranges with their corresponding total offset from the default', function() {
-        expect(view.offsetAdjustments()).toEq([
-          [0,   5,   0],
-          [6,  25,  40],
-          [26, 40,  35],
-          [41, 49, 425]
-        ]);
-      });
-
-      it('should update when the content size changes', function() {
-        var content = view.content().slice(0, 48);
-        view.content(content);
-        expect(view.offsetAdjustments()).toEq([
-          [0,   5,   0],
-          [6,  25,  40],
-          [26, 40,  35],
-          [41, 47, 425]
-        ]);
-      });
-
-      it('should update when the rowHeight property changes', function() {
-        view.rowHeight(20);
-        expect(view.offsetAdjustments()).toEq([
-          [0,   5,   0],
-          [6,  25,  30],
-          [26, 40,  15],
-          [41, 49, 395]
-        ]);
-      });
-
-      it('should update when the customRowHeightIndexes property changes', function() {
-        view.customRowHeightIndexes().push(10);
-        expect(view.offsetAdjustments()).toEq([
-          [0,   5,   0],
-          [6,  10,  40],
-          [11, 25, 130],
-          [26, 40, 125],
-          [41, 49, 515]
-        ]);
-      });
-
-      it('should update when the customRowHeights property changes', function() {
-        expect(view.offsetAdjustments()).toEq([
-          [0,   5,   0],
-          [6,  25,  40],
-          [26, 40,  35],
-          [41, 49, 425]
-        ]);
-
-        view.def('customRowHeightForIndex', function(i) {
-          return i === 25 ? 6 : i * 10;
-        });
-        view.customRowHeightDidChange(25);
-
-        expect(view.offsetAdjustments()).toEq([
-          [0,   5,   0],
-          [6,  25,  40],
-          [26, 40,  36],
-          [41, 49, 426]
-        ]);
+        expect(view.needsDisplay()).toBe(true);
       });
     });
 
@@ -294,7 +200,7 @@ describe('Z.FastListView', function() {
   });
 
   describe('.update', function() {
-    it('should set the content of the item views based the indexes returned by the displayRange property', function() {
+    it('should set the content of the item views based the indexes returned by the displayRange method', function() {
       expect(view.subviews().at(0).content()).toBe(items.at(0));
       expect(view.subviews().at(1).content()).toBe(items.at(1));
       expect(view.subviews().at(2).content()).toBe(items.at(2));
@@ -382,17 +288,17 @@ describe('Z.FastListView', function() {
     });
   });
 
-  describe('.subviewForIndex', function() {
+  describe('.subviewForContentIndex', function() {
     it('should return the subview that is currently displaying the content item at the given index', function() {
-      expect(view.subviewForIndex(0)).toBe(view.subviews().at(0));
-      expect(view.subviewForIndex(1)).toBe(view.subviews().at(1));
-      expect(view.subviewForIndex(25)).toBe(null);
+      expect(view.subviewForContentIndex(0)).toBe(view.subviews().at(0));
+      expect(view.subviewForContentIndex(1)).toBe(view.subviews().at(1));
+      expect(view.subviewForContentIndex(25)).toBe(null);
 
       view.scrollOffset(450);
       view.display();
 
-      expect(view.subviewForIndex(41)).toBe(view.subviews().at(5));
-      expect(view.subviewForIndex(42)).toBe(view.subviews().at(6));
+      expect(view.subviewForContentIndex(41)).toBe(view.subviews().at(5));
+      expect(view.subviewForContentIndex(42)).toBe(view.subviews().at(6));
     });
   });
 
@@ -424,13 +330,13 @@ describe('Z.FastListView', function() {
 
   describe('.firstVisibleIndex', function() {
     it('should return the first subview that is at least paritally visible', function() {
-      expect(view.firstVisibleSubview()).toBe(view.subviewForIndex(0));
+      expect(view.firstVisibleSubview()).toBe(view.subviewForContentIndex(0));
       view.scrollOffset(10);
       view.display();
-      expect(view.firstVisibleSubview()).toBe(view.subviewForIndex(1));
+      expect(view.firstVisibleSubview()).toBe(view.subviewForContentIndex(1));
       view.scrollOffset(25);
       view.display();
-      expect(view.firstVisibleSubview()).toBe(view.subviewForIndex(2));
+      expect(view.firstVisibleSubview()).toBe(view.subviewForContentIndex(2));
     });
   });
 });

@@ -219,8 +219,6 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('display', function() {
     var subviews = this.subviews(), removed, i, size;
 
-    this.subviews().each('displayIfNeeded');
-
     // if this is the first time the view has been displayed, invoke the
     // `render` method, other wise invoke the `update` method if it exists,
     // falling back to the `render` method if it doesn't
@@ -231,6 +229,8 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
     else {
       if (this.respondTo('update')) { this.update(); } else { this.render(); }
     }
+
+    this.subviews().each('displayIfNeeded');
 
     // ensure that all removed subviews have had their nodes removed
     if (removed = this.__removedSubviews__) {

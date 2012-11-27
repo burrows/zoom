@@ -15,7 +15,7 @@
 // its `overflow-y` css property set to `scroll` or `auto`. This gives us a
 // scrollable div that is large enough to contain all of our items. Instead of
 // creating subviews for each content item though, we instead only create enough
-// to fill the visible area of our view. Then based on the view's node's
+// to fill the visible area of the view. Then based on the view's node's
 // `scrollOffset` property we can determine which content items should currently
 // be displayed. The displayed content items are set as the `content` properties
 // on the subviews and each subview's `node` property is absolutely positioned
@@ -24,11 +24,13 @@
 // If you would like to have some views in your list have a height that is
 // different than the rest, you can accomplish this by adding their indexes to
 // the `customRowHeightIndexes` property and overriding the
-// `customRowHeightForIndex` method to return their custom heights. Note that
+// `customRowHeightForIndex` method to return the custom heights. Note that
 // there is a performance cost when you have custom heights since the offset
 // calculations are no longer a simple multiplication of the item index and
 // default row height.
-Z.FastListView = Z.View.extend(function() {
+Z.FastListView = Z.ListView.extend(function() {
+  var slice = Array.prototype.slice;
+
   // Internal: The callback function for the `window`'s `resize` event. Resizing
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
@@ -39,28 +41,49 @@ Z.FastListView = Z.View.extend(function() {
       this.display();
     }
   }
-
+  
   // Internal: The callback function for the `node`'s `scroll` event. When the
   // view is scrolled we must adjust the `top` property and re-render the
   // subviews.
   function scrollListener() {
-    var node = this.overflowNode();
-    this.scrollOffset(node.scrollTop);
+    this.scrollOffset(this.overflowNode().scrollTop);
     this.display();
   }
 
-  // Internal: Observes changes to the `itemViewType` property and replaces all
-  // existing subviews with instances of the new item view type.
-  function itemViewTypeDidChange() {
-    var self = this;
-    this.subviews().each(function(sv) {
-      self.replaceSubview(sv, self.createItemView(sv.content()));
-    });
+  // Internal: Caches the custom row heights indicated by the
+  // `customRowHeightIndexes` property and calculates of row offset adjustments
+  // based on those heights.
+  function cacheCustomHeightsAndOffsetAdjustments() {
+    var _this      = this,
+        rowHeight  = this.rowHeight(),
+        indexes    = this.customRowHeightIndexes(),
+        adjustment = 0;
+
+    if (!indexes || indexes.size() === 0) {
+      this.__z_heights__     = null;
+      this.__z_adjustments__ = null;
+    }
+    else {
+      this.__z_heights__     = {};
+      this.__z_adjustments__ = [];
+
+      indexes.sort().each(function(idx) {
+        var height = _this.customRowHeightForIndex(idx);
+
+        _this.__z_heights__[idx] = height;
+        _this.__z_adjustments__.push([idx, adjustment]);
+
+        adjustment += (height - rowHeight);
+      });
+
+      this.__z_adjustments__.push([Infinity, adjustment]);
+    }
+
+    this.needsDisplay(true);
   }
 
-  // Public: A property pointing to a `Z.Array` of objects for the list view to
-  // display.
-  this.prop('content');
+  // Internal: Comparator function for searching the adjustments array.
+  function adjustmentCmp(adj, idx) { return Z.cmp(adj[0], idx); }
 
   // Public: The height of each item view. See the `customRowHeightIndexes`
   // property if any items in your list need to be rendered with a height that
@@ -72,6 +95,15 @@ Z.FastListView = Z.View.extend(function() {
   // first displayed item and after the last displayed item when possible. The
   // overflow views allow scrolling to look smooth.
   this.prop('overflow', {def: 10});
+
+  // Internal: The height of the scrollable container. This property is managed
+  // by the view itself and should not be set by client code.
+  this.prop('scrollHeight', {def: 0});
+
+  // Internal: The current scroll offset. This property is managed by the view
+  // itself and should not be set by client code. You can programtically adjust
+  // the scroll position however with the `scrollTo` method.
+  this.prop('scrollOffset', {def: 0});
 
   // Public: This property can be used to tell the list view which content items
   // need to be rendered with a height that is different from the `rowHeight`
@@ -88,156 +120,115 @@ Z.FastListView = Z.View.extend(function() {
     set: function(a) { return this.__customRowHeightIndexes__ = a; }
   });
 
-  // Internal: The height of the scrollable container. This property is managed
-  // by the view itself and should not be set by client code.
-  this.prop('scrollHeight', {def: 0});
-
-  // Internal: The current scroll offset. This property is managed by the view
-  // itself and should not be set by client code. You can programtically adjust
-  // the scroll position however with the `scrollTo` method.
-  this.prop('scrollOffset', {def: 0});
-
-  // Internal: Returns an array of triples, each of which contain an inclusive
-  // range and the offset adjustment that needs to be applied to the default
-  // offset for items in that range. This property is only used when there are
-  // custom row heights.
-  this.prop('offsetAdjustments', {
-    readonly: true, cache: true,
-    dependsOn: ['content.size', 'customRowHeights', 'rowHeight'],
-    get: function() {
-      var size        = this.get('content.size'),
-          indexes     = this.customRowHeightIndexes().sort().toNative(),
-          rowHeight   = this.rowHeight(),
-          adjustments, i, len;
-
-      if (!indexes || indexes.length === 0) { return null; }
-
-      adjustments = [[0, indexes[0], 0]];
-
-      for (i = 1, len = indexes.length; i <= len; i++) {
-        adjustments.push([
-          indexes[i - 1] + 1,
-          indexes[i] || size - 1,
-          adjustments[i - 1][2] + this.rowHeightForIndex(indexes[i - 1]) - rowHeight
-        ]);
-      }
-
-      return adjustments;
-    }
+  // Internal: The `Z.FastListView` constructor.
+  this.def('init', function(props) {
+    this.supr(props);
+    this.observe('customRowHeightIndexes.@', this,
+      cacheCustomHeightsAndOffsetAdjustments, {fire: true});
   });
 
-  // Internal: The total height necessary to accomodate all items. This value is
-  // used to set the height of the scrollable container node. When there are no
-  // custom row heights, then this is simply the number of content items times
-  // the `rowHeight` property. When there are custom row heights, then the
-  // `offsetAdjustments` property is used to determine the total height.
-  this.prop('totalHeight', {
-    readonly: true, cache: true,
-    dependsOn: ['content.size', 'rowHeight', 'offsetAdjustments'],
-    get: function() {
-      var size        = this.get('content.size'),
-          rowHeight   = this.rowHeight(),
-          adjustments = this.offsetAdjustments(),
-          height      = size * rowHeight;
+  // Internal: The `Z.FastListView` destructor.
+  this.def('destroy', function() {
+    var node = this.overflowNode();
 
-      if (!adjustments) { return height; }
+    this.stopObserving('customRowHeightIndexes.@', this,
+      cacheCustomHeightsAndOffsetAdjustments);
+    window.removeEventListener('resize', this.__resizeListener__, false);
+    node.removeEventListener('scroll', this.__scrollListener__, false);
 
-      return height + adjustments[adjustments.length - 1][2];
-    }
+    this.supr();
   });
-
-  // Internal: Returns a native object that maps the index of each custom row
-  // to the return value of `customRowHeightForIndex`.
-  this.prop('customRowHeights', {
-    readonly: true, cache: true,
-    dependsOn: ['customRowHeightIndexes.@'],
-    get: function() {
-      var indexes = this.customRowHeightIndexes(), self = this;
-
-      if (!indexes || indexes.size() === 0) { return null; }
-
-      return indexes.inject({}, function(acc, i) {
-        acc[i] = self.customRowHeightForIndex(i);
-        return acc;
-      });
-    }
-  });
-
-  // Internal: Returns a two element native array containing an inclusive range
-  // of the item views that should currently be displayed. The range will
-  // contain enough views to fill the visible display plus the number of
-  // overflow views evenly distributed between the top and bottom where
-  // possible.
-  this.prop('displayRange', {
-    readonly: true, cache: true,
-    dependsOn: [
-      'content.size', 'totalHeight', 'scrollHeight', 'scrollOffset',
-      'rowHeight', 'overflow', 'customRowHeights'
-    ],
-    get: function() {
-      var size     = this.get('content.size'),
-          custom   = this.customRowHeights(),
-          theight  = this.totalHeight(),
-          sheight  = this.scrollHeight(),
-          soffset  = this.scrollOffset(),
-          rheight  = this.rowHeight(),
-          overflow = this.overflow(),
-          nviews   = Math.min(Math.ceil(sheight / rheight), size),
-          first, last, ofirst, olast;
-
-      if (size === 0 || nviews === 0) { return null; }
-
-      first = Math.min(Math.floor(soffset / rheight), size - 1);
-      last  = Math.min(first + nviews - 1, size - 1);
-
-      // if we have custom row heights we may need to adjust the first and last
-      // views to display to ensure that we're inside the visible area and we
-      // have enough views to fill the visible area
-      if (custom) {
-        while (this.rowOffsetForIndex(first) > soffset) { first--; last--; }
-
-        while (last < size - 1 && (this.rowOffsetForIndex(last) +
-          this.rowHeightForIndex(last)) < (soffset + sheight)) {
-          last++;
-        }
-
-        nviews = last - first + 1;
-      }
-
-      // add in the overflow views
-      ofirst = Math.max(first - Math.floor(overflow / 2), 0);
-      olast  = Math.min(last + (overflow - (first - ofirst)), size - 1);
-      ofirst = Math.max(0, olast - (nviews + overflow) + 1);
-
-      return [ofirst, olast];
-    }
-  });
-
-  // Public: The `Z.View` subtype to use for content item views. This must be
-  // specified in sub-types and must have a `content` property.
-  this.prop('itemViewType');
 
   // Internal: Returns a list of property paths that trigger this view to update
   // itself.
   this.def('displayPaths', function() {
-    return this.supr().concat('displayRange');
+    return this.supr().concat('rowHeight', 'overflow', 'scrollHeight', 'scrollOffset');
   });
 
-  // Internal: The `Z.FastListView` constructor. This is overridden in order to
-  // setup the `resize` and `scroll` event listeners.
-  this.def('init', function(props) {
-    this.supr(props);
-    this.observe('itemViewType', this, itemViewTypeDidChange);
+  // Internal: Renders the view by creating the container div and then invoking
+  // the `update` method to setup the subviews.
+  //
+  // Returns nothing.
+  this.def('render', function() {
+    this.node.innerHTML = '<div style="position: relative;"></div>';
+    this.update();
   });
 
-  // Internal: The `Z.FastListView` destructor. This is overridden in order to
-  // remove the event listeners setup in `init`.
-  this.def('destroy', function() {
-    window.removeEventListener('resize', this.__resizeListener__, false);
-    this.node.removeEventListener('scroll', this.__scrollListener__, false);
-    this.stopObserving('itemViewType', this, itemViewTypeDidChange);
-    return this.supr();
+  // Internal: Updates the view by syncing the `subviews` array to the list of
+  // content items indicated by the `displayRange` method and sets the
+  // appropriate offsets and heights.
+  //
+  // Returns nothing.
+  this.def('update', function() {
+    var content  = this.content(),
+        itemView = this.itemViewType(),
+        soffset  = this.scrollOffset(),
+        subviews = this.subviews(),
+        onode    = this.overflowNode(),
+        cnode    = this.contentNode(),
+        range    = this.displayRange(),
+        n        = range ? range[1] - range[0] + 1 : 0,
+        i, item, items, subview, offset, height;
+    
+    // ensure that the container is tall enough for all content items
+    cnode.style.height = this.totalHeight() + 'px';
+
+    // sync the scroll position with the `top` property
+    if (onode.scrollTop !== soffset) { onode.scrollTop = soffset; }
+    
+    // sync the content items we want to display with their appropriate subviews
+    if (n > 0) {
+      for (i = range[0]; i <= range[1]; i++) {
+        item    = content.at(i);
+        subview = subviews.at(i % n) ||
+          this.addSubview(this.createItemView(itemView, item));
+    
+        if (subview.content() !== item) { subview.content(item); }
+    
+        subview.__z_contentIndex__  = i;
+        subview.node.style.position = 'absolute';
+        subview.node.style.left     = 0;
+        subview.node.style.right    = 0;
+    
+        offset = this.rowOffsetForIndex(i);
+        height = this.rowHeightForIndex(i);
+    
+        if (subview.node.style.top !== offset + 'px' ||
+            subview.node.style.height !== height + 'px') {
+          this.positionSubview(subview, offset, height);
+        }
+      }
+    }
+    
+    if (subviews.size() > n) {
+      subviews.slice(n).each(function(v) { v.remove().destroy(); });
+    }
+
+    this.supr();
   });
+
+  // Internal: The height of the view may not be known until its actually
+  // attached to the page, so we override this method in order to first set the
+  // view's `height` and `top` properties and trigger a display.
+  this.def('didAttachNode', function() {
+    var node = this.overflowNode();
+  
+    this.__z_resizeListener__ = Z.bind(resizeListener, this);
+    this.__z_scrollListener__ = Z.bind(scrollListener, this);
+  
+    window.addEventListener('resize', this.__z_resizeListener__, false);
+    node.addEventListener('scroll', this.__z_scrollListener__, false);
+  
+    this.scrollHeight(node.offsetHeight);
+    this.scrollOffset(node.scrollTop);
+    this.display();
+  });
+
+  // Internal: Overridden to simply mark the view as being dirty.
+  this.def('contentItemsInserted', function() { this.needsDisplay(true); });
+
+  // Internal: Overridden to simply mark the view as being dirty.
+  this.def('contentItemsRemoved', function() { this.needsDisplay(true); });
 
   // Public: Returns the node that has its `overflow-y` property set. By default
   // this is the view's `node` property, but you may want to override this if
@@ -256,21 +247,16 @@ Z.FastListView = Z.View.extend(function() {
   // Internal: Tells the view system to use the `contentNode` node to attach
   // subviews to instead of `node`.
   this.def('subviewContainerNode', function() { return this.contentNode(); });
-  
-  // Public: Creates a new item view instance. Override this method if you want
-  // to customize how item views are created.
-  //
-  // content - The object to set as the `content` property on the item view.
-  //
-  // Returns the item view instance.
-  this.def('createItemView', function(content) {
-    var type = this.itemViewType();
 
-    if (!type) {
-      throw new Error(Z.fmt("Z.FastListView.createItemView: `itemViewType` is not defined: %@", this));
-    }
-
-    return type.create({content: content});
+  // Public: This method must be overridden when indexes are added to the
+  // `customRowHeightIndexes` property. It should return the custom height of
+  // the view at the given index.
+  //
+  // i - The content item index to return the custom height for.
+  //
+  // Returns an integer.
+  this.def('customRowHeightForIndex', function(i) {
+    throw new Error("Z.FastListView.customRowHeightForIndex: must be overridden in sub-types when customRowHeightIndexes is used");
   });
 
   // Public: Notifies the view that a row with a custom height has changed its
@@ -281,80 +267,113 @@ Z.FastListView = Z.View.extend(function() {
   //
   // Returns the receiver.
   this.def('customRowHeightDidChange', function() {
-    this.willChangeProperty('customRowHeights');
-    this.didChangeProperty('customRowHeights');
+    // FIXME: take given indexes into account
+    cacheCustomHeightsAndOffsetAdjustments.call(this);
     return this;
   });
 
-  // Internal: Renders the view by creating the container div and then invoking
-  // the `update` method to setup the subviews.
+  // Internal: Returns the height that should be applied to the item view at the
+  // given index.
   //
-  // Returns nothing.
-  this.def('render', function() {
-    this.node.innerHTML = '<div style="position: relative;"></div>';
-    this.update();
+  // i - The content item index to return the height for.
+  //
+  // Returns an integer.
+  this.def('rowHeightForIndex', function(i) {
+    var heights = this.__z_heights__;
+    return heights && heights.hasOwnProperty(i) ? heights[i] : this.rowHeight();
+  });
+  
+  // Internal: Returns the offset that should be applied to the item view at the
+  // given index.
+  //
+  // idx - The content item index to return the offset for.
+  //
+  // Returns an integer.
+  this.def('rowOffsetForIndex', function(idx) {
+    var rowHeight   = this.rowHeight(),
+        adjustments = this.__z_adjustments__,
+        offset      = rowHeight * idx,
+        ai;
+
+    if (adjustments) {
+      ai = Z.binsearch(idx, adjustments, adjustmentCmp);
+      ai = ai < 0 ? -ai - 1 : ai;
+      if (!adjustments[ai]) {
+        Z.log(idx, ai, adjustments);
+      }
+      offset += adjustments[ai][1];
+    }
+
+    return offset;
   });
 
-  // Internal: Updates the view by syncing the `subviews` area to the list of
-  // content items indicated by the `displayRange` property and sets the
-  // appropriate offsets and heights.
+  // Internal: Calculates the total height needed to display all rows.
   //
-  // Returns nothing.
-  this.def('update', function() {
-    var content  = this.content(),
-        soffset  = this.scrollOffset(),
-        rheight  = this.rowHeight(),
-        theight  = this.totalHeight(),
-        subviews = this.subviews(),
-        range    = this.displayRange(),
-        onode    = this.overflowNode(),
-        cnode    = this.contentNode(),
-        n        = range ? range[1] - range[0] + 1 : 0,
-        i, item, subview, items, display, offset, height;
+  // Returns an integer.
+  this.def('totalHeight', function() {
+    var height      = this.rowHeight() * (this.get('content.size') || 0),
+        adjustments = this.__z_adjustments__;
 
-    // ensure that the container is tall enough for all content items
-    cnode.style.height = theight + 'px';
+    if (adjustments) {
+      height += adjustments[adjustments.length - 1][1];
+    }
 
-    // sync the scroll position with the `top` property
-    if (onode.scrollTop !== soffset) { onode.scrollTop = soffset; }
+    return height;
+  });
 
-    // sync the content items we want to display with their appropriate subviews
-    if (n > 0) {
-      for (i = range[0]; i <= range[1]; i++) {
-        item    = content.at(i);
-        display = false;
-        subview = subviews.at(i % n);
-
-        if (!subview) {
-          subview = this.addSubview(this.createItemView(item));
-          display = true;
-        }
-
-        if (subview.content() !== item) {
-          subview.content(item);
-          display = true;
-        }
-
-        subview.__z_contentIndex__  = i;
-        subview.node.style.position = 'absolute';
-        subview.node.style.left     = 0;
-        subview.node.style.right    = 0;
-
-        offset = this.rowOffsetForIndex(i);
-        height = this.rowHeightForIndex(i);
-
-        if (subview.node.style.top !== offset + 'px' ||
-            subview.node.style.height !== height + 'px') {
-          this.positionSubview(subview, offset, height);
-        }
-
-        if (display) { subview.display(); }
+  // Internal: Returns a two element native array containing an inclusive range
+  // of the item views that should currently be displayed. The range will
+  // contain enough views to fill the visible display plus the number of
+  // overflow views evenly distributed between the top and bottom where
+  // possible.
+  this.def('displayRange', function() {
+    var size      = this.get('content.size'),
+        hasCustom = this.__z_heights__ !== null,
+        theight   = this.totalHeight(),
+        sheight   = this.scrollHeight(),
+        soffset   = this.scrollOffset(),
+        rheight   = this.rowHeight(),
+        overflow  = this.overflow(),
+        nviews    = Math.min(Math.ceil(sheight / rheight), size),
+        first, last, ofirst, olast;
+  
+    if (size === 0 || nviews === 0) { return null; }
+  
+    first = Math.min(Math.floor(soffset / rheight), size - 1);
+    last  = Math.min(first + nviews - 1, size - 1);
+  
+    // if we have custom row heights we may need to adjust the first and last
+    // views to display to ensure that we're inside the visible area and we
+    // have enough views to fill the visible area
+    if (hasCustom) {
+      while (this.rowOffsetForIndex(first) > soffset) { first--; last--; }
+  
+      while (last < size - 1 && (this.rowOffsetForIndex(last) +
+        this.rowHeightForIndex(last)) < (soffset + sheight)) {
+        last++;
       }
+  
+      nviews = last - first + 1;
     }
+  
+    // add in the overflow views
+    ofirst = Math.max(first - Math.floor(overflow / 2), 0);
+    olast  = Math.min(last + (overflow - (first - ofirst)), size - 1);
+    ofirst = Math.max(0, olast - (nviews + overflow) + 1);
+  
+    return [ofirst, olast];
+  });
 
-    if (subviews.size() > n) {
-      subviews.slice(n).each(function(v) { v.remove().destroy(); });
-    }
+  // Public: Returns the subview that is currently displaying the content item
+  // at the given index.
+  //
+  // i - An index in the content array.
+  //
+  // Returns a subview or `null` if the subview can't be found.
+  this.def('subviewForContentIndex', function(i) {
+    return this.subviews().find(function(v) {
+      return v.__z_contentIndex__ === i;
+    });
   });
 
   // Public: Positions the given subview's node using the given offset and
@@ -373,64 +392,15 @@ Z.FastListView = Z.View.extend(function() {
     return this;
   });
 
-  // Public: This method must be overridden when indexes are added to the
-  // `customRowHeightIndexes` property. It should return the custom height of
-  // the view at the given index.
+  // Public: Cause the view to scroll to a particular content item.
   //
-  // i - The content item index to return the custom height for.
+  // item - Either a content item or the index of a content item.
   //
-  // Returns an integer.
-  this.def('customRowHeightForIndex', function(i) {
-    throw new Error("Z.FastListView.customRowHeightForIndex: must be overridden in sub-types when customRowHeightIndexes is used");
-  });
-
-  // Internal: Returns the height that should be applied to the item view at the
-  // given index.
-  //
-  // i - The content item index to return the height for.
-  //
-  // Returns an integer.
-  this.def('rowHeightForIndex', function(i) {
-    var custom = this.customRowHeights();
-    return custom && custom.hasOwnProperty(i) ? custom[i] : this.rowHeight();
-  });
-
-  // Internal: Returns the offset that should be applied to the item view at the
-  // given index.
-  //
-  // idx - The content item index to return the offset for.
-  //
-  // Returns an integer.
-  this.def('rowOffsetForIndex', function(idx) {
-    var adjustments = this.offsetAdjustments(),
-        offset      = this.rowHeight() * idx,
-        ai;
-
-    if (!adjustments) { return offset; }
-
-    ai = Z.binsearch(idx, adjustments, function(adj, i) {
-      if (adj[0] <= i && i <= adj[1]) { return 0; }
-      else if (adj[1] < i ) { return -1; }
-      return 1;
-    });
-
-    if (ai < 0) {
-      throw new Error(Z.fmt("Z.FastListView.rowOffsetForIndex: BUG: %@: %@", idx, adjustments));
-    }
-
-    return offset + adjustments[ai][2];
-  });
-
-  // Public: Returns the subview that is currently displaying the content item
-  // at the given index.
-  //
-  // i - An index in the content array.
-  //
-  // Returns a subview or `null` if the subview can't be found.
-  this.def('subviewForIndex', function(i) {
-    return this.subviews().find(function(v) {
-      return v.__z_contentIndex__ === i;
-    });
+  // Returns the receiver.
+  this.def('scrollTo', function(item) {
+    var i = Z.isNumber(item) ? item : (this.content().index(item) || 0);
+    this.scrollOffset(this.rowOffsetForIndex(i));
+    return this;
   });
 
   // Public: Returns the content index that the given subview is currently
@@ -443,54 +413,26 @@ Z.FastListView = Z.View.extend(function() {
     return v.hasOwnProperty('__z_contentIndex__') ? v.__z_contentIndex__ : null;
   });
 
-  // Internal: The height of the view may not be known until its actually
-  // attached to the page, so we override this method in order to first set the
-  // view's `height` and `top` properties and trigger a display.
-  this.def('didAttachNode', function() {
-    var node = this.overflowNode();
-
-    this.__resizeListener__ = Z.bind(resizeListener, this);
-    this.__scrollListener__ = Z.bind(scrollListener, this);
-
-    window.addEventListener('resize', this.__resizeListener__, false);
-    node.addEventListener('scroll', this.__scrollListener__, false);
-
-    this.scrollHeight(node.offsetHeight);
-    this.scrollOffset(node.scrollTop);
-    this.display();
-  });
-
-  // Public: Cause the view to scroll to a particular content item.
-  //
-  // item - Either a content item or the index of a content item.
-  //
-  // Returns the receiver.
-  this.def('scrollTo', function(item) {
-    var i = Z.isNumber(item) ? item : (this.content().index(item) || 0);
-    this.scrollOffset(this.rowOffsetForIndex(i));
-    return this;
-  });
-
   // Public: Returns the index of the first content item that is at least
   // partially visible.
   this.def('firstVisibleIndex', function() {
     var soffset = this.scrollOffset(), range = this.displayRange(), i;
-
+  
     if (!range) { return null; }
-
+  
     for (i = range[0]; i <= range[1]; i++) {
       if (this.rowOffsetForIndex(i) + this.rowHeightForIndex(i) > soffset) {
         return i;
       }
     }
-
+  
     return null;
   });
-
+  
   // Public: Returns the first subview that is at least partially visible.
   this.def('firstVisibleSubview', function() {
     var idx = this.firstVisibleIndex();
-    return idx === null ? null : this.subviewForIndex(idx);
+    return idx === null ? null : this.subviewForContentIndex(idx);
   });
 });
 
