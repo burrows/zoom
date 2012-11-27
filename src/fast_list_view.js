@@ -414,7 +414,7 @@ Z.FastListView = Z.View.extend(function() {
       return 1;
     });
 
-    if (ai === null) {
+    if (ai < 0) {
       throw new Error(Z.fmt("Z.FastListView.rowOffsetForIndex: BUG: %@: %@", idx, adjustments));
     }
 

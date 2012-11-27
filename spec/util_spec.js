@@ -534,4 +534,31 @@ describe('Z.resolve', function() {
   });
 });
 
+describe('Z.binsearch', function() {
+  var a = [1,3,4,7,12,20,22,54,68];
+
+  it('should return the index of the array where the given object is found', function() {
+    expect(Z.binsearch(1, a)).toBe(0);
+    expect(Z.binsearch(3, a)).toBe(1);
+    expect(Z.binsearch(4, a)).toBe(2);
+    expect(Z.binsearch(7, a)).toBe(3);
+    expect(Z.binsearch(12, a)).toBe(4);
+    expect(Z.binsearch(20, a)).toBe(5);
+    expect(Z.binsearch(22, a)).toBe(6);
+    expect(Z.binsearch(54, a)).toBe(7);
+    expect(Z.binsearch(68, a)).toBe(8);
+  });
+
+  it('should return the insertion index multiplied by -1 and decremented by 1 when the object is not found', function() {
+    expect(Z.binsearch(0, a)).toBe(-1);
+    expect(Z.binsearch(0.5, a)).toBe(-1);
+    expect(Z.binsearch(2, a)).toBe(-2);
+    expect(Z.binsearch(5, a)).toBe(-4);
+    expect(Z.binsearch(8, a)).toBe(-5);
+    expect(Z.binsearch(23, a)).toBe(-8);
+    expect(Z.binsearch(67, a)).toBe(-9);
+    expect(Z.binsearch(69, a)).toBe(-10);
+  });
+});
+
 }());

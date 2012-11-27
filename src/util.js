@@ -376,7 +376,14 @@ Z.murmur = function(key, seed) {
 };
 
 // Public: Performs a binary search on the items in the given array for the
-// given object. It assumes that the given array is already sorted.
+// given object. It assumes that the given array is already sorted. If the
+// object is found, then its index in the array is returned. If the object is
+// not found, a negative number is returned that indicates what the object's
+// insertion index would be if it were inserted into the array in sorted order.
+// To get the actual insertion index, multiple the return value by `-1` and then
+// subtract `1` (offsetting it by one is necessary in order to be able to
+// distinguish between the case where the object is found at index zero and when
+// its not found but its insertion index would be zero).
 //
 // o     - The object to search for.
 // array - The pre-sorted array to search. This can be a `Z.Array` or a native
@@ -384,7 +391,8 @@ Z.murmur = function(key, seed) {
 // cmp   - The comparison function to use to determine a match (default:
 //         `Z.cmp`).
 //
-// Returns the index of the object when found and `false` otherwise.
+// Returns the index of the object when found and a negative value indicating
+//   the insertion index when not found.
 Z.binsearch = function(o, array, cmp) {
   var imin, imax, imid, r;
 
@@ -402,7 +410,7 @@ Z.binsearch = function(o, array, cmp) {
     else            { return imid; }
   }
 
-  return null;
+  return -imin - 1;
 };
 
 // Public: Returns a string indicating the type of the given object. This can be

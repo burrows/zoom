@@ -126,7 +126,10 @@ Z.SortedArray = Z.Array.extend(function() {
   // o - The object to find the index of.
   //
   // Returns the index of the object or `null` if its not present.
-  this.def('index', function(o) { return Z.binsearch(o, this); });
+  this.def('index', function(o) {
+    var i = Z.binsearch(o, this);
+    return i >= 0 ? i : null;
+  });
 
   // Internal: General array manipulations are not allowed in a sorted array.
   this.def('push', function() {
