@@ -19,6 +19,20 @@ Person = Z.Object.extend(function() {
   this.prop('last');
 });
 
+function nameAsc(a, b) {
+  var afull = a.last() + ', ' + a.first(),
+      bfull = b.last() + ', ' + b.first();
+  return Z.cmp(afull, bfull);
+}
+
+function nameDesc(a, b) {
+  var afull = a.last() + ', ' + a.first(),
+      bfull = b.last() + ', ' + b.first();
+  return Z.cmp(bfull, afull);
+}
+
+function evenLast(p) {  return p.last().length % 2 === 0; }
+
 describe('Z.ArrayController', function() {
   var controller;
 
@@ -68,14 +82,7 @@ describe('Z.ArrayController', function() {
     });
 
     describe('with a `compareFn`', function() {
-      beforeEach(function() {
-        controller.compareFn(function(a, b) {
-          var afull = a.last() + ', ' + a.first(),
-              bfull = b.last() + ', ' + b.first();
-
-          return Z.cmp(afull, bfull);
-        });
-      });
+      beforeEach(function() {  controller.compareFn(nameAsc); });
 
       it('should return the sorted `content` array', function() {
         expect(controller.arranged()).toEq(Z.A(p1, p4, p3, p2));
@@ -110,11 +117,7 @@ describe('Z.ArrayController', function() {
     });
 
     describe('with a `filterFn`', function() {
-      beforeEach(function() {
-        controller.filterFn(function(o) {
-          return o.last().length % 2 === 0;
-        });
-      });
+      beforeEach(function() { controller.filterFn(evenLast); });
 
       it('should return the filtered `content` array', function() {
         expect(controller.arranged()).toEq(Z.A(p2, p3));
@@ -155,12 +158,7 @@ describe('Z.ArrayController', function() {
 
     describe('with both a `compareFn` and `filterFn`', function() {
       beforeEach(function() {
-        controller.compareFn(function(a, b) {
-          var afull = a.last() + ', ' + a.first(),
-              bfull = b.last() + ', ' + b.first();
-
-          return Z.cmp(afull, bfull);
-        });
+        controller.compareFn(nameAsc);
 
         controller.filterFn(function(o) {
           return o.last().length % 2 === 0;
@@ -182,6 +180,230 @@ describe('Z.ArrayController', function() {
         controller.content().push(p5);
         expect(controller.arranged()).toEq(Z.A(p3, p2));
       });
+    });
+  });
+
+  describe('single selection', function() {
+    beforeEach(function() {
+      controller.allowsMultipleSelection(false);
+    });
+
+    describe('.selectItem', function() {
+      it('should add the item to the `selection` array', function() {
+        expect(controller.selection()).toEq(Z.A());
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p2));
+      });
+
+      it('should replace the currently selected item in the `selection` array', function() {
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p2));
+        controller.selectItem(p3);
+        expect(controller.selection()).toEq(Z.A(p3));
+      });
+
+      it('should add the `arranged` index of the item to the `selectionIndexes` array', function() {
+        controller.selectItem(p2);
+        expect(controller.selectionIndexes()).toEq(Z.A(1));
+        controller.selectItem(p4);
+        expect(controller.selectionIndexes()).toEq(Z.A(3));
+      });
+
+      it('should add the `arranged` index of the item to the `selectionIndexes` array when the arranged index is different than the content index', function() {
+        controller.compareFn(nameAsc);
+        controller.selectItem(p4);
+        expect(controller.selectionIndexes()).toEq(Z.A(1));
+        controller.selectItem(p2);
+        expect(controller.selectionIndexes()).toEq(Z.A(3));
+      });
+
+      it('should not add the `arranged` index to the `selectionIndexes` array when the item does not appear in `arranged`', function() {
+        controller.filterFn(evenLast);
+        controller.selectItem(p1);
+        expect(controller.selectionIndexes()).toEq(Z.A());
+      });
+
+      it('should not add an item to `selection` array multiple times', function() {
+        controller.selectItem(p2);
+        controller.selectItem(p2);
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p2));
+      });
+
+      it('should not add an index to `selectionIndexes` multiple times', function() {
+        controller.selectItem(p3);
+        controller.selectItem(p3);
+        controller.selectItem(p3);
+        expect(controller.selectionIndexes()).toEq(Z.A(2));
+      });
+    });
+
+    describe('.unselectItem', function() {
+      it('should do nothing if the item is not already selected', function() {
+        expect(controller.selection()).toEq(Z.A());
+        controller.unselectItem(p1);
+        expect(controller.selection()).toEq(Z.A());
+      });
+
+      it('should remove the item from the `selection` array', function() {
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p2));
+        controller.unselectItem(p2);
+        expect(controller.selection()).toEq(Z.A());
+      });
+
+      it("should remove the item's `arranged` index from the array", function() {
+        controller.selectItem(p2);
+        expect(controller.selectionIndexes()).toEq(Z.A(1));
+        controller.unselectItem(p2);
+        expect(controller.selectionIndexes()).toEq(Z.A());
+      });
+    });
+  });
+
+  describe('multiple selection', function() {
+    beforeEach(function() {
+      controller.allowsMultipleSelection(true);
+    });
+
+    describe('.selectItem', function() {
+      it('should add the item to the `selection` array', function() {
+        expect(controller.selection()).toEq(Z.A());
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p2));
+      });
+
+      it('should add multiple items to the `selection` array', function() {
+        controller.selectItem(p2);
+        controller.selectItem(p3);
+        expect(controller.selection()).toEq(Z.A(p2, p3));
+      });
+
+      it('should not add an item to the `selection` array multiple times', function() {
+        controller.selectItem(p2);
+        controller.selectItem(p2);
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p2));
+      });
+
+      it('should add the `arranged` indexes of the selected items to the `selectionIndexes` array', function() {
+        controller.selectItem(p1);
+        controller.selectItem(p3);
+        expect(controller.selectionIndexes()).toEq(Z.A(0, 2));
+      });
+
+      it('should not add the arranged index to the `selectionIndexes` array multiple times', function() {
+        controller.selectItem(p1);
+        controller.selectItem(p1);
+        controller.selectItem(p1);
+        expect(controller.selectionIndexes()).toEq(Z.A(0));
+      });
+
+      it('should add the `arranged` index of the item to the `selectionIndexes` array when the arranged index is different than the content index', function() {
+        controller.compareFn(nameAsc);
+        controller.selectItem(p4);
+        controller.selectItem(p2);
+        expect(controller.selectionIndexes()).toEq(Z.A(1, 3));
+      });
+
+      it('should not add the `arranged` index to the `selectionIndexes` array when the item does not appear in `arranged`', function() {
+        controller.filterFn(evenLast);
+        controller.selectItem(p1);
+        expect(controller.selectionIndexes()).toEq(Z.A());
+      });
+    });
+
+    describe('.unselectItem', function() {
+      it('should do nothing if the item is not already selected', function() {
+        expect(controller.selection()).toEq(Z.A());
+        controller.unselectItem(p1);
+        expect(controller.selection()).toEq(Z.A());
+      });
+
+      it('should remove the item from the `selection` array', function() {
+        controller.selectItem(p2);
+        controller.selectItem(p4);
+        expect(controller.selection()).toEq(Z.A(p2, p4));
+        controller.unselectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p4));
+        controller.unselectItem(p4);
+        expect(controller.selection()).toEq(Z.A());
+      });
+
+      it("should remove the item's `arranged` index from the array", function() {
+        controller.selectItem(p2);
+        controller.selectItem(p4);
+        expect(controller.selectionIndexes()).toEq(Z.A(1, 3));
+        controller.unselectItem(p2);
+        expect(controller.selectionIndexes()).toEq(Z.A(3));
+        controller.unselectItem(p4);
+        expect(controller.selectionIndexes()).toEq(Z.A());
+      });
+    });
+
+    describe('.clearSelection', function() {
+      it('should clear the `selection` and `selectionIndexes` arrays', function() {
+        controller.selectItem(p1);
+        controller.selectItem(p2);
+        expect(controller.selection()).toEq(Z.A(p1, p2));
+        expect(controller.selectionIndexes()).toEq(Z.A(0, 1));
+        controller.clearSelection();
+        expect(controller.selection()).toEq(Z.A());
+        expect(controller.selectionIndexes()).toEq(Z.A());
+      });
+    });
+  });
+
+  describe('changing `compareFn`', function() {
+    it('should rearrange the `arranged` array', function() {
+      expect(controller.arranged()).toEq(Z.A(p1, p2, p3, p4));
+      controller.compareFn(nameAsc);
+      expect(controller.arranged()).toEq(Z.A(p1, p4, p3, p2));
+      controller.compareFn(nameDesc);
+      expect(controller.arranged()).toEq(Z.A(p2, p3, p4, p1));
+      controller.compareFn(null);
+      expect(controller.arranged()).toEq(Z.A(p1, p2, p3, p4));
+    });
+  });
+
+  describe('changing `filterFn`', function() {
+    it('should update the `arranged` array', function() {
+      expect(controller.arranged()).toEq(Z.A(p1, p2, p3, p4));
+      controller.filterFn(evenLast);
+      expect(controller.arranged()).toEq(Z.A(p2, p3));
+      controller.filterFn(null);
+      expect(controller.arranged()).toEq(Z.A(p1, p2, p3, p4));
+    });
+
+    it('should update the `selectionIndexes` array', function() {
+      controller.allowsMultipleSelection(true);
+      controller.selectItem(p1);
+      controller.selectItem(p2);
+      expect(controller.selectionIndexes()).toEq(Z.A(0, 1));
+      controller.filterFn(evenLast);
+      expect(controller.selectionIndexes()).toEq(Z.A(0));
+      controller.filterFn(null);
+      expect(controller.selectionIndexes()).toEq(Z.A(0, 1));
+    });
+  });
+
+  describe('changing `content`', function() {
+    it('should clear the `selection` array', function() {
+      controller.allowsMultipleSelection(true);
+      controller.selectItem(p1);
+      controller.selectItem(p3);
+      expect(controller.selection()).toEq(Z.A(p1, p3));
+      controller.content(Z.A(p1, p4));
+      expect(controller.selection()).toEq(Z.A());
+    });
+
+    it('should clear the `selectionIndexes` array', function() {
+      controller.allowsMultipleSelection(true);
+      controller.selectItem(p1);
+      controller.selectItem(p3);
+      expect(controller.selectionIndexes()).toEq(Z.A(0, 2));
+      controller.content(Z.A(p1, p4));
+      expect(controller.selectionIndexes()).toEq(Z.A());
     });
   });
 });

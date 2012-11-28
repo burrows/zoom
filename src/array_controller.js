@@ -11,6 +11,7 @@ Z.ArrayController = Z.Object.extend(function() {
 
     switch (n.type) {
       case 'change':
+        this.clearSelection();
         rearrange.call(this);
         break;
       case 'insert':
@@ -27,8 +28,22 @@ Z.ArrayController = Z.Object.extend(function() {
   }
 
   function index(o) {
-    var arranged = this.arranged(), cmp = this.compareFn();
+    var arranged = this.arranged(), cmp = this.compareFn(), idx;
+
+    if (cmp) {
+      idx = Z.binsearch(o, arranged, cmp);
+      return idx >= 0 ? idx : null;
+    }
+    else {
+      return arranged.index(o);
+    }
+
     return cmp ? Z.binsearch(o, arranged, cmp) : arranged.index(o);
+  }
+
+  function insertSorted(o, array, cmp) {
+    var i = Z.binsearch(o, array, cmp);
+    array.splice(i < 0 ? -i - 1 : i, 0, o);
   }
 
   function insert(o) {
@@ -38,15 +53,8 @@ Z.ArrayController = Z.Object.extend(function() {
         i;
 
     if (filter && !filter(o)) { return; }
-
-    if (cmp) {
-      i = Z.binsearch(o, arranged, cmp);
-      i = i < 0 ? -i - 1 : i;
-      arranged.splice(i, 0, o);
-    }
-    else {
-      arranged.push(o);
-    }
+    if (cmp) { insertSorted(o, arranged, cmp); }
+    else { arranged.push(o); }
   }
 
   function remove(o) {
@@ -56,23 +64,55 @@ Z.ArrayController = Z.Object.extend(function() {
   }
 
   function rearrange() {
-    var content   = this.content(),
+    var _this     = this,
+        content   = this.content(),
         filterFn  = this.filterFn(),
-        compareFn = this.compareFn();
+        compareFn = this.compareFn(),
+        indexes   = [];
 
-    if (!content) { this.arranged(null); return; }
+    if (!content) {
+      this.arranged(null);
+      this.clearSelection();
+      return;
+    }
 
     content = filterFn ? content.select(filterFn) : content.dup();
 
     if (compareFn) { content.sort$(compareFn); }
 
     this.arranged(content);
+
+    this.selection().each(function(item) {
+      var idx = index.call(_this, item);
+      if (idx !== null) { indexes.push(idx); }
+    });
+
+    this.selectionIndexes().replace(indexes);
   }
 
   this.prop('content');
+
   this.prop('arranged');
+
   this.prop('compareFn');
+
   this.prop('filterFn');
+
+  this.prop('allowsMultipleSelection', {def: true});
+
+  this.prop('selection', {
+    readonly: true,
+    get: function() {
+      return this.__selection__ = this.__selection__ || Z.A();
+    }
+  });
+
+  this.prop('selectionIndexes', {
+    readonly: true,
+    get: function() {
+      return this.__selectionIndexes__ = this.__selectionIndexes__ || Z.A();
+    },
+  });
 
   this.def('init', function(props) {
     this.supr(props);
@@ -88,5 +128,36 @@ Z.ArrayController = Z.Object.extend(function() {
     this.stopObserving('compareFn', this, rearrange);
     this.stopObserving('filterFn', this, rearrange);
     return this.supr();
+  });
+
+  this.def('selectItem', function(item) {
+    var selection = this.selection(),
+        indexes   = this.selectionIndexes(),
+        idx       = index.call(this, item);
+
+    if (selection.contains(item)) { return; }
+
+    if (!this.allowsMultipleSelection()) {  this.clearSelection(); }
+
+    selection.push(item);
+    if (idx !== null) { indexes.push(idx); }
+
+    return this;
+  });
+
+  this.def('unselectItem', function(item) {
+    var selection = this.selection(),
+        indexes   = this.selectionIndexes(),
+        idx       = index.call(this, item);
+
+    selection.remove(item);
+    if (idx !== null) { indexes.remove(idx); }
+
+    return this;
+  });
+
+  this.def('clearSelection', function() {
+    this.selection().clear();
+    this.selectionIndexes().clear();
   });
 });
