@@ -42,8 +42,8 @@ describe('Z.ArrayController', function() {
 
   describe('.arranged', function() {
     describe('with no `compareFn` or `filterFn`', function() {
-      it('should return `null` when `content` is `null`', function() {
-        expect(Z.ArrayController.create().arranged()).toBe(null);
+      it('should return an empty array when `content` is `null`', function() {
+        expect(Z.ArrayController.create().arranged()).toEq(Z.A());
       });
 
       it('should return an array the same as `content`', function() {

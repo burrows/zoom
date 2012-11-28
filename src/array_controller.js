@@ -71,7 +71,7 @@ Z.ArrayController = Z.Object.extend(function() {
         indexes   = [];
 
     if (!content) {
-      this.arranged(null);
+      this.arranged().clear();
       this.clearSelection();
       return;
     }
@@ -80,7 +80,7 @@ Z.ArrayController = Z.Object.extend(function() {
 
     if (compareFn) { content.sort$(compareFn); }
 
-    this.arranged(content);
+    this.arranged().replace(content);
 
     this.selection().each(function(item) {
       var idx = index.call(_this, item);
@@ -92,7 +92,10 @@ Z.ArrayController = Z.Object.extend(function() {
 
   this.prop('content');
 
-  this.prop('arranged');
+  this.prop('arranged', {
+    readonly: true,
+    get: function() { return this.__arranged__ = this.__arranged__ || Z.A(); }
+  });
 
   this.prop('compareFn');
 
