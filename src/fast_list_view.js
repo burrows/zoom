@@ -83,6 +83,10 @@ Z.FastListView = Z.ListView.extend(function() {
   // Internal: Comparator function for searching the adjustments array.
   function adjustmentCmp(adj, idx) { return Z.cmp(adj[0], idx); }
 
+  // Public: Override the default `Z.ListView` tag of `ul` since by default
+  // `Z.FastListView` renders a wrapper `div` around the item views.
+  this.tag = 'div';
+
   // Public: The height of each item view. See the `customRowHeightIndexes`
   // property if any items in your list need to be rendered with a height that
   // is something other than this value.
