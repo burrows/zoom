@@ -443,6 +443,17 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return this;
   });
 
+  // Public: Replaces the contents of the receiver with the contents of the
+  // given array.
+  //
+  // a - A `Z.Array` or native array.
+  //
+  // Returns the receiver.
+  this.def('replace', function(a) {
+    a = Z.isA(a, Z.Array) ? a.toNative() : a;
+    return this.splice.apply(this, [0, this.size()].concat(a));
+  });
+
   // Public: Reduces the size of the array to 0 by removing all items.
   //
   // Returns the receiver.

@@ -288,6 +288,20 @@ describe('Z.Array.splice', function() {
   });
 });
 
+describe('Z.Array.replace', function() {
+  it('should replace the contents of the receiver with the given `Z.Array` contents', function() {
+    var a = Z.A(1,2,3);
+    a.replace(Z.A('foo', 'bar'));
+    expect(a).toEq(Z.A('foo', 'bar'));
+  });
+
+  it('should replace the contents of the receiver with the given native array contents', function() {
+    var a = Z.A(1,2,3);
+    a.replace([10, 11, 12, 13]);
+    expect(a).toEq(Z.A(10, 11, 12, 13));
+  });
+});
+
 describe('Z.Array.remove', function() {
   it('should return the receiver', function() {
     var a = Z.A(1,2,3);
