@@ -1417,6 +1417,10 @@ describe('Z.Array.sort$', function() {
     expect(notifications[0].path).toBe('@');
     expect(notifications[0].range).toEq([0, 4]);
   });
+
+  it('should not throw an exception when the array is empty', function() {
+    expect(function() { Z.A().sort$(); }).not.toThrow();
+  });
 });
 
 describe('Z.Array.sortBy', function() {
