@@ -677,9 +677,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   this.def('sort$', function(fn) {
     var size = this.size();
 
-    willMutate.call(this, 'update', 0, size);
-    this.__z_items__.sort(fn || Z.cmp);
-    didMutate.call(this, 'update', 0, size);
+    if (size > 0) {
+      willMutate.call(this, 'update', 0, size);
+      this.__z_items__.sort(fn || Z.cmp);
+      didMutate.call(this, 'update', 0, size);
+    }
 
     return this;
   });
