@@ -151,11 +151,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('init', function(props) {
     var self = this, subviewTypes = this.__subviewTypes__;
 
-    this.supr(props);
     views[this.objectId()] = this;
-
-    this.node = buildNode.call(this);
-    this.__rendered__ = false;
 
     if (subviewTypes) {
       subviewTypes.each(function(tuple) {
@@ -164,6 +160,10 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
         self.addSubview(view);
       });
     }
+
+    this.supr(props);
+    this.node = buildNode.call(this);
+    this.__rendered__ = false;
 
     this.displayPaths().each(function(path) {
       self.observe(path, self, displayPathObserver);
