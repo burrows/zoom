@@ -1,10 +1,3 @@
-// TODO:
-// selectionIndexes property (array of indexes)
-// selection property (array of selected objects)
-// selectItem(item) - adds to selectionIndexes
-// unselectItem(item) - removes from selectionIndexes
-// clearSelection()
-// allowsMultipleSelection - boolean
 Z.ArrayController = Z.Object.extend(function() {
   function contentObserver(n) {
     var _this = this;
@@ -27,20 +20,6 @@ Z.ArrayController = Z.Object.extend(function() {
     }
   }
 
-  function index(o) {
-    var arranged = this.arranged(), cmp = this.compareFn(), idx;
-
-    if (cmp) {
-      idx = Z.binsearch(o, arranged, cmp);
-      return idx >= 0 ? idx : null;
-    }
-    else {
-      return arranged.index(o);
-    }
-
-    return cmp ? Z.binsearch(o, arranged, cmp) : arranged.index(o);
-  }
-
   function insertSorted(o, array, cmp) {
     var i = Z.binsearch(o, array, cmp);
     array.splice(i < 0 ? -i - 1 : i, 0, o);
@@ -58,16 +37,16 @@ Z.ArrayController = Z.Object.extend(function() {
   }
 
   function remove(o) {
-    var arranged = this.arranged(), idx = index.call(this, o);
+    var arranged = this.arranged(), idx = arranged.index(o);
     if (idx === null) { return; }
     arranged.splice(idx, 1);
   }
 
   function rearrange() {
-    var _this     = this,
-        content   = this.content(),
+    var content   = this.content(),
         filterFn  = this.filterFn(),
         compareFn = this.compareFn(),
+        arranged  = this.arranged(),
         indexes   = [];
 
     if (!content) {
@@ -83,7 +62,7 @@ Z.ArrayController = Z.Object.extend(function() {
     this.arranged().replace(content);
 
     this.selection().each(function(item) {
-      var idx = index.call(_this, item);
+      var idx = arranged.index(item);
       if (idx !== null) { indexes.push(idx); }
     });
 
@@ -136,11 +115,12 @@ Z.ArrayController = Z.Object.extend(function() {
   this.def('selectItem', function(item) {
     var selection = this.selection(),
         indexes   = this.selectionIndexes(),
-        idx       = index.call(this, item);
+        arranged  = this.arranged(),
+        idx       = arranged.index(item);
 
     if (selection.contains(item)) { return; }
 
-    if (!this.allowsMultipleSelection()) {  this.clearSelection(); }
+    if (!this.allowsMultipleSelection()) { this.clearSelection(); }
 
     selection.push(item);
     if (idx !== null) { indexes.push(idx); }
@@ -151,7 +131,8 @@ Z.ArrayController = Z.Object.extend(function() {
   this.def('unselectItem', function(item) {
     var selection = this.selection(),
         indexes   = this.selectionIndexes(),
-        idx       = index.call(this, item);
+        arranged  = this.arranged(),
+        idx       = arranged.index(item);
 
     selection.remove(item);
     if (idx !== null) { indexes.remove(idx); }
