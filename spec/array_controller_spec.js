@@ -313,6 +313,18 @@ describe('Z.ArrayController', function() {
       });
     });
 
+    describe('.selectItems', function() {
+      it('should select all items in the given native array', function() {
+        controller.selectItems([p2, p3]);
+        expect(controller.selection()).toEq(Z.A(p2, p3));
+      });
+
+      it('should select all items in the given Z.Array', function() {
+        controller.selectItems(Z.A(p2, p3));
+        expect(controller.selection()).toEq(Z.A(p2, p3));
+      });
+    });
+
     describe('.unselectItem', function() {
       it('should do nothing if the item is not already selected', function() {
         expect(controller.selection()).toEq(Z.A());
@@ -338,6 +350,22 @@ describe('Z.ArrayController', function() {
         expect(controller.selectionIndexes()).toEq(Z.A(3));
         controller.unselectItem(p4);
         expect(controller.selectionIndexes()).toEq(Z.A());
+      });
+    });
+
+    describe('.unselectItems', function() {
+      it('should unselect all items in the given native array', function() {
+        controller.selectItems([p2, p3, p4]);
+        expect(controller.selection()).toEq(Z.A(p2, p3, p4));
+        controller.unselectItems([p3, p4]);
+        expect(controller.selection()).toEq(Z.A(p2));
+      });
+
+      it('should unselect all items in the given Z.Array', function() {
+        controller.selectItems(Z.A(p2, p3, p4));
+        expect(controller.selection()).toEq(Z.A(p2, p3, p4));
+        controller.unselectItems(Z.A(p3, p4));
+        expect(controller.selection()).toEq(Z.A(p2));
       });
     });
 

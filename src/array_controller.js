@@ -128,6 +128,13 @@ Z.ArrayController = Z.Object.extend(function() {
     return this;
   });
 
+  this.def('selectItems', function(items) {
+    var _this = this;
+    items = Z.isA(items, Z.Array) ? items : Z.Array.create(items);
+    items.each(function(item) { _this.selectItem(item); });
+    return this;
+  });
+
   this.def('unselectItem', function(item) {
     var selection = this.selection(),
         indexes   = this.selectionIndexes(),
@@ -140,8 +147,16 @@ Z.ArrayController = Z.Object.extend(function() {
     return this;
   });
 
+  this.def('unselectItems', function(items) {
+    var _this = this;
+    items = Z.isA(items, Z.Array) ? items : Z.Array.create(items);
+    items.each(function(item) { _this.unselectItem(item); });
+    return this;
+  });
+
   this.def('clearSelection', function() {
     this.selection().clear();
     this.selectionIndexes().clear();
+    return this;
   });
 });
