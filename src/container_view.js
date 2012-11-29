@@ -14,7 +14,7 @@ Z.ContainerView = Z.View.extend(function() {
   // property changes this method converts the value of a concrete `Z.View`
   // instance and sets that view as the value of the `contentView` property.
   function nowShowingDidChange() {
-    var ns = this.nowShowing(), view = Z.isString(ns) ? Z.resolve(ns) : ns;
+    var ns = this.nowShowing(), view = Z.isString(ns) ? Z.get(ns) : ns;
 
     if (view && !Z.isA(view, Z.View)) {
       throw new Error(Z.fmt("Z.ContainerView: `nowShowing` must be a Z.View: %@", ns));

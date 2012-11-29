@@ -501,11 +501,11 @@ describe('Z.eq', function() {
   });
 });
 
-describe('Z.resolve', function() {
+describe('Z.get', function() {
   describe('given the name of a global variable', function() {
     it('should return the value of the global variable', function() {
       Z.global.Something = 9;
-      expect(Z.resolve('Something')).toBe(9);
+      expect(Z.get('Something')).toBe(9);
       Z.del(Z.global, 'Something');
     });
   });
@@ -513,7 +513,7 @@ describe('Z.resolve', function() {
   describe('given a path containing native objects', function() {
     it('should return the value at the end of the path', function() {
       Z.global.A = { b: { c: 'blah' } };
-      expect(Z.resolve('A.b.c')).toBe('blah');
+      expect(Z.get('A.b.c')).toBe('blah');
       Z.del(Z.global, 'A');
     });
   });
@@ -521,16 +521,53 @@ describe('Z.resolve', function() {
   describe('given a path zobjects', function() {
     it('should return the value at the end of the path', function() {
       Z.global.A = Z.H('b', Z.H('c', 'foo'));
-      expect(Z.resolve('A.b.c')).toBe('foo');
+      expect(Z.get('A.b.c')).toBe('foo');
       Z.del(Z.global, 'A');
     });
   });
 
   describe('given a path to a non-existant object', function() {
     it('should return `undefined`', function() {
-      expect(Z.resolve('Foo')).toBeUndefined();
-      expect(Z.resolve('Foo.bar.baz')).toBeUndefined();
+      expect(Z.get('Foo')).toBeUndefined();
+      expect(Z.get('Foo.bar.baz')).toBeUndefined();
     });
+  });
+});
+
+describe('Z.set', function() {
+  describe('given a path with one segement', function() {
+    it('should throw an exception', function() {
+      expect(function() {
+        Z.set('foo', 1);
+      }).toThrow("Z.set: must be given a path with multiple segments");
+    });
+  });
+
+  describe('given a path that does not resolve', function() {
+    it('should throw an exception', function() {
+      var ctx = {foo: {}};
+
+      expect(function() {
+        Z.set('blah.bar', 1, ctx);
+      }).toThrow("Z.set: could not resolve path: 'blah'");
+    });
+  });
+
+  describe('given a path to something that is not a Z.Object', function() {
+    it('should throw an exception', function() {
+      var ctx = {foo: {}};
+
+      expect(function() {
+        Z.set('foo.bar', 1, ctx);
+      }).toThrow("Z.set: path did not resolve to a Z.Object: 'foo'");
+    });
+  });
+
+  it('should set the given value at the given path', function() {
+    var o = Z.Object.create(), ctx = {o: o};
+    o.prop('foo');
+    Z.set('o.foo', 9, ctx);
+    expect(o.foo()).toBe(9);
   });
 });
 

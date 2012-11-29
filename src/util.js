@@ -532,7 +532,7 @@ Z.detectOutermostRecursion = function(o1, o2, f) {
 // ctx  - The object to resolve the path from.
 //
 // Returns the resolved object or `undefined` if it doesn't exist.
-Z.resolve = function(path, ctx) {
+Z.get = function(path, ctx) {
   var head, tail;
 
   ctx  = ctx || Z.global;
@@ -545,7 +545,38 @@ Z.resolve = function(path, ctx) {
 
   if (tail.length === 0) { return ctx[head]; }
 
-  return ctx[head] ? Z.resolve(tail.join('.'), ctx[head]) : undefined;
+  return ctx[head] ? Z.get(tail.join('.'), ctx[head]) : undefined;
+};
+
+// Public: Sets the value of a key path resolved from the given context object.
+//
+// path  - A string containing the path to resolve.
+// value - The value to set.
+// ctx   - The object to resolve the path from.
+//
+// Returns `value`.
+// Throws `Error` if not given a path with at least two segments.
+// Throws `Error` if the path does not resolve to a `Z.Object`.
+Z.set = function(path, value, ctx) {
+  var init, last, o;
+
+  path = path.split('.');
+
+  if (path.length <= 1) { throw new Error("Z.set: must be given a path with multiple segments"); }
+
+  init = path.slice(0, path.length - 1);
+  last = path[path.length - 1];
+  o    = Z.get(init.join('.'), ctx);
+
+  if (!o) {
+    throw new Error(Z.fmt("Z.set: could not resolve path: '%@'", init.join('.')));
+  }
+
+  if (!Z.isZObject(o)) {
+    throw new Error(Z.fmt("Z.set: path did not resolve to a Z.Object: '%@'", init.join('.')));
+  }
+
+  return o.set(last, value);
 };
 
 // Public: Converts each argument to a string using `Z.inspect` and logs it to
