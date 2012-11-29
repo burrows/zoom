@@ -176,7 +176,7 @@ Z.Model = Z.Object.extend(function() {
     var name    = descriptor.name,
         key     = '__' + name + '__',
         prev    = this[key],
-        type    = Z.resolve(descriptor.modelType),
+        type    = Z.get(descriptor.modelType),
         inverse = descriptor.inverse,
         state   = this.sourceState();
 
@@ -384,7 +384,7 @@ Z.Model = Z.Object.extend(function() {
 
     // load and set each association
     for (key in associated) {
-      type = Z.resolve(associations[key].modelType);
+      type = Z.get(associations[key].modelType);
       if (!(data = associated[key])) { continue; }
 
       if (associations[key].type === 'hasOne') {
@@ -759,7 +759,7 @@ Z.HasManyArray = Z.Array.extend(function() {
         descriptor      = this.__z_descriptor__,
         owner           = descriptor.owner,
         inverse         = descriptor.inverse,
-        type            = Z.resolve(descriptor.modelType),
+        type            = Z.get(descriptor.modelType),
         handlingInverse = this.__handlingInverse__,
         size            = this.size(),
         idx             = i < 0 ? size + i : i,
