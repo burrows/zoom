@@ -33,18 +33,6 @@ describe('Z.FastListView', function() {
     expect(view.node.childNodes[0].style.height).toBe('500px');
   });
 
-  describe('.overflowNode', function() {
-    it('should return the views node', function() {
-      expect(view.overflowNode()).toBe(view.node);
-    });
-  });
-
-  describe('.contentNode', function() {
-    it('should return the node created by the render method', function() {
-      expect(view.contentNode()).toBe(view.node.childNodes[0]);
-    });
-  });
-
   describe('.subviewContainerNode', function() {
     it('should return the node created by the render method', function() {
       expect(view.subviewContainerNode()).toBe(view.node.childNodes[0]);
