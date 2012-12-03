@@ -168,7 +168,12 @@ Z.FastListView = Z.ListView.extend(function() {
         range    = this.displayRange(),
         n        = range ? range[1] - range[0] + 1 : 0,
         i, item, items, subview, offset, height;
-    
+
+    if (this.showingEmpty()) {
+      cnode.style.height = null;
+      return;
+    }
+
     // ensure that the container is tall enough for all content items
     cnode.style.height = this.totalHeight() + 'px';
 
@@ -227,7 +232,7 @@ Z.FastListView = Z.ListView.extend(function() {
   });
 
   // Internal: Overridden to simply mark the view as being dirty.
-  this.def('contentItemsInserted', function() { this.needsDisplay(true); });
+  this.def('contentItemsAdded', function() { this.needsDisplay(true); });
 
   // Internal: Overridden to simply mark the view as being dirty.
   this.def('contentItemsRemoved', function() { this.needsDisplay(true); });
@@ -426,6 +431,14 @@ Z.FastListView = Z.ListView.extend(function() {
   this.def('firstVisibleSubview', function() {
     var idx = this.firstVisibleIndex();
     return idx === null ? null : this.subviewForContentIndex(idx);
+  });
+
+  // Internal: Overridden from the `Z.ListView` implementation to first remove
+  // any existing content item views since `Z.FastListView` overrides
+  // `contentItemsRemoved` to do nothing.
+  this.def('addEmptyView', function() {
+    this.subviews().slice().each(function(v) { v.remove().destroy(); });
+    return this.supr();
   });
 });
 

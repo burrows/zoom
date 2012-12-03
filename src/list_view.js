@@ -37,32 +37,46 @@ Z.ListView = Z.View.extend(function() {
   //
   // Returns nothing.
   function contentObserver(n) {
-    var content = this.content(), i, size;
+    var content      = this.content(),
+        isEmpty      = !content || (content.size() === 0),
+        showingEmpty = this.showingEmpty(),
+        hasEmpty     = !!this.emptyView(),
+        i, size;
 
     if (n.range) { i = n.range[0]; size = n.range[1]; }
 
+    if (!isEmpty && showingEmpty) { this.removeEmptyView(); }
+
     switch (n.type) {
       case 'change':
-        this.contentItemsRemoved(0, this.subviews().size());
-        if (content) { this.contentItemsInserted(content, 0); }
+        if (this.subviews().size() > 0) {
+          this.contentItemsRemoved(0, this.subviews().size());
+        }
+
+        if (content && content.size() > 0) {
+          this.contentItemsAdded(content, 0);
+        }
         break;
       case 'insert':
-        this.contentItemsInserted(content.slice(i, size), i);
+        this.contentItemsAdded(content.slice(i, size), i);
         break;
       case 'remove':
         this.contentItemsRemoved(i, size);
         break;
       case 'update':
         this.contentItemsRemoved(i, size);
-        this.contentItemsInserted(content.slice(i, size), i);
+        this.contentItemsAdded(content.slice(i, size), i);
         break;
     }
+
+    if (isEmpty && !showingEmpty && hasEmpty) { this.addEmptyView(); }
   }
 
   // Internal: Observes changes to the `itemViewType` property and replaces all
   // existing subviews with instances of the new item view type.
   function itemViewTypeObserver() {
     var _this = this, type = this.itemViewType();
+    if (this.showingEmpty()) { return; }
     this.subviews().each(function(sv) {
       _this.replaceSubview(sv, _this.createItemView(type, sv.content()));
     });
@@ -89,6 +103,14 @@ Z.ListView = Z.View.extend(function() {
     },
     set: function(v) {  return this.__selectionIndexes__ = v; }
   });
+
+  // Public: A `Z.View` concrete instance to display when `content` is `null`
+  // or empty.
+  this.prop('emptyView');
+
+  // Public: A boolean property indicating whether or not the empty view is
+  // currently being displayed.
+  this.prop('showingEmpty', {def: false});
 
   // Internal: The list view constructor - adds an observer to the `content`
   // property and fires that observer in order to setup the initial state of the
@@ -139,7 +161,7 @@ Z.ListView = Z.View.extend(function() {
   // idx   - The index of `content` where the items were inserted.
   //
   // Returns the receiver..
-  this.def('contentItemsInserted', function(items, idx) {
+  this.def('contentItemsAdded', function(items, idx) {
     var type = this.itemViewType(), i, size;
 
     for (i = 0, size = items.size(); i < size; i++) {
@@ -186,6 +208,38 @@ Z.ListView = Z.View.extend(function() {
       var sv = _this.subviewForContentIndex(idx);
       if (sv) { sv.isSelected(true); }
     });
+
+    return this;
+  });
+
+  // Internal: Adds the `emptyView` property as a subview if it is set and sets
+  // the `showingEmpty` property. This method is invoked by the content observer
+  // and should not be called by client code.
+  //
+  // Returns the receiver.
+  this.def('addEmptyView', function() {
+    var emptyView = this.emptyView();
+
+    if (emptyView) {
+      this.addSubview(emptyView);
+      this.showingEmpty(true);
+    }
+
+    return this;
+  });
+
+  // Internal: Removes the `emptyView` from the `subviews` array and unsets the
+  // `showingEmpty` property. This method is invoked by the content observer
+  // and should not be called by client code.
+  //
+  // Returns the receiver.
+  this.def('removeEmptyView', function() {
+    var emptyView = this.emptyView();
+
+    if (emptyView && emptyView.superview() === this) {
+      this.removeSubview(emptyView);
+      this.showingEmpty(false);
+    }
 
     return this;
   });

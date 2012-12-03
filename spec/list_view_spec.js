@@ -33,9 +33,16 @@ TestListView = Z.ListView.extend(function() {
 
 describe('Z.ListView', function() {
   describe('.init without content', function() {
-    it('should not create any subviews', function() {
+    it('should not create any subviews when `emptyView` is `null`', function() {
       var v = TestListView.create();
       expect(v.subviews()).toEq(Z.A());
+    });
+
+    it('should add `emptyView` as a subview', function() {
+      var empty = Z.View.create(),
+          v     = TestListView.create({emptyView: empty});
+
+      expect(v.subviews()).toEq(Z.A(empty));
     });
   });
 
@@ -67,6 +74,33 @@ describe('Z.ListView', function() {
       spyOn(v, 'createItemView').andCallThrough();
       v.content().push(p1);
       expect(v.createItemView).toHaveBeenCalledWith(TestItemView, p1);
+    });
+
+    it('should remove the `emptyView` when displayed', function() {
+      var empty = Z.View.create(),
+          view  = TestListView.create({content: Z.A(), emptyView: empty});
+
+      expect(empty.superview()).toBe(view);
+      view.content().push(p1, p2);
+      expect(empty.superview()).toBe(null);
+    });
+
+    it('should not destroy the `emptyView`', function() {
+      var empty = Z.View.create(),
+          view  = TestListView.create({content: Z.A(), emptyView: empty});
+
+      spyOn(empty, 'destroy');
+      view.content().push(p1, p2);
+      expect(empty.destroy).not.toHaveBeenCalled();
+    });
+
+    it('should set `showingEmpty` to `false` when removing the empty view', function() {
+      var empty = Z.View.create(),
+          view  = TestListView.create({content: Z.A(), emptyView: empty});
+
+      expect(view.showingEmpty()).toBe(true);
+      view.content().push(p1, p2);
+      expect(view.showingEmpty()).toBe(false);
     });
   });
 
@@ -100,6 +134,24 @@ describe('Z.ListView', function() {
       spyOn(iv, 'destroy');
       v.content().pop();
       expect(iv.destroy).toHaveBeenCalled();
+    });
+
+    it('should display the `emptyView` when set and `content` is empty or `null`', function() {
+      var empty = Z.View.create(),
+          v     = TestListView.create({content: Z.A(p1, p2), emptyView: empty});
+
+      expect(v.subviews().size()).toBe(2);
+      v.content().clear();
+      expect(v.subviews()).toEq(Z.A(empty));
+    });
+
+    it('should set `showingEmpty` to `true` when adding the empty view', function() {
+      var empty = Z.View.create(),
+          view  = TestListView.create({content: Z.A(p1, p2), emptyView: empty});
+
+      expect(view.showingEmpty()).toBe(false);
+      view.content(null);
+      expect(view.showingEmpty()).toBe(true);
     });
   });
 
@@ -146,6 +198,15 @@ describe('Z.ListView', function() {
       expect(iv1.destroy).toHaveBeenCalled();
       expect(iv2.destroy).toHaveBeenCalled();
     });
+
+    it('should show the `emptyView` when set', function() {
+      var empty = Z.View.create(),
+          v     = TestListView.create({content: Z.A(p1, p2), emptyView: empty});
+
+      expect(v.get('subviews.size')).toBe(2);
+      v.content(null);
+      expect(v.subviews()).toEq(Z.A(empty));
+    });
   });
 
   describe('replacing content with a new array', function() {
@@ -176,15 +237,23 @@ describe('Z.ListView', function() {
   describe('changing `itemViewType` property', function() {
     it('should replace all current subviews with instances of the new item view type', function() {
       var v   = TestListView.create({content: Z.A(p1, p2)}),
-          ivt = Z.View.extend(function() {
-            this.prop('content');
-          });
+          ivt = Z.View.extend(function() { this.prop('content'); });
 
       expect(v.get('subviews.size')).toBe(2);
       expect(v.get('subviews.type')).toEq(Z.A(TestItemView, TestItemView));
       v.itemViewType(ivt);
       expect(v.get('subviews.size')).toBe(2);
       expect(v.get('subviews.type')).toEq(Z.A(ivt, ivt));
+    });
+
+    it('should do nothing when the emptyView is currently being displayed', function() {
+      var empty = Z.View.create(),
+          v     = TestListView.create({content: Z.A(), emptyView: empty}),
+          ivt   = Z.View.extend(function() { this.prop('content'); });
+
+      expect(v.subviews()).toEq(Z.A(empty));
+      v.itemViewType(ivt);
+      expect(v.subviews()).toEq(Z.A(empty));
     });
   });
 

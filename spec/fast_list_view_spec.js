@@ -258,6 +258,14 @@ describe('Z.FastListView', function() {
       view.display();
       expect(subview.destroy).toHaveBeenCalled();
     });
+
+    it('should remove the explicit height from the item view container when `content` is empty or `null` and `emptyView` is set', function() {
+      view.emptyView(Z.View.create());
+      expect(view.node.childNodes[0].style.height).toBe('500px');
+      view.content(null);
+      view.display();
+      expect(view.node.childNodes[0].style.height).toBe('');
+    });
   });
 
   describe('.scrollTo', function() {
@@ -325,6 +333,33 @@ describe('Z.FastListView', function() {
       view.scrollOffset(25);
       view.display();
       expect(view.firstVisibleSubview()).toBe(view.subviewForContentIndex(2));
+    });
+  });
+
+  describe('removing content items', function() {
+    it('should add the `emptyView` property as a subview when set and `content` is empty or `null`', function() {
+      var empty = Z.View.create();
+
+      view.emptyView(empty);
+
+      expect(empty.superview()).toBe(null);
+      view.content().clear();
+      view.display();
+      expect(view.subviews()).toEq(Z.A(empty));
+    });
+  });
+
+  describe('adding content items', function() {
+    it('should remove the `emptyView` when displayed', function() {
+      var empty = Z.View.create();
+
+      view.emptyView(empty);
+      view.content(null);
+      view.display();
+
+      expect(empty.superview()).toBe(view);
+      view.content(Z.A({title: 'title', desc: 'desc'}));
+      expect(empty.superview()).toBe(null);
     });
   });
 });
