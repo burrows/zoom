@@ -33,6 +33,12 @@ describe('Z.FastListView', function() {
     expect(view.node.childNodes[0].style.height).toBe('500px');
   });
 
+  describe('.overflowNode', function() {
+    it("should return the view's node", function() {
+      expect(view.overflowNode()).toBe(view.node);
+    });
+  });
+
   describe('.subviewContainerNode', function() {
     it('should return the node created by the render method', function() {
       expect(view.subviewContainerNode()).toBe(view.node.childNodes[0]);
