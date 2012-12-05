@@ -36,7 +36,7 @@ Z.ArrayController = Z.Object.extend(function() {
     switch (n.type) {
       case 'change':
         this.clearSelection();
-        rearrange.call(this);
+        this.rearrange();
         break;
       case 'insert':
         n.current.each(function(o) { insert.call(_this, o); });
@@ -93,38 +93,6 @@ Z.ArrayController = Z.Object.extend(function() {
     arranged.splice(idx, 1);
   }
 
-  // Internal: Rearranges the `arranged` array based on the current `content`,
-  // `filterFn` and `compareFn` properties and updates the `selectionIndexes`
-  // property to reflect the new indexes of the currently selected items.
-  //
-  // Returns nothing.
-  function rearrange() {
-    var content   = this.content(),
-        filterFn  = this.filterFn(),
-        compareFn = this.compareFn(),
-        arranged  = this.arranged(),
-        indexes   = [];
-
-    if (!content) {
-      this.arranged().clear();
-      this.clearSelection();
-      return;
-    }
-
-    content = filterFn ? content.select(filterFn) : content.dup();
-
-    if (compareFn) { content.sort$(compareFn); }
-
-    this.arranged().replace(content);
-
-    this.selection().each(function(item) {
-      var idx = arranged.index(item);
-      if (idx !== null) { indexes.push(idx); }
-    });
-
-    this.selectionIndexes().replace(indexes);
-  }
-
   // Public: The `Z.Array` object to manage.
   this.prop('content');
 
@@ -172,16 +140,16 @@ Z.ArrayController = Z.Object.extend(function() {
     this.supr(props);
     this.observe('content.@', this, contentObserver,
       {previous: true, current: true});
-    this.observe('compareFn', this, rearrange);
-    this.observe('filterFn', this, rearrange);
-    rearrange.call(this);
+    this.observe('compareFn', this, 'rearrange');
+    this.observe('filterFn', this, 'rearrange');
+    this.rearrange();
   });
 
   // Internal: The `Z.ArrayController` destructor.
   this.def('destroy', function() {
     this.stopObserving('content.@', this, contentObserver);
-    this.stopObserving('compareFn', this, rearrange);
-    this.stopObserving('filterFn', this, rearrange);
+    this.stopObserving('compareFn', this, 'rearrange');
+    this.stopObserving('filterFn', this, 'rearrange');
     return this.supr();
   });
 
@@ -259,6 +227,38 @@ Z.ArrayController = Z.Object.extend(function() {
     this.selection().clear();
     this.selectionIndexes().clear();
     return this;
+  });
+
+  // Public: Rearranges the `arranged` array based on the current `content`,
+  // `filterFn` and `compareFn` properties and updates the `selectionIndexes`
+  // property to reflect the new indexes of the currently selected items.
+  //
+  // Returns nothing.
+  this.def('rearrange', function() {
+    var content   = this.content(),
+        filterFn  = this.filterFn(),
+        compareFn = this.compareFn(),
+        arranged  = this.arranged(),
+        indexes   = [];
+
+    if (!content) {
+      this.arranged().clear();
+      this.clearSelection();
+      return;
+    }
+
+    content = filterFn ? content.select(filterFn) : content.dup();
+
+    if (compareFn) { content.sort$(compareFn); }
+
+    this.arranged().replace(content);
+
+    this.selection().each(function(item) {
+      var idx = arranged.index(item);
+      if (idx !== null) { indexes.push(idx); }
+    });
+
+    this.selectionIndexes().replace(indexes);
   });
 });
 
