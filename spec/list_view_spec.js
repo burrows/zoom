@@ -207,6 +207,15 @@ describe('Z.ListView', function() {
       v.content(null);
       expect(v.subviews()).toEq(Z.A(empty));
     });
+
+    it('should not remove the `emptyView` when an empty content is changed to another empty content', function() {
+      var empty = Z.View.create(),
+          v     = TestListView.create({emptyView: empty});
+
+      expect(v.subviews()).toEq(Z.A(empty));
+      v.content(Z.A());
+      expect(v.subviews()).toEq(Z.A(empty));
+    });
   });
 
   describe('replacing content with a new array', function() {

@@ -49,13 +49,15 @@ Z.ListView = Z.View.extend(function() {
 
     switch (n.type) {
       case 'change':
-        if (this.subviews().size() > 0) {
-          this.contentItemsRemoved(0, this.subviews().size());
+        if (this.__prevContent__ && this.__prevContent__.size() > 0) {
+          this.contentItemsRemoved(0, this.__prevContent__.size());
         }
 
         if (content && content.size() > 0) {
           this.contentItemsAdded(content, 0);
         }
+
+        this.__prevContent__ = content;
         break;
       case 'insert':
         this.contentItemsAdded(content.slice(i, size), i);
