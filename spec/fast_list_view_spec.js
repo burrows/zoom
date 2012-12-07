@@ -330,7 +330,22 @@ describe('Z.FastListView', function() {
     });
   });
 
-  describe('.firstVisibleIndex', function() {
+  describe('.firstFullyVisibleIndex', function() {
+    it('should return the index of the first content item that is fully visible', function() {
+      expect(view.firstFullyVisibleIndex()).toBe(0);
+      view.scrollOffset(1);
+      view.display();
+      expect(view.firstFullyVisibleIndex()).toBe(1);
+      view.scrollOffset(10);
+      view.display();
+      expect(view.firstFullyVisibleIndex()).toBe(1);
+      view.scrollOffset(25);
+      view.display();
+      expect(view.firstFullyVisibleIndex()).toBe(3);
+    });
+  });
+
+  describe('.firstVisibleSubview', function() {
     it('should return the first subview that is at least paritally visible', function() {
       expect(view.firstVisibleSubview()).toBe(view.subviewForContentIndex(0));
       view.scrollOffset(10);
@@ -339,6 +354,21 @@ describe('Z.FastListView', function() {
       view.scrollOffset(25);
       view.display();
       expect(view.firstVisibleSubview()).toBe(view.subviewForContentIndex(2));
+    });
+  });
+
+  describe('.firstFullyVisibleSubview', function() {
+    it('should return the first subview that is fully visible', function() {
+      expect(view.firstFullyVisibleSubview()).toBe(view.subviewForContentIndex(0));
+      view.scrollOffset(1);
+      view.display();
+      expect(view.firstFullyVisibleSubview()).toBe(view.subviewForContentIndex(1));
+      view.scrollOffset(10);
+      view.display();
+      expect(view.firstFullyVisibleSubview()).toBe(view.subviewForContentIndex(1));
+      view.scrollOffset(25);
+      view.display();
+      expect(view.firstFullyVisibleSubview()).toBe(view.subviewForContentIndex(3));
     });
   });
 

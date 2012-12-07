@@ -435,10 +435,30 @@ Z.FastListView = Z.ListView.extend(function() {
   
     return null;
   });
+
+  // Public: Returns the index of the first content item that is fully scrolled
+  // past the scroll offset.
+  this.def('firstFullyVisibleIndex', function() {
+    var idx     = this.firstVisibleIndex(),
+        size    = this.get('content.size'),
+        soffset = this.scrollOffset();
+
+    if (idx === null) { return null; }
+    if (this.rowOffsetForIndex(idx) < soffset) { idx++; }
+
+    return idx <= (size - 1) ? idx : null;
+  });
   
   // Public: Returns the first subview that is at least partially visible.
   this.def('firstVisibleSubview', function() {
     var idx = this.firstVisibleIndex();
+    return idx === null ? null : this.subviewForContentIndex(idx);
+  });
+
+  // Public: Returns the first subview that is fully scrolled past the scroll
+  // offset.
+  this.def('firstFullyVisibleSubview', function() {
+    var idx = this.firstFullyVisibleIndex();
     return idx === null ? null : this.subviewForContentIndex(idx);
   });
 
