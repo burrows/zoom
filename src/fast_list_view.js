@@ -302,9 +302,6 @@ Z.FastListView = Z.ListView.extend(function() {
     if (adjustments) {
       ai = Z.binsearch(idx, adjustments, adjustmentCmp);
       ai = ai < 0 ? -ai - 1 : ai;
-      if (!adjustments[ai]) {
-        Z.log(idx, ai, adjustments);
-      }
       offset += adjustments[ai][1];
     }
 
