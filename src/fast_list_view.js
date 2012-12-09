@@ -171,7 +171,7 @@ Z.FastListView = Z.ListView.extend(function() {
         cnode    = this.subviewContainerNode(),
         range    = this.displayRange(),
         n        = range ? range[1] - range[0] + 1 : 0,
-        i, item, items, subview, offset, height;
+        i, item, items, subview, offset, height, position;
 
     if (this.showingEmpty()) {
       cnode.style.height = null;
@@ -189,27 +189,33 @@ Z.FastListView = Z.ListView.extend(function() {
     // sync the content items we want to display with their appropriate subviews
     if (n > 0) {
       for (i = range[0]; i <= range[1]; i++) {
-        item    = content.at(i);
-        subview = subviews.at(i % n) ||
-          this.addSubview(this.createItemView(itemView, item));
+        item     = content.at(i);
+        offset   = this.rowOffsetForIndex(i);
+        height   = this.rowHeightForIndex(i);
+        position = false;
+        subview  = subviews.at(i % n);
+
+        if (!subview) {
+          position = true;
+          subview  = this.addSubview(this.createItemView(itemView, item));
+        }
 
         this.__z_subview2index__.at(subview, i);
-
-        offset = this.rowOffsetForIndex(i);
-        height = this.rowHeightForIndex(i);
     
         if (subview.content() !== item) {
+          position = true;
           subview.content(item);
-          subview.node.style.top    = offset + 'px';
-          subview.node.style.height = height + 'px' ;
         }
-    
-        subview.node.style.position = 'absolute';
-        subview.node.style.left     = 0;
-        subview.node.style.right    = 0;
-    
-        if (subview.node.style.top !== offset + 'px' ||
-            subview.node.style.height !== height + 'px') {
+
+        if (position) {
+          subview.node.style.position = 'absolute';
+          subview.node.style.left     = 0;
+          subview.node.style.right    = 0;
+          subview.node.style.top      = offset + 'px';
+          subview.node.style.height   = height + 'px' ;
+        }
+        else if (subview.node.style.top !== offset + 'px' ||
+                 subview.node.style.height !== height + 'px') {
           this.positionSubview(subview, offset, height);
         }
       }
@@ -372,9 +378,10 @@ Z.FastListView = Z.ListView.extend(function() {
     return [ofirst, olast];
   });
 
-  // Public: Positions the given subview's node using the given offset and
-  // height values by setting the `top` and `height` css properties. You may
-  // want to override this method in order to animate these properties.
+  // Public: Called by the `update` method when a view's position needs to
+  // change to due a custom row height change. The default implementation simply
+  // changes the subview's `node` to have the given offset and height, but you
+  // may want to override this method in order to implement an animation.
   //
   // subview - The `Z.View` to position.
   // offset  - A number indicating the top offset that the view should be
