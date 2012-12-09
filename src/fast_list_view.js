@@ -235,14 +235,40 @@ Z.FastListView = Z.ListView.extend(function() {
     var node = this.overflowNode();
   
     this.__z_resizeListener__ = Z.bind(resizeListener, this);
-    this.__z_scrollListener__ = Z.bind(scrollListener, this);
-  
     window.addEventListener('resize', this.__z_resizeListener__, false);
-    node.addEventListener('scroll', this.__z_scrollListener__, false);
   
+    this.resumeScrollListener();
     this.scrollHeight(node.offsetHeight);
     this.scrollOffset(node.scrollTop);
     this.display();
+  });
+
+  // Public: Starts or resumes the internal scroll event listener. This method
+  // should only ever be called if the `pauseScrollListener` was previously
+  // called.
+  //
+  // Returns the receiver.
+  this.def('resumeScrollListener', function() {
+    var node = this.overflowNode();
+    if (node) {
+      this.__z_scrollListener__ = this.__z_scrollListener__ ||
+        Z.bind(scrollListener, this);
+      node.addEventListener('scroll', this.__z_scrollListener__, false);
+    }
+    return this;
+  });
+
+  // Public: Causes `scroll` events on the view's `overflowNode` to be ignored
+  // until the listener is resumed. This method may be useful to prevent updates
+  // from happening while a custom row height animation is in progress.
+  //
+  // Returns the receiver.
+  this.def('pauseScrollListener', function() {
+    var node = this.overflowNode();
+    if (node && this.__z_scrollListener__) {
+      node.removeEventListener('scroll', this.__z_scrollListener__, false);
+    }
+    return this;
   });
 
   // Internal: Overridden to simply mark the view as being dirty.
