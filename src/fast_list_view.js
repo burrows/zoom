@@ -136,8 +136,8 @@ Z.FastListView = Z.ListView.extend(function() {
     var node = this.overflowNode();
     this.stopObserving('customRowHeightIndexes.@', this,
       cacheCustomHeightsAndOffsetAdjustments);
-    window.removeEventListener('resize', this.__resizeListener__, false);
-    node.removeEventListener('scroll', this.__scrollListener__, false);
+    window.removeEventListener('resize', this.__z_resizeListener__, false);
+    node.removeEventListener('scroll', this.__z_scrollListener__, false);
 
     this.supr();
   });
