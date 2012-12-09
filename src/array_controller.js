@@ -168,10 +168,14 @@ Z.ArrayController = Z.Object.extend(function() {
 
     if (selection.contains(item)) { return; }
 
-    if (!this.allowsMultipleSelection()) { this.clearSelection(); }
-
-    selection.push(item);
-    if (idx !== null) { indexes.push(idx); }
+    if (this.allowsMultipleSelection()) {
+      selection.push(item);
+      if (idx !== null) { indexes.push(idx); }
+    }
+    else {
+      selection.at(0, item);
+      if (idx !== null) { indexes.at(0, idx); }
+    }
 
     return this;
   });
