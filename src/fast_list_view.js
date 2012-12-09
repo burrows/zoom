@@ -51,7 +51,7 @@ Z.FastListView = Z.ListView.extend(function() {
   }
 
   // Internal: Caches the custom row heights indicated by the
-  // `customRowHeightIndexes` property and calculates of row offset adjustments
+  // `customRowHeightIndexes` property and calculates the row offset adjustments
   // based on those heights.
   function cacheCustomHeightsAndOffsetAdjustments() {
     var _this      = this,
@@ -194,15 +194,19 @@ Z.FastListView = Z.ListView.extend(function() {
           this.addSubview(this.createItemView(itemView, item));
 
         this.__z_subview2index__.at(subview, i);
+
+        offset = this.rowOffsetForIndex(i);
+        height = this.rowHeightForIndex(i);
     
-        if (subview.content() !== item) { subview.content(item); }
+        if (subview.content() !== item) {
+          subview.content(item);
+          subview.node.style.top    = offset + 'px';
+          subview.node.style.height = height + 'px' ;
+        }
     
         subview.node.style.position = 'absolute';
         subview.node.style.left     = 0;
         subview.node.style.right    = 0;
-    
-        offset = this.rowOffsetForIndex(i);
-        height = this.rowHeightForIndex(i);
     
         if (subview.node.style.top !== offset + 'px' ||
             subview.node.style.height !== height + 'px') {
@@ -341,21 +345,24 @@ Z.FastListView = Z.ListView.extend(function() {
     if (size === 0 || nviews === 0) { return null; }
   
     first = Math.min(Math.floor(soffset / rheight), size - 1);
-    last  = Math.min(first + nviews - 1, size - 1);
   
     // if we have custom row heights we may need to adjust the first and last
     // views to display to ensure that we're inside the visible area and we
     // have enough views to fill the visible area
     if (hasCustom) {
-      while (this.rowOffsetForIndex(first) > soffset) { first--; last--; }
-  
-      while (last < size - 1 && (this.rowOffsetForIndex(last) +
-        this.rowHeightForIndex(last)) < (soffset + sheight)) {
-        last++;
+      if (this.rowOffsetForIndex(first) > soffset) {
+        while (this.rowOffsetForIndex(first) > soffset) {
+          first--;
+        }
       }
-  
-      nviews = last - first + 1;
+      else {
+        while (this.rowOffsetForIndex(first) + this.rowHeightForIndex(first) < soffset) {
+          first++;
+        }
+      }
     }
+
+    last = Math.min(first + nviews - 1, size - 1);
   
     // add in the overflow views
     ofirst = Math.max(first - Math.floor(overflow / 2), 0);

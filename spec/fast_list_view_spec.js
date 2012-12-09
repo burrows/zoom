@@ -163,7 +163,7 @@ describe('Z.FastListView', function() {
         view.scrollOffset(60);
         expect(view.displayRange()).toEq([3, 11]);
         view.scrollOffset(290);
-        expect(view.displayRange()).toEq([23, 32]);
+        expect(view.displayRange()).toEq([23, 31]);
       });
     });
 
