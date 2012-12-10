@@ -193,18 +193,22 @@ describe('Z.FastListView', function() {
     });
 
     describe('.update', function() {
-      it('should invoke the `positionSubview` method for item views affected by a custom row height change', function() {
-        spyOn(view, 'positionSubview');
+      it('should invoke the `repositionSubviews` method with the item views affected by a custom row height change', function() {
+        var repos;
+
+        spyOn(view, 'repositionSubviews');
 
         view.def('customRowHeightForIndex', function() { return 20; });
         view.customRowHeightDidChange(5);
         view.display();
 
-        expect(view.positionSubview.callCount).toBe(4);
-        expect(view.positionSubview.argsForCall[0][0]).toEq(view.subviews().at(5));
-        expect(view.positionSubview.argsForCall[1][0]).toEq(view.subviews().at(6));
-        expect(view.positionSubview.argsForCall[2][0]).toEq(view.subviews().at(7));
-        expect(view.positionSubview.argsForCall[3][0]).toEq(view.subviews().at(8));
+        expect(view.repositionSubviews).toHaveBeenCalled();
+        expect(view.repositionSubviews.callCount).toBe(1);
+        repos = view.repositionSubviews.argsForCall[0][0];
+        expect(repos[0][0]).toBe(view.subviews().at(5));
+        expect(repos[1][0]).toBe(view.subviews().at(6));
+        expect(repos[2][0]).toBe(view.subviews().at(7));
+        expect(repos[3][0]).toBe(view.subviews().at(8));
       });
     });
   });
