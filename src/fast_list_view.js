@@ -257,6 +257,7 @@ Z.FastListView = Z.ListView.extend(function() {
     if (node && !this.__z_scrollListener__) {
       this.__z_scrollListener__ = Z.bind(scrollListener, this);
       node.addEventListener('scroll', this.__z_scrollListener__, false);
+      this.scrollOffset(node.scrollTop);
     }
 
     return this;
