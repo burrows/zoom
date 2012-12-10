@@ -253,11 +253,12 @@ Z.FastListView = Z.ListView.extend(function() {
   // Returns the receiver.
   this.def('resumeScrollListener', function() {
     var node = this.overflowNode();
-    if (node) {
-      this.__z_scrollListener__ = this.__z_scrollListener__ ||
-        Z.bind(scrollListener, this);
+
+    if (node && !this.__z_scrollListener__) {
+      this.__z_scrollListener__ = Z.bind(scrollListener, this);
       node.addEventListener('scroll', this.__z_scrollListener__, false);
     }
+
     return this;
   });
 
@@ -268,9 +269,12 @@ Z.FastListView = Z.ListView.extend(function() {
   // Returns the receiver.
   this.def('pauseScrollListener', function() {
     var node = this.overflowNode();
+
     if (node && this.__z_scrollListener__) {
       node.removeEventListener('scroll', this.__z_scrollListener__, false);
+      this.__z_scrollListener__ = null;
     }
+
     return this;
   });
 
