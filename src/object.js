@@ -762,6 +762,8 @@ Z.Object.open(function() {
   //              the notification as the `previous` key.
   //   current  - When set, the current value of the key path is sent along in
   //              the notification as the `current` key.
+  //   once     - When set, the observer will automatically be removed the after
+  //              the first time it fires.
   //   context  - An arbitrary object that will be sent along in notifications.
   //
   // Examples
@@ -1071,6 +1073,10 @@ Z.Object.open(function() {
       }
 
       r.callback.call(r.observer, notification);
+
+      if (r.opts.once) {
+        r.observee.stopObserving(r.path, r.observer, r.action, r.opts);
+      }
     }
 
     return this;

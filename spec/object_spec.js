@@ -856,6 +856,17 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notifications[0].hasOwnProperty('current')).toBe(false);
       expect(observer.notifications[1].current).toEqual('Corey');
     });
+
+    it('should remove the observer after the first time it fires if the `once` option is set', function() {
+      var observer = {
+        notifications: [],
+        nameDidChange: function(n) { this.notifications.push(n); }
+      };
+      user.observe('name', observer, 'nameDidChange', { once: true });
+      user.set('name', 'Ed');
+      user.set('name', 'Bill');
+      expect(observer.notifications.length).toBe(1);
+    });
   });
 
   describe('.stopObserving with a simple key', function() {
@@ -1176,6 +1187,7 @@ describe('Z.Object KVO support:', function() {
 
       expect(function() { u.name('Bob'); }).not.toThrow();
     });
+
     it('should not raise an exception when done after the property changes', function() {
       var u   = User.create({name: 'Ed'}),
           cb2 = function() {},
