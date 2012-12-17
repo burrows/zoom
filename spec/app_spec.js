@@ -309,6 +309,16 @@ describe('Z.App', function() {
       app.removeWindow(w);
       expect(app.windows()).toEq(Z.A(app.mainWindow()));
     });
+
+    it("should set the window's app property to `null`", function() {
+      var w = Z.Window.create(Child3);
+      expect(w.app()).toBe(null);
+      app.addWindow(w);
+      expect(w.app()).toBe(app);
+      app.removeWindow(w);
+      expect(w.app()).toBe(null);
+    });
+
   });
 
   describe('key window management', function() {

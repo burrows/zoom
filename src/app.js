@@ -280,20 +280,21 @@ Z.App = Z.Object.extend(function() {
   });
 
   // Public: Removes the given window from this app's `windows` array. The window
-  // will be removed from the DOM during the next running of the run loop.
+  // will be removed from the DOM during the next run loop.
   //
   // window - A `Z.Window` that currently exists in the `windows` array.
   //
   // Returns the given window.
   // Throws `Error` if the given object is not in the `windows` array.
   this.def('removeWindow', function(window) {
-    var windows = this.windows(), i = windows.index(window);
+    var windows = this.windows();
 
-    if (i === null) {
+    if (!windows.contains(window)) {
       throw new Error(Z.fmt("Z.App.removeWindow: given object does not exist in the app's `windows` array: %@", window));
     }
 
-    windows.splice(i, 1);
+    windows.remove(window);
+    window.app(null);
 
     (this.__removedWindows__ = this.__removedWindows__ || []).push(window);
     return window;
