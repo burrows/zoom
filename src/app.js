@@ -35,6 +35,8 @@
 // models have been updated). In these situations you can simply invoke the
 // app's `run` method to trigger a run of the run loop.
 Z.App = Z.Object.extend(function() {
+  var slice = Array.prototype.slice;
+
   // Internal: Handles events observed by the event listener by dispatching them
   // to the appropriate window and triggering a run loop if they are handled.
   //
@@ -193,11 +195,27 @@ Z.App = Z.Object.extend(function() {
     return this;
   });
 
-  // Public: Delegates to the `statechart`'s `send` method. Use this method to
-  // send actions to the app's statechart.
+  // Public: Attempts to invoke the given method on the app if it exists. If it
+  // doesn't exist or exists and returns a falsy value, then this method
+  // delegates to the `statechart`'s `send` method.
+  //
+  // action  - A string containing the action name.
+  // args... - An additional list of arguments to send to the action method(s)
+  //           (default: `[]`).
+  //
+  // Returns `true` if the action was handled and `false` otherwise.
   this.def('send', function() {
-    var sc = this.statechart();
-    return sc.send.apply(sc, arguments);
+    var args    = slice.call(arguments),
+        action  = args[0],
+        sc      = this.statechart(),
+        handled = false;
+
+    // attempt to allow the app to handle the action
+    if (this.respondTo(action)) {
+      handled = !!this[action].apply(this, args.slice(1));
+    }
+
+    return handled || sc.send.apply(sc, arguments);
   });
 
   // Public: Queues up a method to invoke on the given object at the end of the

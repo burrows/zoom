@@ -481,7 +481,37 @@ describe('Z.App', function() {
   });
 
   describe('.send', function() {
-    it('should delegate to the statechart', function() {
+    it('should invoke the given method on the app if its defined', function() {
+      var a = Z.App.create(Parent);
+
+      a.def('foo', function() { return true; });
+      spyOn(a, 'foo').andCallThrough();
+      a.send('foo', 1, 2);
+      expect(a.foo).toHaveBeenCalledWith(1, 2);
+      a.stop();
+    });
+
+    it('should delegate to the statechart if the method is defined but does not return true', function() {
+      var a = Z.App.create(Parent);
+
+      a.def('foo', function() { return false; });
+      spyOn(a.statechart(), 'send');
+      a.send('foo', 1, 2);
+      expect(a.statechart().send).toHaveBeenCalledWith('foo', 1, 2);
+      a.stop();
+    });
+
+    it('should not delegate to the statechart if the method is defined and returns true', function() {
+      var a = Z.App.create(Parent);
+
+      a.def('foo', function() { return true; });
+      spyOn(a.statechart(), 'send');
+      a.send('foo', 1, 2);
+      expect(a.statechart().send).not.toHaveBeenCalled();
+      a.stop();
+    });
+
+    it('should delegate to the statechart if the given method is not defined', function() {
       var a = Z.App.create(Parent);
 
       spyOn(a.statechart(), 'send');
