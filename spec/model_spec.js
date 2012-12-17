@@ -1318,6 +1318,24 @@ describe('Z.Model.validate', function() {
     expect(m.isInvalid()).toBe(false);
   });
 
+  it('should clear any existing errors', function() {
+    var M = Z.Model.extend(), m = M.create();
+
+    m.addError('foo', 'some error');
+    expect(m.errors().size()).toBe(1);
+    m.validate();
+    expect(m.errors().size()).toBe(0);
+  });
+
+  it('should unset `isInvalid` even when there are no validators', function() {
+    var M = Z.Model.extend(), m = M.create();
+
+    m.addError('foo', 'some error');
+    expect(m.isInvalid()).toBe(true);
+    m.validate();
+    expect(m.isInvalid()).toBe(false);
+  });
+
   describe('with conditional validators', function() {
     var A = Z.Model.extend(function() {
       this.registerValidator('validatorA', { 'if': 'shouldValidate'});

@@ -581,24 +581,24 @@ Z.Model = Z.Object.extend(function() {
 
     if (this.errors()) { this.errors().clear(); }
 
-    if (!validators) { return; }
+    if (validators) {
+      for (i = 0, len = validators.length; i < len; i++) {
+        validator = validators[i][0];
+        opts      = validators[i][1];
 
-    for (i = 0, len = validators.length; i < len; i++) {
-      validator = validators[i][0];
-      opts      = validators[i][1];
-
-      if (opts.hasOwnProperty('if')) {
-        if (callValidatorFn(this, opts['if'])) {
+        if (opts.hasOwnProperty('if')) {
+          if (callValidatorFn(this, opts['if'])) {
+            callValidatorFn(this, validator);
+          }
+        }
+        else if (opts.hasOwnProperty('unless')) {
+          if (!callValidatorFn(this, opts.unless)) {
+            callValidatorFn(this, validator);
+          }
+        }
+        else {
           callValidatorFn(this, validator);
         }
-      }
-      else if (opts.hasOwnProperty('unless')) {
-        if (!callValidatorFn(this, opts.unless)) {
-          callValidatorFn(this, validator);
-        }
-      }
-      else {
-        callValidatorFn(this, validator);
       }
     }
 
