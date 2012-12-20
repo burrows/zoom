@@ -717,7 +717,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
   });
 
   // Public: Resets the statechart by exiting all current states.
-  this.def('reset', function() { exit.call(this); });
+  this.def('reset', function() { exit.call(this, {}); });
 
   // Public: Returns a boolean indicating whether or not the state at the given
   // path is current.
