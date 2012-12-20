@@ -93,6 +93,17 @@ describe('Z.App', function() {
       expect(document.querySelector('#test-container > .z-main-window')).not.toEqual(null);
     });
 
+    it("should ensure that the mainWindow's `app` property is set", function() {
+      var mainWin = app.mainWindow();
+
+      app.start();
+      expect(mainWin.app()).toBe(app);
+      app.stop();
+      expect(mainWin.app()).toBe(null);
+      app.start(container);
+      expect(mainWin.app()).toBe(app);
+    });
+
     it('should attach all `windows` to `container`', function() {
       expect(container.querySelector('.child1')).toEqual(null);
       expect(container.querySelector('.child2')).toEqual(null);

@@ -139,19 +139,22 @@ Z.App = Z.Object.extend(function() {
   //
   // Returns the receiver.
   this.def('start', function(container, states) {
+    var mainWindow = this.mainWindow();
+
     this.container = container || document.body;
     this.listener  = Z.EventListener.create(this.container,
                                             Z.bind(processEvent, this));
 
     // ensure that the main window is in the windows array, it won't be there
     // in the case that we're restarting the app after previously stopping it
-    if (this.get('windows.first') !== this.mainWindow()) {
-      this.windows().push(this.mainWindow());
+    if (this.get('windows.first') !== mainWindow) {
+      this.windows().push(mainWindow);
+      mainWindow.app(this);
     }
 
     if (!this.keyWindow()) {
-      this.keyWindow(this.mainWindow());
-      this.mainWindow().becomeKeyWindow();
+      this.keyWindow(mainWindow);
+      mainWindow.becomeKeyWindow();
     }
 
     this.statechart().goto(states || []);
