@@ -133,11 +133,19 @@ Z.FastListView = Z.ListView.extend(function() {
 
   // Internal: The `Z.FastListView` destructor.
   this.def('destroy', function() {
-    var node = this.overflowNode();
     this.stopObserving('customRowHeightIndexes.@', this,
       cacheCustomHeightsAndOffsetAdjustments);
-    window.removeEventListener('resize', this.__z_resizeListener__, false);
-    node.removeEventListener('scroll', this.__z_scrollListener__, false);
+
+    if (this.__z_resizeListener__) {
+      window.removeEventListener('resize', this.__z_resizeListener__, false);
+      this.__z_resizeListener__ = null;
+    }
+
+    if (this.__z_scrollListener__) {
+      this.overflowNode().removeEventListener('scroll',
+        this.__z_scrollListener__, false);
+      this.__z_scrollListener__ = null;
+    }
 
     this.supr();
   });
