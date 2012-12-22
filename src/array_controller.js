@@ -77,6 +77,9 @@ Z.ArrayController = Z.Object.extend(function() {
         filter   = this.filterFn(),
         i;
 
+    cmp    = cmp ? Z.bind(cmp, this) : null;
+    filter = filter ? Z.bind(filter, this) : null;
+
     if (filter && !filter(o)) { return; }
     if (cmp) { insertSorted(o, arranged, cmp); }
     else { arranged.push(o); }
@@ -251,7 +254,9 @@ Z.ArrayController = Z.Object.extend(function() {
       return;
     }
 
-    content = filterFn ? content.select(filterFn) : content.dup();
+    filterFn  = filterFn ? Z.bind(filterFn, this) : null;
+    compareFn = compareFn ? Z.bind(compareFn, this) : null;
+    content   = filterFn ? content.select(filterFn) : content.dup();
 
     if (compareFn) { content.sort$(compareFn); }
 
