@@ -28,7 +28,7 @@ Todo.LocalStorageMapper = Z.Mapper.extend(function() {
   function persistTodo(todo) {
     var id = todo.id() || nextId(), k = 'todo:' + id;
 
-    todo.tags().invoke('save');
+    todo.tags().each('save');
 
     localStorage.setItem(k, JSON.stringify({
       id: id,
@@ -95,28 +95,49 @@ Todo.Todo = Z.Model.extend(function() {
 Todo.Tag = Z.Model.extend(function() {
   this.attr('name', 'string');
   this.hasMany('todos', 'Todo.Todo', {inverse: 'tags'});
-
-  this.prop('isSelected', {def: false});
 });
 
 Z.Model.mapper = Todo.LocalStorageMapper.create();
 
-Todo.allTodos = Todo.Todo.query();
-Todo.allTags  = Todo.Tag.query({orderBy: 'todos.size', isDescending: true});
-
 //------------------------------------------------------------------------------
-// controller
+// controllers
 //------------------------------------------------------------------------------
 
-var selectedTags = Z.A();
+Todo.tagsController = Z.ArrayController.extend(function() {
+  this.allowsMultipleSelection(true);
 
-Todo.controller = {
-  createTodo: function(title) {
+  this.compareFn(function(a, b) {
+    return Z.cmp(b.get('todos.size'), a.get('todos.size'));
+  });
+
+  this.def('init', function(props) {
+    this.supr(props);
+    this.observe('content.todos.size', this, 'rearrange');
+  });
+}).create();
+
+Todo.todosController = Z.ArrayController.extend(function() {
+  this.prop('query');
+  this.prop('selectedTags');
+
+  this.filterFn(function(todo) {
+    var tags = this.selectedTags();
+    if (!tags || tags.size() === 0) { return true; }
+    if (todo.get('tags.size') === 0) { return false; }
+    return tags.all(function(tag) { return todo.tags().contains(tag); });
+  });
+
+  this.def('init', function(props) {
+    this.supr(props);
+    this.observe('selectedTags.@', this, 'rearrange');
+  });
+
+  this.def('createTodo', function(title) {
     var todo, tags, tag;
 
     tags = Z.Array.create(title.match(/#\w+/g) || []).map(function(name) {
       name = name.replace('#', '');
-      tag = Todo.allTags.find(function(t) { return t.name() === name; });
+      tag = Todo.Tag.all().find(function(t) { return t.name() === name; });
       return tag || Todo.Tag.create({name: name});
     });
 
@@ -127,49 +148,15 @@ Todo.controller = {
     Z.log(todo, todo.errors());
 
     Todo.app.set('mainWindow.mainView.contentView.inputView.value', null)
-  },
+  });
 
-  deleteTodo: function(todo) {
-    todo.destroy();
-  },
+  this.def('deleteTodo', function(todo) { todo.destroy(); });
 
-  toggleIsDone: function(todo) {
+  this.def('toggleIsDone', function(todo) {
     todo.isDone(!todo.isDone());
     todo.save();
-  },
-
-  toggleTagSelection: function(tag) {
-    if (selectedTags.contains(tag)) {
-      tag.isSelected(false);
-      selectedTags.remove(tag);
-    }
-    else {
-      tag.isSelected(true);
-      selectedTags.push(tag);
-    }
-    this.filterTodos();
-  },
-
-  filterTodos: function() {
-    var todoListView = Todo.app.get('mainWindow.mainView.contentView.todoListView'),
-        oldQuery     = todoListView.content(),
-        newQuery;
-
-    newQuery = selectedTags.size() === 0 ? Todo.allTodos : Todo.Todo.query({
-      matchFn: function(todo) {
-        if (todo.get('tags.size') === 0) { return false; }
-
-        return selectedTags.all(function(tag) {
-          return todo.tags().contains(tag);
-        });
-      }
-    });
-
-    if (oldQuery !== Todo.allTodos) { oldQuery.destroy(); }
-
-    todoListView.content(newQuery);
-  }
-};
+  });
+}).create();
 
 //------------------------------------------------------------------------------
 // views
@@ -179,13 +166,14 @@ Todo.TagView = Z.View.extend(function() {
   this.tag = 'li';
 
   this.prop('content');
+  this.prop('isSelected');
 
   this.def('displayPaths', function() {
-    return this.supr().concat('content.isSelected');
+    return this.supr().concat('isSelected');
   });
 
   this.def('render', function() {
-    var isSelected = this.get('content.isSelected'),
+    var isSelected = this.get('isSelected'),
         badgeClasses = ['badge'];
 
      if (isSelected) { badgeClasses.push('badge-info'); }
@@ -195,7 +183,8 @@ Todo.TagView = Z.View.extend(function() {
   });
 
   this.def('mouseDown', function(e) {
-    Todo.controller.toggleTagSelection(this.content());
+    var action = this.isSelected() ? 'didUnselectTag' : 'didSelectTag';
+    this.send(action, this.content());
   });
 });
 
@@ -242,7 +231,7 @@ Todo.InputView = Z.View.extend(function() {
   this.def('keyDown', function(e) {
     var input = this.node.firstChild;
     if (input && document.activeElement !== input) { input.focus(); }
-    if (e.key === 13) { Todo.controller.createTodo(this.value()); }
+    if (e.key === 13) { this.send('didCreateTodo', this.value()); }
     return true;
   });
 
@@ -285,10 +274,10 @@ Todo.TodoView = Z.View.extend(function() {
     var elem = e.node;
 
     if (elem.nodeName === 'INPUT') {
-      Todo.controller.toggleIsDone(this.content());
+      this.send('didToggleIsDone', this.content());
     }
     else if (elem.className.match(/\bicon-remove-sign\b/)) {
-      Todo.controller.deleteTodo(this.content());
+      this.send('didDeleteTodo', this.content());
     }
   });
 });
@@ -317,11 +306,41 @@ Todo.MainView = Z.View.extend(function() {
   this.subview('contentView', Todo.ContentView);
 });
 
-Todo.app = Z.App.create(Todo.MainView, document.getElementById('app'));
+Todo.app = Z.App.create(Todo.MainView, document.getElementById('app')).open(function() {
+  this.def('didSelectTag', function(tag) {
+    Todo.tagsController.selectItem(tag);
+    Todo.todosController.selectedTags(Todo.tagsController.selection());
+  });
+
+  this.def('didUnselectTag', function(tag) {
+    Todo.tagsController.unselectItem(tag);
+    Todo.todosController.selectedTags(Todo.tagsController.selection());
+  });
+
+  this.def('didCreateTodo', function(todo) {
+    Todo.todosController.createTodo(todo);
+  });
+
+  this.def('didToggleIsDone', function(todo) {
+    Todo.todosController.toggleIsDone(todo);
+  });
+
+  this.def('didDeleteTodo', function(todo) {
+    Todo.todosController.deleteTodo(todo);
+  });
+});
 
 document.addEventListener('DOMContentLoaded', function() {
-  Todo.app.set('mainWindow.mainView.sidebarView.tagListView.content', Todo.allTags);
-  Todo.app.set('mainWindow.mainView.contentView.todoListView.content', Todo.allTodos);
+  Todo.tagsController.content(Todo.Tag.all());
+  Todo.todosController.content(Todo.Todo.all());
+
+  Todo.app.set('mainWindow.mainView.sidebarView.tagListView.content',
+    Todo.tagsController.arranged());
+  Todo.app.set('mainWindow.mainView.sidebarView.tagListView.selectionIndexes',
+    Todo.tagsController.selectionIndexes());
+  Todo.app.set('mainWindow.mainView.contentView.todoListView.content',
+    Todo.todosController.arranged());
+
   Todo.app.start(document.getElementById('app'));
 });
 
