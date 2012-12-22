@@ -93,7 +93,6 @@ describe('Z.isA', function() {
 
     expect(Z.isA(Z.A(), Z.Object)).toBe(true);
     expect(Z.isA(Z.A(), Z.Array)).toBe(true);
-    expect(Z.isA(Z.SortedArray.create(), Z.Array)).toBe(true);
     expect(Z.isA(o, Z.Object)).toBe(true);
     expect(Z.isA(o.create(), o)).toBe(true);
 

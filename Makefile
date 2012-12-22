@@ -7,7 +7,6 @@ SRCS := util.js             \
         orderable.js        \
         enumerable.js       \
         array.js            \
-        sorted_array.js     \
         hash.js             \
         mapper.js           \
         model.js            \

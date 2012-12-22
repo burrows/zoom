@@ -4,34 +4,11 @@ var slice = Array.prototype.slice, attrTypes = [],
     repo, NEW, EMPTY, LOADED, DESTROYED;
 
 repo = Z.Object.create().open(function() {
-  function dependentPathDidChange(notification) {
-    var query = notification.context, model = notification.observee;
-    query.check(model);
-  }
-
-  function attachQueryObservers(model, query) {
-    var paths = query.matchDependsOn, i, len;
-
-    for (i = 0, len = paths.length; i < len; i++) {
-      model.observe(paths[i], null, dependentPathDidChange, {context: query});
-    }
-  }
-
-  function detachQueryObservers(model, query) {
-    var paths = query.matchDependsOn, i, len;
-
-    for (i = 0, len = paths.length; i < len; i++) {
-      model.stopObserving(paths[i], null, dependentPathDidChange, {context: query});
-    }
-  }
-
-  this.idMap   = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-  this.queries = Z.H();
+  this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
 
   this.def('insert', function(model) {
     var baseType = model.baseType(),
         map      = this.idMap.at(baseType),
-        queries  = this.queries.at(baseType),
         id       = model.id();
 
     if (map.hasKey(id)) {
@@ -40,13 +17,6 @@ repo = Z.Object.create().open(function() {
     }
 
     map.at(id, model);
-
-    if (!queries) { return; }
-
-    queries.each(function(query) {
-      attachQueryObservers(model, query);
-      query.check(model);
-    });
   });
 
   this.def('retrieve', function(type, id) {
@@ -54,50 +24,12 @@ repo = Z.Object.create().open(function() {
   });
 
   this.def('remove', function(model) {
-    var baseType = model.baseType(),
-        map      = this.idMap.at(baseType),
-        queries  = this.queries.at(baseType);
-
+    var map = this.idMap.at(model.baseType());
     map.del(model.id());
-
-    if (!queries) { return; }
-
-    queries.each(function(query) {
-      detachQueryObservers(model, query);
-      query.remove(model);
-    });
   });
 
-  this.def('reset', function(query) {
+  this.def('reset', function() {
     this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-    this.queries.each(function(tuple) { tuple[1].each('clear'); });
-  });
-
-  this.def('registerQuery', function(query) {
-    var self     = this,
-        baseType = query.modelType.baseType(),
-        map      = this.idMap.at(baseType),
-        queries  = this.queries.at(baseType);
-
-    if (!queries) { queries = this.queries.at(baseType, Z.A()); }
-
-    queries.push(query);
-
-    map.each(function(tuple) {
-      query.check(tuple[1]);
-      attachQueryObservers(tuple[1], query);
-    });
-  });
-
-  this.def('deregisterQuery', function(query) {
-    var baseType = query.modelType.baseType(),
-        map      = this.idMap.at(baseType);
-
-    this.queries.at(baseType).remove(query);
-
-    map.each(function(tuple) {
-      detachQueryObservers(tuple[1], query);
-    });
   });
 });
 
@@ -724,12 +656,6 @@ Z.Model = Z.Object.extend(function() {
 
     return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
   });
-
-  this.def('query', function(opts) {
-    var q = Z.Query.create(this, opts);
-    repo.registerQuery(q);
-    return q;
-  });
 });
 
 Z.HasManyArray = Z.Array.extend(function() {
@@ -802,54 +728,6 @@ Z.HasManyArray = Z.Array.extend(function() {
 
     return this;
   });
-});
-
-Z.Query = Z.SortedArray.extend(function() {
-  var defaultOpts = {
-    matchFn: function() { return true; },
-    matchDependsOn: []
-  };
-
-  this.def('init', function(type, opts) {
-    var sortOpts = {};
-
-    opts = Z.merge({}, defaultOpts, opts);
-
-    this.modelType      = type;
-    this.matchFn        = opts.matchFn;
-    this.matchDependsOn = opts.matchDependsOn;
-    this.objects        = {};
-
-    if (opts.orderBy) { sortOpts.path = opts.orderBy; }
-    if (opts.isDescending) { sortOpts.isDescending = true; }
-    if (opts.compareFn) { sortOpts.compareFn = opts.compareFn; }
-    if (opts.compareDependsOn) { sortOpts.dependsOn = opts.compareDependsOn; }
-
-    if (!sortOpts.path && !sortOpts.compareFn) { sortOpts.path = 'id';  }
-
-    this.supr(sortOpts);
-  });
-
-  this.def('check', function(model) {
-    var id;
-
-    if (!model.isA(this.modelType)) { return; }
-
-    if (this.matchFn(model)) {
-      id = model.id().toString();
-
-      if (!this.objects[id]) {
-        this.objects[id] = 1;
-        this.insert(model);
-      }
-    }
-    else {
-      this.remove(model);
-      delete this.objects[id];
-    }
-  });
-
-  this.def('destroy', function() { repo.deregisterQuery(this); });
 });
 
 //------------------------------------------------------------------------------
