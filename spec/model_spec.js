@@ -250,11 +250,6 @@ describe('Z.Model.attrs', function() {
   });
 });
 
-describe('Z.Model.attrs', function() {
-  it('should return a raw object containing the values of each raw attribute', function() {
-  });
-});
-
 describe('Z.Model.empty', function() {
   it('should return an instance of the model with `sourceState` set to `EMPTY` and the given id', function() {
     var m = Test.BasicModel.empty(127);
@@ -280,6 +275,14 @@ describe('Z.Model.load', function() {
       var m = Test.BasicModel.load({ id: 127, foo: 's', bar: 1 });
 
       expect(Test.BasicModel.fetch(127)).toBe(m);
+    });
+
+    it("should add the new model instance to the base type's `all` array", function() {
+      var m;
+
+      expect(Test.BasicModel.all()).toEq(Z.A());
+      m = Test.BasicModel.load({ id: 111, foo: 's', bar: 1 });
+      expect(Test.BasicModel.all()).toEq(Z.A(m));
     });
 
     it('should set `sourceState` to `LOADED`', function() {
@@ -585,6 +588,13 @@ describe('Z.Model id property', function() {
     expect(Test.BasicModel.fetch(8734)).toBe(m);
   });
 
+  it("should add the model to the base type's `all` property once its been set for the first time", function() {
+    var m = Test.BasicModel.create();
+    expect(Test.BasicModel.all().contains(m)).toBe(false);
+    m.set('id', 8735);
+    expect(Test.BasicModel.all().contains(m)).toBe(true);
+  });
+
   it('should throw an exception if a model with the same type and id already exists in the identity map', function() {
     var m = Test.BasicModel.load({id: 122});
 
@@ -628,6 +638,11 @@ describe('Z.Model.fetch', function() {
     it('should add the instance to the identity map', function() {
       var m = Test.BasicModel.fetch(20);
       expect(Test.BasicModel.fetch(20)).toBe(m);
+    });
+
+    it("should add the instance to the base type's `all` property", function() {
+      var m = Test.BasicModel.fetch(20);
+      expect(Test.BasicModel.all().contains(m)).toBe(true);
     });
   });
 
@@ -1130,6 +1145,15 @@ describe('Z.Model.destroyModelDidSucceed', function() {
     expect(m2.sourceState()).toBe(Z.Model.EMPTY);
   });
 
+  it("should remove the object from the base type's `all` property", function() {
+    var m = Test.BasicModel.load({id: 888}), m2;
+
+    expect(Test.BasicModel.all().contains(m)).toBe(true);
+    m.destroy();
+    m.destroyModelDidSucceed();
+    expect(Test.BasicModel.all().contains(m)).toBe(false);
+  });
+
   it('should remove the model from any associations', function() {
     var p = Test.Post.load({
       id: 184, title: 'the title', body: 'the body',
@@ -1400,6 +1424,15 @@ describe('Z.Model.reset', function() {
     expect(Test.BasicModel.fetch(1111)).toBe(m);
     Z.Model.reset();
     expect(Test.BasicModel.fetch(1111)).not.toBe(m);
+  });
+
+  it("should clear all type's `all` properties", function() {
+    Test.BasicModel.create({id: 1111});
+    Test.BasicModel.create({id: 2222});
+
+    expect(Test.BasicModel.get('all.size')).toBe(2);
+    Z.Model.reset();
+    expect(Test.BasicModel.get('all.size')).toBe(0);
   });
 });
 

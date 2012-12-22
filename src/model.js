@@ -3,35 +3,50 @@
 var slice = Array.prototype.slice, attrTypes = [],
     repo, NEW, EMPTY, LOADED, DESTROYED;
 
-repo = Z.Object.create().open(function() {
+repo = Z.Object.extend(function() {
   this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+
+  this.def('init', function() {
+    this.idMap = Z.Hash.create(function(h, k) {
+      return h.at(k, {byid: {}, all: Z.A()});
+    });
+  });
 
   this.def('insert', function(model) {
     var baseType = model.baseType(),
         map      = this.idMap.at(baseType),
         id       = model.id();
 
-    if (map.hasKey(id)) {
+    if (map.byid[id]) {
       throw new Error(Z.fmt("%@: a model with the id `%@` already exists",
                             model.typeName(), id));
     }
 
-    map.at(id, model);
+    map.byid[id] = model;
+    map.all.push(model);
   });
 
   this.def('retrieve', function(type, id) {
-    return this.idMap.at(type.baseType()).at(id);
+    return this.idMap.at(type.baseType()).byid[id];
+  });
+
+  this.def('all', function(type) {
+    return this.idMap.at(type.baseType()).all;
   });
 
   this.def('remove', function(model) {
     var map = this.idMap.at(model.baseType());
-    map.del(model.id());
+    Z.del(map.byid, model.id());
+    map.all.remove(model);
   });
 
   this.def('reset', function() {
-    this.idMap = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
+    this.idMap.each(function(tuple) {
+      tuple[1].byid = {};
+      tuple[1].all.clear();
+    });
   });
-});
+}).create();
 
 function setState(state) {
   var source = false, dirty = false, invalid = false, busy = false;
@@ -156,6 +171,10 @@ Z.Model = Z.Object.extend(function() {
 
       return v;
     }
+  });
+
+  this.prop('all', {
+    readonly: true, get: function() { return repo.all(this); }
   });
 
   this.prop('sourceState', { readonly: true });
