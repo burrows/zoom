@@ -311,7 +311,7 @@ Z.Model = Z.Object.extend(function() {
 
   this.def('load', function(attrs) {
     var associations = this.associationDescriptors(), associated = {},
-        model, others, other, assoc, key, type, data, i, len;
+        model, others, other, assoc, key, type, data, i, len, id;
 
     if (Z.isUndefined(attrs.id)) {
       throw new Error(Z.fmt("%@.load: an `id` attribute is required",
@@ -319,11 +319,10 @@ Z.Model = Z.Object.extend(function() {
     }
 
     attrs = Z.dup(attrs);
-    model = repo.retrieve(this, attrs.id) || this.create({id: attrs.id});
+    id    = Z.del(attrs, 'id');
+    model = repo.retrieve(this, id) || this.create();
 
     model.__isLoading__ = true;
-
-    Z.del(attrs, 'id');
 
     // extract associated attributes
     for (key in associations) {
@@ -332,6 +331,9 @@ Z.Model = Z.Object.extend(function() {
 
     // set raw attributes
     model.set(attrs);
+
+    // set id if necessary
+    if (model.id() === null) { model.id(id); }
 
     // load and set each association
     for (key in associated) {
@@ -366,6 +368,15 @@ Z.Model = Z.Object.extend(function() {
     setState.call(model, {source: LOADED, dirty: false, invalid: false, busy: false});
 
     return model;
+  });
+
+  this.def('find', function(params) {
+    return Z.ModelArray.create({
+      modelType: this,
+      params: params || {},
+      isBusy: true,
+      isLoaded: false
+    }).fetch();
   });
 
   this.def('fetch', function(id) {
@@ -674,6 +685,34 @@ Z.Model = Z.Object.extend(function() {
     }
 
     return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
+  });
+});
+
+Z.ModelArray = Z.Array.extend(function() {
+  this.prop('modelType');
+  this.prop('params');
+  this.prop('isBusy', {def: false});
+  this.prop('isLoaded', {def: false});
+
+  this.def('init', function(props) {
+    this.supr();
+    if (props) { this.set(props); }
+  });
+
+  this.def('fetch', function() {
+    this.isBusy(true);
+    this.modelType().mapper.findModels(this);
+    return this;
+  });
+
+  this.def('findModelsDidSucceed', function() {
+    this.set({isBusy: false, isLoaded: true});
+    return this;
+  });
+
+  this.def('findModelsDidFail', function() {
+    this.isBusy(false);
+    return this;
   });
 });
 

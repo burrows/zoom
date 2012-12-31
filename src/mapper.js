@@ -1,5 +1,8 @@
 
 Z.Mapper = Z.Object.extend(function() {
+  this.def('findModels', function(modelArray) {
+  });
+
   this.def('fetchModel', function(model) {
   });
 
