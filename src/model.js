@@ -223,7 +223,7 @@ Z.Model = Z.Object.extend(function() {
     this.prop(name, {
       def: def,
       get: function() {
-        if (this.sourceState() === EMPTY) {
+        if (this.sourceState() === EMPTY && !this.isBusy()) {
           setState.call(this, {busy: true});
           this.mapper.fetchModel(this);
         }

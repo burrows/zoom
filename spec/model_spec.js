@@ -787,6 +787,14 @@ describe('Z.Model getting attributes', function() {
       m.foo();
       expect(m.isBusy()).toBe(true);
     });
+
+    it('should not invoke `fetchModel` when the model is already busy', function() {
+      var m = Test.BasicModel.empty(945);
+
+      m.foo();
+      m.bar();
+      expect(Test.BasicModel.mapper.fetchModel.callCount).toBe(1);
+    });
   });
 });
 
