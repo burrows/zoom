@@ -371,12 +371,16 @@ Z.Model = Z.Object.extend(function() {
   });
 
   this.def('find', function(params) {
+    if (!this.isType) {
+      throw new Error('Z.Model.find: must be called on a model type');
+    }
+
     return Z.ModelArray.create({
       modelType: this,
-      params: params || {},
+      params: slice.call(arguments),
       isBusy: true,
       isLoaded: false
-    }).fetch();
+    }).find();
   });
 
   this.def('fetch', function(id) {
@@ -691,6 +695,7 @@ Z.Model = Z.Object.extend(function() {
 Z.ModelArray = Z.Array.extend(function() {
   this.prop('modelType');
   this.prop('params');
+  this.prop('error');
   this.prop('isBusy', {def: false});
   this.prop('isLoaded', {def: false});
 
@@ -699,19 +704,20 @@ Z.ModelArray = Z.Array.extend(function() {
     if (props) { this.set(props); }
   });
 
-  this.def('fetch', function() {
+  this.def('find', function() {
+    var mapper = this.modelType().mapper, args = [this].concat(this.params());
     this.isBusy(true);
-    this.modelType().mapper.findModels(this);
+    mapper.findModels.apply(mapper, args);
     return this;
   });
 
   this.def('findModelsDidSucceed', function() {
-    this.set({isBusy: false, isLoaded: true});
+    this.set({isBusy: false, isLoaded: true, error: null});
     return this;
   });
 
-  this.def('findModelsDidFail', function() {
-    this.isBusy(false);
+  this.def('findModelsDidFail', function(error) {
+    this.set({isBusy: false, error: error});
     return this;
   });
 });
