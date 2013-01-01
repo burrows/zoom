@@ -462,6 +462,14 @@ describe('Z.State condition states', function() {
     expect(root.current()).toEq(['/a/c/d/g', '/a/c/e/i']);
   });
 
+  it('should pass the context to the condition function', function() {
+    var passedContext;
+
+    a.C(function(ctx) { passedContext = ctx; return ['./c/d/g', '/a/c/e/i']; });
+    root.goto('/a', {context: [1,2,3]});
+    expect(passedContext).toEq([1,2,3]);
+  });
+
   it('should not be called when destination states are given', function() {
     var called = false;
 

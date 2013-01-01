@@ -207,7 +207,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
 
     if (!next && this.substates.size() > 0) {
       if (this.__condition__) {
-        states = Z.Array.create([this.__condition__.call(this)]).flatten().map(function(p) {
+        states = Z.Array.create([this.__condition__.call(this, opts.context)]).flatten().map(function(p) {
           return resolve.call(self, p);
         });
         return enterClustered.call(this, states, opts);
