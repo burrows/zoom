@@ -824,9 +824,9 @@ Z.NumberAttr = Z.BaseAttr.extend(function() {
 Z.Model.registerAttrType('number', Z.NumberAttr);
 
 Z.BooleanAttr = Z.BaseAttr.extend(function() {
-  this.def('toRaw', function(v) {
-    return Z.isNull(v) ? v : !!v;
-  });
+  this.def('toRaw', function(v) { return !!v; });
+
+  this.def('fromRaw', function(v) { return !!v; });
 });
 
 Z.Model.registerAttrType('boolean', Z.BooleanAttr);

@@ -144,12 +144,17 @@ describe('Z.Model.attr', function() {
       expect(x.get('baz')).toBe(false);
     });
 
-    it('should allow setting `null`', function() {
-      x.set('baz', true);
-      expect(x.get('baz')).toBe(true);
-
-      x.set('baz', null);
-      expect(x.get('baz')).toBe(null);
+    it('should convert raw values to booleans', function() {
+      var m = Test.BasicModel.load({id: 1, baz: null});
+      expect(m.baz()).toBe(false);
+      m = Test.BasicModel.load({id: 2, baz: 'true'});
+      expect(m.baz()).toBe(true);
+      m = Test.BasicModel.load({id: 2, baz: 'false'});
+      expect(m.baz()).toBe(true);
+      m = Test.BasicModel.load({id: 2, baz: 1});
+      expect(m.baz()).toBe(true);
+      m = Test.BasicModel.load({id: 2, baz: 0});
+      expect(m.baz()).toBe(false);
     });
   });
 
