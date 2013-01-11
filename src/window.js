@@ -204,5 +204,14 @@ Z.Window = Z.View.extend(function() {
 
     return handled;
   });
+
+  // Public: Removes the receiver from its `app`.
+  //
+  // Returns the receiver.
+  this.def('remove', function() {
+    var app = this.app();
+    if (app) { app.removeWindow(this); }
+    return this;
+  });
 });
 

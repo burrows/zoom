@@ -534,6 +534,22 @@ describe('Z.Window', function() {
       expect(app.send).not.toHaveBeenCalled();
     });
   });
+
+  describe('.remove', function() {
+    var app, w;
+
+    beforeEach(function() {
+      app = Z.App.create(Z.View);
+      w = Z.Window.create(TestView, {app: app});
+    });
+
+    it('should remove the receiver from its app', function() {
+      app.addWindow(w);
+      expect(app.windows().contains(w)).toBe(true);
+      w.remove();
+      expect(app.windows().contains(w)).toBe(false);
+    });
+  });
 });
 
 }());
