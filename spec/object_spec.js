@@ -55,24 +55,52 @@ describe('Z.Object.extend', function() {
     expect(calls).toEq([X, Y]);
   });
 
-  describe('when passed 1 or more Z.Module arguments', function() {
-    var Mod1, Mod2;
-
-    Mod1 = Z.Module.create(function() {
-      this.def('foo', function() {});
+  describe('when passed one or more `Z.Module` arguments', function() {
+    Test.Mod1 = Z.Module.extend(function() {
+      this.foo = 'Mod1.foo';
+      this.blah = 'Mod1.blah'
     });
 
-    Mod2 = Z.Module.create(function() {
-      this.def('bar', function() {});
+    Test.Mod2 = Z.Module.extend(function() {
+      this.bar = 'Mod2.bar';
+      this.blah = 'Mod2.blah'
+    });
+
+    Test.Mod3 = Z.Module.extend(Test.Mod1, Test.Mod2, function() {
+      this.baz = 'Mod3.baz';
     });
 
     it('should mixin the module into the prototype chain', function() {
-      var p = Z.Object.extend(Mod1, Mod2);
+      var p = Z.Object.extend(Test.Mod1, Test.Mod2);
 
-      expect(p.respondTo('foo')).toBe(true);
-      expect(p.respondTo('bar')).toBe(true);
+      expect(p.ancestors()).toEq([p, Test.Mod2, Test.Mod1, Z.Object]);
+      expect(p.foo).toBe('Mod1.foo');
+      expect(p.bar).toBe('Mod2.bar');
+    });
 
-      expect(p.ancestors()).toEq([p, Mod2, Mod1, Z.Object]);
+    it('should mixin any modules that the given modules mixin to themselves', function() {
+      var p = Z.Object.extend(Test.Mod3);
+
+      expect(p.ancestors()).toEq([p, Test.Mod3, Test.Mod2, Test.Mod1, Z.Object]);
+      expect(p.foo).toBe('Mod1.foo');
+      expect(p.bar).toBe('Mod2.bar');
+      expect(p.baz).toBe('Mod3.baz');
+    });
+
+    it('should not mixin any modules more than once', function() {
+      var p1 = Z.Object.extend(Test.Mod1, Test.Mod3),
+          p2 = Z.Object.extend(Test.Mod3, Test.Mod2);
+
+      expect(p1.ancestors()).toEq([p1, Test.Mod3, Test.Mod2, Test.Mod1, Z.Object]);
+      expect(p2.ancestors()).toEq([p2, Test.Mod3, Test.Mod2, Test.Mod1, Z.Object]);
+    });
+
+    it('should include modules listed later lower in the prototype chain', function() {
+      var p1 = Z.Object.extend(Test.Mod1, Test.Mod2),
+          p2 = Z.Object.extend(Test.Mod2, Test.Mod1);
+
+      expect(p1.blah).toBe('Mod2.blah');
+      expect(p2.blah).toBe('Mod1.blah');
     });
   });
 });
@@ -242,8 +270,8 @@ describe('Z.Object.respondTo', function() {
 });
 
 describe('Z.Object.ancestors', function() {
-  var M1 = Z.Module.create(),
-      M2 = Z.Module.create(),
+  var M1 = Z.Module.extend(),
+      M2 = Z.Module.extend(),
       P1 = Z.Object.extend(),
       P2 = P1.extend(),
       P3 = P2.extend(M1, M2);
@@ -262,7 +290,7 @@ describe('Z.Object.ancestors', function() {
 });
 
 describe('Z.Object.isA', function() {
-  var M1 = Z.Module.create(),
+  var M1 = Z.Module.extend(),
       P1 = Z.Object.extend(),
       P2 = P1.extend(M1);
 

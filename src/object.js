@@ -67,7 +67,7 @@ var objectId = 1, slice = Array.prototype.slice;
 //   App.Dog.ancestors();  // => [App.Dog, App.Animal, Z.Object]
 //   d.speak('hello');     // => 'WOOF! hello WOOF!'
 //
-//   App.Flyable = Z.Module.create(function() {
+//   App.Flyable = Z.Module.extend(function() {
 //     this.def('fly', function() { return 'flying'; });
 //   });
 //
@@ -225,11 +225,12 @@ Z.Object.open(function() {
   // to the `extended` method, that method will be invoked with the newly
   // created object passed as an argument.
   //
-  // References to `Z.Module` objects may be passed to mix them in to the new
-  // objects prototype chain. Note that `extend` is the only way to mix in a
-  // module, it is not allowed after the object has been created (this is due to
-  // the fact that the ECMAScript standard does not define a way to modify an
-  // object's prototype after its been created).
+  // `Z.Module` objects may be passed to mix them in to the new object's
+  // prototype chain. Special care is taken to ensure that no modules are
+  // included in the prototype chain multiple times. Note that `extend` is the
+  // only way to mix in a module, it is not allowed after the object has been
+  // created (this is due to the fact that the ECMAScript standard does not
+  // define a way to modify an object's prototype after it has been created).
   //
   // *mods - Zero or more `Z.Module` objects to mix in to the prototype chain.
   // f     - A function to execute in the context of the new object (default:
@@ -238,8 +239,8 @@ Z.Object.open(function() {
   // Examples
   //
   //   Person = Z.Object.extend(function() {
-  //     this.prop('first');
-  //     this.prop('last');
+  //     this.def('first', function() {});
+  //     this.def('last', function() {});
   //   });
   //
   // Returns the new object.
@@ -247,10 +248,18 @@ Z.Object.open(function() {
     var args  = slice.call(arguments),
         f     = typeof args[args.length - 1] === 'function' ? args.pop() : null,
         proto = this,
-        i, len, o;
+        mods  = {},
+        mod, ancestors, i, j, n, o;
 
-    for (i = 0, len = args.length; i < len; i++) {
-      proto = args[i].createMixin(proto);
+    for (i = 0, n = args.length; i < n; i++) {
+      ancestors = args[i].ancestors();
+      for (j = ancestors.length; j >= 0; j--) {
+        mod = ancestors[j];
+        if (Z.isA(mod, Z.Module) && mod !== Z.Module && !mods[mod.objectId()]) {
+          proto = mod.mixin(proto);
+          mods[mod.objectId()] = true;
+        }
+      }
     }
 
     o = Z.create(proto);

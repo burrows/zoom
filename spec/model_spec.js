@@ -2007,7 +2007,7 @@ describe('Z.Model.modelAncestors', function() {
     });
 
     it('should not include any modules mixed in at any level', function() {
-      var M1 = Z.Module.create(), M2 = Z.Module.create(), A = Z.Model.extend(M1), B = A.extend(M2);
+      var M1 = Z.Module.extend(), M2 = Z.Module.extend(), A = Z.Model.extend(M1), B = A.extend(M2);
       expect(B.modelAncestors()).toEq([B, A]);
     });
   });

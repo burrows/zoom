@@ -26,7 +26,7 @@
 //   });                                            // => 21
 //
 //   Z.A(Z.A(), Z.A(1), Z.A(1,2)).pluck('size');    // => #<Z.Array:42 [0, 1, 2]>
-Z.Enumerable = Z.Module.create(function() {
+Z.Enumerable = Z.Module.extend(function() {
   // Internal: An exception object to throw in order to short circuit out of an
   // `each` iteration.
   function EarlyExit(value) { this.value = value; }

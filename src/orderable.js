@@ -26,7 +26,7 @@
 //    x1.gt(x2);  // => false
 //    x3.max(x2); // => #<App.X:20 rank: 3>
 //    x3.min(x2); // => #<App.X:19 rank: 2>
-Z.Orderable = Z.Module.create(function() {
+Z.Orderable = Z.Module.extend(function() {
   // Public: Object comparison method. This method must be overridden in the
   // type objects that mixin `Z.Orderable`. It should return `-1`, `0`, or `+1`
   // depending on whether the receiver is less than, equal to, or greater than
