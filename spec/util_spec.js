@@ -563,7 +563,7 @@ describe('Z.set', function() {
   });
 
   it('should set the given value at the given path', function() {
-    var o = Z.Object.create(), ctx = {o: o};
+    var o = Z.Object.extend(Z.Observable).create(), ctx = {o: o};
     o.prop('foo');
     Z.set('o.foo', 9, ctx);
     expect(o.foo()).toBe(9);

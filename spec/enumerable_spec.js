@@ -4,7 +4,7 @@ if (!this.Z) { require('./helper'); }
 
 var Foo, f, a, h;
 
-Foo = Z.Object.extend(Z.Enumerable, function() {
+Foo = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
   this.prop('x');
   this.def('each', function(f) {
     f('foo'); f('bar'); f('baz'); f('quux');

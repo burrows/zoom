@@ -4,7 +4,7 @@ if (!this.Z) { require('./helper'); }
 
 var Person, TestListView, TestItemView, p1, p2, p3, p4;
 
-Person = Z.Object.extend(function() {
+Person = Z.Object.extend(Z.Observable, function() {
   this.prop('first');
   this.prop('last');
 });

@@ -70,7 +70,7 @@ var seed = Math.floor(Math.random() * 0xffffffff);
 //
 //   h.at('x', 'y');
 //   // {type: 'insert', path: '@', observee: #<Z.Hash:58 {'bar': 23, 'x': 'y'}>, previous: null, current: 'y', key: 'x'}
-Z.Hash = Z.Object.extend(Z.Enumerable, function() {
+Z.Hash = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
   // Internal: Returns the default value for a key that is not present in the
   // hash.
   //
@@ -98,6 +98,8 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
     if (nargs > 1) {
       throw new Error(Z.fmt("Z.Hash.init: given %@ arguments, expected 0 or 1", nargs));
     }
+
+    this.supr();
 
     this.__z_head__    = null;
     this.__z_tail__    = null;
@@ -276,7 +278,7 @@ Z.Hash = Z.Object.extend(Z.Enumerable, function() {
       });
     });
 
-    return Z.fmt("#<%@:%@ {%@}>", this.typeName(), this.objectId(),
+    return Z.fmt("#<%@:%@ {%@}>", this.typeName(), this.objectId,
                  recursed ? '...' : a.join(', '));
   });
 

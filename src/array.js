@@ -43,7 +43,7 @@ var slice = Array.prototype.slice;
 //   txns.observe('@', null, Z.log);
 //   txns.pop();
 //   // {type: 'remove', path: '@', observee: #<Z.Array:95 [...]>, range: [2, 1]}
-Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
+Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Internal: Registers item observers on the given items. Item observers are
   // created when an unknown property is observed on an array.
   //
@@ -293,13 +293,15 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     else {
       throw new Error(Z.fmt("Z.Array.init: invalid argument (%@), expected a number or array", Z.inspect(arg)));
     }
+
+    this.supr();
   });
 
   // Public: Returns a string representation of the array.
   this.def('toString', function() {
     if (this.isType) { return this.supr(); }
 
-    return Z.fmt("#<%@:%@ %@>", this.typeName(), this.objectId(),
+    return Z.fmt("#<%@:%@ %@>", this.typeName(), this.objectId,
                  Z.inspect(this.__z_items__));
   });
 

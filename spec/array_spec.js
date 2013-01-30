@@ -74,7 +74,7 @@ describe('Z.A', function() {
 describe('Z.Array.toString', function() {
   it('should return a string with the prototype name, object id, and array contents', function() {
     var a = Z.A(1, 2, 3);
-    expect(a.toString()).toEqual("#<Z.Array:" + (a.objectId()) + " [1, 2, 3]>");
+    expect(a.toString()).toEqual("#<Z.Array:" + a.objectId + " [1, 2, 3]>");
   });
 
   it('should handle recursive arrays', function() {
@@ -83,8 +83,8 @@ describe('Z.Array.toString', function() {
     a1.push(a1);
     a2.push([9, a2]);
 
-    expect(a1.toString()).toEqual(Z.fmt("#<Z.Array:%@ [#<Z.Array:%@ [...]>]>", a1.objectId(), a1.objectId()));
-    expect(a2.toString()).toEqual(Z.fmt("#<Z.Array:%@ [[9, #<Z.Array:%@ [...]>]]>", a2.objectId(), a2.objectId()));
+    expect(a1.toString()).toEqual(Z.fmt("#<Z.Array:%@ [#<Z.Array:%@ [...]>]>", a1.objectId, a1.objectId));
+    expect(a2.toString()).toEqual(Z.fmt("#<Z.Array:%@ [[9, #<Z.Array:%@ [...]>]]>", a2.objectId, a2.objectId));
   });
 });
 
@@ -744,7 +744,7 @@ describe('Z.Array.flatten', function() {
 });
 
 describe('Z.Array.join', function() {
-  var Foo = Z.Object.extend(function() {
+  var Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
 
     this.def('toString', function() {
@@ -794,11 +794,11 @@ describe('Z.Array.each', function() {
 describe('Z.Array.getUnknownProperty', function() {
   var Foo, Bar;
 
-  Foo = Z.Object.extend(function() {
+  Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('bar');
   });
 
-  Bar = Z.Object.extend(function() {
+  Bar = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
@@ -834,11 +834,11 @@ describe('Z.Array.getUnknownProperty', function() {
 describe('Z.Array.setUnknownProperty', function() {
   var Foo, Bar;
 
-  Foo = Z.Object.extend(function() {
+  Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('bar');
   });
 
-  Bar = Z.Object.extend(function() {
+  Bar = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
@@ -1006,7 +1006,7 @@ describe('Z.Array `@` property', function() {
 describe('Z.Array.observe with an unknown property', function() {
   var Foo, a, observer;
 
-  Foo = Z.Object.extend(function() {
+  Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
@@ -1105,7 +1105,7 @@ describe('Z.Array.observe with an unknown property', function() {
 describe('Z.Array.stopObservering with an unknown property', function() {
   var Foo, a, observer;
 
-  Foo = Z.Object.extend(function() {
+  Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
@@ -1140,15 +1140,15 @@ describe('Z.Array.stopObservering with an unknown property', function() {
 describe('Observing paths that contain multiple arrays with item observers', function() {
   var Foo, Bar, Baz, f, observer;
 
-  Foo = Z.Object.extend(function() {
+  Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('bars');
   });
 
-  Bar = Z.Object.extend(function() {
+  Bar = Z.Object.extend(Z.Observable, function() {
     this.prop('bazs');
   });
 
-  Baz = Z.Object.extend(function() {
+  Baz = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
@@ -1351,7 +1351,7 @@ describe('Z.Array.toArray', function() {
 });
 
 describe('Z.Array.sort', function() {
-  var Foo = Z.Object.extend(Z.Orderable, function() {
+  var Foo = Z.Object.extend(Z.Orderable, Z.Observable, function() {
     this.prop('x');
 
     this.def('eq', function(other) {
@@ -1438,7 +1438,7 @@ describe('Z.Array.sort$', function() {
 });
 
 describe('Z.Array.sortBy', function() {
-  var n = 0, X = Z.Object.extend(function() {
+  var n = 0, X = Z.Object.extend(Z.Observable, function() {
     this.prop('foo', {
       get: function() { n++; return this.__foo__;}
     });

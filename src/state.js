@@ -55,7 +55,7 @@ var slice = Array.prototype.slice;
 //   door.current();          // => [ '/closed/unlocked' ]
 //   door.send('lockDoor');
 //   door.current();          // => [ '/closed/locked' ]
-Z.State = Z.Object.extend(Z.Enumerable, function() {
+Z.State = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
   // Internal: Calculates and caches the path from the root state to the
   // receiver state. Subsequent calls will return the cached path array.
   //
@@ -546,6 +546,7 @@ Z.State = Z.Object.extend(Z.Enumerable, function() {
     this.__isCurrent__ = false;
     this.__cache__     = {};
     this.trace         = false;
+    this.supr();
   });
 
   // Public: The `Z.State` iterator - invokes the given function once for each

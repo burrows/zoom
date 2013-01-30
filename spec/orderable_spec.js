@@ -4,7 +4,7 @@ if (!this.Z) { require('./helper'); }
 
 var Foo, fa, fb, fc;
 
-Foo = Z.Object.extend(Z.Orderable, function() {
+Foo = Z.Object.extend(Z.Orderable, Z.Observable, function() {
   this.prop('x');
 
   this.def('cmp', function(other) {

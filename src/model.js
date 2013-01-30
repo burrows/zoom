@@ -87,7 +87,7 @@ function isEditable(model) {
   return model.__isLoading__ || ((state === NEW || state === LOADED) && !busy);
 }
 
-Z.Model = Z.Object.extend(function() {
+Z.Model = Z.Object.extend(Z.Observable, function() {
   this.mapper = Z.Mapper.create();
 
   // source state
@@ -628,7 +628,7 @@ Z.Model = Z.Object.extend(function() {
       }
     }
 
-    this.set(props);
+    this.supr(props);
   });
 
   this.def('inverseDidAdd', function(associationName, model) {

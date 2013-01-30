@@ -315,7 +315,7 @@ describe('Z.Hash.toString', function() {
   it('should return a string with the prototype name, object id, and hash contents', function() {
     var h = Z.H('foo', 1, [], 2), s = h.toString();
 
-    expect(s).toMatch(new RegExp('^#<Z.Hash:' + h.objectId() + ' {'));
+    expect(s).toMatch(new RegExp('^#<Z.Hash:' + h.objectId + ' {'));
     expect(s).toMatch(/'foo': 1/);
     expect(s).toMatch(/\[\]: 2/);
   });
@@ -325,7 +325,7 @@ describe('Z.Hash.toString', function() {
 
     h.at('h', h);
 
-    expect(h.toString()).toEq(Z.fmt("#<Z.Hash:%@ {'h': #<Z.Hash:%@ {...}>}>", h.objectId(), h.objectId()));
+    expect(h.toString()).toEq(Z.fmt("#<Z.Hash:%@ {'h': #<Z.Hash:%@ {...}>}>", h.objectId, h.objectId));
   });
 });
 

@@ -27,7 +27,7 @@
 //   controller.clearSelection();
 //   controller.selection();         // => #<Z.Array:40 []>
 //   controller.selectionIndexes();  // => #<Z.Array:41 []>
-Z.ArrayController = Z.Object.extend(function() {
+Z.ArrayController = Z.Object.extend(Z.Observable, function() {
   // Internal: The `content` property observer. Syncs changes to the `content`
   // array to the `arranged` array.
   function contentObserver(n) {

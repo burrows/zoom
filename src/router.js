@@ -17,7 +17,7 @@
 // the route name when a matching route is found. The generator function is used
 // to construct a new hash when either the `current` or `params` properties
 // change.
-Z.Router = Z.Object.extend(function() {
+Z.Router = Z.Object.extend(Z.Observable, function() {
   // Internal: A regular expression that can be used to clean up a hash value.
   var stripHash = /^#|\/?$/;
 
@@ -77,6 +77,7 @@ Z.Router = Z.Object.extend(function() {
     this.errback  = errback;
     this.location = (opts && opts.location) || window.location;
     this.params(Z.H());
+    this.supr();
   });
 
   // Public: Defines a new route.

@@ -34,7 +34,7 @@ describe('Z.View', function() {
       expect(node).not.toBeNull();
       expect(node instanceof window.HTMLElement).toBe(true);
       expect(node.parentNode).toBeNull();
-      expect(node.id).toBe('z-view-' + v.objectId());
+      expect(node.id).toBe('z-view-' + v.objectId);
       expect(node.innerHTML).toBe('');
       v.destroy();
     });
@@ -770,7 +770,7 @@ describe('Z.View', function() {
   describe('.displayPaths', function() {
     var Person, V, v;
 
-    Person = Z.Object.extend(function() { this.prop('name'); });
+    Person = Z.Object.extend(Z.Observable, function() { this.prop('name'); });
 
     V = Z.View.extend(function() {
       this.prop('foo');

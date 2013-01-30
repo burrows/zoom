@@ -9,7 +9,7 @@ var slice = Array.prototype.slice;
 //
 // The `Z.View` type itself is abstract, applications are made up of sub-types
 // that inherit from `Z.View` and override many of its methods.
-Z.View = Z.Object.extend(Z.Enumerable, function() {
+Z.View = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
   var viewIdRe, views;
 
   // Internal: A regular expression for matching against a DOM element's `id`
@@ -28,7 +28,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   // Internal: Builds and returns the view's DOM node but does not attach it to
   // the document.
   function buildNode() {
-    var id      = 'z-view-' + this.objectId(),
+    var id      = 'z-view-' + this.objectId,
         node    = document.createElement(this.tag),
         classes = this.classes() || [];
 
@@ -151,7 +151,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
   this.def('init', function(props) {
     var self = this, subviewTypes = this.__subviewTypes__;
 
-    views[this.objectId()] = this;
+    views[this.objectId] = this;
 
     if (subviewTypes) {
       subviewTypes.each(function(tuple) {
@@ -182,7 +182,7 @@ Z.View = Z.Object.extend(Z.Enumerable, function() {
       self.stopObserving(path, self, displayPathObserver);
     });
 
-    delete views[this.objectId()];
+    delete views[this.objectId];
     subviews.each('destroy');
 
     return this.supr();

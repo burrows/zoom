@@ -34,7 +34,7 @@
 // trigger a view update manually (e.g. after an ajax request completes and your
 // models have been updated). In these situations you can simply invoke the
 // app's `run` method to trigger a run of the run loop.
-Z.App = Z.Object.extend(function() {
+Z.App = Z.Object.extend(Z.Observable, function() {
   var slice = Array.prototype.slice;
 
   // Internal: Handles events observed by the event listener by dispatching them
@@ -128,6 +128,8 @@ Z.App = Z.Object.extend(function() {
     // create an empty router
     this.router(Z.Router.create(Z.bind(processRouteChange, this),
                                 Z.bind(processUnknownRouteChange, this)));
+
+    this.supr();
   });
 
   // Public: Starts running the app by creating an event listener, rendering all

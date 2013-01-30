@@ -4,7 +4,7 @@ if (!this.Z) { require('./helper'); }
 
 var Person, p1, p2, p3, p4;
 
-Person = Z.Object.extend(function() {
+Person = Z.Object.extend(Z.Observable, function() {
   this.prop('first');
   this.prop('last');
 });
@@ -13,11 +13,6 @@ p1 = Person.create({first: 'Theon', last: 'Greyjoy'});
 p2 = Person.create({first: 'Davos', last: 'Seaworth'});
 p3 = Person.create({first: 'Meera', last: 'Reed'});
 p4 = Person.create({first: 'Doran', last: 'Martell'});
-
-Person = Z.Object.extend(function() {
-  this.prop('first');
-  this.prop('last');
-});
 
 function nameAsc(a, b) {
   var afull = a.last() + ', ' + a.first(),
