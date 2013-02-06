@@ -77,10 +77,10 @@ Z.ListView = Z.View.extend(function() {
   // Internal: Observes changes to the `itemViewType` property and replaces all
   // existing subviews with instances of the new item view type.
   function itemViewTypeObserver() {
-    var _this = this, type = this.itemViewType();
+    var _this = this;
     if (this.showingEmpty()) { return; }
     this.subviews().each(function(sv) {
-      _this.replaceSubview(sv, _this.createItemView(type, sv.content()));
+      _this.replaceSubview(sv, _this.createItemView(sv.content()));
     });
   }
 
@@ -143,13 +143,16 @@ Z.ListView = Z.View.extend(function() {
   });
 
   // Public: Creates a new item view instance. Override this method if you want
-  // to customize how item views are created.
+  // to customize how item views are created. By default it simply creates a new
+  // concrete instance of the `itemViewType` property with the given item object
+  // set to its `content`.
   //
-  // type - The `Z.View` subtype to use as the
   // item - The object to set as the `content` property on the item view.
   //
   // Returns the item view instance.
-  this.def('createItemView', function(type, item) {
+  this.def('createItemView', function(item) {
+    var type = this.itemViewType();
+
     if (!type) {
       throw new Error(Z.fmt("Z.ListView.createItemView: `itemViewType` is not defined: %@", this));
     }
@@ -164,10 +167,10 @@ Z.ListView = Z.View.extend(function() {
   //
   // Returns the receiver..
   this.def('contentItemsAdded', function(items, idx) {
-    var type = this.itemViewType(), i, size;
+    var i, size;
 
     for (i = 0, size = items.size(); i < size; i++) {
-      this.addSubview(this.createItemView(type, items.at(i)), idx + i);
+      this.addSubview(this.createItemView(items.at(i)), idx + i);
     }
 
     return this;

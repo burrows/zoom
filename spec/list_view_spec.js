@@ -73,7 +73,7 @@ describe('Z.ListView', function() {
 
       spyOn(v, 'createItemView').andCallThrough();
       v.content().push(p1);
-      expect(v.createItemView).toHaveBeenCalledWith(TestItemView, p1);
+      expect(v.createItemView).toHaveBeenCalledWith(p1);
     });
 
     it('should remove the `emptyView` when displayed', function() {
@@ -106,10 +106,10 @@ describe('Z.ListView', function() {
 
   describe('.createItemView', function() {
     it('should throw an exception when `itemViewType` is `null`', function() {
-      var v = TestListView.create({content: Z.A()});
+      var v = TestListView.create({content: Z.A(), itemViewType: null});
 
       expect(function() {
-        v.createItemView(null, p1);
+        v.createItemView(p1);
       }).toThrow(Z.fmt("Z.ListView.createItemView: `itemViewType` is not defined: %@", v));
     });
   });

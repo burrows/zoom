@@ -172,7 +172,6 @@ Z.FastListView = Z.ListView.extend(function() {
   // Returns nothing.
   this.def('update', function() {
     var content  = this.content(),
-        itemView = this.itemViewType(),
         soffset  = this.scrollOffset(),
         subviews = this.subviews(),
         onode    = this.overflowNode(),
@@ -206,7 +205,7 @@ Z.FastListView = Z.ListView.extend(function() {
 
         if (!subview) {
           moved   = true;
-          subview = this.addSubview(this.createItemView(itemView, item));
+          subview = this.addSubview(this.createItemView(item));
         }
 
         this.__z_subview2index__.at(subview, i);
