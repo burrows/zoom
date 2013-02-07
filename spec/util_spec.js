@@ -501,72 +501,95 @@ describe('Z.eq', function() {
 });
 
 describe('Z.get', function() {
-  describe('given the name of a global variable', function() {
-    it('should return the value of the global variable', function() {
-      Z.global.Something = 9;
-      expect(Z.get('Something')).toBe(9);
-      Z.del(Z.global, 'Something');
+  describe('with just a path', function() {
+    it('should return the value at the path relative to the global object', function() {
+      Z.global.something = 9;
+      Z.global.foo = {bar: {baz: 'hello'}};
+
+      expect(Z.get('something')).toBe(9);
+      expect(Z.get('foo.bar.baz')).toBe('hello');
+
+      Z.del(Z.global, 'something');
+      Z.del(Z.global, 'foo');
     });
   });
 
-  describe('given a path containing native objects', function() {
-    it('should return the value at the end of the path', function() {
-      Z.global.A = { b: { c: 'blah' } };
-      expect(Z.get('A.b.c')).toBe('blah');
-      Z.del(Z.global, 'A');
-    });
-  });
+  describe('with a context object and a path', function() {
+    it('should return the value of the raw property at each segment of the path relative to the given context object', function() {
+      var x = {foo: 1, bar: {baz: 2}};
 
-  describe('given a path zobjects', function() {
-    it('should return the value at the end of the path', function() {
-      Z.global.A = Z.H('b', Z.H('c', 'foo'));
-      expect(Z.get('A.b.c')).toBe('foo');
-      Z.del(Z.global, 'A');
+      expect(Z.get(x, 'foo')).toBe(1);
+      expect(Z.get(x, 'bar')).toBe(x.bar);
+      expect(Z.get(x, 'bar.baz')).toBe(2);
     });
-  });
 
-  describe('given a path to a non-existant object', function() {
-    it('should return `undefined`', function() {
-      expect(Z.get('Foo')).toBeUndefined();
-      expect(Z.get('Foo.bar.baz')).toBeUndefined();
+    it('should invoke the `_get` method on each object in the path that implements it in order to get the next object', function() {
+      var x, y;
+
+      y = { _get: function(k) { return k.toUpperCase(); } };
+
+      x = {
+        _get: function(k) { return this['__' + k + '__']; },
+        __foo__: 'a',
+        __bar__: 'b',
+        __y__: y
+      };
+
+      expect(Z.get(x, 'foo')).toBe('a');
+      expect(Z.get(x, 'bar')).toBe('b');
+      expect(Z.get(x, 'baz')).toBeUndefined();
+      expect(Z.get(x, 'y.z')).toBe('Z');
+      expect(Z.get(x, 'y.hello')).toBe('HELLO');
+    });
+
+    it('should return `undefined` when a segment in the middle of the path is not defined', function() {
+      var a = {b: {}};
+      expect(Z.get(a, 'b.c.d.e')).toBeUndefined();
     });
   });
 });
 
 describe('Z.set', function() {
-  describe('given a path with one segement', function() {
-    it('should throw an exception', function() {
-      expect(function() {
-        Z.set('foo', 1);
-      }).toThrow("Z.set: must be given a path with multiple segments");
+  describe('with just a path and value', function() {
+    it('should set the given value at the path relative to the global object', function() {
+      Z.global.foo = {bar: {baz: 7}};
+
+      expect(Z.set('blah', 5)).toBe(5);
+      expect(Z.global.blah).toBe(5);
+      expect(Z.set('foo.bar.baz', 'hey')).toBe('hey');
+      expect(Z.global.foo.bar.baz).toBe('hey');
+
+      Z.del(Z.global, 'foo');
+      Z.del(Z.global, 'blah');
     });
   });
 
-  describe('given a path that does not resolve', function() {
-    it('should throw an exception', function() {
-      var ctx = {foo: {}};
+  describe('with a context object, path, and value', function() {
+    it('should set the given value at the path relative to the given context object', function() {
+      var x = {foo: {bar: {baz: 3}}};
+
+      expect(Z.set(x, 'stuff', 9)).toBe(9);
+      expect(x.stuff).toBe(9);
+      expect(Z.set(x, 'foo.bar.baz', 121)).toBe(121);
+      expect(x.foo.bar.baz).toBe(121);
+    });
+
+    it('should invoke the `_set` method on the object at the end of the path if it implements it', function() {
+      var x = {y : {_set: function(k, v) { this['__' + k + '__'] = v;}}};
+
+      expect(Z.set(x, 'y.foo', 1)).toBe(1);
+      expect(x.y.__foo__).toBe(1);
+      expect(Z.set(x, 'y.bar', 'stuff')).toBe('stuff');
+      expect(x.y.__bar__).toBe('stuff');
+    });
+
+    it('should throw an exception if the path cannot be resolved', function() {
+      var x = {y: {}};
 
       expect(function() {
-        Z.set('blah.bar', 1, ctx);
-      }).toThrow("Z.set: could not resolve path: 'blah'");
+        Z.set(x, 'y.a.b', 4);
+      }).toThrow(Z.fmt('Z.set: could not resolve path `y.a` from object %@', Z.inspect(x)));
     });
-  });
-
-  describe('given a path to something that is not a Z.Object', function() {
-    it('should throw an exception', function() {
-      var ctx = {foo: {}};
-
-      expect(function() {
-        Z.set('foo.bar', 1, ctx);
-      }).toThrow("Z.set: path did not resolve to a Z.Object: 'foo'");
-    });
-  });
-
-  it('should set the given value at the given path', function() {
-    var o = Z.Object.extend(Z.Observable).create(), ctx = {o: o};
-    o.prop('foo');
-    Z.set('o.foo', 9, ctx);
-    expect(o.foo()).toBe(9);
   });
 });
 

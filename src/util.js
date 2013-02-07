@@ -217,9 +217,9 @@ Z.inspect = function(o) {
       if (o.className && o.className.length > 0) {
         a.push(Z.fmt('class="%@"', o.className));
       }
+
       return Z.fmt("<%@%@ />", o.nodeName.toLowerCase(),
                    a.length > 0 ? ' ' + a.join(' ') : '');
-
     case 'object':
       a = [];
 
@@ -566,55 +566,57 @@ Z.detectOutermostRecursion = function(o1, o2, f) {
 // to be relative to the given context object or the global object if a context
 // is not given.
 //
+// ctx  - The object to resolve the path from (default: `Z.global`).
 // path - A string containing the path to resolve.
-// ctx  - The object to resolve the path from.
 //
 // Returns the resolved object or `undefined` if it doesn't exist.
-Z.get = function(path, ctx) {
-  var head, tail;
+Z.get = function(ctx, path) {
+  var head, tail, o;
 
-  ctx  = ctx || Z.global;
+  if (arguments.length === 1) { path = ctx; ctx = Z.global; }
 
-  if (Z.isZObject(ctx)) { return ctx.get(path); }
-
-  path = path.split('.');
+  path = typeof path === 'string' ? path.split('.') : path;
   head = path[0];
   tail = path.slice(1);
+  o    = typeof ctx._get === 'function' ? ctx._get(head) : ctx[head];
 
-  if (tail.length === 0) { return ctx[head]; }
+  if (tail.length === 0) { return o; }
 
-  return ctx[head] ? Z.get(tail.join('.'), ctx[head]) : undefined;
+  return o ? Z.get(o, tail) : undefined;
 };
 
 // Public: Sets the value of a key path resolved from the given context object.
+// If a context object is not given, then the global object is used.
 //
+// ctx   - The object to resolve the path from (default: `Z.global`).
 // path  - A string containing the path to resolve.
 // value - The value to set.
-// ctx   - The object to resolve the path from.
 //
 // Returns `value`.
 // Throws `Error` if not given a path with at least two segments.
 // Throws `Error` if the path does not resolve to a `Z.Object`.
-Z.set = function(path, value, ctx) {
+Z.set = function(ctx, path, value) {
   var init, last, o;
 
-  path = path.split('.');
+  if (arguments.length === 2) {
+    value = path;
+    path  = ctx;
+    ctx   = Z.global;
+  }
 
-  if (path.length <= 1) { throw new Error("Z.set: must be given a path with multiple segments"); }
-
+  path = typeof path === 'string' ? path.split('.') : path;
   init = path.slice(0, path.length - 1);
   last = path[path.length - 1];
-  o    = Z.get(init.join('.'), ctx);
+  o    = init.length > 0 ? Z.get(ctx, init) : ctx;
 
   if (!o) {
-    throw new Error(Z.fmt("Z.set: could not resolve path: '%@'", init.join('.')));
+    throw new Error(Z.fmt("Z.set: could not resolve path `%@` from object %@", init.join('.'), Z.inspect(ctx)));
   }
 
-  if (!Z.isZObject(o)) {
-    throw new Error(Z.fmt("Z.set: path did not resolve to a Z.Object: '%@'", init.join('.')));
-  }
+  if (typeof o._set === 'function') { o._set(last, value); }
+  else { o[last] = value; }
 
-  return o.set(last, value);
+  return value;
 };
 
 // Public: Converts each argument to a string using `Z.inspect` and logs it to
