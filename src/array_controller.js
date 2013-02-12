@@ -39,14 +39,19 @@ Z.ArrayController = Z.Object.extend(function() {
         this.rearrange();
         break;
       case 'insert':
-        n.current.each(function(o) { insert.call(_this, o); });
+        if (n.current.size() === 1) { insert.call(_this, n.current.at(0)); }
+        else { this.rearrange(); }
         break;
       case 'remove':
-        n.previous.each(function(o) { remove.call(_this, o); });
+        if (n.previous.size() === 1) { remove.call(_this, n.previous.at(0)); }
+        else { this.rearrange(); }
         break;
       case 'update':
-        n.current.each(function(o) { insert.call(_this, o); });
-        n.previous.each(function(o) { remove.call(_this, o); });
+        if (n.previous.size() === 1) {
+          remove.call(_this, n.previous.at(0));
+          insert.call(_this, n.current.at(0));
+        }
+        else { this.rearrange(); }
         break;
     }
   }
