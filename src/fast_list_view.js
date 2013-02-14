@@ -29,6 +29,8 @@
 // calculations are no longer a simple multiplication of the item index and
 // default row height.
 Z.FastListView = Z.ListView.extend(function() {
+  var slice = Array.prototype.slice;
+
   // Internal: The callback function for the `window`'s `resize` event. Resizing
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
@@ -50,40 +52,56 @@ Z.FastListView = Z.ListView.extend(function() {
     this.display();
   }
 
-  // Internal: Caches the custom row heights indicated by the
-  // `customRowHeightIndexes` property and calculates the row offset adjustments
-  // based on those heights.
-  function cacheCustomHeightsAndOffsetAdjustments() {
-    var _this      = this,
-        rowHeight  = this.rowHeight(),
-        indexes    = this.customRowHeightIndexes(),
-        adjustment = 0;
+  // Internal: Calculates and caches each custom row's height and each row's
+  // offset from the top of the list.
+  //
+  // start - An index into the content array marking where to start updating
+  //         heights and offsets.
+  //
+  // Returns nothing.
+  function cacheHeightsAndOffsets(start) {
+    var size    = this.get('content.size') || 0,
+        rheight = this.rowHeight(),
+        indexes = this.customRowHeightIndexes().sort().toNative(),
+        custom  = indexes.shift(),
+        offset  = 0,
+        i, n;
 
-    if (!indexes || indexes.size() === 0) {
-      this.__z_heights__     = null;
-      this.__z_adjustments__ = null;
+    start = typeof start === 'undefined' ? 0 : start;
+
+    this.__z_offsets__ = this.__z_offsets__ || new Array(size);
+    this.__z_heights__ = this.__z_heights__ || {};
+
+    for (i = start; i < size; i++) {
+      this.__z_offsets__[i] = offset;
+
+      if (i === custom) {
+        this.__z_heights__[i] = this.customRowHeightForIndex(i);
+
+        offset = offset + this.__z_heights__[i];
+        custom = indexes.shift();
+      }
+      else {
+        offset = offset + rheight;
+      }
+    }
+  }
+
+  // Internal: Recalculates custom heights and offsets if there are currently
+  // rows with custom heights and clears the caches if there are none.
+  function customRowHeightIndexesObserver() {
+    var indexes = this.customRowHeightIndexes();
+
+    if (indexes && indexes.size() > 0) {
+      cacheHeightsAndOffsets.call(this);
     }
     else {
-      this.__z_heights__     = {};
-      this.__z_adjustments__ = [];
-
-      indexes.sort().each(function(idx) {
-        var height = _this.customRowHeightForIndex(idx);
-
-        _this.__z_heights__[idx] = height;
-        _this.__z_adjustments__.push([idx, adjustment]);
-
-        adjustment += (height - rowHeight);
-      });
-
-      this.__z_adjustments__.push([Infinity, adjustment]);
+      Z.del(this, '__z_heights__');
+      Z.del(this, '__z_offsets__');
     }
 
     this.needsDisplay(true);
   }
-
-  // Internal: Comparator function for searching the adjustments array.
-  function adjustmentCmp(adj, idx) { return Z.cmp(adj[0], idx); }
 
   // Public: Override the default `Z.ListView` tag of `ul` since by default
   // `Z.FastListView` renders a wrapper `div` around the item views.
@@ -124,17 +142,29 @@ Z.FastListView = Z.ListView.extend(function() {
     set: function(a) { return this.__customRowHeightIndexes__ = a; }
   });
 
+  // Public: Boolean property indicating whether or not the view currently has
+  // rows with custom heights.
+  this.prop('hasCustomRowHeights', {
+    readonly: true, cache: true, dependsOn: ['customRowHeightIndexes.size'],
+    get: function() { return this.get('customRowHeightIndexes.size') > 0; }
+  });
+
   // Internal: The `Z.FastListView` constructor.
   this.def('init', function(props) {
     this.supr(props);
+
     this.observe('customRowHeightIndexes.@', this,
-      cacheCustomHeightsAndOffsetAdjustments, {fire: true});
+      customRowHeightIndexesObserver);
+
+    if (this.get('customRowHeightIndexes.size') > 0) {
+      cacheHeightsAndOffsets.call(this);
+    }
   });
 
   // Internal: The `Z.FastListView` destructor.
   this.def('destroy', function() {
     this.stopObserving('customRowHeightIndexes.@', this,
-      cacheCustomHeightsAndOffsetAdjustments);
+      customRowHeightIndexesObserver);
 
     if (this.__z_resizeListener__) {
       window.removeEventListener('resize', this.__z_resizeListener__, false);
@@ -322,8 +352,9 @@ Z.FastListView = Z.ListView.extend(function() {
   //
   // Returns the receiver.
   this.def('customRowHeightDidChange', function() {
-    // FIXME: take given indexes into account
-    cacheCustomHeightsAndOffsetAdjustments.call(this);
+    var indexes = slice.call(arguments).sort();
+    cacheHeightsAndOffsets.call(this, indexes[0]);
+    this.needsDisplay(true);
     return this;
   });
 
@@ -334,8 +365,8 @@ Z.FastListView = Z.ListView.extend(function() {
   //
   // Returns an integer.
   this.def('rowHeightForIndex', function(i) {
-    var heights = this.__z_heights__;
-    return heights && heights.hasOwnProperty(i) ? heights[i] : this.rowHeight();
+    return this.hasCustomRowHeights() && this.__z_heights__.hasOwnProperty(i) ?
+      this.__z_heights__[i] : this.rowHeight();
   });
   
   // Internal: Returns the offset that should be applied to the item view at the
@@ -344,33 +375,20 @@ Z.FastListView = Z.ListView.extend(function() {
   // idx - The content item index to return the offset for.
   //
   // Returns an integer.
-  this.def('rowOffsetForIndex', function(idx) {
-    var rowHeight   = this.rowHeight(),
-        adjustments = this.__z_adjustments__,
-        offset      = rowHeight * idx,
-        ai;
-
-    if (adjustments) {
-      ai = Z.binsearch(idx, adjustments, adjustmentCmp);
-      ai = ai < 0 ? -ai - 1 : ai;
-      offset += adjustments[ai][1];
-    }
-
-    return offset;
+  this.def('rowOffsetForIndex', function(i) {
+    return this.hasCustomRowHeights() ?
+      this.__z_offsets__[i] : this.rowHeight() * i;
   });
 
   // Internal: Calculates the total height needed to display all rows.
   //
   // Returns an integer.
   this.def('totalHeight', function() {
-    var height      = this.rowHeight() * (this.get('content.size') || 0),
-        adjustments = this.__z_adjustments__;
+    var size = this.get('content.size') || 0;
 
-    if (adjustments) {
-      height += adjustments[adjustments.length - 1][1];
-    }
-
-    return height;
+    return this.hasCustomRowHeights() ?
+      this.__z_offsets__[size - 1] + this.rowHeightForIndex(size - 1) :
+      this.rowHeight() * size;
   });
 
   // Internal: Returns a two element native array containing an inclusive range
@@ -380,7 +398,7 @@ Z.FastListView = Z.ListView.extend(function() {
   // possible.
   this.def('displayRange', function() {
     var size      = this.get('content.size'),
-        hasCustom = this.__z_heights__ !== null,
+        hasCustom = this.hasCustomRowHeights(),
         theight   = this.totalHeight(),
         sheight   = this.scrollHeight(),
         soffset   = this.scrollOffset(),
@@ -390,7 +408,7 @@ Z.FastListView = Z.ListView.extend(function() {
         first, last, ofirst, olast;
   
     if (size === 0 || nviews === 0) { return null; }
-  
+
     first = Math.min(Math.floor(soffset / rheight), size - 1);
   
     // if we have custom row heights we may need to adjust the first and last
@@ -438,8 +456,8 @@ Z.FastListView = Z.ListView.extend(function() {
     var i, len;
 
     for (i = 0, len = repos.length; i < len; i++) {
-      repos[i][0].node.style.top    = repos[1] + 'px';
-      repos[i][0].node.style.height = repos[2] + 'px';
+      repos[i][0].node.style.top    = repos[i][1] + 'px';
+      repos[i][0].node.style.height = repos[i][2] + 'px';
     }
 
     return this;
@@ -531,4 +549,3 @@ Z.FastListView = Z.ListView.extend(function() {
     return this.supr();
   });
 });
-
