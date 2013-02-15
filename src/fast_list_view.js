@@ -29,8 +29,6 @@
 // calculations are no longer a simple multiplication of the item index and
 // default row height.
 Z.FastListView = Z.ListView.extend(function() {
-  var slice = Array.prototype.slice;
-
   // Internal: The callback function for the `window`'s `resize` event. Resizing
   // the window may change the height of the view so we need to listen for that
   // event and adjust the `height` property if necessary.
@@ -55,24 +53,19 @@ Z.FastListView = Z.ListView.extend(function() {
   // Internal: Calculates and caches each custom row's height and each row's
   // offset from the top of the list.
   //
-  // start - An index into the content array marking where to start updating
-  //         heights and offsets.
-  //
   // Returns nothing.
-  function cacheHeightsAndOffsets(start) {
+  function cacheHeightsAndOffsets() {
     var size    = this.get('content.size') || 0,
         rheight = this.rowHeight(),
         indexes = this.customRowHeightIndexes().sort().toNative(),
         custom  = indexes.shift(),
         offset  = 0,
-        i, n;
-
-    start = typeof start === 'undefined' ? 0 : start;
+        i;
 
     this.__z_offsets__ = this.__z_offsets__ || new Array(size);
     this.__z_heights__ = this.__z_heights__ || {};
 
-    for (i = start; i < size; i++) {
+    for (i = 0; i < size; i++) {
       this.__z_offsets__[i] = offset;
 
       if (i === custom) {
@@ -82,6 +75,7 @@ Z.FastListView = Z.ListView.extend(function() {
         custom = indexes.shift();
       }
       else {
+        Z.del(this.__z_heights__, i);
         offset = offset + rheight;
       }
     }
@@ -352,8 +346,7 @@ Z.FastListView = Z.ListView.extend(function() {
   //
   // Returns the receiver.
   this.def('customRowHeightDidChange', function() {
-    var indexes = slice.call(arguments).sort();
-    cacheHeightsAndOffsets.call(this, indexes[0]);
+    cacheHeightsAndOffsets.call(this);
     this.needsDisplay(true);
     return this;
   });
