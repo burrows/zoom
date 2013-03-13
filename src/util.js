@@ -569,7 +569,7 @@ Z.detectOutermostRecursion = function(o1, o2, f) {
 // ctx  - The object to resolve the path from (default: `Z.global`).
 // path - A string containing the path to resolve.
 //
-// Returns the resolved object or `undefined` if it doesn't exist.
+// Returns the resolved object or `null` if it doesn't exist.
 Z.get = function(ctx, path) {
   var head, tail, o;
 
@@ -582,7 +582,7 @@ Z.get = function(ctx, path) {
 
   if (tail.length === 0) { return o; }
 
-  return o ? Z.get(o, tail) : undefined;
+  return o ? Z.get(o, tail) : null;
 };
 
 // Public: Sets the value of a key path resolved from the given context object.
@@ -592,9 +592,7 @@ Z.get = function(ctx, path) {
 // path  - A string containing the path to resolve.
 // value - The value to set.
 //
-// Returns `value`.
-// Throws `Error` if not given a path with at least two segments.
-// Throws `Error` if the path does not resolve to a `Z.Object`.
+// Returns `value` or `null` if the given path could not be resolved.
 Z.set = function(ctx, path, value) {
   var init, last, o;
 
@@ -609,9 +607,7 @@ Z.set = function(ctx, path, value) {
   last = path[path.length - 1];
   o    = init.length > 0 ? Z.get(ctx, init) : ctx;
 
-  if (!o) {
-    throw new Error(Z.fmt("Z.set: could not resolve path `%@` from object %@", init.join('.'), Z.inspect(ctx)));
-  }
+  if (!o) { return null; }
 
   if (typeof o._set === 'function') { o._set(last, value); }
   else { o[last] = value; }

@@ -290,7 +290,7 @@ Z.Observable = Z.Module.extend(function() {
   // Returns a native array containing the values of all given key paths when
   //   given multiple arguments or a single native array argument.
   this.def('get', function() {
-    var paths, path, i, len, result;
+    var paths, i, len, result;
 
     if (arguments.length === 1) {
       if (Z.isArray(arguments[0])) {
@@ -310,30 +310,19 @@ Z.Observable = Z.Module.extend(function() {
     if (paths.length > 1) {
       result = {};
       for (i = 0, len = paths.length; i < len; i++) {
-        path = paths[i];
-        result[path] = this.getParsedPath(path.split('.'));
+        result[paths[i]] = Z.get(this, paths[i]);
       }
     }
     else {
-      result = this.getParsedPath(paths[0].split('.'));
+      result = Z.get(this, paths[0]);
     }
 
     return result;
   });
 
-  // Internal: Returns the value of the property at the end of the given parsed
-  // path. A parsed path is simply an array containing string representing each
-  // segment of the path.
-  //
-  // path - An array containing strings for each segment in the path.
-  //
-  // Returns the value of the property at the end of the path.
-  this.def('getParsedPath', function(path) {
-    var head = path[0], tail = slice.call(path, 1), v = getProperty.call(this, head);
-
-    if (tail.length > 0) { return v ? v.getParsedPath(tail) : null; }
-    else { return v; }
-  });
+  // Internal: Called by `Z.get` to retrieve a property value from
+  // `Z.Observable` objects.
+  this.def('_get', getProperty);
 
   // Public: Sets the value of a key path or paths. When given two arguments,
   // the second argument is set as the value for the property indicated by the
@@ -360,26 +349,21 @@ Z.Observable = Z.Module.extend(function() {
     if (arguments.length === 1) {
       for (k in path) {
         if (path.hasOwnProperty(k)) {
-          this.set(k, path[k]);
+          Z.set(this, k, path[k]);
         }
       }
 
       return path;
     }
 
-    path = path.split('.');
-    init = path.slice(0, path.length - 1);
-    last = path[path.length - 1];
-
-    if (init.length > 0) {
-      if ((o = this.getParsedPath(init))) { setProperty.call(o, last, value); }
-    }
-    else {
-      setProperty.call(this, last, value);
-    }
+    Z.set(this, path, value);
 
     return value;
   });
+
+  // Internal: Called by `Z.set` to set property values on `Z.Observable`
+  // objects.
+  this.def('_set', setProperty);
 
   // Public: Registers an observer on the given path. Whenever some segment in
   // the path changes, the observer is notified by invoking the given action
@@ -739,7 +723,7 @@ Z.Observable = Z.Module.extend(function() {
   //
   // k - The name of the unknown property.
   this.def('getUnknownProperty', function(k) {
-    if (typeof this[k] === 'undefined') { return null; }
+    if (!(k in this)) { return null; }
     return typeof this[k] === 'function' ? this[k]() : this[k];
   });
 

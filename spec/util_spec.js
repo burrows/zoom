@@ -542,9 +542,9 @@ describe('Z.get', function() {
       expect(Z.get(x, 'y.hello')).toBe('HELLO');
     });
 
-    it('should return `undefined` when a segment in the middle of the path is not defined', function() {
+    it('should return `null` when a segment in the middle of the path is not defined', function() {
       var a = {b: {}};
-      expect(Z.get(a, 'b.c.d.e')).toBeUndefined();
+      expect(Z.get(a, 'b.c.d.e')).toBeNull();
     });
   });
 });
@@ -583,12 +583,9 @@ describe('Z.set', function() {
       expect(x.y.__bar__).toBe('stuff');
     });
 
-    it('should throw an exception if the path cannot be resolved', function() {
+    it('should do nothing and return null if the path cannot be resolved', function() {
       var x = {y: {}};
-
-      expect(function() {
-        Z.set(x, 'y.a.b', 4);
-      }).toThrow(Z.fmt('Z.set: could not resolve path `y.a` from object %@', Z.inspect(x)));
+      expect(Z.set(x, 'y.a.b', 4)).toBeNull();;
     });
   });
 });
