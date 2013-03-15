@@ -104,6 +104,12 @@ Z.ArrayController = Z.Object.extend(function() {
   // Public: The `Z.Array` object to manage.
   this.prop('content');
 
+  // Public: Returns the size of the content array.
+  this.prop('size', {
+    readonly: true, dependsOn: ['content.size'],
+    get: function() { return this.get('content.size') || 0; }
+  });
+
   // Public: A `Z.Array` that contains the content items arranged according to
   // the `filterFn` and `compareFn` properties. Setting the content of a
   // `Z.ListView` to this property allows for easy sorting and filtering.
