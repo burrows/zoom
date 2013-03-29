@@ -204,6 +204,67 @@ describe('Z.Model.attr', function() {
     });
   });
 
+  describe('`datetime` type', function() {
+    var offset = (new Date()).getTimezoneOffset() * 60 * 1000, m;
+
+    beforeEach(function() {
+      m = Z.Model.extend(function() {
+        this.attr('time', 'datetime');
+      }).create();
+    });
+
+    it('should convert valid ISO 8601 strings to a Date object in the local timezone', function() {
+      m.time("2013-03-29T09:49:30-05:00");
+      expect(m.time()).toEq(new Date(Date.UTC(2013, 2, 29, 14, 49, 30, 0) + (5 * 60 * 60 * 1000) - offset));
+
+      m.time("2013-03-29T09:49:30-06:00");
+      expect(m.time()).toEq(new Date(Date.UTC(2013, 2, 29, 14, 49, 30, 0) + (6 * 60 * 60 * 1000) - offset));
+
+      m.time("2013-03-29T09:49:30+02:00");
+      expect(m.time()).toEq(new Date(Date.UTC(2013, 2, 29, 14, 49, 30, 0) - (2 * 60 * 60 * 1000) - offset));
+
+      m.time("2013-03-29T09:49:30Z");
+      expect(m.time()).toEq(new Date(Date.UTC(2013, 2, 29, 14, 49, 30, 0) - offset));
+
+      m.time("2013-03-29T09:49:30");
+      expect(m.time()).toEq(new Date(Date.UTC(2013, 2, 29, 14, 49, 30, 0) - offset));
+    });
+
+    it('should throw an exception if given a string that is not ISO 8601 formatted', function() {
+      expect(function() {
+        m.time('Oct 1, 2012');
+      }).toThrow('Z.DateTimeAttr.toRaw: could not convert string `Oct 1, 2012` to a Date');
+
+      expect(function() {
+        m.time('2012-10-01 10:00:00');
+      }).toThrow('Z.DateTimeAttr.toRaw: could not convert string `2012-10-01 10:00:00` to a Date');
+
+      expect(function() {
+        m.time('2012-10-01T10:00:00:00');
+      }).toThrow('Z.DateTimeAttr.toRaw: could not convert string `2012-10-01T10:00:00:00` to a Date');
+    });
+
+    it('should set the raw attribute to a ISO 8601 string', function() {
+      var d = new Date(2012, 4, 18, 8, 22, 11);
+      m.time(d);
+      expect(m.rawAttrs()['time']).toBe(Z.dateToISOString(d));
+    });
+
+    it('should convert numbers to a Date', function() {
+      var d = new Date(2012, 6, 4, 12, 18, 21);
+
+      m.time(d.valueOf());
+      expect(m.time()).toEq(d);
+    });
+
+    it('should allow setting `null`', function() {
+      expect(function() {
+        m.time(null);
+      }).not.toThrow();
+      expect(m.time()).toBeNull();
+    });
+  });
+
   describe('`array` type', function() {
     var M = Z.Model.extend(function() {
       this.attr('numberArray', 'array', {itemType: 'number'})
