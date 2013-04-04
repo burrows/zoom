@@ -76,42 +76,27 @@ Z.Orderable = Z.Module.create(function() {
 
 // Public: Compares any two objects, including native objects. If the first
 // argument is a `Z.Orderable`, this method simply delegates to that object's
-// `cmp` method, otherwise it uses the javascript operators `<` and `>` if the
-// two arguments have the same type (as determined by `Z.type`).
+// `cmp` method, otherwise it falls back to using the javascript `<` and `>`
+// operators.
 //
 // a - The first object to compare.
 // b - The second object to compare.
 //
 // Returns `-1`, `0`, or `+1` depending on whether the `a` is less than, equal
 //   to, or greater than `b`.
-// Throws `Error` if given two native objects that are not the same type.
 Z.cmp = function(a, b) {
   if (Z.isA(a, Z.Orderable)) { return a.cmp(b); }
 
-  if (Z.type(a) !== Z.type(b)) {
-    throw new Error(Z.fmt("Z.cmp: don't know how to compare %@ and %@", Z.inspect(a), Z.inspect(b)));
-  }
-
-  if (a < b) {
-    return -1;
-  }
-  else if (a > b) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  if (a < b)      { return -1; }
+  else if (a > b) { return 1; }
+  else            { return 0; }
 };
 
 // Public: Returns the greater object between the two given arguments.
-Z.max = function(a, b) {
-  return Z.cmp(a, b) >= 0 ? a : b;
-};
+Z.max = function(a, b) { return Z.cmp(a, b) >= 0 ? a : b; };
 
 // Public: Returns the lesser object between the two given arguments.
-Z.min = function(a, b) {
-  return Z.cmp(a, b) <= 0 ? a : b;
-};
+Z.min = function(a, b) { return Z.cmp(a, b) <= 0 ? a : b; };
 
 }());
 
