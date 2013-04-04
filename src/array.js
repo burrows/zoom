@@ -750,6 +750,18 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
       .map(function(x) { return x[0]; });
   });
 
+  // Public: Reverses the contents of the array in place.
+  //
+  // Returns the receiver.
+  this.def('reverse$', function() {
+    return this.replace(this.__z_items__.reverse());
+  });
+
+  // Public: Returns a new array with the contents of the receiver reversed.
+  //
+  // Returns a `Z.Array`.
+  this.def('reverse', function() { return this.dup().reverse$(); });
+
   // Internal: Overrides the default `registerObserver` implemention in
   // `Z.Object` in order to proxy observers on unknown properties to each item
   // in the array.

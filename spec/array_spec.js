@@ -1514,4 +1514,23 @@ describe('Z.Array.uniq$', function() {
   });
 });
 
+describe('Z.Array.reverse', function() {
+  it('should return a new array with its contents reversed', function() {
+    expect(Z.A(1,2,3,4,5).reverse()).toEq(Z.A(5,4,3,2,1));
+    expect(Z.A([1,2], [3,4]).reverse()).toEq(Z.A([3,4], [1,2]));
+  });
+});
+
+describe('Z.Array.reverse$', function() {
+  it('should reverse the contents in place', function() {
+    var a1 = Z.A(1,2,3,4,5),
+        a2 = Z.A([1,2], [3,4], [5,6]);
+
+    expect(a1.reverse$()).toBe(a1);
+    expect(a1).toEq(Z.A(5,4,3,2,1));
+    expect(a2.reverse$()).toBe(a2);
+    expect(a2).toEq(Z.A([5,6], [3,4], [1,2]));
+  });
+});
+
 }());
