@@ -1533,4 +1533,20 @@ describe('Z.Array.reverse$', function() {
   });
 });
 
+describe('Z.Array.compact', function() {
+  it('should return a new array without `null` or `undefined` items', function() {
+    expect(Z.A(1,2,null,3,undefined,4,5).compact()).toEq(Z.A(1,2,3,4,5));
+    expect(Z.A(1,2,3).compact()).toEq(Z.A(1,2,3));
+  });
+});
+
+describe('Z.Array.compact', function() {
+  it('should remove `null` and `undefined` items from the receiver', function() {
+    var a1 = Z.A(1,null,2,undefined,3,null,4);
+
+    expect(a1.compact$()).toBe(a1);
+    expect(a1).toEq(Z.A(1,2,3,4));
+  });
+});
+
 }());

@@ -732,6 +732,22 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
     return remove.length > 0 ? this : null;
   });
 
+  // Public: Returns a new array with `null` and `undefined` items removed.
+  this.def('compact', function() { return this.dup().compact$(); });
+
+  // Public: Removes all `null` and `undefined` items from the array.
+  //
+  // Returns the receiver.
+  this.def('compact$', function() {
+    var items = this.__z_items__, i, len;
+
+    for (i = items.length - 1; i >= 0; i--) {
+      if (items[i] === null || items[i] === undefined) { this.splice(i, 1); }
+    }
+
+    return this;
+  });
+
   // Public: Sorts the receiver by the given property path or comparison
   // function. This method uses a [Schwartzian transform](http://en.wikipedia.org/wiki/Schwartzian_transform)
   // in order to avoid calculating the sort property of each item more than
