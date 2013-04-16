@@ -715,8 +715,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
 
   // Public: Removes duplicate items from the receiver.
   //
-  // Returns the receiver if duplicates where found and `nil` if no changes were
-  //   made.
+  // Returns the receiver if duplicates where found and `null` if no changes
+  //   were made.
   this.def('uniq$', function() {
     var h = Z.H(), items = this.__z_items__, remove = [], i, len;
 
@@ -733,19 +733,27 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, function() {
   });
 
   // Public: Returns a new array with `null` and `undefined` items removed.
-  this.def('compact', function() { return this.dup().compact$(); });
+  this.def('compact', function() {
+    var a = this.dup();
+    a.compact$();
+    return a;
+  });
 
   // Public: Removes all `null` and `undefined` items from the array.
   //
-  // Returns the receiver.
+  // Returns the receiver if a least one item was removed and `null` if no
+  //   changes were made.
   this.def('compact$', function() {
-    var items = this.__z_items__, i, len;
+    var items = this.__z_items__, removed = false, i, len;
 
     for (i = items.length - 1; i >= 0; i--) {
-      if (items[i] === null || items[i] === undefined) { this.splice(i, 1); }
+      if (items[i] === null || items[i] === undefined) {
+        removed = true;
+        this.splice(i, 1);
+      }
     }
 
-    return this;
+    return removed ? this : null;
   });
 
   // Public: Sorts the receiver by the given property path or comparison

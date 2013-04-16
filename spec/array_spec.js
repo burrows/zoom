@@ -1547,6 +1547,10 @@ describe('Z.Array.compact', function() {
     expect(a1.compact$()).toBe(a1);
     expect(a1).toEq(Z.A(1,2,3,4));
   });
+
+  it('should return `null` if no changes were made', function() {
+    expect(Z.A(1,2,3).compact$()).toBeNull();
+  });
 });
 
 }());
