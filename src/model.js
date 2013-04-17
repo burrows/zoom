@@ -877,6 +877,45 @@ Z.DateAttr = Z.BaseAttr.extend(function() {
 
 Z.Model.registerAttrType('date', Z.DateAttr);
 
+Z.DateTimeAttr = Z.BaseAttr.extend(function() {
+  this.def('toRaw', function(v) {
+    var date = v;
+
+    if (Z.isNull(v) || Z.isUndefined(v)) { return null; }
+
+    if (typeof date === 'string') {
+      date = this.fromRaw(date);
+
+      if (!date) {
+        throw new Error(Z.fmt("Z.DateTimeAttr.toRaw: could not convert string `%@` to a Date", v));
+      }
+    }
+    else if (typeof date === 'number') {
+      date = new Date(date);
+    }
+
+    if (!(date instanceof Date)) {
+      throw new Error(Z.fmt("Z.DateTimeAttr.toRaw: %@ is not a Date", date));
+    }
+
+    return Z.dateToISOString(date);
+  });
+
+  this.def('fromRaw', function(s) {
+    var t;
+
+    if (typeof s !== 'string') { return null; }
+
+    t = Z.parseISODate(s);
+
+    if (Z.isNaN(t)) { return null; }
+
+    return new Date(t);
+  });
+});
+
+Z.Model.registerAttrType('datetime', Z.DateTimeAttr);
+
 Z.ArrayAttr = Z.BaseAttr.extend(function() {
   this.def('init', function(opts) {
     if (opts && opts.itemType && !attrTypes[opts.itemType]) {

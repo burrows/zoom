@@ -31,6 +31,67 @@ Z.bind = function(fn, ctx) {
     function() { return fn.apply(ctx, slice.call(arguments)); };
 };
 
+// Internal: Parses an ISO8601 formatted date/time string.
+//
+// Source: https://github.com/csnover/js-iso8601
+//
+// s - A string containing an ISO8601 formatted date/time string.
+//
+// Returns the number of milliseconds since the epoch or `NaN` if the string
+//   could not be parsed..
+Z.parseISODate = function(s) {
+  var numericKeys = [1, 4, 5, 6, 7, 10, 11], minutesOffset = 0, struct, i, k;
+
+  //              1 YYYY                2 MM       3 DD           4 HH    5 mm       6 ss        7 msec        8 Z 9 ±    10 tzHH    11 tzmm
+  if ((struct = /^(\d{4}|[+\-]\d{6})(?:-(\d{2})(?:-(\d{2}))?)?(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?(?:(Z)|([+\-])(\d{2})(?::(\d{2}))?)?)?$/.exec(s))) {
+    // avoid NaN timestamps caused by “undefined” values being passed to Date.UTC
+    for (i = 0; (k = numericKeys[i]); ++i) {
+      struct[k] = +struct[k] || 0;
+    }
+
+    // allow undefined days and months
+    struct[2] = (+struct[2] || 1) - 1;
+    struct[3] = +struct[3] || 1;
+
+    if (struct[8] !== 'Z' && struct[9] !== undefined) {
+      minutesOffset = struct[10] * 60 + struct[11];
+
+      if (struct[9] === '+') {
+        minutesOffset = 0 - minutesOffset;
+      }
+    }
+
+    return Date.UTC(struct[1], struct[2], struct[3], struct[4], struct[5] + minutesOffset, struct[6], struct[7]);
+  }
+
+  return NaN;
+};
+
+// Internal: Pads part of a date by adding a leading "0" if necessary.
+function padDatePart(n) {
+  var r = String(n);
+  if (r.length === 1) { r = '0' + r; }
+  return r;
+}
+
+// Internal: Converts a `Date` object into an ISO8601 formatted string.
+//
+// Source: https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Date/toISOString
+//
+// date - The `Date` object to convert.
+//
+// Returns an ISO8601 formatted string.
+Z.dateToISOString = function(date) {
+  return date.getUTCFullYear() +
+    '-' + padDatePart(date.getUTCMonth() + 1) +
+    '-' + padDatePart(date.getUTCDate()) +
+    'T' + padDatePart(date.getUTCHours()) +
+    ':' + padDatePart(date.getUTCMinutes()) +
+    ':' + padDatePart(date.getUTCSeconds()) +
+    '.' + String((date.getUTCMilliseconds()/1000).toFixed(3) ).slice(2, 5) +
+    'Z';
+};
+
 // Public: Registers a namespace for `Z.Object.typeName` to search through to
 // determine the name of a type object. All of your application objects should
 // be created under a namespace object instead of in the global scope.

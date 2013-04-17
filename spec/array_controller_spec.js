@@ -35,6 +35,16 @@ describe('Z.ArrayController', function() {
     controller = Z.ArrayController.create({content: Z.A(p1, p2, p3, p4)});
   });
 
+  describe('.size', function() {
+    it('should return 0 when the content is null', function() {
+      expect(Z.ArrayController.create().size()).toBe(0);
+    });
+
+    it('should return the the size of the content array', function() {
+      expect(Z.ArrayController.create({content: Z.A(1,2,3)}).size()).toBe(3);
+    });
+  });
+
   describe('.arranged', function() {
     describe('with no `compareFn` or `filterFn`', function() {
       it('should return an empty array when `content` is `null`', function() {

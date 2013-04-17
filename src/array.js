@@ -717,8 +717,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
 
   // Public: Removes duplicate items from the receiver.
   //
-  // Returns the receiver if duplicates where found and `nil` if no changes were
-  //   made.
+  // Returns the receiver if duplicates where found and `null` if no changes
+  //   were made.
   this.def('uniq$', function() {
     var h = Z.H(), items = this.__z_items__, remove = [], i, len;
 
@@ -732,6 +732,30 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     }
 
     return remove.length > 0 ? this : null;
+  });
+
+  // Public: Returns a new array with `null` and `undefined` items removed.
+  this.def('compact', function() {
+    var a = this.dup();
+    a.compact$();
+    return a;
+  });
+
+  // Public: Removes all `null` and `undefined` items from the array.
+  //
+  // Returns the receiver if a least one item was removed and `null` if no
+  //   changes were made.
+  this.def('compact$', function() {
+    var items = this.__z_items__, removed = false, i, len;
+
+    for (i = items.length - 1; i >= 0; i--) {
+      if (items[i] === null || items[i] === undefined) {
+        removed = true;
+        this.splice(i, 1);
+      }
+    }
+
+    return removed ? this : null;
   });
 
   // Public: Sorts the receiver by the given property path or comparison
@@ -751,6 +775,18 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
       .sort(function(a, b) { return Z.cmp(a[1], b[1]); })
       .map(function(x) { return x[0]; });
   });
+
+  // Public: Reverses the contents of the array in place.
+  //
+  // Returns the receiver.
+  this.def('reverse$', function() {
+    return this.replace(this.__z_items__.reverse());
+  });
+
+  // Public: Returns a new array with the contents of the receiver reversed.
+  //
+  // Returns a `Z.Array`.
+  this.def('reverse', function() { return this.dup().reverse$(); });
 
   // Internal: Overrides the default `registerObserver` implemention in
   // `Z.Object` in order to proxy observers on unknown properties to each item

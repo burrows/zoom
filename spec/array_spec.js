@@ -1514,4 +1514,43 @@ describe('Z.Array.uniq$', function() {
   });
 });
 
+describe('Z.Array.reverse', function() {
+  it('should return a new array with its contents reversed', function() {
+    expect(Z.A(1,2,3,4,5).reverse()).toEq(Z.A(5,4,3,2,1));
+    expect(Z.A([1,2], [3,4]).reverse()).toEq(Z.A([3,4], [1,2]));
+  });
+});
+
+describe('Z.Array.reverse$', function() {
+  it('should reverse the contents in place', function() {
+    var a1 = Z.A(1,2,3,4,5),
+        a2 = Z.A([1,2], [3,4], [5,6]);
+
+    expect(a1.reverse$()).toBe(a1);
+    expect(a1).toEq(Z.A(5,4,3,2,1));
+    expect(a2.reverse$()).toBe(a2);
+    expect(a2).toEq(Z.A([5,6], [3,4], [1,2]));
+  });
+});
+
+describe('Z.Array.compact', function() {
+  it('should return a new array without `null` or `undefined` items', function() {
+    expect(Z.A(1,2,null,3,undefined,4,5).compact()).toEq(Z.A(1,2,3,4,5));
+    expect(Z.A(1,2,3).compact()).toEq(Z.A(1,2,3));
+  });
+});
+
+describe('Z.Array.compact', function() {
+  it('should remove `null` and `undefined` items from the receiver', function() {
+    var a1 = Z.A(1,null,2,undefined,3,null,4);
+
+    expect(a1.compact$()).toBe(a1);
+    expect(a1).toEq(Z.A(1,2,3,4));
+  });
+
+  it('should return `null` if no changes were made', function() {
+    expect(Z.A(1,2,3).compact$()).toBeNull();
+  });
+});
+
 }());
