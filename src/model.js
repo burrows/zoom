@@ -370,17 +370,16 @@ Z.Model = Z.Object.extend(Z.Observable, function() {
     return model;
   });
 
-  this.def('find', function(params) {
+  this.def('find', function() {
+    var a;
+
     if (!this.isType) {
       throw new Error('Z.Model.find: must be called on a model type');
     }
 
-    return Z.ModelArray.create({
-      modelType: this,
-      params: slice.call(arguments),
-      isBusy: true,
-      isLoaded: false
-    }).find();
+    a = Z.ModelArray.create({modelType: this, isBusy: true, isLoaded: false});
+    a.find.apply(a, arguments);
+    return a;
   });
 
   this.def('fetch', function(id) {
@@ -694,7 +693,6 @@ Z.Model = Z.Object.extend(Z.Observable, function() {
 
 Z.ModelArray = Z.Array.extend(function() {
   this.prop('modelType');
-  this.prop('params');
   this.prop('error');
   this.prop('isBusy', {def: false});
   this.prop('isLoaded', {def: false});
@@ -705,7 +703,9 @@ Z.ModelArray = Z.Array.extend(function() {
   });
 
   this.def('find', function() {
-    var mapper = this.modelType().mapper, args = [this].concat(this.params());
+    var mapper = this.modelType().mapper,
+        args   = [this].concat(slice.call(arguments));
+
     this.isBusy(true);
     mapper.findModels.apply(mapper, args);
     return this;

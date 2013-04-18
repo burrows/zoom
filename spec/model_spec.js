@@ -610,13 +610,6 @@ describe('Z.Model.find', function() {
     expect(ms.modelType()).toBe(Test.BasicModel);
   });
 
-  it('should set the arguments as the `params` property', function() {
-    var ms = Test.BasicModel.find();
-    expect(ms.params()).toEq([]);
-    ms = Test.BasicModel.find('foo', 1, 'bar');
-    expect(ms.params()).toEq(['foo', 1, 'bar']);
-  });
-
   it("should set the array's `isBusy` property to `true`", function() {
     var ms = Test.BasicModel.find();
     expect(ms.isBusy()).toBe(true);
@@ -632,7 +625,7 @@ describe('Z.ModelArray', function() {
   var array;
 
   beforeEach(function() {
-    array = Z.ModelArray.create({modelType: Test.BasicModel, params: []});
+    array = Z.ModelArray.create({modelType: Test.BasicModel});
     spyOn(Test.BasicModel.mapper, 'findModels');
   });
 
@@ -648,10 +641,9 @@ describe('Z.ModelArray', function() {
       expect(Test.BasicModel.mapper.findModels).toHaveBeenCalledWith(array);
     });
 
-    it('should pass the `params` property as the remaining arguments to the `findModels` method on the mapper', function() {
-      array.params([1,2,3]);
-      array.find();
-      expect(Test.BasicModel.mapper.findModels).toHaveBeenCalledWith(array, 1,2,3);
+    it('should forward the `find` arguments as the remaining arguments to the `findModels` method on the mapper', function() {
+      array.find(1,2,3);
+      expect(Test.BasicModel.mapper.findModels).toHaveBeenCalledWith(array,1,2,3);
     });
 
     it('should return itself', function() {
