@@ -5,10 +5,13 @@ var slice = Array.prototype.slice;
 // Public: Event type constants.
 Z.KeyDown        = 'KeyDown';
 Z.KeyUp          = 'KeyUp';
+Z.LeftClick      = 'LeftClick';
 Z.LeftMouseDown  = 'LeftMouseDown';
 Z.LeftMouseUp    = 'LeftMouseUp';
+Z.RightClick     = 'RightClick';
 Z.RightMouseDown = 'RightMouseDown';
 Z.RightMouseUp   = 'RightMouseUp';
+Z.OtherClick     = 'OtherClick';
 Z.OtherMouseDown = 'OtherMouseDown';
 Z.OtherMouseUp   = 'OtherMouseUp';
 Z.MouseMove      = 'MouseMove';
@@ -77,7 +80,7 @@ Z.MouseEvent = Z.Event.extend(function() {
   // Internal: Converts the event's `kind` to the name of a handler method name
   // that views can implement in order to be notified of the event.
   this.def('handler', function() {
-    return this.supr().replace(/^leftM/, 'm');
+    return this.supr().replace(/^leftM/, 'm').replace(/^leftC/, 'c');
   });
 
   // Internal: Specifies the properties for the `toString` method to display.
@@ -111,7 +114,9 @@ Z.EventListener = Z.Object.extend(function() {
   keyEvents = ['keydown', 'keyup'];
 
   // Internal: List of native mouse events to listen for.
-  mouseEvents = ['mousemove', 'mousedown', 'mouseup', 'mouseover', 'mouseout'];
+  mouseEvents = [
+    'click', 'mousemove', 'mousedown', 'mouseup', 'mouseover', 'mouseout'
+  ];
 
   // Internal: Builds a `Z.KeyEvent` object from the given native key event.
   function keyEvent(native) {
@@ -146,6 +151,7 @@ Z.EventListener = Z.Object.extend(function() {
     else {
       button = {0: 'left', 2: 'right'}[native.button] || 'other';
       kind   = {
+        click:     {left: Z.LeftClick,     right: Z.RightClick,     other: Z.OtherClick},
         mousedown: {left: Z.LeftMouseDown, right: Z.RightMouseDown, other: Z.OtherMouseDown},
         mouseup:   {left: Z.LeftMouseUp,   right: Z.RightMouseUp,   other: Z.OtherMouseUp}
       }[type][button];

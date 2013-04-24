@@ -21,18 +21,22 @@ describe('Z.EventListener', function() {
 
   describe('mouse event listener', function() {
     it("should observe events on the container, create `Z.MouseEvent` objects and pass them to the given callback", function() {
-      simulateMouseEvent(container, 'mousedown');
+      simulateMouseEvent(container, 'click');
       expect(events[0]).not.toBe(null);
       expect(events[0].isA(Z.MouseEvent)).toBe(true);
-      expect(events[0].kind).toBe(Z.LeftMouseDown);
+      expect(events[0].kind).toBe(Z.LeftClick);
+
+      simulateMouseEvent(container, 'mousedown');
+      expect(events[1].isA(Z.MouseEvent)).toBe(true);
+      expect(events[1].kind).toBe(Z.LeftMouseDown);
 
       simulateMouseEvent(container, 'mouseup');
-      expect(events[1].isA(Z.MouseEvent)).toBe(true);
-      expect(events[1].kind).toBe(Z.LeftMouseUp);
+      expect(events[2].isA(Z.MouseEvent)).toBe(true);
+      expect(events[2].kind).toBe(Z.LeftMouseUp);
 
       simulateMouseEvent(container, 'mousemove');
-      expect(events[2].isA(Z.MouseEvent)).toBe(true);
-      expect(events[2].kind).toBe(Z.MouseMove);
+      expect(events[3].isA(Z.MouseEvent)).toBe(true);
+      expect(events[3].kind).toBe(Z.MouseMove);
     });
   });
 
