@@ -62,6 +62,11 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     }
   });
 
+  // Public: When set to `true`, the `updateHash` method will cause the new
+  // location to be pushed onto the browser's history. When set to `false`, a
+  // the new location will not be added to the browser's history.
+  this.prop('push', {def: true});
+
   // Public: The `Z.Router` constructor.
   //
   // callback - A function to invoke whenever the user changes the browser's
@@ -153,6 +158,10 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
 
   // Public: Sets the browser's location hash to the value of the `hash`
   // property if it has changed since the last time `updateHash` was called.
+  //
+  // If the `push` property is set to `true` then the new location will be added
+  // to the browser's history. If `push` is `false` then the new location will
+  // not be added to the browser's history.
   this.def('updateHash', function() {
     var oldhash, newhash;
     if (!this.__needsUpdate__) { return; }
@@ -162,7 +171,12 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
 
     if (oldhash.replace(stripHash, '') !== newhash.replace(stripHash, '')) {
       this.__updatingHash__ = true;
-      this.location.hash = newhash;
+      if (this.push()) {
+        this.location.hash = newhash;
+      }
+      else {
+        this.location.replace(window.location.toString().replace(/#.*$/, '') + newhash);
+      }
     }
 
     this.__needsUpdate__ = false;
