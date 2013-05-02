@@ -601,6 +601,15 @@ Z.View = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
     return null;
   });
 
+  // Public: Makes a request the receiver's window to give the receiver key view
+  // status. Returns `true` if the view successfully gains key view status and
+  // `false` otherwise.
+  this.def('requestKeyView', function() {
+    var window = this.window();
+    if (!window) { return false; }
+    return window.makeKeyView(this);
+  });
+
   // Public: Sends an action up the superview chain until a view is found that
   // both implements a method with the given action name and returns a truthy
   // value. Each view's `delegate` will also get an opportunity to handle the

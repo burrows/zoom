@@ -879,6 +879,44 @@ describe('Z.View', function() {
     });
   });
 
+  describe('.requestKeyView', function() {
+    var w, v1, v2;
+
+    beforeEach(function() {
+      w = Z.Window.create(TestCompoundView);
+      v1 = TestView1.create();
+      v2 = TestView2.create();
+      w.mainView().addSubview(v1)
+      w.mainView().addSubview(v2)
+      w.makeKeyView(v1);
+    });
+
+    it('should give the receiver key view status', function() {
+      expect(w.keyView()).not.toBe(v2);
+      expect(v2.isKey()).toBe(false);
+      v2.requestKeyView();
+      expect(w.keyView()).toBe(v2);
+      expect(v2.isKey()).toBe(true);
+    });
+
+    it('should remove key view status from the current key view', function() {
+      expect(w.keyView()).toBe(v1);
+      expect(v1.isKey()).toBe(true);
+      v2.requestKeyView();
+      expect(w.keyView()).not.toBe(v1);
+      expect(v1.isKey()).toBe(false);
+    });
+
+    it('should return true when the request is successful', function() {
+      expect(v2.requestKeyView()).toBe(true);
+    });
+
+    it('should return false when the request is unsuccessful', function() {
+      v1.def('resignKeyView', function() { return false; });
+      expect(v2.requestKeyView()).toBe(false);
+    });
+  });
+
   describe('.send', function() {
     it('should send the action up the superview chain until a view implements the action and returns a truthy value', function() {
       var a = Z.View.create(),
