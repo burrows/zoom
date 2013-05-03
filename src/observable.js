@@ -437,7 +437,7 @@ Z.Observable = Z.Module.extend(function() {
         notification.current = this.get(path);
       }
       if (registration.opts.context) {
-        notification.context = registration.context;
+        notification.context = registration.opts.context;
       }
 
       registration.callback.call(registration.observer, notification);

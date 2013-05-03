@@ -460,6 +460,15 @@ describe('Z.Object KVO support:', function() {
       expect(observer.notification.hasOwnProperty('previous')).toBe(false);
     });
 
+    it('should fire the observer immediately when the `fire` option is set and include the `context` when the `context` option is set', function() {
+      var observer = {
+        notification: null,
+        nameDidChange: function(n) { this.notification = n; }
+      };
+      user.observe('name', observer, 'nameDidChange', { fire: true, context: 'foo' });
+      expect(observer.notification.context).toBe('foo');
+    });
+
     it('should invoke the action before the property change actually occurs when the `prior` option is set', function() {
       var observer = {
         notifications: [],
