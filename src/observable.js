@@ -366,7 +366,8 @@ Z.Observable = Z.Module.extend(function() {
   this.def('_set', setProperty);
 
   // Public: Sets the value of the key path to the given value unless the
-  // current value of the key path is already identical to the given value.
+  // current value of the key path is already equal to the given value (as
+  // determined by `Z.eq`).
   //
   // This is useful for cases where its important to avoid sending notifications
   // unless a value has actually changed.
@@ -376,7 +377,7 @@ Z.Observable = Z.Module.extend(function() {
   //
   // Returns `value`.
   this.def('setif', function(path, value) {
-    if (this.get(path) !== value) { this.set(path, value); }
+    if (!Z.eq(this.get(path), value)) { this.set(path, value); }
     return value;
   });
 

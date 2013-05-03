@@ -864,6 +864,16 @@ describe('Z.Object KVO support:', function() {
        u.setif('name', 'Bob');
        expect(triggered).toBe(0);
     });
+
+    it('should not trigger notifications when the new value is equal to the old value', function() {
+      var u         = User.create({name: [1,2,3]}),
+          triggered = 0,
+          observer  = {action: function() { triggered++; }};
+
+       u.observe('name', observer, 'action');
+       u.setif('name', [1,2,3]);
+       expect(triggered).toBe(0);
+    });
   });
 });
 
