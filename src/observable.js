@@ -365,6 +365,21 @@ Z.Observable = Z.Module.extend(function() {
   // objects.
   this.def('_set', setProperty);
 
+  // Public: Sets the value of the key path to the given value unless the
+  // current value of the key path is already identical to the given value.
+  //
+  // This is useful for cases where its important to avoid sending notifications
+  // unless a value has actually changed.
+  //
+  // path  - A string containing a key path.
+  // value - The value to set the key path to.
+  //
+  // Returns `value`.
+  this.def('setif', function(path, value) {
+    if (this.get(path) !== value) { this.set(path, value); }
+    return value;
+  });
+
   // Public: Registers an observer on the given path. Whenever some segment in
   // the path changes, the observer is notified by invoking the given action
   // with a notification object passed as an argument. The notification object

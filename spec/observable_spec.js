@@ -843,6 +843,28 @@ describe('Z.Object KVO support:', function() {
       expect(function() { u.name('Bob'); }).not.toThrow();
     });
   });
+
+  describe('.setif', function() {
+    it('should trigger notifications when the new value is different than the old value', function() {
+      var u         = User.create({name: 'Bob'}),
+          triggered = 0,
+          observer  = {action: function() { triggered++; }};
+
+       u.observe('name', observer, 'action');
+       u.setif('name', 'Bill');
+       expect(triggered).toBe(1);
+    });
+
+    it('should not trigger notifications when the new value is identical to the old value', function() {
+      var u         = User.create({name: 'Bob'}),
+          triggered = 0,
+          observer  = {action: function() { triggered++; }};
+
+       u.observe('name', observer, 'action');
+       u.setif('name', 'Bob');
+       expect(triggered).toBe(0);
+    });
+  });
 });
 
 describe('Z.Object dependent properties:', function() {
