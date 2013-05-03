@@ -2,7 +2,7 @@
   "name": "zoom",
   "version": "0.0.1",
   "devDependencies": {
-    "jshint": "~0.6",
+    "jshint": "~1.1",
     "jasmine-node": "~1.0",
     "benchmark": "~0.3",
     "watch": "~0.5",

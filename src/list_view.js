@@ -48,27 +48,27 @@ Z.ListView = Z.View.extend(function() {
     if (!isEmpty && showingEmpty) { this.removeEmptyView(); }
 
     switch (n.type) {
-      case 'change':
-        if (this.__prevContent__ && this.__prevContent__.size() > 0) {
-          this.contentItemsRemoved(0, this.__prevContent__.size());
-        }
+    case 'change':
+      if (this.__prevContent__ && this.__prevContent__.size() > 0) {
+        this.contentItemsRemoved(0, this.__prevContent__.size());
+      }
 
-        if (content && content.size() > 0) {
-          this.contentItemsAdded(content, 0);
-        }
+      if (content && content.size() > 0) {
+        this.contentItemsAdded(content, 0);
+      }
 
-        this.__prevContent__ = content;
-        break;
-      case 'insert':
-        this.contentItemsAdded(content.slice(i, size), i);
-        break;
-      case 'remove':
-        this.contentItemsRemoved(i, size);
-        break;
-      case 'update':
-        this.contentItemsRemoved(i, size);
-        this.contentItemsAdded(content.slice(i, size), i);
-        break;
+      this.__prevContent__ = content;
+      break;
+    case 'insert':
+      this.contentItemsAdded(content.slice(i, size), i);
+      break;
+    case 'remove':
+      this.contentItemsRemoved(i, size);
+      break;
+    case 'update':
+      this.contentItemsRemoved(i, size);
+      this.contentItemsAdded(content.slice(i, size), i);
+      break;
     }
 
     if (isEmpty && !showingEmpty && hasEmpty) { this.addEmptyView(); }

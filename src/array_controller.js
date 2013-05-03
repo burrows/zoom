@@ -34,25 +34,25 @@ Z.ArrayController = Z.Object.extend(Z.Observable, function() {
     var _this = this;
 
     switch (n.type) {
-      case 'change':
-        this.clearSelection();
-        this.rearrange();
-        break;
-      case 'insert':
-        if (n.current.size() === 1) { insert.call(_this, n.current.at(0)); }
-        else { this.rearrange(); }
-        break;
-      case 'remove':
-        if (n.previous.size() === 1) { remove.call(_this, n.previous.at(0)); }
-        else { this.rearrange(); }
-        break;
-      case 'update':
-        if (n.previous.size() === 1) {
-          remove.call(_this, n.previous.at(0));
-          insert.call(_this, n.current.at(0));
-        }
-        else { this.rearrange(); }
-        break;
+    case 'change':
+      this.clearSelection();
+      this.rearrange();
+      break;
+    case 'insert':
+      if (n.current.size() === 1) { insert.call(_this, n.current.at(0)); }
+      else { this.rearrange(); }
+      break;
+    case 'remove':
+      if (n.previous.size() === 1) { remove.call(_this, n.previous.at(0)); }
+      else { this.rearrange(); }
+      break;
+    case 'update':
+      if (n.previous.size() === 1) {
+        remove.call(_this, n.previous.at(0));
+        insert.call(_this, n.current.at(0));
+      }
+      else { this.rearrange(); }
+      break;
     }
   }
 
@@ -79,8 +79,7 @@ Z.ArrayController = Z.Object.extend(Z.Observable, function() {
   function insert(o) {
     var arranged = this.arranged(),
         cmp      = this.compareFn(),
-        filter   = this.filterFn(),
-        i;
+        filter   = this.filterFn();
 
     cmp    = cmp ? Z.bind(cmp, this) : null;
     filter = filter ? Z.bind(filter, this) : null;
@@ -106,7 +105,8 @@ Z.ArrayController = Z.Object.extend(Z.Observable, function() {
 
   // Public: Returns the size of the content array.
   this.prop('size', {
-    readonly: true, dependsOn: ['content.size'],
+    readonly: true,
+    dependsOn: ['content.size'],
     get: function() { return this.get('content.size') || 0; }
   });
 

@@ -40,7 +40,7 @@ Z.FastListView = Z.ListView.extend(function() {
       this.display();
     }
   }
-  
+
   // Internal: The callback function for the `node`'s `scroll` event. When the
   // view is scrolled we must adjust the `top` property and re-render the
   // subviews.
@@ -139,7 +139,9 @@ Z.FastListView = Z.ListView.extend(function() {
   // Public: Boolean property indicating whether or not the view currently has
   // rows with custom heights.
   this.prop('hasCustomRowHeights', {
-    readonly: true, cache: true, dependsOn: ['customRowHeightIndexes.size'],
+    readonly: true,
+    cache: true,
+    dependsOn: ['customRowHeightIndexes.size'],
     get: function() { return this.get('customRowHeightIndexes.size') > 0; }
   });
 
@@ -203,7 +205,7 @@ Z.FastListView = Z.ListView.extend(function() {
         range    = this.displayRange(),
         n        = range ? range[1] - range[0] + 1 : 0,
         repos    = [],
-        i, item, items, subview, offset, height, moved;
+        i, item, subview, offset, height, moved;
 
     if (this.showingEmpty()) {
       cnode.style.height = null;
@@ -217,7 +219,7 @@ Z.FastListView = Z.ListView.extend(function() {
     if (onode.scrollTop !== soffset) { onode.scrollTop = soffset; }
 
     (this.__z_subview2index__ = this.__subview2index__ || Z.H()).clear();
-    
+
     // sync the content items we want to display with their appropriate subviews
     if (n > 0) {
       for (i = range[0]; i <= range[1]; i++) {
@@ -233,7 +235,7 @@ Z.FastListView = Z.ListView.extend(function() {
         }
 
         this.__z_subview2index__.at(subview, i);
-    
+
         if (subview.content() !== item) {
           moved = true;
           subview.content(item);
@@ -267,10 +269,10 @@ Z.FastListView = Z.ListView.extend(function() {
   // view's `height` and `top` properties and trigger a display.
   this.def('didAttachNode', function() {
     var node = this.overflowNode();
-  
+
     this.__z_resizeListener__ = Z.bind(resizeListener, this);
     window.addEventListener('resize', this.__z_resizeListener__, false);
-  
+
     this.resumeScrollListener();
     this.scrollHeight(node.offsetHeight);
     this.scrollOffset(node.scrollTop);
@@ -334,7 +336,7 @@ Z.FastListView = Z.ListView.extend(function() {
   // i - The content item index to return the custom height for.
   //
   // Returns an integer.
-  this.def('customRowHeightForIndex', function(i) {
+  this.def('customRowHeightForIndex', function() {
     throw new Error("Z.FastListView.customRowHeightForIndex: must be overridden in sub-types when customRowHeightIndexes is used");
   });
 
@@ -361,7 +363,7 @@ Z.FastListView = Z.ListView.extend(function() {
     return this.hasCustomRowHeights() && this.__z_heights__.hasOwnProperty(i) ?
       this.__z_heights__[i] : this.rowHeight();
   });
-  
+
   // Internal: Returns the offset that should be applied to the item view at the
   // given index.
   //
@@ -392,18 +394,17 @@ Z.FastListView = Z.ListView.extend(function() {
   this.def('displayRange', function() {
     var size      = this.get('content.size'),
         hasCustom = this.hasCustomRowHeights(),
-        theight   = this.totalHeight(),
         sheight   = this.scrollHeight(),
         soffset   = this.scrollOffset(),
         rheight   = this.rowHeight(),
         overflow  = this.overflow(),
         nviews    = Math.min(Math.ceil(sheight / rheight), size),
         first, last, ofirst, olast;
-  
+
     if (size === 0 || nviews === 0) { return null; }
 
     first = Math.min(Math.floor(soffset / rheight), size - 1);
-  
+
     // if we have custom row heights we may need to adjust the first and last
     // views to display to ensure that we're inside the visible area and we
     // have enough views to fill the visible area
@@ -421,12 +422,12 @@ Z.FastListView = Z.ListView.extend(function() {
     }
 
     last = Math.min(first + nviews - 1, size - 1);
-  
+
     // add in the overflow views
     ofirst = Math.max(first - Math.floor(overflow / 2), 0);
     olast  = Math.min(last + (overflow - (first - ofirst)), size - 1);
     ofirst = Math.max(0, olast - (nviews + overflow) + 1);
-  
+
     return [ofirst, olast];
   });
 
@@ -496,15 +497,15 @@ Z.FastListView = Z.ListView.extend(function() {
   // partially visible.
   this.def('firstVisibleIndex', function() {
     var soffset = this.scrollOffset(), range = this.displayRange(), i;
-  
+
     if (!range) { return null; }
-  
+
     for (i = range[0]; i <= range[1]; i++) {
       if (this.rowOffsetForIndex(i) + this.rowHeightForIndex(i) > soffset) {
         return i;
       }
     }
-  
+
     return null;
   });
 
@@ -520,7 +521,7 @@ Z.FastListView = Z.ListView.extend(function() {
 
     return idx <= (size - 1) ? idx : null;
   });
-  
+
   // Public: Returns the first subview that is at least partially visible.
   this.def('firstVisibleSubview', function() {
     var idx = this.firstVisibleIndex();

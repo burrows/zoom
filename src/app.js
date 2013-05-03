@@ -114,7 +114,9 @@ Z.App = Z.Object.extend(Z.Observable, function() {
 
     // create the app's main window
     this.mainWindow(Z.Window.create(mainView, {
-      app: this, isMain: true, isKey: true
+      app: this,
+      isMain: true,
+      isKey: true
     }));
 
     this.windows(Z.A(this.mainWindow()));
