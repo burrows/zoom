@@ -530,12 +530,12 @@
     });
 
     this.def('addError', function(attr, message) {
-      if (!this.errors()) {
-        this.errors(Z.Hash.create(function(h, k) { return h.at(k, Z.A()); }));
-      }
-
-      this.errors().at(attr).push(message);
+      var errors = this.errors();
+      if (!errors) { errors = this.errors(Z.Hash.create()); }
+      if (!errors.hasKey(attr)) { errors.at(attr, Z.A(message)); }
+      else { errors.at(attr).push(message); }
       setState.call(this, {invalid: true});
+      return this;
     });
 
     this.def('validate', function() {
