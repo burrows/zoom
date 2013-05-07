@@ -417,13 +417,15 @@
       setState.call(this, {busy: false});
     });
 
-    this.def('save', function() {
-      var state = this.sourceState(), args = [this].concat(slice.call(arguments));
+    this.def('save', function(ctx) {
+      var state = this.sourceState(), args = [this];
 
       if ((state !== NEW && state !== LOADED) || this.isBusy()) {
         throw new Error(Z.fmt("%@.save: can't save a model in the %@ state: %@",
                              this.typeName(), this.stateString(), this));
       }
+
+      if (ctx) { args.push(ctx); }
 
       this.validate();
 
@@ -459,10 +461,11 @@
       setState.call(this, {busy: false});
     });
 
-    this.def('destroy', function() {
-      var state = this.sourceState(), args = [this].concat(slice.call(arguments));
+    this.def('destroy', function(ctx) {
+      var state = this.sourceState(), args = [this];
 
       if (state === DESTROYED) { return this; }
+      if (ctx) { args.push(ctx); }
 
       if (this.isBusy()) {
         throw new Error(Z.fmt("%@.destroy: can't destroy a model in the %@ state: %@",

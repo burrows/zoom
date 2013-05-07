@@ -1051,12 +1051,12 @@ describe('Z.Model.save', function() {
     expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
-  it('should forward any arguments on to the `createModel` method', function() {
+  it('should forward the context argument on to the `createModel` method', function() {
     var m = Test.BasicModel.create({id: 1, foo: 'x', bar: 9 });
 
     expect(m.sourceState()).toBe(Z.Model.NEW);
-    m.save(1, 2, 3);
-    expect(Test.BasicModel.mapper.createModel).toHaveBeenCalledWith(m, 1, 2, 3);
+    m.save('foo');
+    expect(Test.BasicModel.mapper.createModel).toHaveBeenCalledWith(m, 'foo');
     expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
@@ -1075,9 +1075,9 @@ describe('Z.Model.save', function() {
 
     m.foo('y');
     expect(m.isDirty()).toBe(true);
-    m.save('a', 2);
+    m.save('a');
     expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
-    expect(Test.BasicModel.mapper.updateModel).toHaveBeenCalledWith(m, 'a', 2);
+    expect(Test.BasicModel.mapper.updateModel).toHaveBeenCalledWith(m, 'a');
   });
 
   it("should do nothing for a model that is `LOADED` and `isDirty` is false", function() {
@@ -1232,9 +1232,9 @@ describe('Z.Model.destroy', function() {
     expect(m.mapper.destroyModel).toHaveBeenCalledWith(m);
   });
 
-  it("should pass any arguments on to the mapper's `destroyModel` method", function() {
-    m.destroy('foo', 'bar');
-    expect(m.mapper.destroyModel).toHaveBeenCalledWith(m, 'foo', 'bar');
+  it("should pass the context argument on to the mapper's `destroyModel` method", function() {
+    m.destroy('foo');
+    expect(m.mapper.destroyModel).toHaveBeenCalledWith(m, 'foo');
   });
 
   it('should set `isBusy` to `true`', function() {
