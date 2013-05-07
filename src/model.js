@@ -517,12 +517,13 @@
                               this.typeName(), this.toString()));
       }
 
+      if (this.errors()) { this.errors().clear(); }
+
       if (!this.isDirty()) { return this; }
 
       changes = this.changes();
       changes.each(function(tuple) { self.set(tuple[0], tuple[1]); });
       changes.clear();
-      if (this.errors()) { this.errors().clear(); }
       setState.call(this, {dirty: false});
 
       return this;

@@ -1438,6 +1438,15 @@ describe('Z.Model.undoChanges', function() {
       expect(m.get('errors.size')).toBe(0);
     });
 
+    it('should clear the `errors` hash even when the model is not dirty', function() {
+      var m = Test.ValidatedModel.load({id: 12});
+      m.validate();
+      expect(m.get('errors.size') > 0).toBe(true);
+      expect(m.isDirty()).toBe(false);
+      m.undoChanges();
+      expect(m.get('errors.size')).toBe(0);
+    });
+
     it('should set `isDirty` to `false`', function() {
       expect(m.isDirty()).toBe(true);
       m.undoChanges();
