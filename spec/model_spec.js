@@ -1428,6 +1428,16 @@ describe('Z.Model.undoChanges', function() {
       expect(m.get('changes.size')).toBe(0);
     });
 
+    it('should clear the `errors` hash', function() {
+      var m = Test.ValidatedModel.load({id: 12});
+      m.bar(9);
+
+      m.validate();
+      expect(m.get('errors.size') > 0).toBe(true);
+      m.undoChanges();
+      expect(m.get('errors.size')).toBe(0);
+    });
+
     it('should set `isDirty` to `false`', function() {
       expect(m.isDirty()).toBe(true);
       m.undoChanges();

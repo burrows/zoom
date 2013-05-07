@@ -522,6 +522,7 @@
       changes = this.changes();
       changes.each(function(tuple) { self.set(tuple[0], tuple[1]); });
       changes.clear();
+      if (this.errors()) { this.errors().clear(); }
       setState.call(this, {dirty: false});
 
       return this;
