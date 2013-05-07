@@ -1102,6 +1102,14 @@ describe('Z.Model.save', function() {
     expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
+  it('should pass the context argument on to the validate method', function() {
+    var m = Test.ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
+    m.set('bar', 1);
+    spyOn(m, 'validate')
+    m.save('something');
+    expect(m.validate).toHaveBeenCalledWith('something');
+  });
+
   it('should throw an exception for a model that is `BUSY`', function() {
     var m = Test.BasicModel.load({id: 1, foo: 'x'});
 
@@ -1463,6 +1471,12 @@ describe('Z.Model.validate', function() {
       inlineValidatorRan  = true;
       inlineValidatorThis = this;
     });
+
+    this.registerValidator('validateX', {context: 'x'});
+    this.registerValidator('validateY', {context: 'y'});
+
+    this.def('validateX', function() {});
+    this.def('validateY', function() {});
   });
 
   beforeEach(function() {
@@ -1471,7 +1485,7 @@ describe('Z.Model.validate', function() {
     inlineValidatorThis = null;
   });
 
-  it('should run all registered validators', function() {
+  it('should run all registered validators without a context option', function() {
     spyOn(m, 'validatePresenceOfFoo');
     spyOn(m, 'validateBarIsOver20');
 
@@ -1481,6 +1495,27 @@ describe('Z.Model.validate', function() {
     expect(m.validateBarIsOver20).toHaveBeenCalled();
     expect(inlineValidatorRan).toBe(true);
     expect(inlineValidatorThis).toBe(m);
+  });
+
+  it('should only run validations with a context option when the option matches the context passed to validate', function() {
+    spyOn(m, 'validateX');
+    spyOn(m, 'validateY');
+
+    m.validate();
+    expect(m.validateX).not.toHaveBeenCalled();
+    expect(m.validateY).not.toHaveBeenCalled();
+    m.validateX.reset();
+    m.validateY.reset();
+
+    m.validate('x');
+    expect(m.validateX).toHaveBeenCalled();
+    expect(m.validateY).not.toHaveBeenCalled();
+    m.validateX.reset();
+    m.validateY.reset();
+
+    m.validate('y');
+    expect(m.validateX).not.toHaveBeenCalled();
+    expect(m.validateY).toHaveBeenCalled();
   });
 
   it('should set `isInvalid` if any validators add an error to the `errors` hash', function() {

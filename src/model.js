@@ -427,7 +427,7 @@
 
       if (ctx) { args.push(ctx); }
 
-      this.validate();
+      this.validate(ctx);
 
       if (this.isInvalid()) { return this; }
 
@@ -541,7 +541,7 @@
       return this;
     });
 
-    this.def('validate', function() {
+    this.def('validate', function(ctx) {
       var validators = this.__z_validators__, validator, opts, i, len;
 
       if (this.errors()) { this.errors().clear(); }
@@ -550,6 +550,10 @@
         for (i = 0, len = validators.length; i < len; i++) {
           validator = validators[i][0];
           opts      = validators[i][1];
+
+          if (opts.hasOwnProperty('context') && opts.context !== ctx) {
+            continue;
+          }
 
           if (opts.hasOwnProperty('if')) {
             if (callValidatorFn(this, opts['if'])) {
