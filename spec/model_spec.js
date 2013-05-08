@@ -488,6 +488,16 @@ describe('Z.Model.load', function() {
       expect(p.tags().at(1).posts()).toEq(Z.A(p));
     });
 
+    it('should remove existing associations that are not present in the given attributes', function() {
+      var t1 = Test.Tag.load({id: 1, name: 'tag a'}),
+          t2 = Test.Tag.load({id: 2, name: 'tag b'}),
+          p  = Test.Post.load({id: 127, title: 'the title', body: 'the body', tags: [1, 2]});
+
+      expect(p.tags()).toEq(Z.A(t1, t2));
+      Test.Post.load({id: 127, title: 'the title', body: 'the body', tags: [2]});
+      expect(p.tags()).toEq(Z.A(t2));
+    });
+
     it('should not mark the associated models as `DIRTY` when they own the association', function() {
       var a;
 

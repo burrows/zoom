@@ -350,10 +350,10 @@
           for (i = 0, len = data.length; i < len; i++) {
             other = Z.isObject(data[i]) ? type.load(data[i]) :
               repo.retrieve(type, data[i]) || type.empty(data[i]);
-            if (!assoc.contains(other)) { others.push(other); }
+            others.push(other);
           }
 
-          assoc.push.apply(assoc, others);
+          assoc.replace(others);
 
           for (i = 0, len = others.length; i < len; i++) {
             setState.call(others[i], {dirty: false});
