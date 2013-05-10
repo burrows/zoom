@@ -790,12 +790,12 @@
       if (owner && state === LOADED) { setState.call(model, {dirty: true}); }
 
       if (!handlingInverse && inverse) {
-        for (j = 0, len = added.length; j < len; j++) {
-          added[j].inverseDidAdd(inverse, model);
-        }
-
         for (j = 0, len = removed.length; j < len; j++) {
           removed[j].inverseDidRemove(inverse, model);
+        }
+
+        for (j = 0, len = added.length; j < len; j++) {
+          added[j].inverseDidAdd(inverse, model);
         }
       }
 

@@ -2101,6 +2101,24 @@ describe('Z.Model `hasMany` association', function() {
       expect(b1.foos()).toEq(Z.A());
       expect(b2.foos()).toEq(Z.A());
     });
+
+    it('should properly set the other side when an existing associated model removed and added in a call to `repalce`', function() {
+      var f  = Test.Foo.create(),
+          b1 = Test.Bar.create(),
+          b2 = Test.Bar.create();
+
+      f.bars().push(b1, b2);
+
+      expect(f.bars()).toEq(Z.A(b1, b2));
+      expect(b1.foos()).toEq(Z.A(f));
+      expect(b2.foos()).toEq(Z.A(f));
+
+      f.bars().replace([b2, b1]);
+
+      expect(f.bars()).toEq(Z.A(b2, b1));
+      expect(b1.foos()).toEq(Z.A(f));
+      expect(b2.foos()).toEq(Z.A(f));
+    });
   });
 });
 
