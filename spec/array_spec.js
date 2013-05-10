@@ -550,13 +550,15 @@ describe('Z.Array `last` property', function() {
     expect(observer.notifications[2].previous).toBe(2);
     expect(observer.notifications[2].current).toBe(9);
     a.splice(1, 2, 100, 200, 300, 400);
-    expect(observer.notifications.length).toBe(4);
-    expect(observer.notifications[3].previous).toBe(9);
-    expect(observer.notifications[3].current).toBe(400);
-    a.splice(0);
     expect(observer.notifications.length).toBe(5);
-    expect(observer.notifications[4].previous).toBe(400);
-    expect(observer.notifications[4].current).toBeNull();
+    expect(observer.notifications[3].previous).toBe(9);
+    expect(observer.notifications[3].current).toBe(200);
+    expect(observer.notifications[4].previous).toBe(200);
+    expect(observer.notifications[4].current).toBe(400);
+    a.splice(0);
+    expect(observer.notifications.length).toBe(6);
+    expect(observer.notifications[5].previous).toBe(400);
+    expect(observer.notifications[5].current).toBeNull();
   });
 });
 

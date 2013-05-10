@@ -128,7 +128,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
       break;
     case 'update':
       if (idx === 0)       { this.willChangeProperty('first'); }
-      if (idx === len - 1) { this.willChangeProperty('last'); }
+      if (idx + n === len) { this.willChangeProperty('last'); }
       this.willChangeProperty('@', {
         type     : 'update',
         range    : [idx, n],
@@ -204,8 +204,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
       });
       break;
     case 'update':
-      if (idx === 0) { this.didChangeProperty('first'); }
-      if (idx === len - 1) { this.didChangeProperty('last'); }
+      if (idx === 0)       { this.didChangeProperty('first'); }
+      if (idx + n === len) { this.didChangeProperty('last'); }
       this.didChangeProperty('@', {
         type    : 'update',
         range   : [idx, n],
@@ -408,11 +408,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Returns the receiver.
   // Throws `Error` when given an index that is out of range.
   this.def('splice', function(i, n) {
-    var items = slice.call(arguments, 2),
-        len   = this.size(),
-        idx   = i < 0 ? len + i : i,
-        expand, insertIdx, insertNum, removeIdx, removeNum, updateIdx,
-        updateNum;
+    var items    = this.__z_items__,
+        newItems = slice.call(arguments, 2),
+        len      = this.size(),
+        idx      = i < 0 ? len + i : i,
+        insertIdx, insertNum, removeIdx, removeNum, updateIdx, updateNum;
 
     if (idx < 0) {
       throw new Error(Z.fmt("Z.Array.splice: index `%@` is too small for %@", i, this));
@@ -420,25 +420,34 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
 
     if (n === void 0) { n = len - idx; }
 
-    expand    = idx >= len;
-    updateNum = expand ? 0 : Z.min(n, items.length);
+    updateNum = idx >= len ? 0 : Z.min(n, newItems.length);
     updateIdx = idx;
-    insertNum = items.length - updateNum;
+    insertNum = newItems.length - updateNum;
     insertIdx = idx + updateNum;
-    removeNum = expand ? 0 : n - updateNum;
+    removeNum = idx >= len ? 0 : n - updateNum;
     removeIdx = idx + updateNum;
 
-    if (updateNum > 0) { willMutate.call(this, 'update', updateIdx, updateNum); }
-    if (insertNum > 0)  { willMutate.call(this, 'insert', insertIdx, insertNum); }
-    if (removeNum > 0)  { willMutate.call(this, 'remove', removeIdx, removeNum); }
+    // handle updates
+    if (updateNum > 0) {
+      willMutate.call(this, 'update', updateIdx, updateNum);
+      items.splice.apply(items, [updateIdx, updateNum].concat(newItems.slice(0, updateNum)));
+      didMutate.call(this, 'update', updateIdx, updateNum);
+    }
 
-    if (expand) { this.__z_items__.length = idx; }
+    // handle removes
+    if (removeNum > 0) {
+      willMutate.call(this, 'remove', removeIdx, removeNum);
+      items.splice(removeIdx, removeNum);
+      didMutate.call(this, 'remove', removeIdx, removeNum);
+    }
 
-    this.__z_items__.splice.apply(this.__z_items__, [idx, n].concat(items));
-
-    if (updateNum > 0) { didMutate.call(this, 'update', updateIdx, updateNum); }
-    if (insertNum > 0) { didMutate.call(this, 'insert', insertIdx, insertNum); }
-    if (removeNum > 0) { didMutate.call(this, 'remove', removeIdx, removeNum); }
+    // handle inserts
+    if (insertNum > 0) {
+      willMutate.call(this, 'insert', insertIdx, insertNum);
+      if (insertIdx >= len) { items.length = insertIdx; }
+      items.splice.apply(items, [insertIdx, 0].concat(newItems.slice(updateNum)));
+      didMutate.call(this, 'insert', insertIdx, insertNum);
+    }
 
     return this;
   });
