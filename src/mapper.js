@@ -1,4 +1,5 @@
 Z.Mapper = Z.Object.extend(function() {
+  this.def('mungeAttributes', function() {});
   this.def('findModels', function() {});
   this.def('fetchModel', function() {});
   this.def('createModel', function() {});

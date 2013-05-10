@@ -327,6 +327,41 @@ describe('Z.Model.empty', function() {
 });
 
 describe('Z.Model.load', function() {
+  describe('attribute munging', function() {
+    var M;
+
+    beforeEach(function() {
+      M = Z.Model.extend(function() {
+        this.attr('foo', 'string');
+      });
+    });
+
+    it("should pass the given attributes to the mapper's `mungeAttributes` method if it exists", function() {
+      var attrs = {id: 1, foo: 'hello'};
+
+      M.mapper = {mungeAttributes: function() {}};
+
+      spyOn(M.mapper, 'mungeAttributes');
+
+      M.load(attrs);
+
+      expect(M.mapper.mungeAttributes).toHaveBeenCalledWith(M, attrs);
+    });
+
+    it('should use the updates made by the `mungeAttributes` mapper method', function() {
+      var m;
+
+      M.mapper = {
+        mungeAttributes: function(type, attrs) {
+          attrs.foo = attrs.foo.toUpperCase();
+        }
+      };
+
+      m = M.load({id: 3, foo: 'hello'});
+      expect(m.foo()).toBe('HELLO');
+    });
+  });
+
   describe('given attributes containing an id not in the identity map', function() {
     it('should return a new model instance with the given attributes', function() {
       var m = Test.BasicModel.load({ id: 126, foo: 's', bar: 1 });

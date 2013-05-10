@@ -310,6 +310,10 @@
       var associations = this.associationDescriptors(), associated = {},
           model, others, other, assoc, key, type, data, i, len, id;
 
+      if (this.mapper.mungeAttributes) {
+        this.mapper.mungeAttributes(this, attrs);
+      }
+
       if (Z.isUndefined(attrs.id)) {
         throw new Error(Z.fmt("%@.load: an `id` attribute is required",
                               this.typeName()));
