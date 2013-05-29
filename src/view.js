@@ -120,7 +120,7 @@
     // depends on for rendering. When any of the paths change, the view will
     // automatically set its `needsDisplay` property. This method is designed to
     // be overridden by sub-types and by default simply returns an empty array. Be
-    // sure to call `supr` when overriding so that diplay paths defined on parent
+    // sure to call `supr` when overriding so that display paths defined on parent
     // types are not lost.
     //
     // Examples
