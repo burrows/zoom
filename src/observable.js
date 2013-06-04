@@ -593,7 +593,7 @@ Z.Observable = Z.Module.extend(function() {
   //
   // Returns the receiver.
   this.def('willChangeProperty', function(k, opts) {
-    var regs, star, type, i, len, r, val, notification;
+    var regs, star, type, i, len, r, val, notification, prevGiven, prev;
 
     if (!this.__z_registrations__) { return this; }
 
@@ -604,20 +604,17 @@ Z.Observable = Z.Module.extend(function() {
 
     if (!regs) { return this; }
 
-    regs = regs.slice();
-    opts = opts ? Z.dup(opts) : {};
-    type = Z.del(opts, 'type') || 'change';
+    regs      = regs.slice();
+    opts      = opts ? Z.dup(opts) : {};
+    type      = Z.del(opts, 'type') || 'change';
+    prevGiven = opts.hasOwnProperty('previous');
+    prev      = Z.del(opts, 'previous');
 
     for (i = 0, len = regs.length; i < len; i++) {
       r = regs[i];
 
       if (r.opts.previous) {
-        if (opts.hasOwnProperty('previous')) {
-          r.previous[type] = opts.previous;
-        }
-        else {
-          r.previous[type] = r.observee.get(r.path);
-        }
+        r.previous[type] = prevGiven ? prev : r.observee.get(r.path);
       }
 
       if (r.tail.length > 0 && (val = this.get(k))) {
@@ -635,7 +632,6 @@ Z.Observable = Z.Module.extend(function() {
         if (r.opts.context) { notification.context = r.opts.context; }
         if (r.opts.previous) { notification.previous = r.previous[type]; }
 
-        Z.del(opts, 'previous');
         Z.merge(notification, opts);
 
         r.callback.call(r.observer, notification);
@@ -670,7 +666,7 @@ Z.Observable = Z.Module.extend(function() {
   // Returns the receiver.
   this.def('didChangeProperty', function(k, opts) {
     var cache = '__' + k + '_' + 'cached' + '__',
-        regs, star, type, i, len, r, val, notification;
+        regs, star, type, i, len, r, val, notification, curGiven, cur;
 
     delete this[cache];
 
@@ -683,9 +679,11 @@ Z.Observable = Z.Module.extend(function() {
 
     if (!regs) { return this; }
 
-    regs = regs.slice();
-    opts = opts ? Z.dup(opts) : {};
-    type = Z.del(opts, 'type') || 'change';
+    regs     = regs.slice();
+    opts     = opts ? Z.dup(opts) : {};
+    type     = Z.del(opts, 'type') || 'change';
+    curGiven = opts.hasOwnProperty('current');
+    cur      = Z.del(opts, 'current');
 
     for (i = 0, len = regs.length; i < len; i++) {
       r = regs[i];
@@ -700,15 +698,9 @@ Z.Observable = Z.Module.extend(function() {
       if (r.opts.context) { notification.context = r.opts.context; }
 
       if (r.opts.current) {
-        if (opts.hasOwnProperty('current')) {
-          notification.current = opts.current;
-        }
-        else {
-          notification.current = r.observee.get(r.path);
-        }
+        notification.current = curGiven ? cur : r.observee.get(r.path);
       }
 
-      Z.del(opts, 'current');
       Z.merge(notification, opts);
 
       if (r.tail.length > 0 && (val = this.get(k))) {
