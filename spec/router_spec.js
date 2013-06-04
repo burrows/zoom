@@ -38,16 +38,6 @@ describe('Z.Router', function() {
     });
   });
 
-  describe('.current', function() {
-    it('should clear the `params` hash when changed', function() {
-      router.set('params.foo', 1);
-      router.set('params.bar', 2);
-      expect(router.params()).toEq(Z.H('foo', 1, 'bar', 2));
-      router.current('search');
-      expect(router.params()).toEq(Z.H());
-    });
-  });
-
   describe('.hash', function() {
     it('should return `null` if `current` is `null`', function() {
       router.current(null);

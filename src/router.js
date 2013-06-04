@@ -21,12 +21,6 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // Internal: A regular expression that can be used to clean up a hash value.
   var stripHash = /^#|\/?$/;
 
-  // Internal: The `current` property observer - simply clears the `params` hash
-  // whenever `current` changes.
-  //
-  // Returns nothing.
-  function currentDidChange() { this.params().clear(); }
-
   // Internal: The `hash` property observer - simply records that the location
   // hash needs to be updated.
   //
@@ -113,7 +107,6 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   //
   // Returns nothing.
   this.def('start', function() {
-    this.observe('current', this, currentDidChange);
     this.observe('hash', this, hashDidChange);
     this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
     window.addEventListener('hashchange', this.__hashChangeListener__, false);
@@ -125,7 +118,6 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   //
   // Returns nothing.
   this.def('stop', function() {
-    this.stopObserving('current', this, currentDidChange);
     this.stopObserving('hash', this, hashDidChange);
     window.removeEventListener('hashchange', this.__hashChangeListener__, false);
   });
