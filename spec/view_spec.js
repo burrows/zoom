@@ -720,6 +720,21 @@ describe('Z.View', function() {
       expect(sv2.isNodeAttached()).toBe(false);
       expect(sv3.isNodeAttached()).toBe(true);
     });
+
+    it('should reset the dirtyDisplayPaths', function() {
+      var V, v;
+
+      V = Z.View.extend(function() {
+        this.prop('foo');
+        this.def('displayPaths', function() { return this.supr().concat('foo'); });
+      });
+
+      v = V.create().display();
+      v.foo(9);
+      expect(v.dirtyDisplayPaths).toEq({'foo': 'change'});
+      v.display();
+      expect(v.dirtyDisplayPaths).toEq({});
+    });
   });
 
   describe('.subview', function() {
@@ -793,6 +808,14 @@ describe('Z.View', function() {
       expect(v.needsDisplay()).toBe(false);
       p.name('Bob');
       expect(v.needsDisplay()).toBe(true);
+    });
+
+    it('should cause the view to record the path that changed and the type of change', function() {
+      expect(v.dirtyDisplayPaths).toEq({});
+      v.foo(2);
+      expect(v.dirtyDisplayPaths).toEq({'foo': 'change'});
+      p.name('Bob');
+      expect(v.dirtyDisplayPaths).toEq({'foo': 'change', 'content.name': 'change'});
     });
 
     it('should remove the observers when the view is destroyed', function() {

@@ -22,7 +22,10 @@
     views = {};
 
     // Internal: Observer callback for `displayPaths`.
-    function displayPathObserver() { this.needsDisplay(true); }
+    function displayPathObserver(n) {
+      this.dirtyDisplayPaths[n.path] = n.type;
+      this.needsDisplay(true);
+    }
 
     // Internal: Builds and returns the view's DOM node but does not attach it to
     // the document.
@@ -44,6 +47,10 @@
 
     // Public: A native property holding the DOM node managed by the view.
     this.node = null;
+
+    // Public: A native property holding the paths from the `displayPaths`
+    // property that have changed but not yet displayed.
+    this.dirtyDisplayPaths = null;
 
     // Public: Indicates whether this view's `node` is currently attached to the
     // DOM.
@@ -150,6 +157,8 @@
     this.def('init', function(props) {
       var self = this, subviewTypes = this.__subviewTypes__;
 
+      this.dirtyDisplayPaths = {};
+
       views[this.objectId] = this;
 
       if (subviewTypes) {
@@ -228,6 +237,8 @@
       else {
         if (this.respondTo('update')) { this.update(); } else { this.render(); }
       }
+
+      this.dirtyDisplayPaths = {};
 
       this.subviews().each('displayIfNeeded');
 
