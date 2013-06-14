@@ -3,95 +3,109 @@
 if (!this.Z) { require('./helper'); }
 
 describe('Z.Router', function() {
-  var router, currentRoute, currentUnknown, loc;
+  var stubloc = false, router, currentRoute, currentUnknown;
+
+  function routeHandler(name, params) {
+    currentRoute = {name: name, params: params};
+  }
+
+  function unknownRouteHandler(route) {
+    currentUnknown = route;
+  }
 
   beforeEach(function() {
-    loc            = {hash: ''};
     currentRoute   = null;
     currentUnknown = null;
-    router         = Z.Router.create(function(name, params) {
-      currentRoute = {name: name, params: params};
-    }, function(hash) {
-      currentUnknown = hash;
-    }, {location: loc});
 
-    router.route('home', /^$/, function() { return ''; });
+    if (!Z.global.location) {
+      Z.global.location = {hash: ''};
+      stubloc = true;
+    }
 
-    router.route('search', /^search\/(.*?)(?:\/p(\d+))?$/, function(params) {
+    Z.Router.registerHandler(routeHandler, unknownRouteHandler);
+
+    Z.Router.route('home', /^$/, function() { return ''; });
+
+    Z.Router.route('search', /^search\/(.*?)(?:\/p(\d+))?$/, function(params) {
       var hash = 'search/' + params.query;
       if (params.page) { hash = hash + '/p' + params.page; }
       return hash;
     });
 
-    router.route('showWidget', /^widgets\/(\d+)$/, function(params) {
+    Z.Router.route('showWidget', /^widgets\/(\d+)$/, function(params) {
       return '#widgets/' + params.id;
     });
 
-    router.start();
+    Z.Router.start();
+  });
+
+  afterEach(function() {
+    Z.Router.stop().reset();
+    if (stubloc) { Z.del(Z.global, 'location'); }
   });
 
   describe('.route', function() {
     it('should throw an exception if a route with the given name is alread defined', function() {
       expect(function() {
-      router.route('home', /foo/, function() {});
+        Z.Router.route('home', /foo/, function() {});
       }).toThrow("Z.Router.route: a route with the name 'home' already exists");
     });
   });
 
   describe('.hash', function() {
     it('should return `null` if `current` is `null`', function() {
-      router.current(null);
-      expect(router.hash()).toBe(null);
+      Z.Router.current(null);
+      expect(Z.Router.hash()).toBe(null);
     });
 
     it('should return `null` if `current` is set to an unknown route name', function() {
-      router.current('foobar');
-      expect(router.hash()).toBe(null);
+      Z.Router.current('foobar');
+      expect(Z.Router.hash()).toBe(null);
     });
 
     it('should use the route with the same name as the `current` property and generate a hash using the current value of `params`', function() {
-      router.current('home');
-      expect(router.hash()).toBe('#');
+      Z.Router.current('home');
+      expect(Z.Router.hash()).toBe('#');
 
-      router.current('search');
-      router.set('params.query', 'findme');
-      expect(router.hash()).toBe('#search/findme');
+      Z.Router.current('search');
+      Z.Router.set('params.query', 'findme');
+      expect(Z.Router.hash()).toBe('#search/findme');
 
-      router.set('params.page', 12);
-      expect(router.hash()).toBe('#search/findme/p12');
+      Z.Router.set('params.page', 12);
+      expect(Z.Router.hash()).toBe('#search/findme/p12');
 
-      router.current('showWidget');
-      router.set('params.id', 121);
-      expect(router.hash()).toBe('#widgets/121');
+      Z.Router.current('showWidget');
+      Z.Router.set('params.id', 121);
+      expect(Z.Router.hash()).toBe('#widgets/121');
     });
   });
 
   describe('.routeHash', function() {
     it('should find the first matching route, extract params, and invoke callback with route name and params', function() {
-      router.routeHash('');
+      Z.Router.routeHash('');
       expect(currentRoute.name).toBe('home');
       expect(currentRoute.params).toEq([]);
 
-      router.routeHash('search/something/p3');
+      Z.Router.routeHash('search/something/p3');
       expect(currentRoute.name).toBe('search');
       expect(currentRoute.params).toEq(['something', '3']);
     });
 
     it('should invoke the errback if no matching route is found', function() {
       expect(currentUnknown).toBe(null);
-      router.routeHash('foo/bar/baz');
+      Z.Router.routeHash('foo/bar/baz');
       expect(currentUnknown).toBe('foo/bar/baz');
     });
   });
 
   describe('.updateHash', function() {
     it('should set the location hash to the current value of the `hash` property', function() {
-      router.current('showWidget');
-      router.set('params.id', 452);
+      Z.Router.current('showWidget');
+      Z.Router.set('params.id', 452);
 
-      expect(loc.hash).toBe('');
-      router.updateHash();
-      expect(loc.hash).toBe('#widgets/452');
+      expect(Z.global.location.hash).toBe('');
+      Z.Router.updateHash();
+      expect(Z.global.location.hash).toBe('#widgets/452');
     });
   });
 
@@ -100,9 +114,9 @@ describe('Z.Router', function() {
     });
 
     it('should lookup the route and invoke its generator with the given params', function() {
-      expect(router.generate('home')).toBe('#');
-      expect(router.generate('search', {query: 'foo', page: 9})).toBe('#search/foo/p9');
-      expect(router.generate('showWidget', {id: 973})).toBe('#widgets/973');
+      expect(Z.Router.generate('home')).toBe('#');
+      expect(Z.Router.generate('search', {query: 'foo', page: 9})).toBe('#search/foo/p9');
+      expect(Z.Router.generate('showWidget', {id: 973})).toBe('#widgets/973');
     });
   });
 });

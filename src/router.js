@@ -1,15 +1,15 @@
-// The `Z.Router` type provides an object that can be used to add location hash
-// routing to an application. Instances observe changes to the browser's
-// location hash (`window.location.hash` via the `window`'s `hashchange` event),
-// match the new hash value against the defined routes, and trigger a callback
-// with the matching route name and any parameters extracted from the hash.
+// The `Z.Router` object can be used to add location hash routing to an
+// application. It observes changes to the browser's location hash
+// (`window.location.hash` via the `window`'s `hashchange` event), matches the
+// new hash value against the defined routes, and triggers a callback with the
+// matching route name and any parameters extracted from the hash value.
 //
 // When an application decides that it wants to update the current hash, it can
-// set the `current` property of the router to the name of a defined route and
-// set any parameters necessary to generate the new hash. To actually modify the
-// browser's hash, the `updateHash` method must be used. This is typically done
-// during an application run loop. Calling the `updateHash` method will not
-// trigger the router's callback.
+// set the `Z.Router.current` property to the name of a defined route and set
+// any parameters (`Z.Router.params`) necessary to generate the new hash. To
+// actually modify the browser's hash, the `Z.Router.updateHash` method must be
+// used. This is typically done during the run loop. Calling the `updateHash`
+// method will not trigger the router's callback.
 //
 // Routes are defined with a matcher regular expression and a generator
 // function. The regular expression may contain capturing parenthesis, the
@@ -18,8 +18,19 @@
 // to construct a new hash when either the `current` or `params` properties
 // change.
 Z.Router = Z.Object.extend(Z.Observable, function() {
+  var stripHash, callbacks, errbacks, routes;
+
   // Internal: A regular expression that can be used to clean up a hash value.
-  var stripHash = /^#|\/?$/;
+  stripHash = /^#|\/?$/;
+
+  // Internal: A list of route handlers.
+  callbacks = Z.A();
+
+  // Internal: A list of unknown route handlers.
+  errbacks = Z.A();
+
+  // Internal: A native object containing route definitions.
+  routes = {};
 
   // Internal: The `hash` property observer - simply records that the location
   // hash needs to be updated.
@@ -32,7 +43,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // Returns nothing.
   function processLocationHashChange() {
     if (this.__updatingHash__) { this.__updatingHash__ = false; return; }
-    this.routeHash(this.location.hash);
+    this.routeHash(Z.global.location.hash);
   }
 
   // Public: The name of the current route. Updating this property an then
@@ -41,7 +52,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   this.prop('current');
 
   // Public: A `Z.Hash` containing the parameters to use to generate the hash.
-  this.prop('params');
+  this.prop('params', {def: Z.H()});
 
   // Public: A computed property that returns a string to use as the browser's
   // location hash. The `updateHash` method must be called after this property
@@ -50,8 +61,8 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     dependsOn: ['current', 'params.@'],
     readonly: true,
     get: function() {
-      var current = this.current(), params  = this.params().toNative();
-      if (!current || !this.routes[current]) { return null; }
+      var current = this.current(), params = this.params().toNative();
+      if (!current || !routes[current]) { return null; }
       return this.generate(current, params);
     }
   });
@@ -61,7 +72,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // the new location will not be added to the browser's history.
   this.prop('push', {def: true});
 
-  // Public: The `Z.Router` constructor.
+  // Public: Registers handlers to be invoked whenever a route is matched.
   //
   // callback - A function to invoke whenever the user changes the browser's
   //            location hash and a matching route is found. The name of the
@@ -70,13 +81,22 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // errback  - A function to invoke when the user changes the browser's
   //            location hash to a value that does not match any routes. The
   //            hash value will be passed to this function.
-  this.def('init', function(callback, errback,  opts) {
-    this.routes   = {};
-    this.callback = callback;
-    this.errback  = errback;
-    this.location = (opts && opts.location) || window.location;
-    this.params(Z.H());
-    this.supr();
+  //
+  // Returns the receiver.
+  this.def('registerHandler', function(callback, errback) {
+    callbacks.push(callback);
+    errbacks.push(errback);
+    return this;
+  });
+
+  // Public: Deregisters route handlers so that they will no longer be invoked
+  // when a route change is processed.
+  //
+  // Returns the receiver.
+  this.def('deregisterHandler', function(callback, errback) {
+    callbacks.remove(callback);
+    errbacks.remove(errback);
+    return this;
   });
 
   // Public: Defines a new route.
@@ -93,11 +113,11 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // Returns the receiver.
   // Throws `Error` if a route with the given name already exists.
   this.def('route', function(name, matcher, generator) {
-    if (this.routes[name]) {
+    if (routes[name]) {
       throw new Error(Z.fmt("Z.Router.route: a route with the name '%@' already exists", name));
     }
 
-    this.routes[name] = {matcher: matcher, generator: generator};
+    routes[name] = {matcher: matcher, generator: generator};
 
     return this;
   });
@@ -105,21 +125,32 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // Public: Starts the rotuer by causing it to start observing `hashchange`
   // events as well as changes to the `hash` property.
   //
-  // Returns nothing.
+  // Returns the receiver.
   this.def('start', function() {
     this.observe('hash', this, hashDidChange);
     this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
     window.addEventListener('hashchange', this.__hashChangeListener__, false);
     this.__hashChangeListener__();
+    return this;
   });
 
   // Public: Stops the router by causing it to stop observing `hashchange`
   // events and changes to the `hash` property.
   //
-  // Returns nothing.
+  // Returns the receiver.
   this.def('stop', function() {
     this.stopObserving('hash', this, hashDidChange);
     window.removeEventListener('hashchange', this.__hashChangeListener__, false);
+    return this;
+  });
+
+  // Public: Resets the router by clearing all defined routes and route
+  // handlers.
+  this.def('reset', function() {
+    callbacks.clear();
+    errbacks.clear();
+    routes = {};
+    return this;
   });
 
   // Internal: Takes a hash value and attempts to find a matching route. When a
@@ -131,20 +162,26 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   //
   // Returns `true` if a match was found and `false` otherwise.
   this.def('routeHash', function(hash) {
-    var name, match;
+    var r, match, route, params;
 
     hash = hash.replace(stripHash, '');
 
-    for (name in this.routes) {
-      if (!this.routes.hasOwnProperty(name)) { continue; }
+    for (r in routes) {
+      if (!routes.hasOwnProperty(r)) { continue; }
 
-      if ((match = this.routes[name].matcher.exec(hash))) {
-        this.callback(name, match.slice(1));
-        return true;
+      if ((match = routes[r].matcher.exec(hash))) {
+        route  = r;
+        params = match.slice(1);
+        break;
       }
     }
 
-    this.errback(hash);
+    if (route) {
+      callbacks.each(function(f) { f(route, params); });
+      return true;
+    }
+
+    errbacks.each(function(f) { f(hash); });
     return false;
   });
 
@@ -158,16 +195,16 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     var oldhash, newhash;
     if (!this.__needsUpdate__) { return; }
 
-    oldhash = this.location.hash;
+    oldhash = Z.global.location.hash;
     newhash = this.hash();
 
     if (oldhash.replace(stripHash, '') !== newhash.replace(stripHash, '')) {
       this.__updatingHash__ = true;
       if (this.push()) {
-        this.location.hash = newhash;
+        Z.global.location.hash = newhash;
       }
       else {
-        this.location.replace(window.location.toString().replace(/#.*$/, '') + newhash);
+        Z.global.location.replace(Z.global.location.toString().replace(/#.*$/, '') + newhash);
       }
     }
 
@@ -184,7 +221,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // Returns a string containing the generated hash.
   // Throws `Error` if a route with the given name does not exist.
   this.def('generate', function(name, params) {
-    var route = this.routes[name], hash;
+    var route = routes[name], hash;
 
     if (!route) {
       throw new Error(Z.fmt("Z.Router.generate: unknown route name: '%@'", name));
@@ -196,5 +233,5 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
 
     return hash;
   });
-});
+}).create();
 
