@@ -1,25 +1,27 @@
 NODE_PATH := build
 SPEC ?= ./spec
 
-SRCS := util.js             \
-        object.js           \
-        module.js           \
-        orderable.js        \
-        enumerable.js       \
-        observable.js       \
-        array.js            \
-        hash.js             \
-        mapper.js           \
-        model.js            \
-        state.js            \
-        event.js            \
-        view.js             \
-        window.js           \
-        app.js              \
-        router.js           \
-        container_view.js   \
-        list_view.js        \
-        fast_list_view.js   \
+SRCS := util.js              \
+        object.js            \
+        module.js            \
+        orderable.js         \
+        enumerable.js        \
+        observable.js        \
+        array.js             \
+        hash.js              \
+        mapper.js            \
+        model.js             \
+        model_array.js       \
+        paged_model_array.js \
+        state.js             \
+        event.js             \
+        view.js              \
+        window.js            \
+        app.js               \
+        router.js            \
+        container_view.js    \
+        list_view.js         \
+        fast_list_view.js    \
         array_controller.js
 
 default: spec

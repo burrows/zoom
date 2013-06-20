@@ -371,16 +371,12 @@
       return model;
     });
 
-    this.def('find', function() {
-      var a;
-
+    this.def('find', function(opts) {
       if (!this.isType) {
         throw new Error('Z.Model.find: must be called on a model type');
       }
 
-      a = Z.ModelArray.create({modelType: this, isBusy: true, isLoaded: false});
-      a.find.apply(a, arguments);
-      return a;
+      return Z.ModelArray.create(this).load(opts);
     });
 
     this.def('fetch', function(id) {
@@ -702,37 +698,6 @@
       }
 
       return Z.fmt("#<%@ (%@) %@>", name, stateString, a.join(', '));
-    });
-  });
-
-  Z.ModelArray = Z.Array.extend(function() {
-    this.prop('modelType');
-    this.prop('error');
-    this.prop('isBusy', {def: false});
-    this.prop('isLoaded', {def: false});
-
-    this.def('init', function(props) {
-      this.supr();
-      if (props) { this.set(props); }
-    });
-
-    this.def('find', function() {
-      var mapper = this.modelType().mapper,
-          args   = [this].concat(slice.call(arguments));
-
-      this.isBusy(true);
-      mapper.findModels.apply(mapper, args);
-      return this;
-    });
-
-    this.def('findModelsDidSucceed', function() {
-      this.set({isBusy: false, isLoaded: true, error: null});
-      return this;
-    });
-
-    this.def('findModelsDidFail', function(error) {
-      this.set({isBusy: false, error: error});
-      return this;
     });
   });
 

@@ -652,84 +652,12 @@ describe('Z.Model.find', function() {
 
   it('should set the `modelType` property on the array to the receiver', function() {
     var ms = Test.BasicModel.find();
-    expect(ms.modelType()).toBe(Test.BasicModel);
+    expect(ms.modelType).toBe(Test.BasicModel);
   });
 
   it("should set the array's `isBusy` property to `true`", function() {
     var ms = Test.BasicModel.find();
     expect(ms.isBusy()).toBe(true);
-  });
-
-  it("should set the array's `isLoaded` property to `false`", function() {
-    var ms = Test.BasicModel.find();
-    expect(ms.isLoaded()).toBe(false);
-  });
-});
-
-describe('Z.ModelArray', function() {
-  var array;
-
-  beforeEach(function() {
-    array = Z.ModelArray.create({modelType: Test.BasicModel});
-    spyOn(Test.BasicModel.mapper, 'findModels');
-  });
-
-  describe('.find', function() {
-    it('should set `isBusy` to `true`', function() {
-      expect(array.isBusy()).toBe(false);
-      array.find();
-      expect(array.isBusy()).toBe(true);
-    });
-
-    it("should invoke the `findModels` method on the type's mapper with the array as the first argument", function() {
-      array.find();
-      expect(Test.BasicModel.mapper.findModels).toHaveBeenCalledWith(array);
-    });
-
-    it('should forward the `find` arguments as the remaining arguments to the `findModels` method on the mapper', function() {
-      array.find(1,2,3);
-      expect(Test.BasicModel.mapper.findModels).toHaveBeenCalledWith(array,1,2,3);
-    });
-
-    it('should return itself', function() {
-      expect(array.find()).toBe(array);
-    });
-  });
-
-  describe('.findModelsDidSucceed', function() {
-    it('should set `isBusy` to `false` and `isLoaded` to `true`', function() {
-      array.find();
-      expect(array.isBusy()).toBe(true);
-      expect(array.isLoaded()).toBe(false);
-      array.findModelsDidSucceed();
-      expect(array.isBusy()).toBe(false);
-      expect(array.isLoaded()).toBe(true);
-    });
-
-    it('should clear the current `error`', function() {
-      array.error('some error');
-      expect(array.error()).toBe('some error');
-      array.findModelsDidSucceed();
-      expect(array.error()).toBeNull();
-    });
-  });
-
-  describe('.fetchModelsDidFail', function() {
-    it('should set `isBusy` to `false` and leave `isLoaded` unchanged', function() {
-      array.find();
-      expect(array.isBusy()).toBe(true);
-      expect(array.isLoaded()).toBe(false);
-      array.findModelsDidFail();
-      expect(array.isBusy()).toBe(false);
-      expect(array.isLoaded()).toBe(false);
-    });
-
-    it('should set the `error` property to the given error message', function() {
-      expect(array.error()).toBeNull();
-      array.find();
-      array.findModelsDidFail('the error message');
-      expect(array.error()).toBe('the error message');
-    });
   });
 });
 
