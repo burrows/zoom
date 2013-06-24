@@ -3,10 +3,11 @@ Z.PagedModelArray = Z.Array.extend(function() {
 
   this.prop('isBusy', {def: false});
 
-  this.def('init', function(modelType, pageSize) {
+  this.def('init', function(modelType, pageSize, defaultOpts) {
     this.supr();
     this.modelType     = modelType;
     this.pageSize      = pageSize;
+    this.defaultOpts   = defaultOpts || {};
     this.__busyPages__ = Z.H();
   });
 
@@ -23,7 +24,7 @@ Z.PagedModelArray = Z.Array.extend(function() {
   this.def('load', function(opts) {
     var page;
 
-    this.opts = Z.dup(opts || {});
+    this.opts = Z.merge({}, this.defaultOpts, opts);
 
     page = typeof this.opts.page === 'number' ? Z.del(this.opts, 'page') : 0;
 

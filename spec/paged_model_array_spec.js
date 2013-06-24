@@ -34,6 +34,12 @@ describe('Z.PagedModelArray', function() {
       expect(array.opts).toEq({foo: 'blah', bar: 8});
     });
 
+    it('should merge the given options with the default options given to the `init` method', function() {
+      var a = Z.PagedModelArray.create(Model, 3, {a: 1, b: 2});
+      a.load({b: 20, c: 30});
+      expect(a.opts).toEq({a: 1, b: 20, c: 30});
+    });
+
     it('should clear the existing contents of the array', function() {
       spyOn(array, 'clear');
       array.load();
