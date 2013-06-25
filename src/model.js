@@ -376,7 +376,7 @@
         throw new Error('Z.Model.find: must be called on a model type');
       }
 
-      return Z.ModelArray.create(this).load(opts);
+      return Z.ModelArray.create(this).find(opts);
     });
 
     this.def('fetch', function(id) {

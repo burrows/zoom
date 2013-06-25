@@ -15,13 +15,13 @@ Z.PagedModelArray = Z.Array.extend(function() {
     var r = this.supr.apply(this, arguments), pageSize = this.pageSize;
 
     if (arguments.length === 1 && pageSize && !r) {
-      this.loadPage(Math.floor(i / pageSize));
+      this.findPage(Math.floor(i / pageSize));
     }
 
     return r;
   });
 
-  this.def('load', function(opts) {
+  this.def('find', function(opts) {
     var page;
 
     this.opts = Z.merge({}, this.defaultOpts, opts);
@@ -29,12 +29,12 @@ Z.PagedModelArray = Z.Array.extend(function() {
     page = typeof this.opts.page === 'number' ? Z.del(this.opts, 'page') : 0;
 
     this.clear();
-    this.loadPage(page);
+    this.findPage(page);
 
     return this;
   });
 
-  this.def('loadPage', function(page) {
+  this.def('findPage', function(page) {
     if (!this.__busyPages__.hasKey(page)) {
       this.__busyPages__.at(page, true);
       this.setif('isBusy', true);

@@ -3,7 +3,7 @@ Z.ModelArray = Z.Array.extend(function() {
     var opts = this.__queued__;
     if (opts) {
       this.__queued__ = null;
-      this.load(opts);
+      this.find(opts);
     }
   }
 
@@ -16,7 +16,7 @@ Z.ModelArray = Z.Array.extend(function() {
     this.modelType = modelType;
   });
 
-  this.def('load', function(opts) {
+  this.def('find', function(opts) {
     if (this.isBusy()) {
       this.__queued__ = opts;
     }

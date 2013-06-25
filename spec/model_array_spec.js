@@ -18,28 +18,28 @@ describe('Z.ModelArray', function() {
     spyOn(Model.mapper, 'findModels');
   });
 
-  describe('.load', function() {
+  describe('.find', function() {
     it('should set `isBusy` to `true`', function() {
       expect(array.isBusy()).toBe(false);
-      array.load();
+      array.find();
       expect(array.isBusy()).toBe(true);
     });
 
     it("should invoke the `findModels` method on the type's mapper with the array as the first argument", function() {
-      array.load();
+      array.find();
       expect(Model.mapper.findModels).toHaveBeenCalledWith(array, {});
     });
 
     it("should not invoke the `findModels` method on the type's mapper when the array is already busy", function() {
-      array.load();
-      array.load();
+      array.find();
+      array.find();
       expect(Model.mapper.findModels.callCount).toBe(1);
     });
 
-    it('should queue the latest call to `.load` when the array is busy and invoke `.load` when the previous load finished', function() {
-      array.load({foo: 1});
+    it('should queue the latest call to `.find` when the array is busy and invoke `.find` when the previous load finished', function() {
+      array.find({foo: 1});
       expect(array.isBusy()).toBe(true);
-      array.load({foo: 2});
+      array.find({foo: 2});
       expect(Model.mapper.findModels.callCount).toBe(1);
       expect(Model.mapper.findModels).toHaveBeenCalledWith(array, {foo: 1});
       array.findModelsDidSucceed([]);
@@ -48,18 +48,18 @@ describe('Z.ModelArray', function() {
     });
 
     it('should forward the `load` options on to the `findModels` method on the mapper', function() {
-      array.load({foo: 1});
+      array.find({foo: 1});
       expect(Model.mapper.findModels).toHaveBeenCalledWith(array, {foo: 1});
     });
 
     it('should return itself', function() {
-      expect(array.load()).toBe(array);
+      expect(array.find()).toBe(array);
     });
   });
 
   describe('.findModelsDidSucceed', function() {
     it('should set `isBusy` to `false`', function() {
-      array.load();
+      array.find();
       expect(array.isBusy()).toBe(true);
       array.findModelsDidSucceed([]);
       expect(array.isBusy()).toBe(false);
@@ -74,7 +74,7 @@ describe('Z.ModelArray', function() {
 
   describe('.findModelsDidFail', function() {
     it('should set `isBusy` to `false`', function() {
-      array.load();
+      array.find();
       expect(array.isBusy()).toBe(true);
       array.findModelsDidFail();
       expect(array.isBusy()).toBe(false);
