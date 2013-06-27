@@ -208,10 +208,10 @@ Z.ListView = Z.View.extend(function() {
   this.def('applySelections', function(selectionIndexes) {
     var _this = this;
 
-    this.subviews().set('isSelected', false);
+    this.subviews().each(function(v) { v.setif('isSelected', false); });
     selectionIndexes.each(function(idx) {
       var sv = _this.subviewForContentIndex(idx);
-      if (sv) { sv.isSelected(true); }
+      if (sv) { sv.setif('isSelected', true); }
     });
 
     return this;
