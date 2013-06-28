@@ -97,6 +97,13 @@ Z.FastListView = Z.ListView.extend(function() {
     this.needsDisplay(true);
   }
 
+  // Internal: Recalculates the cached row heights and offsets whenever the
+  // `rowHeight` property changes.
+  function rowHeightObserver() {
+    var indexes = this.customRowHeightIndexes();
+    if (indexes && indexes.size() > 0) { cacheHeightsAndOffsets.call(this); }
+  }
+
   // Public: Override the default `Z.ListView` tag of `ul` since by default
   // `Z.FastListView` renders a wrapper `div` around the item views.
   this.tag = 'div';
@@ -151,6 +158,7 @@ Z.FastListView = Z.ListView.extend(function() {
 
     this.observe('customRowHeightIndexes.@', this,
       customRowHeightIndexesObserver);
+    this.observe('rowHeight', this, rowHeightObserver);
 
     if (this.get('customRowHeightIndexes.size') > 0) {
       cacheHeightsAndOffsets.call(this);
@@ -161,6 +169,7 @@ Z.FastListView = Z.ListView.extend(function() {
   this.def('destroy', function() {
     this.stopObserving('customRowHeightIndexes.@', this,
       customRowHeightIndexesObserver);
+    this.stopObserving('rowHeight', this, rowHeightObserver);
 
     if (this.__z_resizeListener__) {
       window.removeEventListener('resize', this.__z_resizeListener__, false);
