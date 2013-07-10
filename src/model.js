@@ -81,11 +81,6 @@
     if (busy)    { this.didChangeProperty('isBusy'); }
   }
 
-  function isEditable(model) {
-    var state = model.sourceState(), busy = model.isBusy();
-    return model.__isLoading__ || ((state === NEW || state === LOADED) && !busy);
-  }
-
   Z.Model = Z.Object.extend(Z.Observable, function() {
     this.mapper = Z.Mapper.create();
 
@@ -104,13 +99,6 @@
           owner  = descriptor.owner,
           key    = '__' + name + '__',
           state  = this.sourceState();
-
-      if (owner) {
-        if (!isEditable(this)) {
-          throw new Error(Z.fmt("%@.%@: can't set a hasOne association when the owner side is %@: %@",
-                                this.typeName(), name, this.stateString(), this));
-        }
-      }
 
       this.willChangeProperty(name);
       this[key] = val;
@@ -230,11 +218,6 @@
         },
         set: function(v) {
           var state = this.sourceState(), changes;
-
-          if (!isEditable(this)) {
-            throw new Error(Z.fmt("%@.%@ (setter): can't set attributes on a model in the %@ state: %@",
-                                  this.typeName(), name, this.stateString(), this));
-          }
 
           if (state === LOADED) {
             changes = this.changes() || this.changes(Z.H());
@@ -435,7 +418,7 @@
         setState.call(this, {busy: true});
         this.mapper.createModel.apply(this.mapper, args);
       }
-      else if (this.isDirty()) {
+      else {
         setState.call(this, {busy: true});
         this.mapper.updateModel.apply(this.mapper, args);
       }
@@ -737,14 +720,6 @@
 
       if (added.length === 0 && removed.length === 0) {
         this.supr.apply(this, slice.call(arguments));
-      }
-
-      if (owner) {
-        if (!isEditable(model)) {
-          throw new Error(Z.fmt("%@.%@: can't add to a hasMany association when the owner side is %@: %@",
-                                model.typeName(), descriptor.name, model.stateString(), model));
-
-        }
       }
 
       for (j = 0, len = added.length; j < len; j++) {

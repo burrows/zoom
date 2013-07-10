@@ -935,24 +935,6 @@ describe('Z.Model getting attributes', function() {
 });
 
 describe('Z.Model setting attributes', function() {
-  it('should throw an exception for a model that is `EMPTY`', function() {
-    var m = Test.BasicModel.empty(222);
-
-    expect(function() {
-      m.set('foo', 'abc');
-    }).toThrow("Test.BasicModel.foo (setter): can't set attributes on a model in the EMPTY state: " + m.toString());
-  });
-
-  it('should throw an exception for a model that is `BUSY`', function() {
-    var m = Test.BasicModel.load({id: 1});
-
-    m.refresh();
-    expect(m.isBusy()).toBe(true);
-    expect(function() {
-      m.foo('x');
-    }).toThrow("Test.BasicModel.foo (setter): can't set attributes on a model in the LOADED-BUSY state: " + m.toString());
-  });
-
   describe('for a `NEW` model', function() {
     it('should not set `isDirty`', function() {
       var m = Test.BasicModel.create();
@@ -1051,16 +1033,6 @@ describe('Z.Model.save', function() {
     m.save('a');
     expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
     expect(Test.BasicModel.mapper.updateModel).toHaveBeenCalledWith(m, 'a');
-  });
-
-  it("should do nothing for a model that is `LOADED` and `isDirty` is false", function() {
-    var m = Test.BasicModel.load({id: 1, foo: 'x', bar: 9 });
-
-    expect(m.sourceState()).toBe(Z.Model.LOADED);
-    expect(m.isDirty()).toBe(false);
-    m.save();
-    expect(Test.BasicModel.mapper.createModel).not.toHaveBeenCalled();
-    expect(Test.BasicModel.mapper.updateModel).not.toHaveBeenCalled();
   });
 
   it("should do nothing for a model that is invalid", function() {
@@ -1739,34 +1711,6 @@ describe('Z.Model `hasOne` association', function() {
       f.bar(null);
       expect(f.isDirty()).toBe(true);
     });
-
-    it('should throw an exception when setting on an `EMPTY` model', function() {
-      var f = Test.Foo.empty(4);
-
-      expect(function() {
-        f.bar(Test.Bar.create());
-      }).toThrow("Test.Foo.bar: can't set a hasOne association when the owner side is EMPTY: " + f.toString());
-    });
-
-    it('should throw an exception when setting on a `DESTROYED` model', function() {
-      var f = Test.Foo.load({id: 9});
-
-      f.destroy().destroyModelDidSucceed();
-
-      expect(function() {
-        f.bar(Test.Bar.create());
-      }).toThrow("Test.Foo.bar: can't set a hasOne association when the owner side is DESTROYED: " + f.toString());
-    });
-
-    it('should throw an exception when setting on a `BUSY` model', function() {
-      var f = Test.Foo.load({id: 12});
-
-      f.refresh();
-      expect(f.isBusy()).toBe(true);
-      expect(function() {
-        f.bar(Test.Bar.create());
-      }).toThrow("Test.Foo.bar: can't set a hasOne association when the owner side is LOADED-BUSY: " + f.toString());
-    });
   });
 
   describe('with `hasOne` inverse', function() {
@@ -1927,34 +1871,6 @@ describe('Z.Model `hasMany` association', function() {
       expect(f.isDirty()).toBe(false);
       f.bars().pop();
       expect(f.isDirty()).toBe(true);
-    });
-
-    it('should throw an exception when adding objects to an `EMPTY` model', function() {
-      var f = Test.Foo.empty(4);
-
-      expect(function() {
-        f.bars().push(Test.Bar.create());
-      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the owner side is EMPTY: " + f.toString());
-    });
-
-    it('should throw an exception when adding objects to a `DESTROYED` model', function() {
-      var f = Test.Foo.load({id: 12});
-
-      f.destroy().destroyModelDidSucceed();
-
-      expect(function() {
-        f.bars().push(Test.Bar.create());
-      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the owner side is DESTROYED: " + f.toString());
-    });
-
-    it('should throw an exception when adding objects to a `BUSY` model', function() {
-      var f = Test.Foo.load({id: 12});
-
-      f.refresh();
-      expect(f.isBusy()).toBe(true);
-      expect(function() {
-        f.bars().push(Test.Bar.create());
-      }).toThrow("Test.Foo.bars: can't add to a hasMany association when the owner side is LOADED-BUSY: " + f.toString());
     });
   });
 
