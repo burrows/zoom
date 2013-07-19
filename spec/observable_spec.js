@@ -886,7 +886,7 @@ describe('Z.Object KVO support:', function() {
   });
 });
 
-describe('Z.Object dependent properties:', function() {
+describe('Z.Observable dependent properties:', function() {
   var Person, Occupation;
 
   Person = Z.Object.extend(Z.Observable, function() {
@@ -979,6 +979,30 @@ describe('Z.Object dependent properties:', function() {
     expect(observer.notifications[0].path).toBe('displayName');
     expect(observer.notifications[0].previous).toBe('Homer Simpson (Safety Inspector)');
     expect(observer.notifications[0].current).toBe('Bart Simpson (Safety Inspector)');
+  });
+});
+
+describe('Z.Observeable.destroy', function() {
+  Person = Z.Object.extend(Z.Observable, function() {
+    this.prop('first');
+    this.prop('last');
+    this.prop('full', {
+      readonly: true, dependsOn: ['first', 'last'],
+      get: function() { return this.first() + ' ' + this.last(); }
+    });
+  });
+
+  it('should remove any existing observers', function() {
+    var p = Person.create({first: 'Homer', last: 'Simpson'}),
+        observer = function() {};
+
+    p.observe('first', null, observer);
+
+    expect(p.__z_registrations__['first'].length).toBe(2);
+    expect(p.__z_registrations__['last'].length).toBe(1);
+    p.destroy();
+    expect(p.__z_registrations__['first'].length).toBe(0);
+    expect(p.__z_registrations__['last'].length).toBe(0);
   });
 });
 

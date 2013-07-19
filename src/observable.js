@@ -111,23 +111,6 @@ Z.Observable = Z.Module.extend(function() {
     }
   }
 
-  // Internal: Deregisters observers for all properties defined with the
-  // `dependsOn` option.
-  //
-  // Returns nothing.
-  function deregisterDependsOnObservers() {
-    var descs = this.propertyDescriptors(), desc, k, i, len;
-
-    for (k in descs) {
-      desc = descs[k];
-      for (i = 0, len = desc.dependsOn.length; i < len; i++) {
-        this.stopObserving(desc.dependsOn[i], this, dependentPropertyObserver, {
-          context: k
-        });
-      }
-    }
-  }
-
   // Public: The default `Z.Observable` initializer. Takes a native object
   // mapping property names to values and sets each on the object.
   //
@@ -140,8 +123,24 @@ Z.Observable = Z.Module.extend(function() {
     return this.supr();
   });
 
+  // Public: The `Z.Observable` destructor. Removes any observers on the object.
+  //
+  // Returns the receiver.
   this.def('destroy', function() {
-    deregisterDependsOnObservers.call(this);
+    var regs = this.__z_registrations__, reg, prop, i;
+
+    if (regs) {
+      for (prop in regs) {
+        if (!regs.hasOwnProperty(prop)) { continue; }
+        for (i = regs[prop].length - 1; i >= 0; i--) {
+          reg = regs[prop][i];
+          this.deregisterObserver([reg.head].concat(reg.tail), reg.path,
+                                  reg.observee, reg.observer, reg.action,
+                                  reg.opts);
+        }
+      }
+    }
+
     return this.supr();
   });
 
