@@ -152,6 +152,36 @@ Z.FastListView = Z.ListView.extend(function() {
     get: function() { return this.get('customRowHeightIndexes.size') > 0; }
   });
 
+  // Public: A property that contains the index of the first content item that
+  // is at least partially visible.
+  this.prop('firstVisibleIndex');
+
+  // Public: A property that contains the index of the first content item that
+  // is fully visible.
+  this.prop('firstFullyVisibleIndex');
+
+  // Public: A property that contains the first visible subview.
+  this.prop('firstVisibleSubview', {
+    readonly: true,
+    cache: true,
+    dependsOn: ['firstVisibleIndex'],
+    get: function() {
+      var i = this.firstVisibleIndex();
+      return i === null ? null : this.subviewForContentIndex(i);
+    }
+  });
+
+  // Public: A property that contains the first fully visible subview.
+  this.prop('firstFullyVisibleSubview', {
+    readonly: true,
+    cache: true,
+    dependsOn: ['firstFullyVisibleIndex'],
+    get: function() {
+      var i = this.firstFullyVisibleIndex();
+      return i === null ? null : this.subviewForContentIndex(i);
+    }
+  });
+
   // Internal: The `Z.FastListView` constructor.
   this.def('init', function(props) {
     this.supr(props);
@@ -202,7 +232,8 @@ Z.FastListView = Z.ListView.extend(function() {
 
   // Internal: Updates the view by syncing the `subviews` array to the list of
   // content items indicated by the `displayRange` method and sets the
-  // appropriate offsets and heights.
+  // appropriate offsets and heights. Also updates the values of the
+  // `firstVisibleIndex` and `firstFullyVisibleIndex` properties.
   //
   // Returns nothing.
   this.def('update', function() {
@@ -214,6 +245,8 @@ Z.FastListView = Z.ListView.extend(function() {
         range    = this.displayRange(),
         n        = range ? range[1] - range[0] + 1 : 0,
         repos    = [],
+        setFVI   = false,
+        setFFVI  = false,
         i, item, subview, offset, height, moved;
 
     if (this.showingEmpty()) {
@@ -261,8 +294,21 @@ Z.FastListView = Z.ListView.extend(function() {
                  subview.node.style.height !== height + 'px') {
           repos.push([subview, offset, height]);
         }
+
+        if ((offset + height > soffset) && !setFVI) {
+          this.setif('firstVisibleIndex', i);
+          setFVI = true;
+        }
+
+        if ((offset >= soffset) && !setFFVI) {
+          this.setif('firstFullyVisibleIndex', i);
+          setFFVI = true;
+        }
       }
     }
+
+    if (!setFVI) { this.setif('firstVisibleIndex', null); }
+    if (!setFFVI) { this.setif('firstFullyVisibleIndex', null); }
 
     if (subviews.size() > n) {
       subviews.slice(n).each(function(v) { v.remove().destroy(); });
@@ -484,7 +530,11 @@ Z.FastListView = Z.ListView.extend(function() {
   //
   // Returns a subview or `null` if the subview can't be found.
   this.def('subviewForContentIndex', function(i) {
-    var tuple = this.__z_subview2index__.find(function(tuple) {
+    var tuple;
+
+    if (!this.__z_subview2index__) { return null; }
+
+    tuple = this.__z_subview2index__.find(function(tuple) {
       return tuple[1] === i;
     });
 
@@ -500,48 +550,6 @@ Z.FastListView = Z.ListView.extend(function() {
   this.def('indexForSubview', function(v) {
     if (!this.__z_subview2index__) { return null; }
     return this.__z_subview2index__.at(v);
-  });
-
-  // Public: Returns the index of the first content item that is at least
-  // partially visible.
-  this.def('firstVisibleIndex', function() {
-    var soffset = this.scrollOffset(), range = this.displayRange(), i;
-
-    if (!range) { return null; }
-
-    for (i = range[0]; i <= range[1]; i++) {
-      if (this.rowOffsetForIndex(i) + this.rowHeightForIndex(i) > soffset) {
-        return i;
-      }
-    }
-
-    return null;
-  });
-
-  // Public: Returns the index of the first content item that is fully scrolled
-  // past the scroll offset.
-  this.def('firstFullyVisibleIndex', function() {
-    var idx     = this.firstVisibleIndex(),
-        size    = this.get('content.size'),
-        soffset = this.scrollOffset();
-
-    if (idx === null) { return null; }
-    if (this.rowOffsetForIndex(idx) < soffset) { idx++; }
-
-    return idx <= (size - 1) ? idx : null;
-  });
-
-  // Public: Returns the first subview that is at least partially visible.
-  this.def('firstVisibleSubview', function() {
-    var idx = this.firstVisibleIndex();
-    return idx === null ? null : this.subviewForContentIndex(idx);
-  });
-
-  // Public: Returns the first subview that is fully scrolled past the scroll
-  // offset.
-  this.def('firstFullyVisibleSubview', function() {
-    var idx = this.firstFullyVisibleIndex();
-    return idx === null ? null : this.subviewForContentIndex(idx);
   });
 
   // Internal: Overridden from the `Z.ListView` implementation to first remove
