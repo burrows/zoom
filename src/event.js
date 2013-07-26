@@ -91,45 +91,83 @@ Z.KeyEvent = Z.Event.extend(function() {
   this.key = null;
 });
 
-// Public: The `Z.EventListener` type provides an object for listening for
-// native mouse events on a given container node and key events on the document.
-// Objects interested in being notified of events can observe the event
-// listener's `event` property. It is updated every time a new event occurs.
-//
-// Examples
-//
-//   var listener = Z.EventListener.create(document.querySelector('#my-app'));
-//
-//   listener.observe('event', null, function(n) {
-//     console.log(n.current); // #<Z.MouseEvent:156>
-//   }, {current: true});
-Z.EventListener = Z.Object.extend(function() {
-  var keyEvents, mouseEvents;
+// Public: The `Z.KeyEventListener` type provides an object for listening for
+// native key events on the document. It converts the native events to a
+// `Z.KeyEvent` object and passes it to the given callback function.
+Z.KeyEventListener = Z.Object.extend(function() {
+  var events;
 
   // Internal: List of native key events to listen for.
-  keyEvents = ['keydown', 'keyup'];
+  events = ['keydown', 'keyup'];
+
+  // Internal: The key event listener - each native key event is converted to a
+  // `Z.KeyEvent` object and passed to the registered `callback`.
+  function process(e) {
+    this.callback(Z.KeyEvent.create({
+      kind        : e.type === 'keydown' ? Z.KeyDown : Z.KeyUp,
+      isAlt       : e.altKey,
+      isCtrl      : e.ctrlKey,
+      isMeta      : e.metaKey,
+      isShift     : e.shiftKey,
+      timestamp   : new Date(),
+      nativeEvent : e,
+      key         : e.which
+    }));
+  }
+
+  // Internal: Registers key listeners on the `document` node.
+  function addListeners() {
+    var i, len;
+
+    this.handler = Z.bind(process, this);
+
+    for (i = 0, len = events.length; i < len; i++) {
+      document.addEventListener(events[i], this.handler, false);
+    }
+  }
+
+  // Internal: Deregisters key listeners from the `document` node.
+  function removeListeners() {
+    var i, len;
+
+    for (i = 0, len = events.length; i < len; i++) {
+      document.removeEventListener(events[i], this.handler, false);
+    }
+
+    this.handler = null;
+  }
+
+  // Public: The `Z.KeyEventListener` constructor. This sets up event listeners.
+  //
+  // callback - A function to be invoked on each key event.
+  this.def('init', function(callback) {
+    this.callback = callback;
+    addListeners.call(this);
+  });
+
+  // Public: The `Z.EventListener` destructor. This removes all event listeners
+  // setup by the `init` method.
+  //
+  // Returns the receiver.
+  this.def('destroy', function() {
+    removeListeners.call(this);
+    return this.supr();
+  });
+});
+
+// Public: The `Z.MouseEventListener` type provides an object for listening for
+// native mouse events on the given DOM node. It converts the native events to a
+// `Z.MouseEvent` object and passes it to the given callback function.
+Z.MouseEventListener = Z.Object.extend(function() {
+  var events;
 
   // Internal: List of native mouse events to listen for.
-  mouseEvents = [
+  events = [
     'click', 'mousemove', 'mousedown', 'mouseup', 'mouseover', 'mouseout'
   ];
 
-  // Internal: Builds a `Z.KeyEvent` object from the given native key event.
-  function keyEvent(native) {
-    return Z.KeyEvent.create({
-      kind        : native.type === 'keydown' ? Z.KeyDown : Z.KeyUp,
-      isAlt       : native.altKey,
-      isCtrl      : native.ctrlKey,
-      isMeta      : native.metaKey,
-      isShift     : native.shiftKey,
-      timestamp   : new Date(),
-      nativeEvent : native,
-      key         : native.which
-    });
-  }
-
-  // Internal: Builds a `Z.KeyEvent` object from the given native mouse event.
-  function mouseEvent(native) {
+  // Internal: Builds a `Z.MouseEvent` object from the given native mouse event.
+  function event(native) {
     var type = native.type,
         node = native.target,
         view = Z.View.forNode(node),
@@ -168,13 +206,9 @@ Z.EventListener = Z.Object.extend(function() {
     });
   }
 
-  // Internal: The key event listener - each native key event is converted to a
-  // `Z.Event` object and set to the `event` property.
-  function processKeyEvent(e) { this.callback(keyEvent.call(this, e)); }
-
-  // Internal: The mouse event listener - each native mouse event is converted to
-  // a `Z.Event` object and set to the `event` property.
-  function processMouseEvent(e) {
+  // Internal: The event listener - each native mouse event is converted to a
+  // `Z.MouseEvent` object and passed to the registered callback.
+  function process(e) {
     var target, related, view;
 
     // ignore mouseover and mouseout events where the mouseout is triggered upon
@@ -187,61 +221,39 @@ Z.EventListener = Z.Object.extend(function() {
       if (!view || (related && view.node.contains(related))) { return; }
     }
 
-    this.callback(mouseEvent.call(this, e));
-  }
-
-  // Internal: Registers key listeners on the `document` node.
-  function addKeyListeners() {
-    var i, len;
-
-    this.keyHandler = Z.bind(processKeyEvent, this);
-
-    for (i = 0, len = keyEvents.length; i < len; i++) {
-      document.addEventListener(keyEvents[i], this.keyHandler, false);
-    }
-  }
-
-  // Internal: Deregisters key listeners from the `document` node.
-  function removeKeyListeners() {
-    var i, len;
-
-    for (i = 0, len = keyEvents.length; i < len; i++) {
-      document.removeEventListener(keyEvents[i], this.keyHandler, false);
-    }
-
-    this.keyHandler = null;
+    this.callback(event.call(this, e));
   }
 
   // Internal: Registers mouse listeners on the `container` node.
-  function addMouseListeners() {
-    var node = this.container, i, len;
+  function addListeners() {
+    var i, len;
 
-    this.mouseHandler = Z.bind(processMouseEvent, this);
+    this.handler = Z.bind(process, this);
 
-    for (i = 0, len = mouseEvents.length; i < len; i++) {
-      node.addEventListener(mouseEvents[i], this.mouseHandler, false);
+    for (i = 0, len = events.length; i < len; i++) {
+      this.node.addEventListener(events[i], this.handler, false);
     }
   }
 
   // Internal: Deregisters mouse listeners from the `container` node.
-  function removeMouseListeners() {
-    var node = this.container, i, len;
+  function removeListeners() {
+    var i, len;
 
-    for (i = 0, len = mouseEvents.length; i < len; i++) {
-      node.removeEventListener(mouseEvents[i], this.mouseHandler, false);
+    for (i = 0, len = events.length; i < len; i++) {
+      this.node.removeEventListener(events[i], this.handler, false);
     }
 
-    this.mouseHandler = null;
+    this.handler = null;
   }
 
   // Public: The `Z.EventListener` constructor. This sets up event listeners.
   //
-  // container - A DOM node object to observe mouse events on.
-  this.def('init', function(container, callback) {
-    this.container = container;
-    this.callback  = callback;
-    addKeyListeners.call(this);
-    addMouseListeners.call(this);
+  // node     - A DOM node object to observe mouse events on.
+  // callback - A function to be invoked on each mouse event.
+  this.def('init', function(node, callback) {
+    this.node     = node;
+    this.callback = callback;
+    addListeners.call(this);
   });
 
   // Public: The `Z.EventListener` destructor. This removes all event listeners
@@ -249,8 +261,7 @@ Z.EventListener = Z.Object.extend(function() {
   //
   // Returns the receiver..
   this.def('destroy', function() {
-    removeKeyListeners.call(this);
-    removeMouseListeners.call(this);
+    removeListeners.call(this);
     return this.supr();
   });
 });
