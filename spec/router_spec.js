@@ -40,7 +40,7 @@ describe('Z.Router', function() {
   });
 
   afterEach(function() {
-    router.stop().reset();
+    router.stop();
     if (stubloc) { Z.del(Z.global, 'location'); }
   });
 

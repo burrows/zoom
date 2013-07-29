@@ -363,7 +363,7 @@ describe('Z.Window', function() {
     });
   });
 
-  describe('.dispatchEvent', function() {
+  describe('.processEvent', function() {
     var ParentView, TestView, win, cv, sv1, sv11, sv12, evt;
 
     TestView = Z.View.extend(function(){
@@ -405,7 +405,7 @@ describe('Z.Window', function() {
           expect(win.keyView()).toBe(sv11);
           expect(sv11.isKey()).toBe(true);
           expect(sv12.isKey()).toBe(false);
-          win.dispatchEvent(evt);
+          win.processEvent(evt);
           expect(win.keyView()).toBe(sv12);
           expect(sv11.isKey()).toBe(false);
           expect(sv12.isKey()).toBe(true);
@@ -414,7 +414,7 @@ describe('Z.Window', function() {
         it('should set the key view to the superview of the target view if it accepts key view status and the the target view does not', function() {
           sv12.def('acceptsKeyView', function() { return false; });
           expect(win.keyView()).toBe(sv11);
-          win.dispatchEvent(evt);
+          win.processEvent(evt);
           expect(win.keyView()).toBe(sv1);
         });
 
@@ -423,7 +423,7 @@ describe('Z.Window', function() {
           sv1.def('acceptsKeyView', function() { return false; });
           cv.def('acceptsKeyView', function() { return false; });
           expect(win.keyView()).toBe(sv11);
-          win.dispatchEvent(evt);
+          win.processEvent(evt);
           expect(win.keyView()).toBe(sv11);
         });
       });
@@ -434,23 +434,23 @@ describe('Z.Window', function() {
         sv1.def('mouseDown', function() { views.push(this); return false; });
         cv.def('mouseDown', function() { views.push(this); return false; });
         win.def('mouseDown', function() { views.push(this); return true; });
-        win.dispatchEvent(evt);
+        win.processEvent(evt);
         expect(views).toEq([sv12, sv1, cv, win]);
 
         views = []
         sv1.def('mouseDown', function() { views.push(this); return true; });
-        win.dispatchEvent(evt);
+        win.processEvent(evt);
         expect(views).toEq([sv12, sv1]);
       });
 
       it('should return `true` if it finds a view that handles the event and returns `true`', function() {
         sv12.def('mouseDown', function() { return false; });
         sv1.def('mouseDown', function() { return true; });
-        expect(win.dispatchEvent(evt)).toBe(true);
+        expect(win.processEvent(evt)).toBe(true);
       });
 
       it('should return `false` if no views handle the event', function() {
-        expect(win.dispatchEvent(evt)).toBe(false);
+        expect(win.processEvent(evt)).toBe(false);
       });
 
       it('should return `false` if some views handle the event but all return `false`', function() {
@@ -459,7 +459,7 @@ describe('Z.Window', function() {
         cv.def('mouseDown', function() { return false; });
         win.def('mouseDown', function() { return false; });
 
-        expect(win.dispatchEvent(evt)).toBe(false);
+        expect(win.processEvent(evt)).toBe(false);
       });
     });
 
@@ -474,7 +474,7 @@ describe('Z.Window', function() {
 
         win.def('keyDown', function() { views.push(this); return true; });
         win.makeKeyView(null);
-        win.dispatchEvent(evt);
+        win.processEvent(evt);
         expect(views).toEq([win]);
       });
 
@@ -484,23 +484,23 @@ describe('Z.Window', function() {
         sv1.def('keyDown', function() { views.push(this); return false; });
         cv.def('keyDown', function() { views.push(this); return false; });
         win.def('keyDown', function() { views.push(this); return true; });
-        win.dispatchEvent(evt);
+        win.processEvent(evt);
         expect(views).toEq([sv11, sv1, cv, win]);
 
         views = []
         sv1.def('keyDown', function() { views.push(this); return true; });
-        win.dispatchEvent(evt);
+        win.processEvent(evt);
         expect(views).toEq([sv11, sv1]);
       });
 
       it('should return `true` if it finds a view that handles the event and returns `true`', function() {
         sv11.def('keyDown', function() { return false; });
         sv1.def('keyDown', function() { return true; });
-        expect(win.dispatchEvent(evt)).toBe(true);
+        expect(win.processEvent(evt)).toBe(true);
       });
 
       it('should return `false` if no views handle the event', function() {
-        expect(win.dispatchEvent(evt)).toBe(false);
+        expect(win.processEvent(evt)).toBe(false);
       });
 
       it('should return `false` if some views handle the event but all return `false`', function() {
@@ -509,7 +509,7 @@ describe('Z.Window', function() {
         cv.def('keyDown', function() { return false; });
         win.def('keyDown', function() { return false; });
 
-        expect(win.dispatchEvent(evt)).toBe(false);
+        expect(win.processEvent(evt)).toBe(false);
       });
     });
   });

@@ -15,6 +15,7 @@ SRCS := util.js              \
         paged_model_array.js \
         state.js             \
         event.js             \
+        run_loop.js          \
         view.js              \
         window.js            \
         app.js               \

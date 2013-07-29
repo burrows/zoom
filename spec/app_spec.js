@@ -71,11 +71,6 @@ describe('Z.App', function() {
       expect(app.statechart().isA(Z.State)).toBe(true);
       expect(app.statechart().superstate).toBeNull();
     });
-
-    it('should create an empty router', function() {
-      expect(app.router().isA(Z.Router)).toBe(true);
-      expect(app.router().routes).toEq({});
-    });
   });
 
   describe('.start', function() {
@@ -134,12 +129,6 @@ describe('Z.App', function() {
       app.start(container, ['/a']);
       expect(app.statechart().goto).toHaveBeenCalledWith(['/a']);
     });
-
-    it('should start the router', function() {
-      spyOn(app.router(), 'start');
-      app.start(container);
-      expect(app.router().start).toHaveBeenCalled();
-    });
   });
 
   describe('.stop', function() {
@@ -170,20 +159,6 @@ describe('Z.App', function() {
       expect(container.querySelector('.child1')).toEqual(null);
       expect(container.querySelector('.child2')).toEqual(null);
       expect(container.querySelector('.child3')).toEqual(null);
-    });
-
-    it('should destroy the event listener', function() {
-      app.start(container);
-      spyOn(app.listener, 'destroy').andCallThrough();
-      app.stop();
-      expect(app.listener.destroy).toHaveBeenCalled();
-    });
-
-    it('should stop the router', function() {
-      app.start(container);
-      spyOn(app.router(), 'stop').andCallThrough();
-      app.stop();
-      expect(app.router().stop).toHaveBeenCalled();
     });
 
     it('should reset the statechart', function() {
@@ -396,7 +371,7 @@ describe('Z.App', function() {
     });
   });
 
-  describe('.dispatchEvent', function() {
+  describe('.processEvent', function() {
     var mainWin, win1;
 
     beforeEach(function() {
@@ -419,13 +394,13 @@ describe('Z.App', function() {
         expect(app.keyWindow()).toBe(mainWin);
         expect(mainWin.isKey()).toBe(true);
         expect(win1.isKey()).toBe(false);
-        app.dispatchEvent(e);
+        app.processEvent(e);
         expect(app.keyWindow()).toBe(win1);
         expect(mainWin.isKey()).toBe(false);
         expect(win1.isKey()).toBe(true);
       });
 
-      it("should forward the event object to the window's `dispatchEvent` method", function() {
+      it("should forward the event object to the window's `processEvent` method", function() {
         var e = Z.MouseEvent.create({
           kind   : Z.LeftMouseDown,
           window : mainWin,
@@ -433,81 +408,21 @@ describe('Z.App', function() {
           node   : mainWin.get('mainView.sv1').node
         });
 
-        spyOn(mainWin, 'dispatchEvent');
-        app.dispatchEvent(e);
-        expect(mainWin.dispatchEvent).toHaveBeenCalledWith(e);
+        spyOn(mainWin, 'processEvent');
+        app.processEvent(e);
+        expect(mainWin.processEvent).toHaveBeenCalledWith(e);
       });
     });
 
     describe('with a `Z.KeyEvent`', function() {
-      it("should forward the event object to the key window's `dispatchEvent` method", function() {
+      it("should forward the event object to the key window's `processEvent` method", function() {
         var e = Z.KeyEvent.create({kind: Z.KeyDown});
 
         app.makeKeyWindow(win1);
-        spyOn(win1, 'dispatchEvent');
-        app.dispatchEvent(e);
-        expect(win1.dispatchEvent).toHaveBeenCalledWith(e);
+        spyOn(win1, 'processEvent');
+        app.processEvent(e);
+        expect(win1.processEvent).toHaveBeenCalledWith(e);
       });
-    });
-  });
-
-  describe('.run', function() {
-    var o1, o2;
-
-    beforeEach(function() {
-      o1 = Z.Object.create();
-      o2 = Z.Object.create();
-
-      o1.def('foo', function() {});
-      o2.def('foo', function() {});
-    });
-
-    it("should invoke the `displayWindows` method", function() {
-      spyOn(app, 'displayWindows');
-      app.run();
-      expect(app.displayWindows).toHaveBeenCalled();
-    });
-
-    it("should invoke all methods queued up with the once method", function() {
-      spyOn(o1, 'foo');
-      spyOn(o2, 'foo');
-
-      app.once(o1, 'foo');
-      app.once(o2, 'foo');
-
-      app.run();
-
-      expect(o1.foo).toHaveBeenCalled();
-      expect(o1.foo.callCount).toBe(1);
-    });
-
-    it("should invoke once methods one time even when they are queued multiple times", function() {
-      spyOn(o1, 'foo');
-
-      app.once(o1, 'foo');
-      app.once(o1, 'foo');
-      app.once(o1, 'foo');
-      app.once(o1, 'foo');
-
-      app.run();
-
-      expect(o1.foo).toHaveBeenCalled();
-      expect(o1.foo.callCount).toBe(1);
-    });
-
-    it("should clear the once queue", function() {
-      spyOn(o1, 'foo');
-
-      app.once(o1, 'foo');
-
-      app.run();
-
-      expect(o1.foo).toHaveBeenCalled();
-      expect(o1.foo.callCount).toBe(1);
-
-      app.run();
-
-      expect(o1.foo.callCount).toBe(1);
     });
   });
 
@@ -563,34 +478,6 @@ describe('Z.App', function() {
       expect(a.get('statechart.current')).toEq(['/b']);
       expect(a.get('current')).toEq(['/b']);
       a.stop();
-    });
-  });
-
-  describe('route changes', function() {
-    beforeEach(function() {
-      app.router().route('home', /^$/, function() { return ''; });
-      app.router().route('foo', /^foos\/(\d+)$/, function(params) { return 'foos/' + params.id; });
-    });
-
-    it('should invoke `send` on the statechart with the action `didRouteTo` and the route name and params', function() {
-      app.start(container);
-      spyOn(app.statechart(), 'send');
-      app.router().routeHash('foos/13');
-      expect(app.statechart().send).toHaveBeenCalledWith('didRouteTo', 'foo', ['13']);
-    });
-
-    it('should invoke `send` on the statechart with the action `didRouteToUnknown` and hash when the route is not recognized', function() {
-      app.start(container);
-      spyOn(app.statechart(), 'send');
-      app.router().routeHash('bars/9');
-      expect(app.statechart().send).toHaveBeenCalledWith('didRouteToUnknown', 'bars/9');
-    });
-
-    it('should trigger a run loop', function() {
-      app.start(container);
-      spyOn(app, 'run');
-      app.router().routeHash('foos/2');
-      expect(app.run).toHaveBeenCalled();
     });
   });
 });

@@ -102,6 +102,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
     window.addEventListener('hashchange', this.__hashChangeListener__, false);
     this.__hashChangeListener__();
+    Z.RunLoop.registerRouter(this).start();
     return this;
   });
 
@@ -112,15 +113,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   this.def('stop', function() {
     this.stopObserving('hash', this, hashDidChange);
     window.removeEventListener('hashchange', this.__hashChangeListener__, false);
-    return this;
-  });
-
-  // Public: Resets the router by clearing all defined routes and route
-  // handlers.
-  this.def('reset', function() {
-    this.callback = null;
-    this.errback = null;
-    this.routes = {};
+    Z.RunLoop.deregisterRouter(this);
     return this;
   });
 

@@ -3,9 +3,7 @@
 //
 // * provide a root to the window/view hierarchy
 // * setup and perform initial rendering of all windows and views
-// * creates a `Z.EventListener` object to listen for native events
 // * creates a statechart for modeling your app's state
-// * creates a `Z.Router` for processing URL hash changes
 // * dispatches events to the appropriate window
 // * triggers run loops when events occur
 //
@@ -37,46 +35,9 @@
 Z.App = Z.Object.extend(Z.Observable, function() {
   var slice = Array.prototype.slice;
 
-  // Internal: Handles events observed by the event listener by dispatching them
-  // to the appropriate window and triggering a run loop if they are handled.
-  //
-  // e - A `Z.Event` object..
-  //
-  // Returns nothing.
-  function processEvent(e) { if (this.dispatchEvent(e)) { this.run(); } }
-
-  // Internal: Handles location hash changes by sending the action `didRouteTo`
-  // to the app's statechart with the new route name and any params extracted
-  // from the hash.
-  //
-  // name   - The name of the route that matched the location hash.
-  // params - An array of parameters extracted from matching the route's regex
-  //          agains the location hash.
-  //
-  // Returns nothing.
-  function processRouteChange(name, params) {
-    this.statechart().send('didRouteTo', name, params);
-    this.run();
-  }
-
-  // Internal: Handles location hash changes that cannot be matched to a defined
-  // route by sending the action `didRouteToUnknown` to the statechart with the
-  // current location hash.
-  //
-  // hash - The location hash value that could not be matched to a route.
-  //
-  // Returns nothing.
-  function processUnknownRouteChange(hash) {
-    this.statechart().send('didRouteToUnknown', hash);
-    this.run();
-  }
-
   // Public: A regular property that holds the container DOM node. All DOM
   // modifications and mouse events observed happen within this container.
   this.container = null;
-
-  // Internal: A hash of function objects queued up with the `once` method.
-  this.queue = null;
 
   // Public: An array containing all of the app's `Z.Window` objects. Every app
   // has at least one window, the main window, which is always at index `0`.
@@ -88,9 +49,6 @@ Z.App = Z.Object.extend(Z.Observable, function() {
   // Public: The window that currently has keyboard focus. All keyboard events
   // observed by the app will be sent to the window pointed to by this property.
   this.prop('keyWindow');
-
-  // Public: The app's router (see `Z.Router`).
-  this.prop('router');
 
   // Public: The app's statechart (see `Z.State`).
   this.prop('statechart');
@@ -123,15 +81,8 @@ Z.App = Z.Object.extend(Z.Observable, function() {
 
     this.windows(Z.A(this.mainWindow()));
 
-    // sets up the queue for "once" methods
-    this.queue = Z.Hash.create(function(h, k) { return h.at(k, Z.H()); });
-
     // create an empty statechart
     this.statechart(Z.State.define());
-
-    // create an empty router
-    this.router(Z.Router.create(Z.bind(processRouteChange, this),
-                                Z.bind(processUnknownRouteChange, this)));
 
     this.supr();
   });
@@ -148,8 +99,6 @@ Z.App = Z.Object.extend(Z.Observable, function() {
     var mainWindow = this.mainWindow();
 
     this.container = container || document.body;
-    this.listener  = Z.EventListener.create(this.container,
-                                            Z.bind(processEvent, this));
 
     // ensure that the main window is in the windows array, it won't be there
     // in the case that we're restarting the app after previously stopping it
@@ -164,9 +113,10 @@ Z.App = Z.Object.extend(Z.Observable, function() {
     }
 
     this.statechart().goto(states || []);
-    this.router().start();
-    this.run();
     this.__started__ = true;
+
+    Z.RunLoop.registerApp(this).start();
+    this.displayWindows();
 
     return this;
   });
@@ -178,29 +128,13 @@ Z.App = Z.Object.extend(Z.Observable, function() {
   // Returns the receiver.
   this.def('stop', function() {
     if (this.__started__) {
+      Z.RunLoop.deregisterApp(this);
       this.set('keyWindow', null);
       this.removeWindows().displayWindows();
-      this.listener.destroy();
-      this.router().stop();
       this.statechart().reset();
       this.__started__ = false;
     }
 
-    return this;
-  });
-
-  // Public: Perform a run of the run loop. This involes updating any views that
-  // need updating and executing any methods queued up by the `once` method.
-  this.def('run', function() {
-    this.displayWindows();
-    this.router().updateHash();
-
-    this.queue.each(function(tuple) {
-      var o = tuple[0], methods = tuple[1];
-      methods.keys().each(function(method) { o[method](); });
-    });
-
-    this.queue.clear();
     return this;
   });
 
@@ -226,15 +160,6 @@ Z.App = Z.Object.extend(Z.Observable, function() {
 
     return handled || sc.send.apply(sc, arguments);
   });
-
-  // Public: Queues up a method to invoke on the given object at the end of the
-  // next run of the run loop.
-  //
-  // `o` - A `Z.Object` instance.
-  // `m` - A string representing the method to invoke on `o`.
-  //
-  // Returns `o`.
-  this.def('once', function(o, m) { this.queue.at(o).at(m, true); return o; });
 
   // Public: Display's the app's windows by invoking each window's
   // `displayIfNeeded` method and attaching their nodes to the `container` node
@@ -356,7 +281,7 @@ Z.App = Z.Object.extend(Z.Observable, function() {
   // e - A `Z.Event` object.
   //
   // Returns `true` if the app processes the event and `false` if it does not.
-  this.def('dispatchEvent', function(e) {
+  this.def('processEvent', function(e) {
     var keyWin = this.keyWindow(), view, window;
 
     if (e.isA(Z.MouseEvent)) {
@@ -374,7 +299,7 @@ Z.App = Z.Object.extend(Z.Observable, function() {
       }
     }
 
-    keyWin.dispatchEvent(e);
+    keyWin.processEvent(e);
 
     return true;
   });

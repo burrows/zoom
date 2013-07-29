@@ -163,7 +163,7 @@ Z.Window = Z.View.extend(function() {
   // e - A `Z.Event` object.
   //
   // Returns `true` if the event was handled and `false` otherwise.
-  this.def('dispatchEvent', function(e) {
+  this.def('processEvent', function(e) {
     var handled = false, view;
 
     if (e.isA(Z.MouseEvent)) {
