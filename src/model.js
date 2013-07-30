@@ -314,7 +314,7 @@
       }
 
       // set raw attributes
-      model.set(attrs);
+      for (key in attrs) { model.setif(key, attrs[key]); }
 
       // set id if necessary
       if (model.id() === null) { model.id(id); }
