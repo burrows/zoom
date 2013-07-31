@@ -370,12 +370,25 @@ Z.Observable = Z.Module.extend(function() {
   // This is useful for cases where its important to avoid sending notifications
   // unless a value has actually changed.
   //
-  // path  - A string containing a key path.
+  // path  - A string containing a key path or a native object containing paths
+  //         as the keys and property values as the values..
   // value - The value to set the key path to.
   //
   // Returns `value`.
   this.def('setif', function(path, value) {
+    var k;
+
+    if (arguments.length === 1) {
+      for (k in path) {
+        if (!path.hasOwnProperty(k)) { continue; }
+        if (!Z.eq(this.get(k), path[k])) { Z.set(this, k, path[k]); }
+      }
+
+      return path;
+    }
+
     if (!Z.eq(this.get(path), value)) { this.set(path, value); }
+
     return value;
   });
 

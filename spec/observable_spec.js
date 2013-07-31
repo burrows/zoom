@@ -883,6 +883,22 @@ describe('Z.Object KVO support:', function() {
        u.setif('name', [1,2,3]);
        expect(triggered).toBe(0);
     });
+
+    it('should conditionally set values given as a native object', function() {
+      var u = User.create({name: 'Bob', address: '123 Fake St.'}),
+          notifications = [],
+          observer = function(n) { notifications.push(n); };
+
+      u.observe('name', null, observer);
+      u.observe('address', null, observer);
+
+      u.setif({name: 'Bill', address: '123 Fake St.'});
+
+      expect(u.name()).toBe('Bill');
+      expect(u.address()).toBe('123 Fake St.');
+      expect(notifications.length).toBe(1);
+      expect(notifications[0].path).toBe('name');
+    });
   });
 });
 
