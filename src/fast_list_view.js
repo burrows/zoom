@@ -330,7 +330,6 @@ Z.FastListView = Z.ListView.extend(function() {
 
     this.resumeScrollListener();
     this.scrollHeight(node.offsetHeight);
-    this.scrollOffset(node.scrollTop);
     this.display();
   });
 
