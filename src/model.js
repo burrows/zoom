@@ -314,7 +314,12 @@
       }
 
       // set raw attributes
-      model.setif(attrs);
+      if (model.sourceState() === EMPTY) {
+        model.set(attrs); // prevents a fetch from being triggered
+      }
+      else {
+        model.setif(attrs);
+      }
 
       // set id if necessary
       if (model.id() === null) { model.id(id); }
