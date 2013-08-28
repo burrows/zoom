@@ -57,6 +57,16 @@ describe('Z.App', function() {
       expect(app.get('mainWindow.isKey')).toBe(true);
     });
 
+    it('should default to using a `Z.Window` as the main window type', function() {
+      expect(app.get('mainWindow.type')).toBe(Z.Window);
+    });
+
+    it('should use the given mainWindowType option to use as the main window type', function() {
+      var W   = Z.Window.extend(),
+          app = Z.App.create(Parent, {mainWindowType: W});
+      expect(app.get('mainWindow.type')).toBe(W);
+    });
+
     it('should create the root state of a statechart', function() {
       expect(app.statechart().isA(Z.State)).toBe(true);
       expect(app.statechart().superstate).toBeNull();

@@ -106,14 +106,16 @@ Z.App = Z.Object.extend(Z.Observable, function() {
   //
   // mainView  - A sub-type of `Z.App` to use as the root view of the app's main
   //             window.
-  this.def('init', function(mainView) {
+  this.def('init', function(mainView, opts) {
+    opts = Z.merge({mainWindowType: Z.Window}, opts || {});
+
     if (!(Z.isA(mainView, Z.View) && mainView.isType)) {
       throw new Error(Z.fmt("%@.init: must provide a sub-type of `Z.View` as the main view type",
                             this.typeName()));
     }
 
     // create the app's main window
-    this.mainWindow(Z.Window.create(mainView, {
+    this.mainWindow(opts.mainWindowType.create(mainView, {
       app: this,
       isMain: true,
       isKey: true
