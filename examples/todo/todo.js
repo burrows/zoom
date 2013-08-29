@@ -143,7 +143,8 @@ Todo.todosController = Z.ArrayController.extend(function() {
 
     title = title.replace(/#\w+/g, '').replace(/^\s+|\s+$/g, '')
 
-    todo = Todo.Todo.create({title: title, tags: tags || Z.A()}).save();
+    todo = Todo.Todo.create({title: title, tags: tags || Z.A()})
+    todo.save();
 
     Z.log(todo, todo.errors());
 
