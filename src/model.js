@@ -417,7 +417,7 @@
 
       this.validate(ctx);
 
-      if (this.isInvalid()) { return this; }
+      if (this.isInvalid()) { return false; }
 
       if (state === NEW) {
         setState.call(this, {busy: true});
@@ -428,7 +428,7 @@
         this.mapper.updateModel.apply(this.mapper, args);
       }
 
-      return this;
+      return true;
     });
 
     this.def('createModelDidSucceed', function() {

@@ -1055,6 +1055,19 @@ describe('Z.Model.save', function() {
     expect(m.validate).toHaveBeenCalledWith('something');
   });
 
+  it('should return true when validation passes', function() {
+    var m = Test.ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
+    expect(m.save()).toBe(true);
+    expect(m.isInvalid()).toBe(false);
+  });
+
+  it('should return false when the validation fails', function() {
+    var m = Test.ValidatedModel.load({id: 1, foo: 'x', bar: 22 });
+    m.set('bar', 1);
+    expect(m.save()).toBe(false);
+    expect(m.isInvalid()).toBe(true);
+  });
+
   it('should throw an exception for a model that is `BUSY`', function() {
     var m = Test.BasicModel.load({id: 1, foo: 'x'});
 
@@ -1705,7 +1718,8 @@ describe('Z.Model `hasOne` association', function() {
       var f = Test.Foo.load({id: 12}), b = Test.Bar.load({id: 19});
 
       f.bar(b);
-      f.save().updateModelDidSucceed();
+      f.save();
+      f.updateModelDidSucceed();
 
       expect(f.isDirty()).toBe(false);
       f.bar(null);
@@ -1866,7 +1880,8 @@ describe('Z.Model `hasMany` association', function() {
       var f = Test.Foo.load({id: 12}), b = Test.Bar.load({id: 19});
 
       f.bars().push(b);
-      f.save().updateModelDidSucceed();
+      f.save();
+      f.updateModelDidSucceed();
 
       expect(f.isDirty()).toBe(false);
       f.bars().pop();
