@@ -143,8 +143,6 @@ Calc.CalculatorView = Z.View.extend(function() {
   });
 
   this.def('render', function() {
-    if (this.__rendered__) { return this.update(); }
-
     this.node.innerHTML = '<div class="display"><div class="result">0</div>' +
       '<div class="operator"></div></div>' +
       '<button class="clear">C</button>' +
@@ -165,8 +163,6 @@ Calc.CalculatorView = Z.View.extend(function() {
       '<button class="number seven">7</button>' +
       '<button class="number eight">8</button>' +
       '<button class="number nine">9</button>';
-
-    this.__rendered__ = true;
   });
 
   this.def('update', function() {
