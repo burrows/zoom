@@ -307,7 +307,7 @@ Todo.MainView = Z.View.extend(function() {
   this.subview('contentView', Todo.ContentView);
 });
 
-Todo.app = Z.App.create(Todo.MainView, document.getElementById('app')).open(function() {
+Todo.app = Z.App.create(Todo.MainView).open(function() {
   this.def('didSelectTag', function(tag) {
     Todo.tagsController.selectItem(tag);
     Todo.todosController.selectedTags(Todo.tagsController.selection());

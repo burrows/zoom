@@ -259,8 +259,8 @@ Calc.CalculatorView = Z.View.extend(function() {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-  Calc.app = Z.App.create(Calc.CalculatorView, document.getElementById('app'));
-  Calc.app.start();
+  Calc.app = Z.App.create(Calc.CalculatorView);
+  Calc.app.start(document.getElementById('app'));
 });
 
 }());
