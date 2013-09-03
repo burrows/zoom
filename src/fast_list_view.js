@@ -251,6 +251,8 @@ Z.FastListView = Z.ListView.extend(function() {
 
     if (this.showingEmpty()) {
       cnode.style.height = null;
+      this.setif('firstVisibleIndex', null);
+      this.setif('firstFullyVisibleIndex', null);
       return;
     }
 

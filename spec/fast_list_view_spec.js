@@ -348,6 +348,21 @@ describe('Z.FastListView', function() {
       view.display();
       expect(view.firstVisibleIndex()).toBe(2);
     });
+
+    it('should return null when the view has no content items', function() {
+      expect(view.firstVisibleIndex()).toBe(0);
+      view.content(Z.A());
+      view.display()
+      expect(view.firstVisibleIndex()).toBeNull();
+    });
+
+    it('should return null when the view has an empty view and no content items', function() {
+      view.emptyView(Z.View.create());
+      expect(view.firstVisibleIndex()).toBe(0);
+      view.content(Z.A());
+      view.display()
+      expect(view.firstVisibleIndex()).toBeNull();
+    });
   });
 
   describe('.firstFullyVisibleIndex', function() {
@@ -362,6 +377,21 @@ describe('Z.FastListView', function() {
       view.scrollOffset(25);
       view.display();
       expect(view.firstFullyVisibleIndex()).toBe(3);
+    });
+
+    it('should return null when the view has no content items', function() {
+      expect(view.firstFullyVisibleIndex()).toBe(0);
+      view.content(Z.A());
+      view.display()
+      expect(view.firstFullyVisibleIndex()).toBeNull();
+    });
+
+    it('should return null when the view has an empty view and no content items', function() {
+      view.emptyView(Z.View.create());
+      expect(view.firstFullyVisibleIndex()).toBe(0);
+      view.content(Z.A());
+      view.display()
+      expect(view.firstFullyVisibleIndex()).toBeNull();
     });
   });
 
