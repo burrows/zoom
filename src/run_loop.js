@@ -1,7 +1,6 @@
 Z.RunLoop = Z.Object.create().open(function() {
   var _this     = this,
       apps      = Z.A(),
-      routers   = Z.A(),
       listeners = Z.H(),
       running   = false;
 
@@ -31,16 +30,6 @@ Z.RunLoop = Z.Object.create().open(function() {
       listeners.del(app).destroy();
     }
 
-    return this;
-  });
-
-  this.def('registerRouter', function(router) {
-    routers.push(router);
-    return this;
-  });
-
-  this.def('deregisterRouter', function(router) {
-    routers.remove(router);
     return this;
   });
 
@@ -78,8 +67,8 @@ Z.RunLoop = Z.Object.create().open(function() {
     if (!running) {
       running = true;
       // flush bindings
+      Z.Router.render();
       apps.each('displayWindows');
-      routers.each('updateHash');
       running = false;
     }
 

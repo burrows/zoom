@@ -21,26 +21,27 @@ describe('Z.Router', function() {
       Z.global.location = {hash: ''};
       stubloc = true;
     }
+    else {
+      Z.global.location.hash = '';
+    }
 
-    Z.Router.registerHandler(routeHandler, unknownRouteHandler);
-
-    Z.Router.route('home', /^$/, function() { return ''; });
+    Z.Router.route('home', /^$/, function() { return ''; }, routeHandler);
 
     Z.Router.route('search', /^search\/(.*?)(?:\/p(\d+))?$/, function(params) {
       var hash = 'search/' + params.query;
       if (params.page) { hash = hash + '/p' + params.page; }
       return hash;
-    });
+    }, routeHandler);
 
     Z.Router.route('showWidget', /^widgets\/(\d+)$/, function(params) {
       return '#widgets/' + params.id;
-    });
+    }, routeHandler);
 
-    Z.Router.start();
+    Z.Router.error(unknownRouteHandler);
   });
 
   afterEach(function() {
-    Z.Router.stop().reset();
+    Z.Router.reset();
     if (stubloc) { Z.del(Z.global, 'location'); }
   });
 
@@ -91,26 +92,29 @@ describe('Z.Router', function() {
       expect(currentRoute.params).toEq(['something', '3']);
     });
 
-    it('should invoke the errback if no matching route is found', function() {
+    it('should invoke all registered error handlers when a matching route is not found', function() {
       expect(currentUnknown).toBe(null);
       Z.Router.routeHash('foo/bar/baz');
       expect(currentUnknown).toBe('foo/bar/baz');
     });
   });
 
-  describe('.updateHash', function() {
+  describe('.render', function() {
     it('should set the location hash to the current value of the `hash` property', function() {
       Z.Router.current('showWidget');
       Z.Router.set('params.id', 452);
 
       expect(Z.global.location.hash).toBe('');
-      Z.Router.updateHash();
+      Z.Router.render();
       expect(Z.global.location.hash).toBe('#widgets/452');
     });
   });
 
   describe('.generate', function() {
     it('should throw an exception if given an unknown route name', function() {
+      expect(function() {
+        Z.Router.generate('foo', {});
+      }).toThrow("Z.Router.generate: unknown route name: 'foo'");
     });
 
     it('should lookup the route and invoke its generator with the given params', function() {
