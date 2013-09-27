@@ -266,6 +266,22 @@ describe('Z.Emitter', function() {
       });
     });
 
+    describe('with a registration created with a `context` option', function() {
+      it('should add the context object to the notification passed to handlers', function() {
+        f.on('foo', 'methHandler1', {context: 'hello'});
+        f.emit('foo');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo', context: 'hello'});
+      });
+    });
+
+    describe('with additional arguments', function() {
+      it('should add those arguments to the notification passed to the handlers', function() {
+        f.on('foo', 'methHandler1');
+        f.emit('foo', 1, 2, 3);
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo', args: [1,2,3]});
+      });
+    });
+
     describe('with non-namespaced events', function() {
       it('should trigger registrations that match the event name exactly', function() {
         f.on('foo', 'methHandler1');

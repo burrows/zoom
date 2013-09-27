@@ -74,7 +74,6 @@ Z.Emitter = Z.Module.extend(function() {
     if (args.length) { n.args = args; }
 
     if (event.indexOf(':') >= 0) {
-      // event is namespaced, so add in wildcard keys
       parts = event.split(':');
       keys.push(parts[0] + ':*');
       keys.push('*:' + parts[1]);
