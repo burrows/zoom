@@ -40,16 +40,23 @@ Z.Emitter = Z.Module.extend(function() {
   });
 
   this.def('off', function(event, handler, opts) {
-    var regs, i;
+    var regs, keys, i, j, n;
 
-    if (!this.__z_on__ || !(regs = this.__z_on__[event])) { return this; }
+    if (!this.__z_on__) { return this; }
 
-    opts = Z.merge({observer: this}, opts);
+    opts = opts || {};
 
-    for (i = regs.length - 1; i >= 0; i--) {
-      if (handler && handler !== regs[i].handler) { continue; }
-      if (opts.observer !== regs[i].observer) { continue; }
-      regs.splice(i, 1);
+    keys = event ? [event] : Z.H(this.__z_on__).keys().toNative();
+
+    for (i = 0, n = keys.length; i < n; i++) {
+      if (!(regs = this.__z_on__[keys[i]])) { continue; }
+
+      for (j = regs.length - 1; j >= 0; j--) {
+        if (handler && handler !== regs[j].handler) { continue; }
+        if (opts.observer && opts.observer !== regs[j].observer) { continue; }
+        if (opts.context && opts.context !== regs[j].context) { continue; }
+        regs.splice(j, 1);
+      }
     }
 
     return this;
