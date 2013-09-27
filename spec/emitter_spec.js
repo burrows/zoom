@@ -2,38 +2,44 @@
 
 if (!this.Z) { require('./helper'); }
 
-var Foo, f, b;
+var Foo, Bar, f, b, funcHandler1, funcHandler2;
 
 Foo = Z.Object.extend(Z.Emitter, function() {
-  this.def('handler', function() {});
+  this.def('methHandler1', function() {});
+  this.def('methHandler2', function() {});
 });
 
 Bar = Z.Object.extend(Z.Emitter, function() {
-  this.def('handler', function() {});
+  this.def('methHandler1', function() {});
 });
 
 describe('Z.Emitter', function() {
   beforeEach(function() {
     f = Foo.create();
     b = Bar.create();
+
+    funcHandler1 = jasmine.createSpy();
+    funcHandler2 = jasmine.createSpy();
+
+    spyOn(f, 'methHandler1');
+    spyOn(f, 'methHandler2');
+
+    spyOn(b, 'methHandler1');
   });
 
   describe('.on', function() {
     describe('with a string handler, no `observer` option, and the `fire` option set', function() {
       it('should invoke the method indicated by the string handler on the receiver', function() {
-        spyOn(f, 'handler');
-        f.on('change', 'handler', {fire: true});
-        expect(f.handler).toHaveBeenCalledWith('change');
+        f.on('change', 'methHandler1', {fire: true});
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'change'});
       });
     });
 
     describe('with a string handler, an `observer` option, and the `fire` option set', function() {
       it('should invoke the method indicated by the string handler on the `observer` object', function() {
-        spyOn(f, 'handler')
-        spyOn(b, 'handler')
-        f.on('change', 'handler', {observer: b, fire: true});
-        expect(f.handler).not.toHaveBeenCalled()
-        expect(b.handler).toHaveBeenCalledWith('change')
+        f.on('change', 'methHandler1', {observer: b, fire: true});
+        expect(f.methHandler1).not.toHaveBeenCalled()
+        expect(b.methHandler1).toHaveBeenCalledWith({event: 'change'})
       });
     });
 
@@ -57,22 +63,6 @@ describe('Z.Emitter', function() {
   });
 
   describe('.off', function() {
-    var Foo, f, funcHandler1, funcHandler2;
-
-    Foo = Z.Object.extend(Z.Emitter, function() {
-      this.def('methHandler1', function() {console.log('methHandler1')});
-      this.def('methHandler2', function() {console.log('methHandler2')});
-    });
-
-    beforeEach(function() {
-      f = Foo.create();
-
-      funcHandler1 = jasmine.createSpy();
-      funcHandler2 = jasmine.createSpy();
-      spyOn(f, 'methHandler1');
-      spyOn(f, 'methHandler2');
-    });
-
     describe('with an event and handler', function() {
       beforeEach(function() {
         f.on('event1', funcHandler1);
@@ -157,21 +147,18 @@ describe('Z.Emitter', function() {
   describe('.emit', function() {
     describe('with a registration created with a string handler and no `observer` option', function() {
       it('should invoke the method indicated by the string handler on the receiver', function() {
-        spyOn(f, 'handler')
-        f.on('change', 'handler');
+        f.on('change', 'methHandler1');
         f.emit('change');
-        expect(f.handler).toHaveBeenCalledWith('change');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'change'});
       });
     });
 
     describe('with a registration created with a string handler and an `observer` option', function() {
       it('should invoke the method indicated by the string handler on the `observer` object', function() {
-        spyOn(f, 'handler')
-        spyOn(b, 'handler')
-        f.on('change', 'handler', {observer: b});
+        f.on('change', 'methHandler1', {observer: b});
         f.emit('change');
-        expect(f.handler).not.toHaveBeenCalled()
-        expect(b.handler).toHaveBeenCalledWith('change')
+        expect(f.methHandler1).not.toHaveBeenCalled()
+        expect(b.methHandler1).toHaveBeenCalledWith({event: 'change'});
       });
     });
 
@@ -197,24 +184,92 @@ describe('Z.Emitter', function() {
 
     describe('with a registration created with the `once` option', function() {
       it('should remove the registration so that the handler is no longer invoked on subsequent events', function() {
-        spyOn(f, 'handler');
-        f.on('change', 'handler', {once: true});
+        f.on('change', 'methHandler1', {once: true});
         f.emit('change');
-        expect(f.handler.callCount).toBe(1);
+        expect(f.methHandler1.callCount).toBe(1);
         f.emit('change');
-        expect(f.handler.callCount).toBe(1);
+        expect(f.methHandler1.callCount).toBe(1);
+      });
+    });
+
+    describe('with non-namespaced events', function() {
+      it('should trigger registrations that match the event name exactly', function() {
+        f.on('foo', 'methHandler1');
+        f.emit('foo');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo'});
+      });
+
+      it("should trigger '*' registrations", function() {
+        f.on('*', 'methHandler1');
+        f.emit('foo');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo'});
+      });
+
+      it('should not trigger registrations for other events', function() {
+        f.on('bar', 'methHandler1');
+        f.emit('foo');
+        expect(f.methHandler1).not.toHaveBeenCalled();
+      });
+
+      it('should not trigger registrations for a namespace', function() {
+        f.on('foo:bar', 'methHandler1');
+        f.emit('foo');
+        expect(f.methHandler1).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('with namespaced events', function() {
+      it('should trigger registrations that match the event exactly', function() {
+        f.on('foo:bar', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo:bar'});
+      })
+
+      it("should trigger registrations that match the type and have a namespace of '*'", function() {
+        f.on('foo:*', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo:bar'});
+      });
+
+      it("should trigger registrations that have a type of '*' and match the namespace exactly", function() {
+        f.on('*:bar', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo:bar'});
+      });
+
+      it("should trigger registrations that have a type of '*' and a namespace of '*'", function() {
+        f.on('*:*', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo:bar'});
+      });
+
+      it("should trigger '*' registrations", function() {
+        f.on('*', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).toHaveBeenCalledWith({event: 'foo:bar'});
+      });
+
+      it('should not trigger registrations where just the type matches', function() {
+        f.on('foo:quux', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).not.toHaveBeenCalled();
+      });
+
+      it('should not trigger registrations where just the namespace matches', function() {
+        f.on('abc:bar', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).not.toHaveBeenCalled();
+      });
+
+      it('should not trigger registrations for just the event type', function() {
+        f.on('foo', 'methHandler1');
+        f.emit('foo:bar');
+        expect(f.methHandler1).not.toHaveBeenCalled();
       });
     });
 
     it('should return the receiver', function() {
       expect(f.emit('change')).toBe(f);
-    });
-
-    it('should not trigger handlers registered for other events', function() {
-      spyOn(f, 'handler');
-      f.on('change', 'handler');
-      f.emit('someEvent');
-      expect(f.handler).not.toHaveBeenCalled();
     });
   });
 });
