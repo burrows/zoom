@@ -1,15 +1,13 @@
 Z.Emitter = Z.Module.extend(function() {
-  var slice = Array.prototype.slice;
-
-  function trigger(reg, n) {
+  function trigger(reg, event, data) {
     var handler = typeof reg.handler === 'string' ?
       reg.observer[reg.handler] : reg.handler;
 
     if (reg.context) {
-      handler.call(reg.observer, Z.merge({}, n, {context: reg.context}));
+      handler.call(reg.observer, event, data, reg.context);
     }
     else {
-      handler.call(reg.observer, n);
+      handler.call(reg.observer, event, data);
     }
   }
 
@@ -38,7 +36,7 @@ Z.Emitter = Z.Module.extend(function() {
     };
     this.__z_on__[event].push(reg);
 
-    if (opts.fire) { trigger(reg, {event: event}); }
+    if (opts.fire) { trigger(reg, event); }
 
     return this;
   });
@@ -68,16 +66,12 @@ Z.Emitter = Z.Module.extend(function() {
     return this;
   });
 
-  this.def('emit', function(event) {
-    var args, keys, parts, regs, n, len, i, j;
+  this.def('emit', function(event, data) {
+    var keys, parts, regs, len, i, j;
 
     if (!this.__z_on__) { return this; }
 
-    args = slice.call(arguments, 1);
     keys = [event, '*'];
-    n    = {event: event};
-
-    if (args.length) { n.args = args; }
 
     if (event.indexOf(':') >= 0) {
       parts = event.split(':');
@@ -90,7 +84,7 @@ Z.Emitter = Z.Module.extend(function() {
       if (!(regs = this.__z_on__[keys[i]])) { continue; }
 
       for (j = regs.length - 1; j >= 0; j--) {
-        trigger(regs[j], n);
+        trigger(regs[j], event, data);
         if (regs[j].once) { regs.splice(j, 1); }
       }
     }

@@ -404,20 +404,20 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return this.supr(event, handler, opts);
   });
 
-  function pathSegmentWillChange(n) {
-    var ctx = n.context, val = this.get(ctx.head);
+  function pathSegmentWillChange(event, data, ctx) {
+    var val;
 
-    if (val && ctx.tail) {
+    if (ctx.tail && (val = this.get(ctx.head))) {
       val.teardownPathObserver(ctx.tail, ctx.path, ctx.observee);
     }
 
     ctx.observee.emit('willChange:' + ctx.path);
   }
 
-  function pathSegmentDidChange(n) {
-    var ctx = n.context, val = this.get(ctx.head);
+  function pathSegmentDidChange(event, data, ctx) {
+    var val;
 
-    if (val && ctx.tail) {
+    if (ctx.tail && (val = this.get(ctx.head))) {
       val.setupPathObserver(ctx.tail, ctx.path, ctx.observee);
     }
 
