@@ -121,7 +121,14 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   //
   // Returns the receiver.
   this.def('destroy', function() {
-    // FIXME: remove path observers
+    var k;
+
+    for (k in this.__z_paths__) {
+      if (!this.__z_paths__.hasOwnProperty(k)) { continue; }
+      this.teardownPathObserver(k, k, this);
+    }
+
+    this.off();
     return this.supr();
   });
 
