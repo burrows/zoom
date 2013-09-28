@@ -423,14 +423,13 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
         tail = i > 0 ? rpath.substring(i + 1) : null,
         val;
 
-    // FIXME: how to handle * keys?
-    //if (!this.hasProperty(head) && head !== '*') {
-    //  throw new Error(Z.fmt("Z.Object.setupPathObserver: undefined key `%@` for %@", head, this));
-    //}
+    if (!this.hasProperty(head) && head !== '*') {
+      throw new Error(Z.fmt("Z.Observable.setupPathObserver: undefined key `%@` for %@", head, this));
+    }
 
-    //if (head === '*' && tail.length > 0) {
-    //  throw new Error(Z.fmt("Z.Object.setupPathObserver: observing `*` in the middle of a property path is not supported: '%@'", origEvent));
-    //}
+    if (head === '*' && tail) {
+      throw new Error(Z.fmt("Z.Observable.setupPathObserver: observing `*` anywhere other than at the end of a property path is not supported: '%@'", opath));
+    }
 
     this.on('willChange:' + head, pathSegmentWillChange, {
       context: {observee: observee, path: opath, head: head, tail: tail}
