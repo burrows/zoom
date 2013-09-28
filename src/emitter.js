@@ -13,18 +13,22 @@ Z.Emitter = Z.Module.extend(function() {
     }
   }
 
+  this.def('normalizeOnOpts', function(opts) {
+    return Z.merge({
+      observer: this,
+      context: null,
+      fire: false,
+      once: false
+    }, opts);
+  });
+
   this.def('on', function(event, handler, opts) {
     var reg;
 
     this.__z_on__ = this.__z_on__ || {};
     this.__z_on__[event] = this.__z_on__[event] || [];
 
-    opts = Z.merge({
-      observer: this,
-      context: null,
-      fire: false,
-      once: false
-    }, opts);
+    opts = this.normalizeOnOpts(opts);
 
     reg = {
       handler: handler,
@@ -46,7 +50,7 @@ Z.Emitter = Z.Module.extend(function() {
 
     opts = opts || {};
 
-    keys = event ? [event] : Z.H(this.__z_on__).keys().toNative();
+    keys = event ? [event] : Object.keys(this.__z_on__);
 
     for (i = 0, n = keys.length; i < n; i++) {
       if (!(regs = this.__z_on__[keys[i]])) { continue; }
@@ -57,6 +61,8 @@ Z.Emitter = Z.Module.extend(function() {
         if (opts.context && opts.context !== regs[j].context) { continue; }
         regs.splice(j, 1);
       }
+
+      if (regs.length === 0) { delete this.__z_on__[keys[i]]; }
     }
 
     return this;
