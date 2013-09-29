@@ -20,7 +20,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     cache     : false
   },
 
-  pathEventRe = /^(willChange|didChange):[\w*@]+\./;
+  propEventRe = /^(?:willChange|didChange):/;
 
   // Internal: Returns the current value of the property indicated by the given
   // key. If a property with the given name does not exist, the
@@ -376,14 +376,22 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return value;
   });
 
+  this.def('isPropEvent', function(event) { return propEventRe.test(event); });
+
   this.def('on', function(event, handler, opts) {
     var path;
 
-    if (pathEventRe.test(event)) {
+    if (this.isPropEvent(event)) {
       path = event.split(':')[1];
-      if (!this.__z_paths__[path]) {
-        this.setupPathObserver(path, path, this);
-        this.__z_paths__[path] = true;
+
+      if (path.indexOf('.') >= 0) {
+        if (!this.__z_paths__[path]) {
+          this.setupPathObserver(path, path, this);
+          this.__z_paths__[path] = 1;
+        }
+      }
+      else if (!this.hasProperty(path) && path !== '*') {
+        throw new Error(Z.fmt("Z.Observable.on: unknown property `%@` for `%@`", path, this));
       }
     }
 
@@ -393,8 +401,9 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   this.def('off', function(event, handler, opts) {
     var path;
 
-    if (pathEventRe.test(event)) {
+    if (this.isPropEvent(event)) {
       path = event.split(':')[1];
+
       if (this.__z_paths__[path]) {
         this.teardownPathObserver(path, path, this);
         delete this.__z_paths__[path];
@@ -411,7 +420,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       val.teardownPathObserver(ctx.tail, ctx.path, ctx.observee);
     }
 
-    ctx.observee.emit('willChange:' + ctx.path);
+    ctx.observee.emit('willChange:' + ctx.path, data);
   }
 
   function pathSegmentDidChange(event, data, ctx) {
@@ -421,7 +430,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       val.setupPathObserver(ctx.tail, ctx.path, ctx.observee);
     }
 
-    ctx.observee.emit('didChange:' + ctx.path);
+    ctx.observee.emit('didChange:' + ctx.path, data);
   }
 
   this.def('setupPathObserver', function(rpath, opath, observee) {
