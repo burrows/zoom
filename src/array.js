@@ -42,56 +42,45 @@
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   var slice = Array.prototype.slice;
 
-  // Internal: Registers item observers on the given items. Item observers are
-  // created when an unknown property is observed on an array.
-  //
-  // items - The items to add observers to.
-  //
-  // Returns nothing.
-  function registerItemObservers(items) {
-    var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
+  function itemObserver(event, data) {
+    var path = event.split(':')[0];
+    if (path.indexOf('.') === -1) { this.emit(event, data); }
+  }
 
-    if (!registrations) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      for (j = 0, ilen = items.length; j < ilen; j++) {
-        items[j].registerObserver(r.tail, r.path, r.observee, r.observer,
-                                  r.action, r.opts);
-      }
+  function setupItemObservers(i, n) {
+    if (!this.__z_hasItemObservers__) { return; }
+    for (; i < n; i++) {
+      this.__z_items__[i].on('willChange:*', itemObserver, {observer: this});
+      this.__z_items__[i].on('didChange:*', itemObserver, {observer: this});
     }
   }
 
-  // Internal: Deregisters item observers on the given items. This method is
-  // called when items are removed from an array that has item observers.
-  //
-  // items - The items to remove observers from.
-  //
-  // Returns nothing.
-  function deregisterItemObservers(items) {
-    var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
+  function teardownItemObservers(i, n) {
+    if (!this.__z_hasItemObservers__) { return; }
+    for (; i < n; i++) {
+      this.__z_items__[i].off('willChange:*', itemObserver, {observer: this});
+      this.__z_items__[i].off('didChange:*', itemObserver, {observer: this});
+    }
+  }
 
-    if (!registrations) { return; }
+  function itemObservers() {
+    var x = {}, k;
 
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      for (j = 0, ilen = items.length; j < ilen; j++) {
-        items[j].deregisterObserver(r.tail, r.path, r.observee, r.observer,
-                                    r.action, r.opts);
+    for (k in this.__z_on__) {
+      if (this.isPropEvent(k) && k.indexOf('.') === -1) {
+        x[k.split(':')[1]] = 1;
       }
     }
+
+    return Object.keys(x);
   }
 
   // Internal: Called just before a mutation to the array is made, it does the
   // following:
   //
-  // * Calls `Z.Object.willChangeProperty` for array properties that will be
-  //   affected by the mutation.
+  // * Emits events for array properties that will be affected by the mutation.
   // * Deregisters item observers from items that are about to be removed from
   //   the array.
-  // * Prepares notification objects for item observers.
   //
   // type - The type of mutation that will occur (insert, remove, or update).
   // idx  - The index in the array where the mutation will start.
@@ -100,64 +89,35 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   //
   // Returns nothing.
   function willMutate(type, idx, n) {
-    var len       = this.size(),
-        prevItems = this.slice(idx, n),
-        registrations, r, i, notification;
+    var size = this.size(), ios = itemObservers.call(this), i, len;
 
     switch (type) {
     case 'insert':
-      this.willChangeProperty('size');
-      if (idx === 0)  { this.willChangeProperty('first'); }
-      if (idx >= len) { this.willChangeProperty('last'); }
-      this.willChangeProperty('@', {
-        type     : 'insert',
-        range    : [idx, n],
-        previous : void 0
-      });
+      this.emit('willChange:size');
+      if (idx === 0)   { this.emit('willChange:first'); }
+      if (idx >= size) { this.emit('willChange:last'); }
+      this.emit('willInsert', [idx, n]);
+      this.emit('willChange:@', {type: 'insert', slice: [idx, n]});
       break;
     case 'remove':
-      this.willChangeProperty('size');
-      if (idx === 0)       { this.willChangeProperty('first'); }
-      if (idx + n === len) { this.willChangeProperty('last'); }
-      this.willChangeProperty('@', {
-        type     : 'remove',
-        range    : [idx, n],
-        previous : prevItems
-      });
-      deregisterItemObservers.call(this, prevItems.__z_items__);
+      this.emit('willChange:size');
+      if (idx === 0)        { this.emit('willChange:first'); }
+      if (idx + n === size) { this.emit('willChange:last'); }
+      this.emit('willRemove', [idx, n]);
+      this.emit('willChange:@', {type: 'remove', slice: [idx, n]});
+      teardownItemObservers.call(this, idx, n);
       break;
     case 'update':
-      if (idx === 0)       { this.willChangeProperty('first'); }
-      if (idx + n === len) { this.willChangeProperty('last'); }
-      this.willChangeProperty('@', {
-        type     : 'update',
-        range    : [idx, n],
-        previous : prevItems
-      });
-      deregisterItemObservers.call(this, prevItems.__z_items__);
+      if (idx === 0)        { this.emit('willChange:first'); }
+      if (idx + n === size) { this.emit('willChange:last'); }
+      this.emit('willUpdate', [idx, n]);
+      this.emit('willChange:@', {type: 'update', slice: [idx, n]});
+      teardownItemObservers.call(this, idx, n);
       break;
     }
 
-    if (!(registrations = this.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
-
-      if (r.opts.previous) { r.previous = r.observee.get(r.path); }
-
-      if (r.opts.prior) {
-        notification = {
-          type     : 'change',
-          isPrior  : true,
-          path     : r.path,
-          observee : r.observee
-        };
-
-        if (r.opts.context) { notification.context = r.opts.context; }
-        if (r.opts.previous) { notification.previous = r.previous; }
-
-        r.callback.call(r.observer, notification);
-      }
+    for (i = 0, len = ios.length; i < len; i++) {
+      this.emit('willChange:' + ios[i]);
     }
   }
 
@@ -177,60 +137,35 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   //
   // Returns nothing.
   function didMutate(type, idx, n) {
-    var len      = this.size(),
-        curItems = this.slice(idx, n),
-        registrations, r, i, notification;
+    var size = this.size(), ios = itemObservers.call(this), i, len;
 
     switch (type) {
     case 'insert':
-      this.didChangeProperty('size');
-      if (idx === 0)       { this.didChangeProperty('first'); }
-      if (idx + n === len) { this.didChangeProperty('last'); }
-      this.didChangeProperty('@', {
-        type    : 'insert',
-        range   : [idx, n],
-        current : curItems
-      });
-      registerItemObservers.call(this, curItems.__z_items__);
+      this.emit('didChange:size');
+      if (idx === 0)        { this.emit('didChange:first'); }
+      if (idx + n === size) { this.emit('didChange:last'); }
+      this.emit('didInsert', [idx, n]);
+      this.emit('didChange:@', {type: 'insert', slice: [idx, n]});
+      setupItemObservers.call(this, idx, n);
       break;
     case 'remove':
-      this.didChangeProperty('size');
-      if (idx === 0)     { this.didChangeProperty('first'); }
-      if (idx + n > len) { this.didChangeProperty('last'); }
-      this.didChangeProperty('@', {
-        type    : 'remove',
-        range   : [idx, n],
-        current : void 0
-      });
+      this.emit('didChange:size');
+      if (idx === 0)      { this.emit('didChange:first'); }
+      if (idx + n > size) { this.emit('didChange:last'); }
+      this.emit('didRemove', [idx, n]);
+      this.emit('didChange:@', {type: 'remove', slice: [idx, n]});
       break;
     case 'update':
-      if (idx === 0)       { this.didChangeProperty('first'); }
-      if (idx + n === len) { this.didChangeProperty('last'); }
-      this.didChangeProperty('@', {
-        type    : 'update',
-        range   : [idx, n],
-        current : curItems
-      });
-      registerItemObservers.call(this, curItems.__z_items__);
+      if (idx === 0)        { this.emit('didChange:first'); }
+      if (idx + n === size) { this.emit('didChange:last'); }
+      this.emit('didUpdate', [idx, n]);
+      this.emit('didChange:@', {type: 'update', slice: [idx, n]});
+      setupItemObservers.call(this, idx, n);
       break;
     }
 
-    if (!(registrations = this.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
-
-      notification = {
-        type     : 'change',
-        path     : r.path,
-        observee : r.observee
-      };
-
-      if (r.opts.context)  { notification.context  = r.opts.context; }
-      if (r.opts.previous) { notification.previous = r.previous; }
-      if (r.opts.current)  { notification.current  = r.observee.get(r.path); }
-
-      r.callback.call(r.observer, notification);
+    for (i = 0, len = ios.length; i < len; i++) {
+      this.emit('didChange:' + ios[i]);
     }
   }
 
@@ -798,64 +733,6 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Internal: Overrides the default `registerObserver` implemention in
   // `Z.Object` in order to proxy observers on unknown properties to each item
   // in the array.
-  this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
-    var items = this.__z_items__, registration, i, len;
-
-    if (this.hasProperty(rpath[0])) {
-      return this.supr(rpath, opath, observee, observer, action, opts);
-    }
-
-    registration = {
-      path     : opath,
-      head     : null,
-      tail     : rpath,
-      observee : observee,
-      observer : observer,
-      action   : action,
-      callback : typeof action === 'function' ? action : observer[action],
-      opts     : opts,
-      previous : null
-    };
-
-    this.__z_itemRegistrations__ = this.__z_itemRegistrations__ || [];
-    this.__z_itemRegistrations__.push(registration);
-
-    for (i = 0, len = items.length; i < len; i++) {
-      items[i].registerObserver(rpath, opath, observee, observer, action, opts);
-    }
-
-    return registration;
-  });
-
-  // Internal: Overrides the default `deregisterObserver` implemention in
-  // `Z.Object` in order to remove item observers.
-  this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
-    var items = this.__z_items__, registrations, r, i, j, rlen, ilen;
-
-    if (this.hasProperty(rpath[0])) {
-      return this.supr.apply(this, slice.call(arguments));
-    }
-
-    if (!(registrations = this.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      if (r.path     === opath    &&
-          r.observee === observee &&
-          r.observer === observer &&
-          r.action   === action) {
-        registrations.splice(i, 1);
-
-        for (j = 0, ilen = items.length; j < ilen; j++) {
-          items[j].deregisterObserver(rpath, opath, observee, observer, action, opts);
-        }
-
-        return;
-      }
-    }
-  });
-
   // Internal: Proxies gets for unknown properties out to all items and returns
   // a new array containing each value. The resulting array is flattened.
   //
@@ -876,6 +753,50 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Returns nothing.
   this.def('setUnknownProperty', function(k, v) {
     this.each(function(item) { item.set(k, v); });
+  });
+
+  this.def('_hasProperty', this.hasProperty);
+  this.def('hasProperty', function() { return true; });
+
+  this.def('on', function(event, handler, opts) {
+    this.supr(event, handler, opts);
+
+    if (!this.__z_hasItemObservers__ && itemObservers.call(this).length) {
+      this.__z_hasItemObservers__ = true;
+      setupItemObservers.call(this, 0, this.__z_items__.length);
+    }
+
+    return this;
+  });
+
+  this.def('off', function(event, handler, opts) {
+    this.supr(event, handler, opts);
+
+    if (this.__z_hasItemObservers__ && !itemObservers.call(this).length) {
+      teardownItemObservers.call(this, 0, this.__z_items__.length);
+      this.__z_hasItemObservers__ = false;
+    }
+
+    return this;
+  });
+
+  this.def('setupPathObserver', function(rpath, opath, observee) {
+    var i     = rpath.indexOf('.'),
+        head  = i > 0 ? rpath.substring(0, i) : rpath,
+        items = this.__z_items__,
+        n;
+
+    if (!this._hasProperty(head)) {
+      for (i = 0, n = items.length; i < n; i++) {
+        // FIXME: handle non-observable items?
+        items[i].setupPathObserver(rpath, opath, observee);
+      }
+    }
+    else {
+      this.supr(rpath, opath, observee);
+    }
+
+    return this;
   });
 });
 
