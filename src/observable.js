@@ -112,7 +112,8 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   // Returns the receiver.
   this.def('init', function(props) {
     if (props) { this.set(props); }
-    this.__z_paths__ = {};
+    this.__z_paths__    = {};
+    this.__z_unknowns__ = {};
     observeDependentPaths.call(this);
     return this.supr();
   });
@@ -387,11 +388,14 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       if (path.indexOf('.') >= 0) {
         if (!this.__z_paths__[path]) {
           this.setupPathObserver(path, path, this);
-          this.__z_paths__[path] = 1;
+          this.__z_paths__[path] = (this.__z_paths__[path] || 0) + 1;
         }
       }
       else if (!this.hasProperty(path) && path !== '*') {
-        throw new Error(Z.fmt("Z.Observable.on: unknown property `%@` for `%@`", path, this));
+        if (!this.__z_unknowns__[path]) {
+          this.setupUnknownObserver(path, this);
+          this.__z_unknowns__[path] = (this.__z_unknowns__[path] || 0) + 1;
+        }
       }
     }
 
@@ -404,9 +408,17 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     if (this.isPropEvent(event)) {
       path = event.split(':')[1];
 
-      if (this.__z_paths__[path]) {
-        this.teardownPathObserver(path, path, this);
-        delete this.__z_paths__[path];
+      if (path.indexOf('.') >= 0) {
+        if (this.__z_paths__[path] && !(--this.__z_paths__[path])) {
+          this.teardownPathObserver(path, path, this);
+          delete this.__z_paths__[path];
+        }
+      }
+      else if (!this.hasProperty(path) && path !== '*') {
+        if (this.__z_unknowns__[path] && !(--this.__z_unknowns__[path])) {
+          this.teardownUnknownObserver(path, path, this);
+          delete this.__z_unknowns__[path];
+        }
       }
     }
 
@@ -439,10 +451,6 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
         tail = i > 0 ? rpath.substring(i + 1) : null,
         val;
 
-    if (!this.hasProperty(head) && head !== '*') {
-      throw new Error(Z.fmt("Z.Observable.setupPathObserver: undefined key `%@` for %@", head, this));
-    }
-
     if (head === '*' && tail) {
       throw new Error(Z.fmt("Z.Observable.setupPathObserver: observing `*` anywhere other than at the end of a property path is not supported: '%@'", opath));
     }
@@ -471,11 +479,19 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     this.off('willChange:' + head, pathSegmentWillChange);
     this.off('didChange:' + head, pathSegmentDidChange);
 
-    if (tail && (val = this.get(head))) {
+    if (tail && this.hasProperty(head) && (val = this.get(head))) {
       val.teardownPathObserver(tail, opath, observee);
     }
 
     return this;
+  });
+
+  this.def('setupUnknownObserver', function(prop, observee) {
+    throw new Error(Z.fmt("Z.Observable.on: unknown property `%@` for `%@`", prop, this));
+  });
+
+  this.def('teardownUnknownObserver', function() {
+    throw new Error(Z.fmt("Z.Observable.off: unknown property `%@` for `%@`", prop, this));
   });
 
   // Public: This method is invoked by the KVC system when an attempt is made to
