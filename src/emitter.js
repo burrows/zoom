@@ -85,7 +85,12 @@ Z.Emitter = Z.Module.extend(function() {
 
       for (j = regs.length - 1; j >= 0; j--) {
         trigger(regs[j], event, data);
-        if (regs[j].once) { regs.splice(j, 1); }
+        if (regs[j].once) {
+          this.off(keys[i], regs[j].handler, {
+            observer: regs[j].observer,
+            context: regs[j].context
+          });
+        }
       }
     }
 
