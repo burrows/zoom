@@ -42,39 +42,6 @@
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   var slice = Array.prototype.slice;
 
-  function itemObserver(event, data) {
-    var path = event.split(':')[0];
-    if (path.indexOf('.') === -1) { this.emit(event, data); }
-  }
-
-  function setupItemObservers(i, n) {
-    if (!this.__z_hasItemObservers__) { return; }
-    for (; i < n; i++) {
-      this.__z_items__[i].on('willChange:*', itemObserver, {observer: this});
-      this.__z_items__[i].on('didChange:*', itemObserver, {observer: this});
-    }
-  }
-
-  function teardownItemObservers(i, n) {
-    if (!this.__z_hasItemObservers__) { return; }
-    for (; i < n; i++) {
-      this.__z_items__[i].off('willChange:*', itemObserver, {observer: this});
-      this.__z_items__[i].off('didChange:*', itemObserver, {observer: this});
-    }
-  }
-
-  function itemObservers() {
-    var x = {}, k;
-
-    for (k in this.__z_on__) {
-      if (this.isPropEvent(k) && k.indexOf('.') === -1) {
-        x[k.split(':')[1]] = 1;
-      }
-    }
-
-    return Object.keys(x);
-  }
-
   // Internal: Called just before a mutation to the array is made, it does the
   // following:
   //
@@ -89,7 +56,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   //
   // Returns nothing.
   function willMutate(type, idx, n) {
-    var size = this.size(), ios = itemObservers.call(this), i, len;
+    var size = this.size();
 
     switch (type) {
     case 'insert':
@@ -116,9 +83,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
       break;
     }
 
-    for (i = 0, len = ios.length; i < len; i++) {
-      this.emit('willChange:' + ios[i]);
-    }
+    emitItemObservers.call(this, 'willChange');
   }
 
   // Internal: Called just after a mutation to the array is made, it does the
@@ -137,7 +102,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   //
   // Returns nothing.
   function didMutate(type, idx, n) {
-    var size = this.size(), ios = itemObservers.call(this), i, len;
+    var size = this.size();
 
     switch (type) {
     case 'insert':
@@ -164,9 +129,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
       break;
     }
 
-    for (i = 0, len = ios.length; i < len; i++) {
-      this.emit('didChange:' + ios[i]);
-    }
+    emitItemObservers.call(this, 'didChange');
   }
 
   // Public: A property that returns the current size of the array. The size
@@ -755,45 +718,83 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     this.each(function(item) { item.set(k, v); });
   });
 
-  this.def('_hasProperty', this.hasProperty);
-  this.def('hasProperty', function() { return true; });
+  function setupItemObserver(rpath, opath, observee, i, n) {
+    var items = this.__z_items__;
 
-  this.def('on', function(event, handler, opts) {
-    this.supr(event, handler, opts);
-
-    if (!this.__z_hasItemObservers__ && itemObservers.call(this).length) {
-      this.__z_hasItemObservers__ = true;
-      setupItemObservers.call(this, 0, this.__z_items__.length);
+    for (; i < n; i++) {
+      items[i].setupUnknownObserver(rpath, opath, observee);
     }
+  }
+
+  function teardownItemObserver(rpath, opath, observee, i, n) {
+    var items = this.__z_items__;
+
+    for (; i < n; i++) {
+      items[i].teardownUnknownObserver(rpath, opath, observee);
+    }
+  }
+
+  function setupItemObservers(i, n) {
+    var idx, len, io;
+
+    if (!this.__z_ios__) { return; }
+
+    for (idx = 0, len = this.__z_ios__.length; idx < len; idx++) {
+      io = this.__z_ios__[idx];
+      setupItemObserver.call(this, io.rpath, io.opath, io.observee, i, n);
+    }
+  }
+
+  function teardownItemObservers(i, n) {
+    var idx, len, io;
+
+    if (!this.__z_ios__) { return; }
+
+    for (idx = 0, len = this.__z_ios__.length; idx < len; idx++) {
+      io = this.__z_ios__[idx];
+      teardownItemObserver.call(this, io.rpath, io.opath, io.observee, i, n);
+    }
+  }
+
+  function emitItemObservers(type) {
+    var i, n, io;
+
+    if (!this.__z_ios__) { return; }
+
+    for (i = 0, n = this.__z_ios__.length; i < n; i++) {
+      io = this.__z_ios__[i];
+      io.observee.emit(type + ':' + io.opath);
+    }
+  }
+
+  this.def('setupUnknownObserver', function(rpath, opath, observee) {
+    var i = rpath.indexOf('.'), head = i > 0 ? rpath.substring(0, i) : rpath;
+
+    if (this.hasProperty(head)) { return this.supr(rpath, opath, observee); }
+    setupItemObserver.call(this, rpath, opath, observee, 0, this.size());
+
+    (this.__z_ios__ = this.__z_ios__ || []).push({
+      rpath: rpath,
+      opath: opath,
+      observee: observee
+    });
 
     return this;
   });
 
-  this.def('off', function(event, handler, opts) {
-    this.supr(event, handler, opts);
+  this.def('teardownUnknownObserver', function(rpath, opath, observee) {
+    var i = rpath.indexOf('.'), head = i > 0 ? rpath.substring(0, i) : rpath, n;
 
-    if (this.__z_hasItemObservers__ && !itemObservers.call(this).length) {
-      teardownItemObservers.call(this, 0, this.__z_items__.length);
-      this.__z_hasItemObservers__ = false;
-    }
+    if (this.hasProperty(head)) { return this.supr(rpath, opath, observee); }
+    teardownItemObserver.call(this, rpath, opath, observee, 0, this.size());
 
-    return this;
-  });
-
-  this.def('setupPathObserver', function(rpath, opath, observee) {
-    var i     = rpath.indexOf('.'),
-        head  = i > 0 ? rpath.substring(0, i) : rpath,
-        items = this.__z_items__,
-        n;
-
-    if (!this._hasProperty(head)) {
-      for (i = 0, n = items.length; i < n; i++) {
-        // FIXME: handle non-observable items?
-        items[i].setupPathObserver(rpath, opath, observee);
+    for (i = 0, n = this.__z_ios__.length; i < n; i++) {
+      if (this.__z_ios__[i].rpath === rpath &&
+          this.__z_ios__[i].opath === opath &&
+          this.__z_ios__[i].observee === observee) {
+        this.__z_ios__.splice(i, 1);
+        break;
       }
-    }
-    else {
-      this.supr(rpath, opath, observee);
     }
 
     return this;

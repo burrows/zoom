@@ -20,7 +20,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     cache     : false
   },
 
-  propEventRe = /^(?:willChange|didChange):/;
+  observableEventRe = /^(?:willChange|didChange):/;
 
   // Internal: Returns the current value of the property indicated by the given
   // key. If a property with the given name does not exist, the
@@ -112,8 +112,6 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   // Returns the receiver.
   this.def('init', function(props) {
     if (props) { this.set(props); }
-    this.__z_paths__    = {};
-    this.__z_unknowns__ = {};
     observeDependentPaths.call(this);
     return this.supr();
   });
@@ -377,25 +375,15 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return value;
   });
 
-  this.def('isPropEvent', function(event) { return propEventRe.test(event); });
-
   this.def('on', function(event, handler, opts) {
     var path;
 
-    if (this.isPropEvent(event)) {
+    if (observableEventRe.test(event)) {
       path = event.split(':')[1];
 
-      if (path.indexOf('.') >= 0) {
-        if (!this.__z_paths__[path]) {
-          this.setupPathObserver(path, path, this);
-          this.__z_paths__[path] = (this.__z_paths__[path] || 0) + 1;
-        }
-      }
-      else if (!this.hasProperty(path) && path !== '*') {
-        if (!this.__z_unknowns__[path]) {
-          this.setupUnknownObserver(path, this);
-          this.__z_unknowns__[path] = (this.__z_unknowns__[path] || 0) + 1;
-        }
+      if (!this.hasProperty(path) && path !== '*' &&
+          (!this.__z_on__ || !this.__z_on__['willChange:' + path])) {
+        this.setupUnknownObserver(path, path, this);
       }
     }
 
@@ -405,31 +393,25 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   this.def('off', function(event, handler, opts) {
     var path;
 
-    if (this.isPropEvent(event)) {
+    this.supr(event, handler, opts);
+
+    if (observableEventRe.test(event)) {
       path = event.split(':')[1];
 
-      if (path.indexOf('.') >= 0) {
-        if (this.__z_paths__[path] && !(--this.__z_paths__[path])) {
-          this.teardownPathObserver(path, path, this);
-          delete this.__z_paths__[path];
-        }
-      }
-      else if (!this.hasProperty(path) && path !== '*') {
-        if (this.__z_unknowns__[path] && !(--this.__z_unknowns__[path])) {
-          this.teardownUnknownObserver(path, path, this);
-          delete this.__z_unknowns__[path];
-        }
+      if (!this.hasProperty(path) && path !== '*' &&
+          (!this.__z_on__ || !this.__z_on__['willChange:' + path])) {
+        this.teardownUnknownObserver(path, path, this);
       }
     }
 
-    return this.supr(event, handler, opts);
+    return this;
   });
 
   function pathSegmentWillChange(event, data, ctx) {
     var val;
 
     if (ctx.tail && (val = this.get(ctx.head))) {
-      val.teardownPathObserver(ctx.tail, ctx.path, ctx.observee);
+      val.teardownUnknownObserver(ctx.tail, ctx.path, ctx.observee);
     }
 
     ctx.observee.emit('willChange:' + ctx.path, data);
@@ -439,13 +421,13 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     var val;
 
     if (ctx.tail && (val = this.get(ctx.head))) {
-      val.setupPathObserver(ctx.tail, ctx.path, ctx.observee);
+      val.setupUnknownObserver(ctx.tail, ctx.path, ctx.observee);
     }
 
     ctx.observee.emit('didChange:' + ctx.path, data);
   }
 
-  this.def('setupPathObserver', function(rpath, opath, observee) {
+  this.def('setupUnknownObserver', function(rpath, opath, observee) {
     var i    = rpath.indexOf('.'),
         head = i > 0 ? rpath.substring(0, i) : rpath,
         tail = i > 0 ? rpath.substring(i + 1) : null,
@@ -464,13 +446,13 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     });
 
     if (tail && (val = this.get(head))) {
-      val.setupPathObserver(tail, opath, observee);
+      val.setupUnknownObserver(tail, opath, observee);
     }
 
     return this;
   });
 
-  this.def('teardownPathObserver', function(rpath, opath, observee) {
+  this.def('teardownUnknownObserver', function(rpath, opath, observee) {
     var i    = rpath.indexOf('.'),
         head = i > 0 ? rpath.substring(0, i) : rpath,
         tail = i > 0 ? rpath.substring(i + 1) : null,
@@ -479,19 +461,11 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     this.off('willChange:' + head, pathSegmentWillChange);
     this.off('didChange:' + head, pathSegmentDidChange);
 
-    if (tail && this.hasProperty(head) && (val = this.get(head))) {
-      val.teardownPathObserver(tail, opath, observee);
+    if (tail && (val = this.get(head))) {
+      val.teardownUnknownObserver(tail, opath, observee);
     }
 
     return this;
-  });
-
-  this.def('setupUnknownObserver', function(prop, observee) {
-    throw new Error(Z.fmt("Z.Observable.on: unknown property `%@` for `%@`", prop, this));
-  });
-
-  this.def('teardownUnknownObserver', function() {
-    throw new Error(Z.fmt("Z.Observable.off: unknown property `%@` for `%@`", prop, this));
   });
 
   // Public: This method is invoked by the KVC system when an attempt is made to
