@@ -2,6 +2,8 @@
 
 if (!this.Z) { require('./helper'); }
 
+describe('Z.Observable', function() {
+
 describe('Z.Observable.prop', function() {
   var Person = Z.Object.extend(Z.Observable, function() {
     this.prop('firstName');
@@ -340,17 +342,15 @@ describe('Z.Object KVO support:', function() {
     this.prop('street');
   });
 
-  describe('.observe with a simple key', function() {
-    var user;
-
-    beforeEach(function() { user = User.create({ name: 'Joe' }); });
+  describe('.on with a simple key', function() {
+    beforeEach(function() { user = User.create({name: 'Joe'}); });
 
     it('should cause the given action to be invoked, bound to the observer, after the given key has changed', function() {
       var observer = {
         called: false,
         nameDidChange: function() { this.called = true; }
       };
-      user.observe('name', observer, 'nameDidChange');
+      user.on('didChange:name', 'nameDidChange', {observer: observer});
       user.set('name', 'Bob');
       expect(observer.called).toBe(true);
     });
@@ -360,207 +360,103 @@ describe('Z.Object KVO support:', function() {
         called: false,
         nameDidChange: function() { this.called = true; }
       };
-      user.observe('name', observer, observer.nameDidChange);
+      user.on('didChange:name', observer.nameDidChange, {observer: observer});
       user.set('name', 'Bob');
       expect(observer.called).toBe(true);
     });
 
-    it('should cause the given action to be invoked with a change notification object containing the path that changed and the observee when the given key has changed', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
+    it('should cause the given handler to be invoked with the path that changed and an undefined data argument', function() {
+      var handler = jasmine.createSpy();
 
-      user.observe('name', observer, 'nameDidChange');
+      user.on('willChange:name', handler);
+      user.on('didChange:name', handler);
       user.set('name', 'Bob');
-      expect(observer.notification.type).toEqual('change');
-      expect(observer.notification.path).toEqual('name');
-      expect(observer.notification.observee).toBe(user);
+      expect(handler.callCount).toBe(2);
+      expect(handler).toHaveBeenCalledWith('willChange:name', undefined);
+      expect(handler).toHaveBeenCalledWith('didChange:name', undefined);
     });
 
     it('should allow attaching multiple observers to the same key', function() {
-      var observer1, observer2;
-      observer1 = { called: false, action: function() { this.called = true; } };
-      observer2 = { called: false, action: function() { this.called = true; } };
-      user.observe('name', observer1, 'action');
-      user.observe('name', observer2, 'action');
+      var handler1 = jasmine.createSpy(), handler2 = jasmine.createSpy();
+      user.on('didChange:name', handler1);
+      user.on('didChange:name', handler2);
       user.name('Sam');
-      expect(observer1.called).toBe(true);
-      expect(observer2.called).toBe(true);
+      expect(handler1).toHaveBeenCalledWith('didChange:name', undefined);
+      expect(handler2).toHaveBeenCalledWith('didChange:name', undefined);
     });
 
-    it('should pass the object indicated by the context option in the notification if it exists', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { context: 'the-context' });
+    it('should pass the object indicated by the context option in the handler as the third argument', function() {
+      var handler = jasmine.createSpy();
+      user.on('didChange:name', handler, {context: 'the-context'});
       user.set('name', 'Bob');
-      expect(observer.notification.context).toEqual('the-context');
+      expect(handler).toHaveBeenCalledWith('didChange:name', undefined, 'the-context');
     });
 
-    it('should set an `previous` key in the notification that points to the previous value of the property if the previous option is set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { previous: true });
+    it('should invoke a `willChange` handler before the property is actually changed', function() {
+      var val = null, handler = function() { val = user.name(); };
+      user.on('willChange:name', handler);
       user.set('name', 'Sam');
-      expect(observer.notification.previous).toEqual('Joe');
+      expect(val).toBe('Joe');
     });
 
-    it('should set a `current` key in the notification that points to the current value of the property if the current option is set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { current: true });
-      user.set('name', 'George');
-      expect(observer.notification.current).toEqual('George');
-    });
-
-    it('should set both `previous` and `current` keys when both options are set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { previous: true, current: true });
-      user.set('name', 'Ed');
-      expect(observer.notification.previous).toEqual('Joe');
-      expect(observer.notification.current).toEqual('Ed');
-    });
-
-    it('should fire the observer immediately when  the `fire` option is set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { fire: true });
-      expect(observer.notification).not.toBeNull();
-      expect(observer.notification.path).toEqual('name');
-      expect(observer.notification.observee).toBe(user);
-    });
-
-    it('should fire the observer immediately when the `fire` option is set and include the `current` key when the `current` option is set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { fire: true, current: true });
-      expect(observer.notification.path).toEqual('name');
-      expect(observer.notification.current).toEqual('Joe');
-    });
-
-    it('should fire the observer immediately when the `fire` option is set and not include the `previous` key even when the `previous` option is set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { fire: true, previous: true });
-      expect(observer.notification.hasOwnProperty('previous')).toBe(false);
+    it('should fire the handler immediately when  the `fire` option is set', function() {
+      var handler = jasmine.createSpy();
+      user.on('didChange:name', handler, {fire: true});
+      expect(handler).toHaveBeenCalledWith('didChange:name', undefined);
     });
 
     it('should fire the observer immediately when the `fire` option is set and include the `context` when the `context` option is set', function() {
-      var observer = {
-        notification: null,
-        nameDidChange: function(n) { this.notification = n; }
-      };
-      user.observe('name', observer, 'nameDidChange', { fire: true, context: 'foo' });
-      expect(observer.notification.context).toBe('foo');
-    });
-
-    it('should invoke the action before the property change actually occurs when the `prior` option is set', function() {
-      var observer = {
-        notifications: [],
-        nameDidChange: function(n) {
-          n.currentVal = user.name();
-          this.notifications.push(n);
-        }
-      };
-      user.observe('name', observer, 'nameDidChange', { prior: true });
-      user.set('name', 'Corey');
-      expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].currentVal).toEqual('Joe');
-      expect(observer.notifications[0].isPrior).toBe(true);
-      expect(observer.notifications[1].currentVal).toEqual('Corey');
-      expect(observer.notifications[1].isPrior).toBeUndefined();
-    });
-
-    it('should include the `previous` key in the notification when notifying prior to a property change when the `previous` option is set', function() {
-      var observer = {
-        notifications: [],
-        nameDidChange: function(n) { this.notifications.push(n); }
-      };
-      user.observe('name', observer, 'nameDidChange', { prior: true, previous: true });
-      user.set('name', 'Corey');
-      expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].previous).toEqual('Joe');
-      expect(observer.notifications[1].previous).toEqual('Joe');
-    });
-
-    it('should not include the `current` key in the notification when notifying prior to a property change when the `current` option is set', function() {
-      var observer = {
-        notifications: [],
-        nameDidChange: function(n) { this.notifications.push(n); }
-      };
-      user.observe('name', observer, 'nameDidChange', { prior: true, current: true });
-      user.set('name', 'Corey');
-      expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].hasOwnProperty('current')).toBe(false);
-      expect(observer.notifications[1].current).toEqual('Corey');
+      var handler = jasmine.createSpy();
+      user.on('didChange:name', handler, {fire: true, context: 'foo'});
+      expect(handler).toHaveBeenCalledWith('didChange:name', undefined, 'foo');
     });
 
     it('should remove the observer after the first time it fires if the `once` option is set', function() {
-      var observer = {
-        notifications: [],
-        nameDidChange: function(n) { this.notifications.push(n); }
-      };
-      user.observe('name', observer, 'nameDidChange', { once: true });
+      var handler = jasmine.createSpy();
+      user.on('didChange:name', handler, {once: true});
       user.set('name', 'Ed');
       user.set('name', 'Bill');
-      expect(observer.notifications.length).toBe(1);
+      expect(handler.callCount).toBe(1);
     });
   });
 
-  describe('.stopObserving with a simple key', function() {
-    it('should prevent the registered observer from being notified of further changes', function() {
-      var observer1, observer2, user;
-      user = User.create({ name: 'Joe' });
-      observer1 = { called: false, action: function() { this.called = true; } };
-      observer2 = { called: false, action: function() { this.called = true; } };
-      user.observe('name', observer1, 'action');
-      user.observe('name', observer2, 'action');
+  describe('.off with a simple key', function() {
+    it('should prevent the handler from being notified of further changes', function() {
+      var handler1 = jasmine.createSpy(),
+          handler2 = jasmine.createSpy(),
+          user     = User.create({name: 'Joe'});
+
+      user.on('didChange:name', handler1);
+      user.on('didChange:name', handler2);
       user.name('Mary');
-      expect(observer1.called).toBe(true);
-      expect(observer2.called).toBe(true);
-      observer1.called = false;
-      observer2.called = false;
-      user.stopObserving('name', observer1, 'action');
+      expect(handler1.callCount).toBe(1);
+      expect(handler2.callCount).toBe(1);
+      user.off('didChange:name', handler1);
       user.name('Susan');
-      expect(observer1.called).toBe(false);
-      expect(observer2.called).toBe(true);
+      expect(handler1.callCount).toBe(1);
+      expect(handler2.callCount).toBe(2);
     });
 
-    it('should remove all observers that have the given path, observer, action, and context', function() {
+    it('should remove all handlers for the given event, handler, observer, and context', function() {
       var observer, user;
-      user = User.create({ name: 'Joe' });
-      observer = { called: 0, action: function() { this.called++; } };
-      user.observe('name', observer, 'action', {context: 1});
-      user.observe('name', observer, 'action', {context: 1});
-      user.observe('name', observer, 'action', {context: 2});
+      user = User.create({name: 'Joe'});
+      observer = {called: 0, action: function() { this.called++; }};
+      user.on('didChange:name', 'action', {observer: observer, context: 1});
+      user.on('didChange:name', 'action', {observer: observer, context: 1});
+      user.on('didChange:name', 'action', {observer: observer, context: 2});
       user.name('Mary');
       expect(observer.called).toBe(3);
-      user.stopObserving('name', observer, 'action', {context: 1});
+      user.off('didChange:name', 'action', {observer: observer, context: 1});
       user.name('Susan');
       expect(observer.called).toBe(4);
     });
   });
 
-  describe('.observe with a key path', function() {
-    it('should cause a notification to be delivered to the observer when any segment in the path changes', function() {
+  describe('.on with a key path', function() {
+    it('should trigger handlers when any segment in the path changes', function() {
       var observer = { called: 0, action: function() { this.called++; } },
           user = User.create({ address: Address.create({ street: 'main' }) });
-      user.observe('address.street', observer, 'action');
+      user.on('didChange:address.street', 'action', {observer: observer});
       expect(observer.called).toBe(0);
       user.get('address').set('street', 'north');
       expect(observer.called).toBe(1);
@@ -570,11 +466,11 @@ describe('Z.Object KVO support:', function() {
       expect(observer.called).toBe(3);
     });
 
-    it('should still cause a notifications to be delivered when some segments in the path do not yet exist when the observer is created', function() {
+    it('should still cause handlers to be triggered when some segments in the path do not yet exist when the observer is created', function() {
       var observer, user;
-      observer = { called: 0, action: function() { this.called++; } };
+      observer = {called: 0, action: function() { this.called++; }};
       user = User.create();
-      user.observe('address.street', observer, 'action');
+      user.on('didChange:address.street', 'action', {observer: observer});
       expect(observer.called).toBe(0);
       user.set('address', Address.create());
       expect(observer.called).toBe(1);
@@ -582,23 +478,23 @@ describe('Z.Object KVO support:', function() {
       expect(observer.called).toBe(2);
     });
 
-    it('should cause a single notification to be sent when multiple segments are set', function() {
-      var observer = { called: 0, action: function() { this.called++; } },
+    it('should cause a single handler invocation when multiple segments are set at once', function() {
+      var observer = {called: 0, action: function() { this.called++; }},
           user     = User.create();
 
-      user.observe('address.street', observer, 'action');
+      user.on('didChange:address.street', 'action', {observer: observer});
       expect(observer.called).toBe(0);
-      user.set('address', Address.create({ street: 'chestnut' }));
+      user.set('address', Address.create({street: 'chestnut'}));
       expect(observer.called).toBe(1);
     });
 
-    it('should no longer trigger notifications when a property on an object that was once but is not longer part of the path changes', function() {
-      var observer = { called: 0, action: function() { this.called++; } },
+    it('should no longer trigger handlers when a property on an object that was once but is not longer part of the path changes', function() {
+      var observer = {called: 0, action: function() { this.called++; }},
           user     = User.create(),
-          address1 = Address.create({ street: 'clark' }),
-          address2 = Address.create({ street: 'addison' });
+          address1 = Address.create({street: 'clark'}),
+          address2 = Address.create({street: 'addison'});
 
-      user.observe('address.street', observer, 'action');
+      user.on('didChange:address.street', 'action', {observer: observer});
       expect(observer.called).toBe(0);
       user.set('address', address1);
       expect(observer.called).toBe(1);
@@ -612,292 +508,191 @@ describe('Z.Object KVO support:', function() {
       expect(observer.called).toBe(4);
     });
 
-    it('should cause the given action to be invoked with a change notification object containing the path that changed and the observee when any segment in the path has changed', function() {
-      var observer = { notification: null, action: function(n) { this.notification = n; } },
-          user     = User.create({ address: Address.create({ street: 'main' }) });
+    it('should cause the handler to be invoked with the path that changed when any segment in the path has changed', function() {
+      var handler = jasmine.createSpy(),
+          user    = User.create({address: Address.create({ street: 'main'})});
 
-      user.observe('address.street', observer, 'action');
+      user.on('didChange:address.street', handler);
       user.set('address.street', 'walnut');
-      expect(observer.notification.path).toEqual('address.street');
-      expect(observer.notification.observee).toBe(user);
+      expect(handler).toHaveBeenCalledWith('didChange:address.street', undefined);
     });
 
-    it('should allow attaching multiple observers to the same path', function() {
-      var observer1 = { called: false, action: function() { this.called = true; } },
-          observer2 = { called: false, action: function() { this.called = true; } },
-          user      = User.create({ address: Address.create({ street: 'main' }) });
+    it('should allow attaching multiple handlers to the same path', function() {
+      var handler1 = jasmine.createSpy(),
+          handler2 = jasmine.createSpy(),
+          user     = User.create({address: Address.create({street: 'main'})});
 
-      user.observe('address.street', observer1, 'action');
-      user.observe('address.street', observer2, 'action');
+      user.on('didChange:address.street', handler1);
+      user.on('didChange:address.street', handler2);
       user.set('address', Address.create());
-      expect(observer1.called).toBe(true);
-      expect(observer2.called).toBe(true);
+      expect(handler1.callCount).toBe(1);
+      expect(handler2.callCount).toBe(1);
     });
 
-    it('should pass the object indicated by the context option in the notification if it exists', function() {
-      var observer, user;
-      observer = { notification: null, action: function(n) { this.notification = n; } };
-      user = User.create({ address: Address.create({ street: 'main' }) });
-      user.observe('address.street', observer, 'action', { context: 'the-context' });
+    it('should pass the object indicated by the context option to the handler as the third argument', function() {
+      var handler = jasmine.createSpy(), user;
+      user = User.create({address: Address.create({street: 'main'})});
+      user.on('didChange:address.street', handler, {context: 'the-context'});
       user.address().street('chestnut');
-      expect(observer.notification.context).toEqual('the-context');
+      expect(handler).toHaveBeenCalledWith('didChange:address.street', undefined, 'the-context');
     });
 
-    it('should set an `previous` key in the notification that points to the previous value of the path if the previous option is set', function() {
-      var observer = { notification: null, action: function(n) { this.notification = n; } };
-          user     = User.create({ address: Address.create({ street: 'main' }) });
+    it('should invoke a `willChange` handler before the path is acutally changed', function() {
+      var val     = null,
+          handler = function() { val = user.get('address.street'); };
+          user    = User.create({address: Address.create({street: 'main'})});
 
-      user.observe('address.street', observer, 'action', { previous: true });
+      user.on('willChange:address.street', handler);
       user.set('address.street', 'lincoln');
-      expect(observer.notification.previous).toEqual('main');
-    });
-
-    it('should set a `current` key in the notification that points to the current value of the property if the current option is set', function() {
-      var observer = { notification: null, action: function(n) { this.notification = n; } },
-          user     = User.create({ address: Address.create({ street: 'main' }) });
-
-      user.observe('address.street', observer, 'action', { "current": true });
-      user.set('address.street', 'lincoln');
-      expect(observer.notification.current).toEqual('lincoln');
-    });
-
-    it('should set both `previous` and `current` keys when both options are set', function() {
-      var observer = { notification: null, action: function(n) { this.notification = n; } },
-          user     = User.create({ address: Address.create({ street: 'main' }) });
-
-      user.observe('address.street', observer, 'action', { current: true, previous: true });
-      user.set('address.street', 'lincoln');
-      expect(observer.notification.previous).toEqual('main');
-      expect(observer.notification.current).toEqual('lincoln');
+      expect(val).toEqual('main');
     });
 
     it('should fire the observer immediately when  the `fire` option is set', function() {
-      var observer = { notification: null,action: function(n) { this.notification = n; } },
-          user     = User.create({ address: Address.create({ street: 'main' }) });
+      var handler = jasmine.createSpy(),
+          user    = User.create({address: Address.create({street: 'main'})});
 
-      user.observe('address.street', observer, 'action', { fire: true });
-      expect(observer.notification).not.toBeNull();
-      expect(observer.notification.path).toEqual('address.street');
-      expect(observer.notification.observee).toBe(user);
-    });
-
-    it('should fire the observer immediately when the `fire` option is set and include the `current` key when the `current` option is set', function() {
-      var observer = { notification: null, action: function(n) { this.notification = n; } },
-          user     = User.create({address: Address.create({ street: 'main' }) });
-
-      user.observe('address.street', observer, 'action', { fire: true, current: true });
-      expect(observer.notification.path).toEqual('address.street');
-      expect(observer.notification.current).toEqual('main');
-    });
-
-    it('should fire the observer immediately when the `fire` option is set and not include the `previous` key even when the `previous` option is set', function() {
-      var observer = { notification: null, action: function(n) { this.notification = n; } },
-          user = User.create({ address: Address.create({ street: 'main' }) });
-
-      user.observe('address.street', observer, 'action', { fire: true, previous: true });
-      expect(observer.notification.path).toEqual('address.street');
-      expect(observer.notification.hasOwnProperty('previous')).toBe(false);
-    });
-
-    it('should invoke the action before the property change actually occurs when the `prior` option is set', function() {
-      var user     = User.create({ address: Address.create({ street: 'main' }) }),
-          observer = {
-        notifications: [],
-        action: function(n) {
-          n.currentVal = user.get('address.street');
-          this.notifications.push(n);
-        }
-      };
-
-      user.observe('address.street', observer, 'action', { prior: true });
-      user.set('address.street', 'marshfield');
-      expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].currentVal).toEqual('main');
-      expect(observer.notifications[0].isPrior).toBe(true);
-      expect(observer.notifications[1].currentVal).toEqual('marshfield');
-      expect(observer.notifications[1].isPrior).toBeUndefined();
-    });
-
-    it('should include the `previous` key in the notification when notifying prior to a property change when the `previous` option is set', function() {
-      var user = User.create({ address: Address.create({ street: 'main' }) }),
-          observer = {
-        notifications: [],
-        action: function(n) { this.notifications.push(n); }
-      };
-
-      user.observe('address.street', observer, 'action', { prior: true, previous: true });
-      user.set('address.street', 'marshfield');
-      expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].previous).toEqual('main');
-      expect(observer.notifications[1].previous).toEqual('main');
-    });
-
-    it('should not include the `current` key in the notification when notifying prior to a property change when the `current` option is set', function() {
-      var user     = User.create({ address: Address.create({ street: 'main' }) }),
-          observer = {
-        notifications: [],
-        action: function(n) { this.notifications.push(n); }
-      };
-
-      user.observe('address.street', observer, 'action', { prior: true, current: true });
-      user.set('address.street', 'marshfield');
-      expect(observer.notifications.length).toBe(2);
-      expect(observer.notifications[0].hasOwnProperty('current')).toBe(false);
-      expect(observer.notifications[1].current).toEqual('marshfield');
+      user.on('didChange:address.street', handler, {fire: true});
+      expect(handler).toHaveBeenCalledWith('didChange:address.street', undefined);
     });
   });
 
-  describe('.stopObserving with a key path', function() {
-    it('should prevent the registered observer from being notified of further changes to any segment in the path', function() {
-      var observer = { called: 0, action: function() { this.called++; } },
-          user = User.create({ address: Address.create({ street: 'main' }) });
+  describe('.off with a key path', function() {
+    it('should prevent the handler from being invoked upon further changes to any segment in the path', function() {
+      var handler = jasmine.createSpy(),
+          user    = User.create({address: Address.create({street: 'main'})});
 
-      user.observe('address.street', observer, 'action');
-      expect(observer.called).toBe(0);
+      user.on('didChange:address.street', handler);
+      expect(handler.callCount).toBe(0);
       user.set('address.street', 'first');
-      expect(observer.called).toBe(1);
-      user.stopObserving('address.street', observer, 'action');
+      expect(handler.callCount).toBe(1);
+      user.off('didChange:address.street', handler);
       user.set('address.street', 'second');
-      expect(observer.called).toBe(1);
+      expect(handler.callCount).toBe(1);
       user.set('address', Address.create());
-      expect(observer.called).toBe(1);
+      expect(handler.callCount).toBe(1);
       user.set('address.street', 'third');
-      expect(observer.called).toBe(1);
+      expect(handler.callCount).toBe(1);
     });
   });
 
-  describe('.observe with the `*` key', function() {
-    it('should trigger notifications for any property that changes', function() {
-      var notifications = [],
-          observer = { action: function(n) { notifications.push(n); } },
-          u = User.create();
+  describe('.on with the `*` key', function() {
+    it('should trigger handlers for any property that changes', function() {
+      var handler = jasmine.createSpy(), u = User.create();
 
-      u.observe('*', observer, 'action');
+      u.on('didChange:*', handler);
       u.name('Homer');
-      expect(notifications.length).toBe(1);
-      expect(notifications[0].type).toBe('change');
-      expect(notifications[0].path).toBe('name');
+      expect(handler).toHaveBeenCalledWith('didChange:name', undefined);
       u.address(Address.create({street: '123 Fake St.'}));
-      expect(notifications.length).toBe(2);
-      expect(notifications[1].type).toBe('change');
-      expect(notifications[1].path).toBe('address');
+      expect(handler).toHaveBeenCalledWith('didChange:address', undefined);
     });
 
     it('should throw an exception when `*` is used in the middle of a key path', function() {
       var u = User.create();
 
       expect(function() {
-        u.observe('*.street', {}, 'action');
-      }).toThrow("Z.Object.registerObserver: observing `*` in the middle of a property path is not supported: '*.street'");
+        u.on('didChange:*.street', function() {});
+      }).toThrow("Z.Observable.on: observing `*` anywhere other than at the end of a key path is not supported: '*.street'");
     });
   });
 
-  describe('.stopObserving with the `*` key', function() {
-    it('should stop triggering notifications for any property that changes', function() {
-      var notifications = [],
-          observer = { action: function(n) { notifications.push(n); } },
-          u = User.create();
+  describe('.off with the `*` key', function() {
+    it('should stop triggering handlers for any property that changes', function() {
+      var handler = jasmine.createSpy(), u = User.create();
 
-      u.observe('*', observer, 'action');
+      u.on('didChange:*', handler);
       u.name('Homer');
-      expect(notifications.length).toBe(1);
-      u.stopObserving('*', observer, 'action');
+      expect(handler.callCount).toBe(1);
+      u.off('didChange:*', handler);
       u.name('Marge');
-      expect(notifications.length).toBe(1);
+      expect(handler.callCount).toBe(1);
     });
   });
 
-  describe('.observe with an unknown key', function() {
+  describe('.on with an unknown key', function() {
     it("should thrown an exception", function() {
-      var observer = { action: function() {} },
-          o        = Z.Object.extend(Z.Observable).create();
+      var o = Z.Object.extend(Z.Observable).create();
 
       expect(function() {
-        o.observe('foobar', observer, 'action');
-      }).toThrow("Z.Object.registerObserver: undefined key `foobar` for " + (o.toString()));
+        o.on('didChange:foobar', function() {});
+      }).toThrow("Z.Observable.on: undefined key `foobar` for " + (o.toString()));
     });
   });
 
-  describe('.stopObserving with an unknown key', function() {
+  describe('.off with an unknown key', function() {
     it("should thrown an exception", function() {
-      var observer = { action: function() {} },
-          o        = Z.Object.extend(Z.Observable).create();
+      var o = Z.Object.extend(Z.Observable).create();
 
       expect(function() {
-        o.stopObserving('foobar', observer, 'action');
-      }).toThrow("Z.Object.deregisterObserver: undefined key `foobar` for " + (o.toString()));
+        o.off('didChange:foobar', function() {});
+      }).toThrow("Z.Observable.off: undefined key `foobar` for " + (o.toString()));
     });
   });
 
-  describe('removing an observer from another observer', function() {
+  describe('removing a handler from another handler', function() {
     it('should not raise an exception when done before the property changes', function() {
-      var u   = User.create({name: 'Ed'}),
-          cb2 = function() {},
-          cb1 = function() { this.stopObserving('name', this, cb2); };
+      var u        = User.create({name: 'Ed'}),
+          handler2 = function() {},
+          handler1 = function() { this.off('didChange:name', handler2); };
 
-      u.observe('name', u, cb1, {prior: true});
-      u.observe('name', u, cb2);
+      u.on('willChange:name', handler1);
+      u.on('didChange:name', handler2);
 
       expect(function() { u.name('Bob'); }).not.toThrow();
     });
 
     it('should not raise an exception when done after the property changes', function() {
-      var u   = User.create({name: 'Ed'}),
-          cb2 = function() {},
-          cb1 = function() { this.stopObserving('name', this, cb2); };
+      var u        = User.create({name: 'Ed'}),
+          handler2 = function() {},
+          handler1 = function() { this.off('didChange:name', handler2); };
 
-      u.observe('name', u, cb1);
-      u.observe('name', u, cb2);
+      u.on('didChange:name', handler1);
+      u.on('didChange:name', handler2);
 
       expect(function() { u.name('Bob'); }).not.toThrow();
     });
   });
 
   describe('.setif', function() {
-    it('should trigger notifications when the new value is different than the old value', function() {
-      var u         = User.create({name: 'Bob'}),
-          triggered = 0,
-          observer  = {action: function() { triggered++; }};
+    it('should trigger handlers when the new value is different than the old value', function() {
+      var u       = User.create({name: 'Bob'}),
+          handler = jasmine.createSpy();
 
-       u.observe('name', observer, 'action');
+       u.on('didChange:name', handler);
        u.setif('name', 'Bill');
-       expect(triggered).toBe(1);
+       expect(handler.callCount).toBe(1);
     });
 
-    it('should not trigger notifications when the new value is identical to the old value', function() {
-      var u         = User.create({name: 'Bob'}),
-          triggered = 0,
-          observer  = {action: function() { triggered++; }};
+    it('should not trigger handlers when the new value is identical to the old value', function() {
+      var u       = User.create({name: 'Bob'}),
+          handler = jasmine.createSpy();
 
-       u.observe('name', observer, 'action');
+       u.on('didChange:name', handler);
        u.setif('name', 'Bob');
-       expect(triggered).toBe(0);
+       expect(handler.callCount).toBe(0);
     });
 
-    it('should not trigger notifications when the new value is equal to the old value', function() {
-      var u         = User.create({name: [1,2,3]}),
-          triggered = 0,
-          observer  = {action: function() { triggered++; }};
+    it('should not trigger handlers when the new value is equal to the old value', function() {
+      var u       = User.create({name: [1,2,3]}),
+          handler = jasmine.createSpy();
 
-       u.observe('name', observer, 'action');
+       u.on('didChange:name', handler);
        u.setif('name', [1,2,3]);
-       expect(triggered).toBe(0);
+       expect(handler.callCount).toBe(0);
     });
 
     it('should conditionally set values given as a native object', function() {
       var u = User.create({name: 'Bob', address: '123 Fake St.'}),
-          notifications = [],
-          observer = function(n) { notifications.push(n); };
+          handler = jasmine.createSpy();
 
-      u.observe('name', null, observer);
-      u.observe('address', null, observer);
+      u.on('didChange:name', handler);
+      u.on('didChange:address', handler);
 
       u.setif({name: 'Bill', address: '123 Fake St.'});
 
       expect(u.name()).toBe('Bill');
       expect(u.address()).toBe('123 Fake St.');
-      expect(notifications.length).toBe(1);
-      expect(notifications[0].path).toBe('name');
+      expect(handler.callCount).toBe(1);
+      expect(handler).toHaveBeenCalledWith('didChange:name', undefined);
     });
   });
 });
@@ -926,79 +721,56 @@ describe('Z.Observable dependent properties:', function() {
   });
 
   it('should notify observers when any of the dependent keys change', function() {
-    var p        = Person.create({ first: 'Homer', last: 'Simpson' }),
-        observer = {
-      notifications: [],
-      action: function(n) { this.notifications.push(n); }
-    };
+    var p       = Person.create({first: 'Homer', last: 'Simpson'}),
+        handler = jasmine.createSpy();
 
-    p.observe('full', observer, 'action', { previous: true, current: true });
+    p.on('didChange:full', handler);
 
-    expect(observer.notifications.length).toBe(0);
+    expect(handler.callCount).toBe(0);
     p.set('first', 'Bart');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].path).toBe('full');
-    expect(observer.notifications[0].previous).toBe('Homer Simpson');
-    expect(observer.notifications[0].current).toBe('Bart Simpson');
+    expect(handler.callCount).toBe(1);
+    expect(handler).toHaveBeenCalledWith('didChange:full', undefined);
     p.set('last', 'Smith');
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].path).toBe('full');
-    expect(observer.notifications[1].previous).toBe('Bart Simpson');
-    expect(observer.notifications[1].current).toBe('Bart Smith');
+    expect(handler.callCount).toBe(2);
   });
 
   it('should notify observers when any of the dependent paths change', function() {
-    var observer, p;
-    observer = {
-      notifications: [],
-      action: function(n) {
-        return this.notifications.push(n);
-      }
-    };
+    var handler = jasmine.createSpy(), p;
+
     p = Person.create({
       first: 'Homer',
       last: 'Simpson',
       occupation: Occupation.create({ name: 'Safety Inspector' })
     });
 
-    p.observe('displayName', observer, 'action', { previous: true, current: true });
-    expect(observer.notifications.length).toBe(0);
+    p.on('didChange:displayName', handler);
+    expect(handler.callCount).toBe(0);
     p.set('occupation.name', 'Bus Driver');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].path).toBe('displayName');
-    expect(observer.notifications[0].previous).toBe('Homer Simpson (Safety Inspector)');
-    expect(observer.notifications[0].current).toBe('Homer Simpson (Bus Driver)');
-    p.set('occupation', Occupation.create({ name: 'Astronaut' }));
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].path).toBe('displayName');
-    expect(observer.notifications[1].previous).toBe('Homer Simpson (Bus Driver)');
-    expect(observer.notifications[1].current).toBe('Homer Simpson (Astronaut)');
+    expect(handler.callCount).toBe(1);
+    expect(handler).toHaveBeenCalledWith('didChange:displayName', undefined);
+    p.set('occupation', Occupation.create({name: 'Astronaut'}));
+    expect(handler.callCount).toBe(2);
   });
 
   it('should notify observers when dependent properties which in turn have dependent properties change', function() {
-    var observer, p;
-    observer = {
-      notifications: [],
-      action: function(n) { this.notifications.push(n); }
-    };
+    var handler = jasmine.createSpy(), p;
+
     p = Person.create({
       first: 'Homer',
       last: 'Simpson',
       occupation: Occupation.create({ name: 'Safety Inspector' })
     });
 
-    p.observe('displayName', observer, 'action', { previous: true, current: true });
+    p.on('didChange:displayName', handler);
 
-    expect(observer.notifications.length).toBe(0);
+    expect(handler.callCount).toBe(0);
     p.set('first', 'Bart');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].path).toBe('displayName');
-    expect(observer.notifications[0].previous).toBe('Homer Simpson (Safety Inspector)');
-    expect(observer.notifications[0].current).toBe('Bart Simpson (Safety Inspector)');
+    expect(handler.callCount).toBe(1);
+    expect(handler).toHaveBeenCalledWith('didChange:displayName', undefined);
   });
 });
 
-describe('Z.Observeable.destroy', function() {
+describe('Z.Observable.destroy', function() {
   Person = Z.Object.extend(Z.Observable, function() {
     this.prop('first');
     this.prop('last');
@@ -1012,14 +784,13 @@ describe('Z.Observeable.destroy', function() {
     var p = Person.create({first: 'Homer', last: 'Simpson'}),
         observer = function() {};
 
-    p.observe('first', null, observer);
+    p.on('didChange:first', observer);
 
-    expect(p.__z_registrations__['first'].length).toBe(2);
-    expect(p.__z_registrations__['last'].length).toBe(1);
+    expect(p.__z_on__).not.toEq({});
     p.destroy();
-    expect(p.__z_registrations__['first'].length).toBe(0);
-    expect(p.__z_registrations__['last'].length).toBe(0);
+    expect(p.__z_on__).toEq({});
   });
 });
 
+});
 }());

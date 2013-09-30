@@ -78,14 +78,15 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
 
   // Internal: Handler function that gets invoked when a dependent property path
   // will change. Emits a new event for the dependent property.
-  function dependentPathWillChange(n) {
-    this.emit('willChange:' + n.event.split(':')[1]);
+  function dependentPathWillChange(event, data, k) {
+    this.emit('willChange:' + k);
   }
 
   // Internal: Handler function that gets invoked when a dependent property path
   // has changed. Emits a new event for the dependent property.
-  function dependentPathDidChange(n) {
-    this.emit('didChange:' + n.event.split(':')[1]);
+  function dependentPathDidChange(event, data, k) {
+    delete this['__' + k + '_' + 'cached' + '__'];
+    this.emit('didChange:' + k);
   }
 
   // Internal: Registers observers for all properties defined with the
@@ -98,8 +99,12 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     for (k in descs) {
       desc = descs[k];
       for (i = 0, len = desc.dependsOn.length; i < len; i++) {
-        this.on('willChange:' + desc.dependsOn[i], dependentPathWillChange);
-        this.on('didChange:' + desc.dependsOn[i], dependentPathDidChange);
+        this.on('willChange:' + desc.dependsOn[i], dependentPathWillChange, {
+          context: k
+        });
+        this.on('didChange:' + desc.dependsOn[i], dependentPathDidChange, {
+          context: k
+        });
       }
     }
   }
@@ -375,6 +380,12 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return value;
   });
 
+  function hasUnknownObserver(path) {
+    return this.__z_on__ &&
+      (this.__z_on__['willChange:' + path] ||
+       this.__z_on__['didChange:' + path]);
+  }
+
   this.def('on', function(event, handler, opts) {
     var path;
 
@@ -382,7 +393,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       path = event.split(':')[1];
 
       if (!this.hasProperty(path) && path !== '*' &&
-          (!this.__z_on__ || !this.__z_on__['willChange:' + path])) {
+          !hasUnknownObserver.call(this, path)) {
         this.setupUnknownObserver(path, path, this);
       }
     }
@@ -399,7 +410,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       path = event.split(':')[1];
 
       if (!this.hasProperty(path) && path !== '*' &&
-          (!this.__z_on__ || !this.__z_on__['willChange:' + path])) {
+          !hasUnknownObserver.call(this, path)) {
         this.teardownUnknownObserver(path, path, this);
       }
     }
@@ -434,7 +445,11 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
         val;
 
     if (head === '*' && tail) {
-      throw new Error(Z.fmt("Z.Observable.setupPathObserver: observing `*` anywhere other than at the end of a property path is not supported: '%@'", opath));
+      throw new Error(Z.fmt("Z.Observable.on: observing `*` anywhere other than at the end of a key path is not supported: '%@'", opath));
+    }
+
+    if (!tail && !this.hasProperty(head)) {
+      throw new Error(Z.fmt("Z.Observable.on: undefined key `%@` for %@", head, this));
     }
 
     this.on('willChange:' + head, pathSegmentWillChange, {
@@ -457,6 +472,10 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
         head = i > 0 ? rpath.substring(0, i) : rpath,
         tail = i > 0 ? rpath.substring(i + 1) : null,
         val;
+
+    if (!tail && !this.hasProperty(head)) {
+      throw new Error(Z.fmt("Z.Observable.off: undefined key `%@` for %@", head, this));
+    }
 
     this.off('willChange:' + head, pathSegmentWillChange);
     this.off('didChange:' + head, pathSegmentDidChange);

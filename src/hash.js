@@ -161,18 +161,18 @@
         for (i = 0, len = bucket.length; i < len; i++) {
           entry = bucket[i];
           if (Z.eq(k, entry.key)) {
-            this.willChangeProperty(k);
-            this.willChangeProperty('@', {type: 'update', key: k, previous: entry.value});
+            //this.willChangeProperty(k);
+            //this.willChangeProperty('@', {type: 'update', key: k, previous: entry.value});
             entry.value = v;
-            this.didChangeProperty(k);
-            this.didChangeProperty('@', {type: 'update', key: k, current: v});
+            //this.didChangeProperty(k);
+            //this.didChangeProperty('@', {type: 'update', key: k, current: v});
             return v;
           }
         }
 
-        this.willChangeProperty(k);
-        this.willChangeProperty('size');
-        this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
+        //this.willChangeProperty(k);
+        //this.willChangeProperty('size');
+        //this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
 
         entry = { key: k, value: v, prev: this.__z_tail__, next: null };
 
@@ -184,9 +184,9 @@
         bucket.push(entry);
         this.__z_size__++;
 
-        this.didChangeProperty(k);
-        this.didChangeProperty('size');
-        this.didChangeProperty('@', {type: 'insert', key: k, current: v});
+        //this.didChangeProperty(k);
+        //this.didChangeProperty('size');
+        //this.didChangeProperty('@', {type: 'insert', key: k, current: v});
 
         return v;
       }
@@ -215,18 +215,18 @@
       for (i = 0, len = bucket.length; i < len; i++) {
         entry = bucket[i];
         if (Z.eq(k, entry.key)) {
-          this.willChangeProperty(k);
-          this.willChangeProperty('size');
-          this.willChangeProperty('@', {type: 'remove', key: k, previous: entry.value});
+          //this.willChangeProperty(k);
+          //this.willChangeProperty('size');
+          //this.willChangeProperty('@', {type: 'remove', key: k, previous: entry.value});
           if (this.__z_head__ === entry) { this.__z_head__ = entry.next; }
           if (this.__z_tail__ === entry) { this.__z_tail__ = entry.prev; }
           if (entry.prev) { entry.prev.next = entry.next; }
           if (entry.next) { entry.next.prev = entry.prev; }
           bucket.splice(i, 1);
           this.__z_size__--;
-          this.didChangeProperty(k);
-          this.didChangeProperty('size');
-          this.didChangeProperty('@', {type: 'remove', key: k, current: null});
+          //this.didChangeProperty(k);
+          //this.didChangeProperty('size');
+          //this.didChangeProperty('@', {type: 'remove', key: k, current: null});
           return entry.value;
         }
       }
