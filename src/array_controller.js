@@ -28,29 +28,40 @@
 //   controller.selection();         // => #<Z.Array:40 []>
 //   controller.selectionIndexes();  // => #<Z.Array:41 []>
 Z.ArrayController = Z.Object.extend(Z.Observable, function() {
-  // Internal: The `content` property observer. Syncs changes to the `content`
-  // array to the `arranged` array.
-  function contentObserver(n) {
-    var _this = this;
+  // Internal: Content observer, syncs changes to the `content` array to the
+  // `arranged` array.
+  function contentWillMutate(event, data) {
+    var content = this.content(), type = data ? data.type : 'change';
 
-    switch (n.type) {
+    switch (type) {
+    case 'remove':
+      if (data.slice[1] === 1) { remove.call(this, content.at(data.slice[0])); }
+      break;
+    case 'update':
+      if (data.slice[1] === 1) { remove.call(this, content.at(data.slice[0])); }
+      break;
+    }
+  }
+
+  // Internal: Content observer, syncs changes to the `content` array to the
+  // `arranged` array.
+  function contentDidMutate(event, data) {
+    var content = this.content(), type = data ? data.type : 'change';
+
+    switch (type) {
     case 'change':
       this.clearSelection();
       this.rearrange();
       break;
-    case 'insert':
-      if (n.current.size() === 1) { insert.call(_this, n.current.at(0)); }
-      else { this.rearrange(); }
-      break;
     case 'remove':
-      if (n.previous.size() === 1) { remove.call(_this, n.previous.at(0)); }
+      if (data.slice[1] !== 1) { this.rearrange(); }
+      break;
+    case 'insert':
+      if (data.slice[1] === 1) { insert.call(this, content.at(data.slice[0])); }
       else { this.rearrange(); }
       break;
     case 'update':
-      if (n.previous.size() === 1) {
-        remove.call(_this, n.previous.at(0));
-        insert.call(_this, n.current.at(0));
-      }
+      if (data.slice[1] === 1) { insert.call(this, content.at(data.slice[0])); }
       else { this.rearrange(); }
       break;
     }
@@ -152,19 +163,11 @@ Z.ArrayController = Z.Object.extend(Z.Observable, function() {
   // and the initial state of the `arranged` array.
   this.def('init', function(props) {
     this.supr(props);
-    this.observe('content.@', this, contentObserver,
-      {previous: true, current: true});
-    this.observe('compareFn', this, 'rearrange');
-    this.observe('filterFn', this, 'rearrange');
+    this.on('willChange:content.@', contentWillMutate);
+    this.on('didChange:content.@', contentDidMutate);
+    this.on('didChange:compareFn', 'rearrange');
+    this.on('didChange:filterFn', 'rearrange');
     this.rearrange();
-  });
-
-  // Internal: The `Z.ArrayController` destructor.
-  this.def('destroy', function() {
-    this.stopObserving('content.@', this, contentObserver);
-    this.stopObserving('compareFn', this, 'rearrange');
-    this.stopObserving('filterFn', this, 'rearrange');
-    return this.supr();
   });
 
   // Public: Selects the given item by adding it to the `selection` array and
