@@ -464,21 +464,19 @@ describe('Z.Hash `size` property', function() {
     }).toThrow('Z.Object.set: attempted to set readonly property `size` for ' + h.toString());
   });
 
-  it('should notify observers when the size changes', function() {
-    var h        = Z.H('foo', 1, 'bar', 2),
-        observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
+  it('should emit events when the size changes', function() {
+    var h = Z.H('foo', 1, 'bar', 2), handler = jasmine.createSpy();
 
-    h.observe('size', observer, 'action', { previous: true, current: true });
+    h.on('willChange:size', handler);
+    h.on('didChange:size', handler);
     h.at('baz', 3);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].previous).toBe(2);
-    expect(observer.notifications[0].current).toBe(3);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:size', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:size', undefined);
     h.at('baz', 4);
-    expect(observer.notifications.length).toBe(1);
+    expect(handler.callCount).toBe(2);
     h.del('foo');
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].previous).toBe(3);
-    expect(observer.notifications[1].current).toBe(2);
+    expect(handler.callCount).toBe(4);
   });
 });
 
@@ -675,82 +673,73 @@ describe('Z.Hash.setUnknownProperty', function() {
   });
 });
 
-describe('Z.Hash.observe with an unknown property', function() {
-  var h, observer = { action: function(n) { this.notifications.push(n); } };
+describe('Z.Hash.on with an unknown property', function() {
+  var h, handler;
 
   beforeEach(function() {
-    observer.notifications = [];
+    handler = jasmine.createSpy();
     h = Z.H({foo: 1});
-    h.observe('foo', observer, 'action', { previous: true, current: true });
-    h.observe('newkey', observer, 'action', { previous: true, current: true });
+    h.on('willChange:foo', handler);
+    h.on('didChange:foo', handler);
+    h.on('willChange:newkey', handler);
+    h.on('didChange:newkey', handler);
   });
 
-  it('should trigger notifications when a key that matches the given name is set', function() {
+  it('should emit events when a key that matches the given name is updated', function() {
     h.at('foo', 11);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].path).toBe('foo');
-    expect(observer.notifications[0].previous).toBe(1);
-    expect(observer.notifications[0].current).toBe(11);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:foo', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:foo', undefined);
   });
 
-  it('should trigger notifications when a key that matches the given name is inserted', function() {
+  it('should emit events when a key that matches the given name is inserted', function() {
     h.at('newkey', 'hello');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].path).toBe('newkey');
-    expect(observer.notifications[0].previous).toBe(null);
-    expect(observer.notifications[0].current).toBe('hello');
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:newkey', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:newkey', undefined);
   });
 
-  it('should trigger notifications when a key that matches the given name is deleted', function() {
+  it('should emit events when a key that matches the given name is deleted', function() {
     h.del('foo');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].path).toBe('foo');
-    expect(observer.notifications[0].previous).toBe(1);
-    expect(observer.notifications[0].current).toBe(null);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:foo', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:foo', undefined);
   });
 });
 
 describe('Z.Hash `@` property', function() {
-  var observer = { action: function(n) { this.notifications.push(n); } }, h;
+  var handler;
 
   beforeEach(function() {
-    observer.notifications = [];
+    handler = jasmine.createSpy();
     h = Z.H('foo', 1, 'bar', 2, 'baz', 3);
-    h.observe('@', observer, 'action', { previous: true, current: true });
+    h.on('willChange:@', handler);
+    h.on('didChange:@', handler);
   });
 
   it('should return the hash object', function() {
     expect(h.get('@')).toBe(h);
   });
 
-  it('should notify observers on insertions', function() {
+  it('should emit events on insertions', function() {
     h.at('stuff', 9);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('insert');
-    expect(observer.notifications[0].key).toEqual('stuff');
-    expect(observer.notifications[0].previous).toBe(null);
-    expect(observer.notifications[0].current).toBe(9);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'insert', key: 'stuff'});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'insert', key: 'stuff'});
   });
 
   it('should notify observers on updates', function() {
     h.at('foo', [1,2,3]);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('update');
-    expect(observer.notifications[0].key).toEqual('foo');
-    expect(observer.notifications[0].previous).toBe(1);
-    expect(observer.notifications[0].current).toEq([1,2,3]);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'update', key: 'foo'});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'update', key: 'foo'});
   });
 
   it('should notify observers on deletions', function() {
     h.del('bar');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('remove');
-    expect(observer.notifications[0].key).toEqual('bar');
-    expect(observer.notifications[0].previous).toBe(2);
-    expect(observer.notifications[0].current).toBe(null);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'remove', key: 'bar'});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'remove', key: 'bar'});
   });
 });
 

@@ -161,18 +161,18 @@
         for (i = 0, len = bucket.length; i < len; i++) {
           entry = bucket[i];
           if (Z.eq(k, entry.key)) {
-            //this.willChangeProperty(k);
-            //this.willChangeProperty('@', {type: 'update', key: k, previous: entry.value});
+            this.emit('willChange:' + k);
+            this.emit('willChange:@', {type: 'update', key: k});
             entry.value = v;
-            //this.didChangeProperty(k);
-            //this.didChangeProperty('@', {type: 'update', key: k, current: v});
+            this.emit('didChange:' + k);
+            this.emit('didChange:@', {type: 'update', key: k});
             return v;
           }
         }
 
-        //this.willChangeProperty(k);
-        //this.willChangeProperty('size');
-        //this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
+        this.emit('willChange:' + k);
+        this.emit('willChange:size');
+        this.emit('willChange:@', {type: 'insert', key: k});
 
         entry = { key: k, value: v, prev: this.__z_tail__, next: null };
 
@@ -184,9 +184,9 @@
         bucket.push(entry);
         this.__z_size__++;
 
-        //this.didChangeProperty(k);
-        //this.didChangeProperty('size');
-        //this.didChangeProperty('@', {type: 'insert', key: k, current: v});
+        this.emit('didChange:' + k);
+        this.emit('didChange:size');
+        this.emit('didChange:@', {type: 'insert', key: k});
 
         return v;
       }
@@ -215,18 +215,18 @@
       for (i = 0, len = bucket.length; i < len; i++) {
         entry = bucket[i];
         if (Z.eq(k, entry.key)) {
-          //this.willChangeProperty(k);
-          //this.willChangeProperty('size');
-          //this.willChangeProperty('@', {type: 'remove', key: k, previous: entry.value});
+          this.emit('willChange:' + k);
+          this.emit('willChange:size');
+          this.emit('willChange:@', {type: 'remove', key: k});
           if (this.__z_head__ === entry) { this.__z_head__ = entry.next; }
           if (this.__z_tail__ === entry) { this.__z_tail__ = entry.prev; }
           if (entry.prev) { entry.prev.next = entry.next; }
           if (entry.next) { entry.next.prev = entry.prev; }
           bucket.splice(i, 1);
           this.__z_size__--;
-          //this.didChangeProperty(k);
-          //this.didChangeProperty('size');
-          //this.didChangeProperty('@', {type: 'remove', key: k, current: null});
+          this.emit('didChange:' + k);
+          this.emit('didChange:size');
+          this.emit('didChange:@', {type: 'remove', key: k});
           return entry.value;
         }
       }
@@ -395,10 +395,12 @@
       return this.at(k, v);
     });
 
-    // Internal: Overrides the default `hasProperty` to unconditionally return
-    // `true`. This allows observers to be attached to any arbitrary key on the
-    // hash.
-    this.def('hasProperty', function() { return true; });
+    // Internal: Overrides the default `hasProperty` to return `true` for names
+    // that do not contain a '.' character. This allows observers to be attached
+    // to any arbitrary key on the hash that is a valid property name.
+    this.def('hasProperty', function(prop) {
+      return prop.indexOf('.') === -1;
+    });
   });
 
   // Public: Generates a hash value for any object, including native objects.
