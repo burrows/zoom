@@ -721,7 +721,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   function setupItemObserver(rpath, opath, observee, i, n) {
     var items = this.__z_items__;
 
-    for (; i < n; i++) {
+    for (n = i + n; i < n; i++) {
       items[i].setupUnknownObserver(rpath, opath, observee);
     }
   }
@@ -729,7 +729,7 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   function teardownItemObserver(rpath, opath, observee, i, n) {
     var items = this.__z_items__;
 
-    for (; i < n; i++) {
+    for (n = i + n; i < n; i++) {
       items[i].teardownUnknownObserver(rpath, opath, observee);
     }
   }
