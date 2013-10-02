@@ -107,7 +107,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   //
   // Returns nothing.
   this.def('start', function() {
-    this.observe('hash', this, hashDidChange);
+    this.on('didChange:hash', hashDidChange);
     this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
     window.addEventListener('hashchange', this.__hashChangeListener__, false);
     this.__hashChangeListener__();
@@ -118,7 +118,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   //
   // Returns nothing.
   this.def('stop', function() {
-    this.stopObserving('hash', this, hashDidChange);
+    this.off('didChange:hash', hashDidChange);
     window.removeEventListener('hashchange', this.__hashChangeListener__, false);
   });
 

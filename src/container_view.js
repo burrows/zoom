@@ -52,16 +52,16 @@ Z.ContainerView = Z.View.extend(function() {
   // Internal: The container view constructor - sets up observers on the
   // `nowShowing` and `contentView` properties.
   this.def('init', function(props) {
-    this.observe('nowShowing', this, nowShowingDidChange);
-    this.observe('contentView', this, contentViewDidChange);
+    this.on('didChange:nowShowing', nowShowingDidChange);
+    this.on('didChange:contentView', contentViewDidChange);
     this.supr(props);
   });
 
   // Internal: The container view destructor - removes observes setup by the
   // `init` method.
   this.def('destroy', function() {
-    this.stopObserving('contentView', this, contentViewDidChange);
-    this.stopObserving('nowShowing', this, nowShowingDidChange);
+    this.off('didChange:contentView', contentViewDidChange);
+    this.off('didChange:nowShowing', nowShowingDidChange);
     return this.supr();
   });
 

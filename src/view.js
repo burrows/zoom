@@ -21,9 +21,10 @@
     // node. When views are destroyed they are removed from this cache.
     views = {};
 
-    // Internal: Observer callback for `displayPaths`.
-    function displayPathObserver(n) {
-      this.dirtyDisplayPaths[n.path] = n.type;
+    // Internal: Handler for display path changes.
+    function displayPathDidChange(event, data) {
+      var path = event.split(':')[1];
+      this.dirtyDisplayPaths[path] = data ? data.type : 'change';
       this.needsDisplay(true);
     }
 
@@ -174,7 +175,7 @@
       this.__rendered__ = false;
 
       this.displayPaths().each(function(path) {
-        self.observe(path, self, displayPathObserver);
+        self.on('didChange:' + path, displayPathDidChange);
       });
     });
 
@@ -187,7 +188,7 @@
       var self = this, subviews = this.subviews().slice();
 
       this.displayPaths().each(function(path) {
-        self.stopObserving(path, self, displayPathObserver);
+        self.off('didChange:' + path, displayPathDidChange);
       });
 
       delete views[this.objectId];

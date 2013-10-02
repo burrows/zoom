@@ -52,22 +52,22 @@
 
     if (state.hasOwnProperty('source') && state.source !== this.__sourceState__) {
       source = true;
-      this.willChangeProperty('sourceState');
+      this.emit('willChange:sourceState');
     }
 
     if (state.hasOwnProperty('dirty') && state.dirty !== this.__isDirty__) {
       dirty = true;
-      this.willChangeProperty('isDirty');
+      this.emit('willChange:isDirty');
     }
 
     if (state.hasOwnProperty('invalid') && state.invalid !== this.__isInvalid__) {
       invalid = true;
-      this.willChangeProperty('isInvalid');
+      this.emit('willChange:isInvalid');
     }
 
     if (state.hasOwnProperty('busy') && state.busy !== this.__isBusy__) {
       busy = true;
-      this.willChangeProperty('isBusy');
+      this.emit('willChange:isBusy');
     }
 
     if (source)  { this.__sourceState__ = state.source; }
@@ -75,10 +75,10 @@
     if (invalid) { this.__isInvalid__   = state.invalid; }
     if (busy)    { this.__isBusy__      = state.busy; }
 
-    if (source)  { this.didChangeProperty('sourceState'); }
-    if (dirty)   { this.didChangeProperty('isDirty'); }
-    if (invalid) { this.didChangeProperty('isInvalid'); }
-    if (busy)    { this.didChangeProperty('isBusy'); }
+    if (source)  { this.emit('didChange:sourceState'); }
+    if (dirty)   { this.emit('didChange:isDirty'); }
+    if (invalid) { this.emit('didChange:isInvalid'); }
+    if (busy)    { this.emit('didChange:isBusy'); }
   }
 
   Z.Model = Z.Object.extend(Z.Observable, function() {
@@ -100,10 +100,10 @@
           key    = '__' + name + '__',
           state  = this.sourceState();
 
-      this.willChangeProperty(name);
+      this.emit('willChange:' + name);
       this[key] = val;
       if (owner && state === LOADED) { setState.call(this, {dirty: true}); }
-      this.didChangeProperty(name);
+      this.emit('didChange:' + name);
     }
 
     function setHasOne(descriptor, val) {
