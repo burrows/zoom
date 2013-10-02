@@ -11,22 +11,18 @@ Z.Emitter = Z.Module.extend(function() {
     }
   }
 
-  this.def('normalizeOnOpts', function(opts) {
-    return Z.merge({
-      observer: this,
-      context: null,
-      fire: false,
-      once: false
-    }, opts);
-  });
-
   this.def('on', function(event, handler, opts) {
     var reg;
 
     this.__z_on__ = this.__z_on__ || {};
     this.__z_on__[event] = this.__z_on__[event] || [];
 
-    opts = this.normalizeOnOpts(opts);
+    opts = Z.merge({
+      observer: this,
+      context: null,
+      fire: false,
+      once: false
+    }, opts);
 
     reg = {
       handler: handler,
