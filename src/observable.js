@@ -125,14 +125,19 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   //
   // Returns the receiver.
   this.def('destroy', function() {
-    var k;
+    var event, path;
 
-    for (k in this.__z_paths__) {
-      if (!this.__z_paths__.hasOwnProperty(k)) { continue; }
-      this.teardownPathObserver(k, k, this);
+    // remove any existing unknown observers
+    for (event in this.__z_on__) {
+      if (observableEventRe.test(event)) {
+        path = event.split(':')[1];
+
+        if (!this.hasProperty(path) && path !== '*') {
+          this.teardownUnknownObserver(path, path, this);
+        }
+      }
     }
 
-    this.off();
     return this.supr();
   });
 
@@ -380,7 +385,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return value;
   });
 
-  function hasUnknownObserver(path) {
+  function hasObserverFor(path) {
     return this.__z_on__ &&
       (this.__z_on__['willChange:' + path] ||
        this.__z_on__['didChange:' + path]);
@@ -393,7 +398,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       path = event.split(':')[1];
 
       if (!this.hasProperty(path) && path !== '*' &&
-          !hasUnknownObserver.call(this, path)) {
+          !hasObserverFor.call(this, path)) {
         this.setupUnknownObserver(path, path, this);
       }
     }
@@ -410,7 +415,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       path = event.split(':')[1];
 
       if (!this.hasProperty(path) && path !== '*' &&
-          !hasUnknownObserver.call(this, path)) {
+          !hasObserverFor.call(this, path)) {
         this.teardownUnknownObserver(path, path, this);
       }
     }

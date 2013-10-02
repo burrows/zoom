@@ -771,6 +771,13 @@ describe('Z.Observable dependent properties:', function() {
 });
 
 describe('Z.Observable.destroy', function() {
+  var Address, Person;
+
+  Address = Z.Object.extend(Z.Observable, function() {
+    this.prop('number');
+    this.prop('street');
+  });
+
   Person = Z.Object.extend(Z.Observable, function() {
     this.prop('first');
     this.prop('last');
@@ -778,17 +785,30 @@ describe('Z.Observable.destroy', function() {
       readonly: true, dependsOn: ['first', 'last'],
       get: function() { return this.first() + ' ' + this.last(); }
     });
+    this.prop('address');
   });
 
   it('should remove any existing observers', function() {
-    var p = Person.create({first: 'Homer', last: 'Simpson'}),
-        observer = function() {};
+    var p = Person.create({first: 'Homer', last: 'Simpson'});
 
-    p.on('didChange:first', observer);
+    p.on('didChange:first', function() {});
 
     expect(p.__z_on__).not.toEq({});
     p.destroy();
     expect(p.__z_on__).toEq({});
+  });
+
+  it('should remove any existing unknown property observers', function() {
+    var a = Address.create({number: 123, street: 'Fake St.'}),
+        p = Person.create({address: a});
+
+    p.on('didChange:address.street', function() {});
+
+    expect(p.__z_on__).not.toEq({});
+    expect(a.__z_on__).not.toEq({});
+    p.destroy();
+    expect(p.__z_on__).toEq({});
+    expect(a.__z_on__).toEq({});
   });
 });
 

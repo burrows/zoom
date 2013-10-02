@@ -96,5 +96,10 @@ Z.Emitter = Z.Module.extend(function() {
 
     return this;
   });
+
+  this.def('destroy', function() {
+    this.off();
+    return this.supr();
+  });
 });
 

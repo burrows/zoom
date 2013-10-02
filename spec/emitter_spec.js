@@ -362,6 +362,16 @@ describe('Z.Emitter', function() {
       expect(f.emit('change')).toBe(f);
     });
   });
+
+  describe('.destroy', function() {
+    it('should remove existing handlers', function() {
+      f.on('foo', 'methHandler1');
+      f.on('bar', funcHandler1);
+      expect(f.__z_on__).not.toEq({});
+      f.destroy();
+      expect(f.__z_on__).toEq({});
+    });
+  });
 });
 
 }());
