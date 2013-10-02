@@ -1,4 +1,54 @@
+// The `Z.Emitter` module provides basic pub/sub functionality and is the
+// underpinning of Zoom's key value observing functionality (provided by
+// `Z.Observable`). `Z.Emitter` can be mixed in to any `Z.Object` sub-type to
+// endow the object the ability to emit events that can be subscribed to by
+// other objects. Events are represented by strings and may optionally be
+// classified with a namespace. The event format is:
+//
+// type[:namespace]
+//
+// Emitter objects emit events with the `emit` method and other objects can
+// subscribe to these events with the `on` method. When events are emitted, an
+// optional data argument may be supplied that will be passed on to subscribers.
+//
+// Examples
+//
+//   var e = Z.Object.extend(Z.Emitter).create();
+//
+//   function someEventHandler() {
+//     console.log('someEventHandler called');
+//   }
+//
+//   function someEventWithFooNamespaceHandler() {
+//     console.log('someEventWithFooNamespaceHandler called');
+//   }
+//
+//   function someEventWithAnyNamespaceHandler(event) {
+//     console.log('someEventWithAnyNamespaceHandler called');
+//   }
+//
+//   e.on('someEvent', someEventHandler);
+//   e.on('someEvent:foo', someEventWithFooNamespaceHandler);
+//   e.on('someEvent:*', someEventWithAnyNamespaceHandler);
+//
+//   e.emit('someEvent');
+//   // someEventHandlerCalled
+//
+//   e.emit('someEvent:foo');
+//   // someEventWithFooNamespaceHandler called
+//   // someEventWithAnyNamespaceHandler called
+//
+//   e.emit('someEvent:bar');
+//   // someEventWithAnyNamespaceHandler called
 Z.Emitter = Z.Module.extend(function() {
+  // Internal: Triggers the handler associated with the given registration
+  // object.
+  //
+  // reg   - A registration object created by the `.on` method.
+  // event - An event string.
+  // data  - A data argument to pass to the handler (optional).
+  //
+  // Returns nothing.
   function trigger(reg, event, data) {
     var handler = typeof reg.handler === 'string' ?
       reg.observer[reg.handler] : reg.handler;
@@ -11,6 +61,24 @@ Z.Emitter = Z.Module.extend(function() {
     }
   }
 
+  // Public: Registers a handler for the given event.
+  //
+  // event   - A string representing the event to subscribe to.
+  // handler - Either a Function object or a string representing a method on the
+  //           observer object (which defaults to the receiver but can be set
+  //           with the `observer` option.
+  // opts    - A native object containing any of the following keys:
+  //           observer - The object that the handler will be invoked in the
+  //                      context of (this is the receiver by default).
+  //           context  - An object to pass along to the handler when the event
+  //                      is emitted (default: `null`).
+  //           fire     - A boolean indicating whether to fire the handler
+  //                      immediately after registering it (default: `false`).
+  //           once     - A boolean indicating whether this handler should be
+  //                      automatically removed after it is fired for the first
+  //                      time.
+  //
+  // Returns the receiver.
   this.def('on', function(event, handler, opts) {
     var reg;
 
