@@ -15,39 +15,40 @@
 //   a.size();                 // => 5
 //   a.pop();                  // => 4
 //
-//   // KVC Support
-//   App.Transaction = Z.Object.extend(function() {
+//   App.Transaction = Z.Object.extend(Z.Observable, function() {
 //     this.prop('payee'); this.prop('amount');
 //   });
-//
+//   
 //   var txns = Z.A(
 //     App.Transaction.create({payee: 'Power Co', amount: 120}),
 //     App.Transaction.create({payee: 'Car Loan', amount: 250}),
 //     App.Transaction.create({payee: 'Cable Co', amount: 50})
 //   );
-//
+//   
 //   txns.get('size');  // => 3
 //   txns.get('first'); // => #<App.Transaction:48 payee: 'Power Co', amount: 120>
 //   txns.get('payee'); // => #<Z.Array:56 ['Power Co', 'Car Loan', 'Cable Co']>
-//
+//   
 //   // KVO Support
-//   txns.observe('amount', null, Z.log, {previous: true, current: true});
+//   txns.on('didChange:amount', Z.log);
 //   txns.last().amount(60);
-//   // {type: 'change', path: 'amount', observee: #<Z.Array:58 [...]>, previous: #<Z.Array:63 [120, 250, 50]>, current: #<Z.Array:68 [120, 250, 60]>}
-//
+//   // outputs: 'didChange:amount' undefined
+//   
 //   // Observing mutations with the @ property
-//   txns.observe('@', null, Z.log);
+//   txns.on('didChange:@', Z.log);
 //   txns.pop();
-//   // {type: 'remove', path: '@', observee: #<Z.Array:95 [...]>, range: [2, 1]}
+//   // outputs: didChange:@' {type: 'remove', slice: [2, 1]}
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   var slice = Array.prototype.slice;
 
   // Internal: Called just before a mutation to the array is made, it does the
   // following:
   //
-  // * Emits events for array properties that will be affected by the mutation.
-  // * Deregisters item observers from items that are about to be removed from
-  //   the array.
+  // 1. Emits `willChange:` events for array properties that will be affected by
+  //    the mutation.
+  // 2. Tears down item observers from items that are about to be removed from
+  //    the array.
+  // 3. Emits `didChange:` events for item observers.
   //
   // type - The type of mutation that will occur (insert, remove, or update).
   // idx  - The index in the array where the mutation will start.
@@ -86,13 +87,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     emitItemObservers.call(this, 'willChange');
   }
 
-  // Internal: Called just after a mutation to the array is made, it does the
-  // following:
+  // Internal: Called just after a mutation to the array has been made, it does
+  // the following:
   //
-  // * Calls `Z.Object.didChangeProperty` for array properties that were
-  //   affected by the mutation.
-  // * Registers item observers on items that were added to the array.
-  // * Sends notification objects for item observers.
+  // 1. Emits `didChange:` events for array properties that were be affected by
+  //    the mutation.
+  // 2. Registers item observers on items that were added to the array.
+  // 3. Emits `didChange:` events for item observers.
   //
   // type - The type of mutation that just occurred (insert, remove, or
   //        update).
@@ -153,12 +154,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   });
 
   // Public: A special readonly property that only exists for observing array
-  // mutations. Observing this property will cause notifications to be sent
-  // every time a mutation is made to the array. The `type` key in the
-  // notification objects will be set to one of the following: `insert`,
-  // `remove`, or `update`. Additionaly, a `range` key will be present that is a
-  // tuple containing the starting index of the mutation as well as the number
-  // of items that are affected, starting from that index.
+  // mutations. Observing this property will cause events to be emitted every
+  // time a mutation is made to the array. The events are `willChange:@` and
+  // `didChange:@` and a data object is emitted with the events that contains
+  // a `type` key set to one of the following: 'insert', 'remove', or 'update'.
+  // Additionaly, a `slice` key will also be present in the data object that is
+  // a two element array containing the starting index of the mutatation as well
+  // as the number of items that are affected, starting from that index.
   this.prop('@', { readonly: true, get: function() { return this; } });
 
   // Public: The `Z.Array` constructor. Arrays can be created with zero or one
@@ -693,9 +695,6 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Returns a `Z.Array`.
   this.def('reverse', function() { return this.dup().reverse$(); });
 
-  // Internal: Overrides the default `registerObserver` implemention in
-  // `Z.Object` in order to proxy observers on unknown properties to each item
-  // in the array.
   // Internal: Proxies gets for unknown properties out to all items and returns
   // a new array containing each value. The resulting array is flattened.
   //
@@ -718,6 +717,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     this.each(function(item) { item.set(k, v); });
   });
 
+  // Internal: Sets up an item observer by invoking the `setupUnknownObserver`
+  // method on all items in the array.
   function setupItemObserver(rpath, opath, observee, i, n) {
     var items = this.__z_items__;
 
@@ -726,6 +727,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     }
   }
 
+  // Internal: Tears down an item observer by invoking the
+  // `teardownUnknownObserver` method on all items in the array.
   function teardownItemObserver(rpath, opath, observee, i, n) {
     var items = this.__z_items__;
 
@@ -734,6 +737,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     }
   }
 
+  // Internal: Sets up all registered item observers on the current items in the
+  // array indicated by the given slice. Called by the `didMutate` method to add
+  // item observers to newly added items.
+  //
+  // i - The starting index.
+  // n - The number of items to add item observers to 
+  //
+  // Returns nothing.
   function setupItemObservers(i, n) {
     var idx, len, io;
 
@@ -745,6 +756,14 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     }
   }
 
+  // Internal: Tears down all registered item observers on the current items in
+  // the array indicated by the given slice. Called by the `willMutate` method
+  // to remove item observers from items that are about to be removed.
+  //
+  // i - The starting index.
+  // n - The number of items to add item observers to 
+  //
+  // Returns nothing.
   function teardownItemObservers(i, n) {
     var idx, len, io;
 
@@ -756,6 +775,12 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     }
   }
 
+  // Internal: Emits events for all registered item observers. This method is
+  // called by the `willMutate` and `didMutate` methods.
+  //
+  // type - Either `willChange` or `didChange`.
+  //
+  // Returns the receiver.
   function emitItemObservers(type) {
     var i, n, io;
 
@@ -767,6 +792,11 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     }
   }
 
+  // Internal: Overrides the `setupUnknownObserver` method of `Z.Observable` in
+  // order to create item observers. Item observers are created when an attempt
+  // is made to observe properties on an array that don't exist. Instead of
+  // throwing an error in this case, `Z.Array` proxies the observers to all of
+  // its items.
   this.def('setupUnknownObserver', function(rpath, opath, observee) {
     var i = rpath.indexOf('.'), head = i > 0 ? rpath.substring(0, i) : rpath;
 
@@ -782,6 +812,8 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
     return this;
   });
 
+  // Internal: Overrides the `teardownUnknownObserver` method of `Z.Observable`
+  // in order to teardown item observers.
   this.def('teardownUnknownObserver', function(rpath, opath, observee) {
     var i = rpath.indexOf('.'), head = i > 0 ? rpath.substring(0, i) : rpath, n;
 
