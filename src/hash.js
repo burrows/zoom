@@ -14,7 +14,7 @@
   //
   //   // Creating and manipulating hashes
   //   var h = Z.Hash.create();
-  //
+  //   
   //   h.at('foo', 'string key');               // => 'string key'
   //   h.at({x: 1}, 'object key');              // => 'object key'
   //   h.at(/xy+z$/, 'regex key');              // => 'regex key'
@@ -23,52 +23,52 @@
   //   h.at('foo');                             // => 'string key'
   //   h.at({x: 1});                            // => 'object key'
   //   h.at(new RegExp('xy+z$'));               // => 'regex key'
-  //
+  //   
   //   // Default key values
   //   var h = Z.Hash.create(9);
-  //
+  //   
   //   h.at('foo');     // => 9
   //   h.at('foo', 10); // => 10
   //   h.at('foo');     // => 10
-  //
+  //   
   //   var h = Z.Hash.create(function(h, k) { return h.at(k, []); });
-  //
+  //   
   //   h.at('foo').push('hello');
   //   h.at('bar').push('goodbye');
   //   h                            // => #<Z.Hash:29 {'foo': ['hello'], 'bar': ['goodbye']}>
-  //
+  //   
   //   // KVC/KVO support
   //   var h = Z.H('foo', 9, 'bar', 22);
-  //
+  //   
   //   h.get('size'); // => 2
   //   h.get('foo');  // => 9
   //   h.get('bar');  // => 22
-  //
-  //   h.observe('size', null, Z.log);
-  //   h.observe('foo', null, Z.log);
-  //
+  //   
+  //   h.on('didChange:size', Z.log);
+  //   h.on('didChange:foo', Z.log);
+  //   
   //   h.at('baz', 1);
-  //   // {type: 'change', path: 'size', observee: #<Z.Hash:40 {'foo': 9, 'bar': 22, 'baz': 1}>}
-  //
+  //   // outputs: 'didChange:size' undefined
+  //   
   //   h.at('foo', 10);
-  //   // {type: 'change', path: 'foo', observee: #<Z.Hash:40 {'foo': 10, 'bar': 22, 'baz': 1}>}
-  //
+  //   // outputs: 'didChange:foo' undefined
+  //   
   //   // Observing mutations with the @ property
   //   var h = Z.H('foo', 9, 'bar', 22);
-  //
-  //   h.observe('@', null, Z.log, { previous: true, current: true });
-  //
+  //   
+  //   h.on('didChange:@', Z.log);
+  //   
   //   h.at('foo', 10);
-  //   // {type: 'update', path: '@', observee: #<Z.Hash:58 {'foo': 10, 'bar': 22}>, previous: 9, current: 10, key: 'foo'}
-  //
+  //   // outputs: 'didChange:@' {type: 'update', key: 'foo'}
+  //   
   //   h.set('bar', 23);
-  //   // {type: 'update', path: '@', observee: #<Z.Hash:58 {'foo': 10, 'bar': 23}>, previous: 22, current: 23, key: 'bar'}
-  //
+  //   // outputs: 'didChange:@' {type: 'update', key: 'bar'}
+  //   
   //   h.del('foo');
-  //   // {type: 'remove', path: '@', observee: #<Z.Hash:58 {'bar': 23}>, previous: 10, current: null, key: 'foo'}
-  //
+  //   // outputs: 'didChange:@' {type: 'remove', key: 'foo'}
+  //   
   //   h.at('x', 'y');
-  //   // {type: 'insert', path: '@', observee: #<Z.Hash:58 {'bar': 23, 'x': 'y'}>, previous: null, current: 'y', key: 'x'}
+  //   // outputs: 'didChange:@' {type: 'insert', key: 'x'}
   Z.Hash = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
     // Internal: Returns the default value for a key that is not present in the
     // hash.
@@ -125,8 +125,8 @@
     // argument, it returns the current value for the key. When given a key and
     // value arguments, it sets the value for the given key.
     //
-    // This method will trigger the appropriate property notifications to be sent
-    // when setting keys.
+    // This method will emit the appropriate `willChange:` and `didChange:`
+    // events when setting keys.
     //
     // k - The key to get or set.
     // v - The value to set for the given key. When not given, the current value
@@ -194,7 +194,8 @@
 
     // Public: Deletes a key/value pair from the hash.
     //
-    // This method will trigger the appropriate property notifications to be sent.
+    // This method will emit the appropriate `willChange:` and `didChange:`
+    // events based on the key being deleted.
     //
     // k - The key to delete from the hash.
     //
