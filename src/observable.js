@@ -1,5 +1,13 @@
 // `Z.Observable` is a module that implements the core of the Zoom key-value
-// coding (KVC) and key-value observing (KVO) system.
+// coding (KVC) and key-value observing (KVO) system. The KVO system is built on
+// top of `Z.Emitter` using the `willChange:` and `didChange:` events. These
+// events are emitted whenever a property is changed with the namespace set to
+// the name of the property that changed. Additionally, `Z.Observable` overrides
+// the `on` and `off` methods from `Z.Emitter` in order to implement property
+// path observers. When a handler is created via the `on` method for a
+// `willChange:` or `didChange:` event with a namespace that is a property path,
+// the `Z.Observable` object will start emitting these events whenever any segment
+// of the path changes.
 //
 // The KVC/KVO implementation is highly influenced by Cocoa:
 //
@@ -8,8 +16,8 @@
 Z.Observable = Z.Module.extend(Z.Emitter, function() {
   var slice = Array.prototype.slice,
 
-  // A hash containing the default values for properties defined using
-  // `Z.Observable.prop`.
+  // Internal: An object containing the default values for properties defined
+  // using `Z.Observable.prop`.
   defaultPropertyOpts = {
     dependsOn : [],
     auto      : true,
@@ -20,6 +28,8 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     cache     : false
   },
 
+  // Internal: A regex to test whether an event name is a special `Z.Observable`
+  // event.
   observableEventRe = /^(?:willChange|didChange):/;
 
   // Internal: Returns the current value of the property indicated by the given
@@ -201,10 +211,10 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   //   auto      - The key-value observing system will automatically notify
   //               observers of the property when it changes when this option is
   //               set. If set to `false`, you should manually emit the
-  //               `willChange:<name>` and `didChange:<name>` events when your
-  //               setting actually changes the property. Setting this to
-  //               `false` only make sense when you have defined a custom setter
-  //               using the `set` option.
+  //               `willChange:<name>` and `didChange:<name>` events when
+  //               actually making changes the property. Setting this to`false`
+  //               only make sense when you have defined a custom setter using
+  //               the `set` option.
   //   get       - By default, when properties are retrieved via `get` or the
   //               generated accessor method the actual value is read from a raw
   //               property with the name `__<name>__`. You can use this option
@@ -221,7 +231,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   //   def       - Specify a default value for the property.
   //   cache     - Caches the result the first time the property is computed and
   //               returns the cached value on subsequent gets. The cache will
-  //               be cleared when any dependent paths change.
+  //               be cleared when any `dependsOn` paths change.
   //
   // Returns the receiver.
   this.def('prop', function(name, opts) {
@@ -360,8 +370,8 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   // current value of the key path is already equal to the given value (as
   // determined by `Z.eq`).
   //
-  // This is useful for cases where its important to avoid sending notifications
-  // unless a value has actually changed.
+  // This is useful for cases where its important to avoid emitting change
+  // events when the value hasn't actually changed.
   //
   // path  - A string containing a key path or a native object containing paths
   //         as the keys and property values as the values..
@@ -385,12 +395,21 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return value;
   });
 
+  // Internal: Returns a boolean indicating whether or not the given path is
+  // currently being observed.
   function hasObserverFor(path) {
     return this.__z_on__ &&
       (this.__z_on__['willChange:' + path] ||
        this.__z_on__['didChange:' + path]);
   }
 
+  // Internal: Overrides `Z.Emitter.on` to handle the setup of property path
+  // observers. If the given event is a `willChange:` or `didChange:` event and
+  // the namespace does not match a propery name, then the namespace is assumed
+  // to be a property path and the `setupUnknownObserver` method is called. The
+  // `setupUnknownObserver` method sets up the appropriate internal observers
+  // in order to cause the receiver to start emitting events for the property
+  // path.
   this.def('on', function(event, handler, opts) {
     var path;
 
@@ -406,6 +425,8 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return this.supr(event, handler, opts);
   });
 
+  // Internal: Overrides `Z.Emiter.off` to handler the teardown of property path
+  // observers.
   this.def('off', function(event, handler, opts) {
     var path;
 
@@ -423,6 +444,10 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return this;
   });
 
+  // Internal: Handler for `willChange:` events to a segment of a property path
+  // being observed. Tears down internal path observers from the current value
+  // just before it is actually removed from the path and emits a `willChange:`
+  // event on the original path observer.
   function pathSegmentWillChange(event, data, ctx) {
     var val;
 
@@ -433,6 +458,9 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     ctx.observee.emit('willChange:' + ctx.path, data);
   }
 
+  // Internal: Handler for `didChange:` events to a segment of a property path
+  // being observed. Sets up internal path observers on the new value and emits
+  // a `didChange:` event on the original path observer.
   function pathSegmentDidChange(event, data, ctx) {
     var val;
 
@@ -443,6 +471,18 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     ctx.observee.emit('didChange:' + ctx.path, data);
   }
 
+  // Internal: Called by `on` when a handler is registered for a `willChange:`
+  // or `didChange:` event on an unknown property name. The unknown property is
+  // assumed to be a property path and this method sets up internal observers
+  // on each segment in the path in order to be able to emit events when any
+  // segment in the path changes.
+  //
+  // rpath    - The relative path to the receiver. The method is called
+  //            recursively on each segment within the path and each time the
+  //            head of the path is popped off before the recursive call is
+  //            made.
+  // opath    - The original path to observe.
+  // observee - The object the path is being observed on.
   this.def('setupUnknownObserver', function(rpath, opath, observee) {
     var i    = rpath.indexOf('.'),
         head = i > 0 ? rpath.substring(0, i) : rpath,
@@ -472,6 +512,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return this;
   });
 
+  // Internal: Tears down internal observers setup by `setupUnknownObserver`.
   this.def('teardownUnknownObserver', function(rpath, opath, observee) {
     var i    = rpath.indexOf('.'),
         head = i > 0 ? rpath.substring(0, i) : rpath,
