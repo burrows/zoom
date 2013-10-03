@@ -61,7 +61,13 @@ Z.Emitter = Z.Module.extend(function() {
     }
   }
 
-  // Public: Registers a handler for the given event.
+  // Public: Registers a handler for the given event. When matching events are
+  // emitted by the `emit` method, the handler will be invoked with three
+  // arguments: the event that was emitted, the data argument passed to the
+  // `emit` method, and the `context` option passed to `on`. The data and
+  // context arguments may be `undefined`. By default the handler function will
+  // be invoked in the context of the receiver, but this can be overridden by
+  // specifying and `observer` option.
   //
   // event   - A string representing the event to subscribe to.
   // handler - Either a Function object or a string representing a method on the
@@ -77,6 +83,46 @@ Z.Emitter = Z.Module.extend(function() {
   //           once     - A boolean indicating whether this handler should be
   //                      automatically removed after it is fired for the first
   //                      time.
+  //
+  // Examples
+  //
+  //   // handler will be invoked in the context of x any time the 'foo' event
+  //   is emitted by x
+  //   x.on('foo', handler);
+  //
+  //   // handler will be invoked any time the 'foo:bar' event is emitted
+  //   x.on('foo:bar', handler);
+  //
+  //   // handler will be invoked any time a namespaced 'foo' event is emitted
+  //   // but not when the unnamespaced 'foo' event is emitted
+  //   x.on('foo:*', handler);
+  //
+  //   // handler will be invoked whenever any event with the 'bar' namespace is
+  //   // emitted
+  //   x.on('*:bar', handler)
+  //
+  //   // handler will be invoked whenever any namespaced event is emitted
+  //   x.on('*:*', handler)
+  //
+  //   // handler will be invoked whenever any event (namespaced or not) is
+  //   // emitted
+  //   x.on('*', handler)
+  //
+  //   // handler will be invoked immediately as well as any time the 'foo'
+  //   // event is emitted
+  //   x.on('foo', handler, {fire: true});
+  //
+  //   // handler will be invoked the first time the 'foo' event is emitted and
+  //   // never again
+  //   x.on('foo', handler, {once: true});
+  //
+  //   // handler will be invoked in the context of the y object whenever the
+  //   // 'foo' event is emitted
+  //   x.on('foo', handler, {observer: y});
+  //
+  //   // handler will be invoked with z as the third (context) argument
+  //   // whenever the 'foo' event is emitted
+  //   x.on('foo', handler, {context: z});
   //
   // Returns the receiver.
   this.def('on', function(event, handler, opts) {
@@ -105,6 +151,28 @@ Z.Emitter = Z.Module.extend(function() {
     return this;
   });
 
+  // Public: Deregisters a handler for the given event. A specific handler can
+  // be removed by passing the same arguments to `.off` that were passed to
+  // `.on` (including the `observer` and `context` option). Multiple handlers
+  // can be removed at once by only specifying a subset of the arguments and
+  // options passed to `.on`. For example, if you have multiple handler
+  // functions registered for the 'foo' event, you can remove them all at once
+  // like so:
+  //
+  //   x.off('foo');
+  //
+  // This would remove any handler registered for the 'foo' event'.
+  //
+  // event   - A string representing the event to unsubscribe from.
+  // handler - Either a Function object or a string representing a method on the
+  //           observer object.
+  // opts    - A native object containing any of the following keys:
+  //           observer - Only handlers registered for this observer object will
+  //                      be removed.
+  //           context  - Only handlers registered with this context object will
+  //                      be removed.
+  //
+  // Returns the receiver.
   this.def('off', function(event, handler, opts) {
     var regs, keys, i, j, n;
 
@@ -112,7 +180,7 @@ Z.Emitter = Z.Module.extend(function() {
 
     opts = opts || {};
 
-    keys = event ? [event] : Object.keys(this.__z_on__);
+    keys = event ? [event] : Z.H(this.__z_on__).keys().toNative();
 
     for (i = 0, n = keys.length; i < n; i++) {
       if (!(regs = this.__z_on__[keys[i]])) { continue; }
@@ -130,6 +198,15 @@ Z.Emitter = Z.Module.extend(function() {
     return this;
   });
 
+  // Public: Emits an event by invoking all registered handlers that match the
+  // given event name.
+  //
+  // event - A string representing the event to emit. This may be a bare event
+  //         type or an event type and namespace separated by a ':'.
+  // data  - An aribitraty object to pass along to handlers (default:
+  //         `undefined`).
+  //
+  // Returns the receiver.
   this.def('emit', function(event, data) {
     var keys, parts, regs, len, i, j;
 
@@ -161,6 +238,10 @@ Z.Emitter = Z.Module.extend(function() {
     return this;
   });
 
+  // Public: The `Z.Emitter` destructor. Automatically removes all registered
+  // event handlers.
+  //
+  // Returns the receiver.
   this.def('destroy', function() {
     this.off();
     return this.supr();
