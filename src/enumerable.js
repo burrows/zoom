@@ -254,6 +254,64 @@ Z.Enumerable = Z.Module.extend(function() {
     return false;
   });
 
+  // Public: Yields each set of consecutive `n` items to the function as a
+  // native array.
+  //
+  // n - The number of consecutive items to yield at a time.
+  // f - The function to yield each consecutive set of elements to.
+  //
+  // Examples
+  //
+  //   Z.A(1,2,3,4,5,6,7).eachCons(2, console.log)
+  //   // outputs:
+  //   // [ 1, 2 ]
+  //   // [ 2, 3 ]
+  //   // [ 3, 4 ]
+  //   // [ 4, 5 ]
+  //   // [ 5, 6 ]
+  //   // [ 6, 7 ]
+  //
+  // Returns the receiver.
+  this.def('eachCons', function(n, f) {
+    var a = [];
+
+    this.each(function(item) {
+      a.push(item);
+      if (a.length > n) { a.shift(); }
+      if (a.length === n) { f(a.slice(0)); }
+    });
+
+    return this;
+  });
+
+  // Public: Yields each slice of `n` items to the function as a native array.
+  //
+  // n - The size of each slice to yield.
+  // f - The function to yield each slice to.
+  //
+  // Examples
+  //
+  //   Z.A(1,2,3,4,5,6,7).eachSlice(2, console.log)
+  //   // outputs:
+  //   // [ 1, 2 ]
+  //   // [ 3, 4 ]
+  //   // [ 5, 6 ]
+  //   // [ 7 ]
+  //
+  // Returns the receiver.
+  this.def('eachSlice', function(n, f) {
+    var a = [];
+
+    this.each(function(item) {
+      a.push(item);
+      if (a.length === n) { f(a); a = []; }
+    });
+
+    if (a.length > 0) { f(a); }
+
+    return this;
+  });
+
   // Public: Gets the given property path from each item in the enumerable and
   // returns a `Z.Array` containing the results.
   //
