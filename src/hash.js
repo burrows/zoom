@@ -1,14 +1,15 @@
 (function(undefined) {
   var seed = Math.floor(Math.random() * 0xffffffff);
 
-  // The `Z.Hash` type provides a full blown hash table implementation that is KVC
-  // and KVO compliant. Any objects (those inheriting from `Z.Object` as well as
-  // native objects) can be used as keys in the hash. `Z.Hash` overrides the
-  // `getUnknownProperty` and `setUnknownProperty` methods to support getting and
-  // setting arbitrarily named properties. This means that you can work with
-  // properties on a hash without defining them first. Finally, `Z.Hash` also
-  // supports an `@` property similar to `Z.Array.@` that allows for observing
-  // mutations made to the hash.
+  // The `Z.Hash` type provides a full blown hash table implementation that is
+  // KVC and KVO compliant. Any objects (those inheriting from `Z.Object` as
+  // well as native objects) can be used as keys in the hash. `Z.Hash` overrides
+  // the `getUnknownProperty` and `setUnknownProperty` methods to support
+  // getting and setting arbitrarily named properties. This means that you can
+  // work with properties on a hash without defining them first. Finally,
+  // mutations on a hash can be observed in a similar manner as with `Z.Array`
+  // objects - either through the `@` property or the `willInsert`/`didInsert`,
+  // `willUpdate`/`didUpdate`, and `willRemove`/`didRemove` events.
   //
   // Examples
   //
@@ -69,6 +70,21 @@
   //   
   //   h.at('x', 'y');
   //   // outputs: 'didChange:@' {type: 'insert', key: 'x'}
+  //
+  //   // Observing mutations with mutation events
+  //   var h = Z.H('foo', 9, 'bar', 22);
+  //   h.on('didInsert', Z.log);
+  //   h.on('didRemove', Z.log);
+  //   h.on('didUpdate', Z.log);
+  //
+  //   h.at('quux', 3);
+  //   // outputs: 'didInsert' {key: 'quux'}
+  //
+  //   h.at('foo', 8);
+  //   // outputs: 'didUpdate' {key: 'foo'}
+  //
+  //   h.del('bar');
+  //   // outputs: 'didRemove' {key: 'bar'}
   Z.Hash = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
     // Internal: Returns the default value for a key that is not present in the
     // hash.
@@ -163,9 +179,11 @@
           if (Z.eq(k, entry.key)) {
             this.emit('willChange:' + k);
             this.emit('willChange:@', {type: 'update', key: k});
+            this.emit('willUpdate', {key: k});
             entry.value = v;
             this.emit('didChange:' + k);
             this.emit('didChange:@', {type: 'update', key: k});
+            this.emit('didUpdate', {key: k});
             return v;
           }
         }
@@ -173,8 +191,9 @@
         this.emit('willChange:' + k);
         this.emit('willChange:size');
         this.emit('willChange:@', {type: 'insert', key: k});
+        this.emit('willInsert', {key: k});
 
-        entry = { key: k, value: v, prev: this.__z_tail__, next: null };
+        entry = {key: k, value: v, prev: this.__z_tail__, next: null};
 
         if (this.__z_tail__) { this.__z_tail__.next = entry;  }
         this.__z_tail__ = entry;
@@ -187,6 +206,7 @@
         this.emit('didChange:' + k);
         this.emit('didChange:size');
         this.emit('didChange:@', {type: 'insert', key: k});
+        this.emit('didInsert', {key: k});
 
         return v;
       }
@@ -219,6 +239,7 @@
           this.emit('willChange:' + k);
           this.emit('willChange:size');
           this.emit('willChange:@', {type: 'remove', key: k});
+          this.emit('willRemove', {key: k});
           if (this.__z_head__ === entry) { this.__z_head__ = entry.next; }
           if (this.__z_tail__ === entry) { this.__z_tail__ = entry.prev; }
           if (entry.prev) { entry.prev.next = entry.next; }
@@ -228,6 +249,7 @@
           this.emit('didChange:' + k);
           this.emit('didChange:size');
           this.emit('didChange:@', {type: 'remove', key: k});
+          this.emit('didRemove', {key: k});
           return entry.value;
         }
       }

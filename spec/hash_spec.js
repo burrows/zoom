@@ -353,6 +353,28 @@ describe('Z.Hash.at', function() {
     it('should return the value', function() {
       expect(h.at('x', 'y')).toBe('y');
     });
+
+    it('should emit willUpdate/didUpdate events when the key already exists', function() {
+      var handler = jasmine.createSpy();
+
+      h.on('willUpdate', handler);
+      h.on('didUpdate', handler);
+
+      h.at('foo', 10);
+      expect(handler).toHaveBeenCalledWith('willUpdate', {key: 'foo'});
+      expect(handler).toHaveBeenCalledWith('didUpdate', {key: 'foo'});
+    });
+
+    it('should emit willInsert/didInsert events when the key does not already exist', function() {
+      var handler = jasmine.createSpy();
+
+      h.on('willInsert', handler);
+      h.on('didInsert', handler);
+
+      h.at('quux', 3);
+      expect(handler).toHaveBeenCalledWith('willInsert', {key: 'quux'});
+      expect(handler).toHaveBeenCalledWith('didInsert', {key: 'quux'});
+    });
   });
 
   describe('with zero or more than two arguments', function() {
@@ -407,6 +429,17 @@ describe('Z.Hash.del', function() {
     expect(function() {
       h.del('a', 'b', 'c');
     }).toThrow('Z.Hash.del: given 3 arguments, expected 1');
+  });
+
+  it('should emit willRemove/didRemove events', function() {
+    var handler = jasmine.createSpy();
+
+    h.on('willRemove', handler);
+    h.on('didRemove', handler);
+
+    h.del('foo');
+    expect(handler).toHaveBeenCalledWith('willRemove', {key: 'foo'});
+    expect(handler).toHaveBeenCalledWith('didRemove', {key: 'foo'});
   });
 });
 
