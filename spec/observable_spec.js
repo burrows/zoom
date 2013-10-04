@@ -589,6 +589,24 @@ describe('Z.Object KVO support:', function() {
       expect(handler.callCount).toBe(1);
     });
 
+    it('should not remove internal segment handlers for other path observers', function() {
+      var handler1 = jasmine.createSpy(),
+          handler2 = jasmine.createSpy(),
+          user     = User.create({address: Address.create({number: 123, street: 'main'})});
+
+      user.on('didChange:address.number', handler1);
+      user.on('didChange:address.street', handler2);
+      user.set('address.number', 321);
+      user.set('address.street', 'maple');
+      expect(handler1.callCount).toBe(1);
+      expect(handler2.callCount).toBe(1);
+
+      user.off('didChange:address.street', handler2);
+      user.set('address', Address.create({number: 333, street: 'chestnut'}));
+      expect(handler1.callCount).toBe(2);
+      expect(handler2.callCount).toBe(1);
+    });
+
     describe('with a key path ending in `*`', function() {
       it('should prevent handlers from being invoked when any property on the object at the end of the key path changes', function() {
         var handler = jasmine.createSpy(),

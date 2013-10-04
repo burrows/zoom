@@ -484,9 +484,11 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
   // opath    - The original path to observe.
   // observee - The object the path is being observed on.
   this.def('setupUnknownObserver', function(rpath, opath, observee) {
-    var i    = rpath.indexOf('.'),
-        head = i > 0 ? rpath.substring(0, i) : rpath,
-        tail = i > 0 ? rpath.substring(i + 1) : null,
+    var i      = rpath.indexOf('.'),
+        head   = i > 0 ? rpath.substring(0, i) : rpath,
+        tail   = i > 0 ? rpath.substring(i + 1) : null,
+        ctxkey = opath + ',' + observee.objectId,
+        ctx    = {observee: observee, path: opath, head: head, tail: tail},
         val;
 
     if (head === '*' && tail) {
@@ -497,13 +499,9 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       throw new Error(Z.fmt("Z.Observable.on: undefined key `%@` for %@", head, this));
     }
 
-    this.on('willChange:' + head, pathSegmentWillChange, {
-      context: {observee: observee, path: opath, head: head, tail: tail}
-    });
-
-    this.on('didChange:' + head, pathSegmentDidChange, {
-      context: {observee: observee, path: opath, head: head, tail: tail}
-    });
+    this.on('willChange:' + head, pathSegmentWillChange, {context: ctx});
+    this.on('didChange:' + head, pathSegmentDidChange, {context: ctx});
+    (this.__z_contexts__ = this.__z_contexts__ || {})[ctxkey] = ctx;
 
     if (tail && (val = this.get(head))) {
       val.setupUnknownObserver(tail, opath, observee);
@@ -514,17 +512,22 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
 
   // Internal: Tears down internal observers setup by `setupUnknownObserver`.
   this.def('teardownUnknownObserver', function(rpath, opath, observee) {
-    var i    = rpath.indexOf('.'),
-        head = i > 0 ? rpath.substring(0, i) : rpath,
-        tail = i > 0 ? rpath.substring(i + 1) : null,
+    var i      = rpath.indexOf('.'),
+        head   = i > 0 ? rpath.substring(0, i) : rpath,
+        tail   = i > 0 ? rpath.substring(i + 1) : null,
+        ctxkey = opath + ',' + observee.objectId,
+        ctx    = this.__z_contexts__ ? this.__z_contexts__[ctxkey] : null,
         val;
 
     if (!tail && !this.hasProperty(head) && head !== '*') {
       throw new Error(Z.fmt("Z.Observable.off: undefined key `%@` for %@", head, this));
     }
 
-    this.off('willChange:' + head, pathSegmentWillChange);
-    this.off('didChange:' + head, pathSegmentDidChange);
+    if (!ctx) { return this; }
+
+    this.off('willChange:' + head, pathSegmentWillChange, {context: ctx});
+    this.off('didChange:' + head, pathSegmentDidChange, {context: ctx});
+    delete this.__z_contexts__[ctxkey];
 
     if (tail && (val = this.get(head))) {
       val.teardownUnknownObserver(tail, opath, observee);
