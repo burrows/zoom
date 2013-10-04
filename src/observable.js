@@ -493,7 +493,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
       throw new Error(Z.fmt("Z.Observable.on: observing `*` anywhere other than at the end of a key path is not supported: '%@'", opath));
     }
 
-    if (!tail && !this.hasProperty(head)) {
+    if (!tail && !this.hasProperty(head) && head !== '*') {
       throw new Error(Z.fmt("Z.Observable.on: undefined key `%@` for %@", head, this));
     }
 
@@ -519,7 +519,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
         tail = i > 0 ? rpath.substring(i + 1) : null,
         val;
 
-    if (!tail && !this.hasProperty(head)) {
+    if (!tail && !this.hasProperty(head) && head !== '*') {
       throw new Error(Z.fmt("Z.Observable.off: undefined key `%@` for %@", head, this));
     }
 

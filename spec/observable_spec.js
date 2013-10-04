@@ -339,6 +339,7 @@ describe('Z.Object KVO support:', function() {
   });
 
   Address = Z.Object.extend(Z.Observable, function() {
+    this.prop('number');
     this.prop('street');
   });
 
@@ -554,6 +555,20 @@ describe('Z.Object KVO support:', function() {
       user.on('didChange:address.street', handler, {fire: true});
       expect(handler).toHaveBeenCalledWith('didChange:address.street', undefined);
     });
+
+    describe('with a key path ending in `*`', function() {
+      it('should fire observers when any property on the object at the end of the key path changes', function() {
+        var handler = jasmine.createSpy(),
+            user    = User.create({address: Address.create({number: 123, street: 'main'})});
+
+        user.on('didChange:address.*', handler);
+        user.address().number(321);
+        expect(handler).toHaveBeenCalledWith('didChange:address.*', undefined);
+        user.address().street('pine');
+        expect(handler).toHaveBeenCalledWith('didChange:address.*', undefined);
+        expect(handler.callCount).toBe(2);
+      });
+    });
   });
 
   describe('.off with a key path', function() {
@@ -572,6 +587,22 @@ describe('Z.Object KVO support:', function() {
       expect(handler.callCount).toBe(1);
       user.set('address.street', 'third');
       expect(handler.callCount).toBe(1);
+    });
+
+    describe('with a key path ending in `*`', function() {
+      it('should prevent handlers from being invoked when any property on the object at the end of the key path changes', function() {
+        var handler = jasmine.createSpy(),
+            user    = User.create({address: Address.create({number: 123, street: 'main'})});
+
+        user.on('didChange:address.*', handler);
+        user.address().number(321);
+        expect(handler.callCount).toBe(1);
+        user.address().street('pine');
+        expect(handler.callCount).toBe(2);
+        user.off('didChange:address.*', handler);
+        user.address().number(222);
+        expect(handler.callCount).toBe(2);
+      });
     });
   });
 
