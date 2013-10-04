@@ -4,6 +4,10 @@
 // mutations made to them and the ability to observe properties on items inside
 // the array.
 //
+// Mutations can be observed in two ways, either with the `@` property, which
+// can be used within a key path or the `willUpdate`/`didUpdate`,
+// `willInsert`/`didInsert`, and `willRemove`/`didRemove` events.
+//
 // Examples
 //
 //   // Creating and manipulating arrays
@@ -38,6 +42,20 @@
 //   txns.on('didChange:@', Z.log);
 //   txns.pop();
 //   // outputs: didChange:@' {type: 'remove', slice: [2, 1]}
+//
+//   // Observing mutations with mutation events
+//   txns.on('didUpdate', Z.log);
+//   txns.on('didRemove', Z.log);
+//   txns.on('didInsert', Z.log);
+//   
+//   txns.at(0, App.Transaction.create({payee: 'Mortgage', amout: 500}))
+//   // outputs: 'didUpdate' [0, 1]
+//   
+//   txns.pop();
+//   // outputs: 'didRemove' [1, 1]
+//   
+//   txns.push(App.Transaction.create({payee: 'Water Co', amout: 22}));
+//   // outputs: 'didInsert' [1, 1]
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   var slice = Array.prototype.slice;
 
