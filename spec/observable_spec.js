@@ -569,6 +569,18 @@ describe('Z.Object KVO support:', function() {
         expect(handler.callCount).toBe(2);
       });
     });
+
+    describe('with a `*` event type', function() {
+      it('should fire observers with both `willChange:` and `didChange:` events', function() {
+        var handler = jasmine.createSpy(),
+            user    = User.create({address: Address.create({number: 123, street: 'main'})});
+
+        user.on('*:address.number', handler);
+        user.address().number(321);
+        expect(handler).toHaveBeenCalledWith('willChange:address.number', undefined);
+        expect(handler).toHaveBeenCalledWith('didChange:address.number', undefined);
+      });
+    });
   });
 
   describe('.off with a key path', function() {

@@ -30,7 +30,7 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
 
   // Internal: A regex to test whether an event name is a special `Z.Observable`
   // event.
-  observableEventRe = /^(?:willChange|didChange):/;
+  observableEventRe = /^(?:willChange|didChange|\*):/;
 
   // Internal: Returns the current value of the property indicated by the given
   // key. If a property with the given name does not exist, the
