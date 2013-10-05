@@ -3,15 +3,7 @@
 if (!this.Z) { require('./helper'); }
 
 describe('Z.Router', function() {
-  var stubloc = false, router, currentRoute, currentUnknown;
-
-  function routeHandler(name, params) {
-    currentRoute = {name: name, params: params};
-  }
-
-  function unknownRouteHandler(route) {
-    currentUnknown = route;
-  }
+  var stubloc = false, router, routeHandler, unknownRouteHandler;
 
   beforeEach(function() {
     currentRoute   = null;
@@ -25,17 +17,23 @@ describe('Z.Router', function() {
       Z.global.location.hash = '';
     }
 
-    Z.Router.route('home', /^$/, function() { return ''; }, routeHandler);
+    Z.Router.route('home', /^$/, function() { return ''; });
 
     Z.Router.route('search', /^search\/(.*?)(?:\/p(\d+))?$/, function(params) {
       var hash = 'search/' + params.query;
       if (params.page) { hash = hash + '/p' + params.page; }
       return hash;
-    }, routeHandler);
+    });
 
     Z.Router.route('showWidget', /^widgets\/(\d+)$/, function(params) {
       return '#widgets/' + params.id;
-    }, routeHandler);
+    });
+
+    routeHandler = jasmine.createSpy();
+    unknownRouteHandler = jasmine.createSpy();
+
+    Z.Router.on('route:*', routeHandler);
+    Z.Router.on('unknownRoute', unknownRouteHandler);
   });
 
   afterEach(function() {
@@ -80,14 +78,20 @@ describe('Z.Router', function() {
   });
 
   describe('.routeHash', function() {
-    it('should find the first matching route, extract params, and invoke callback with route name and params', function() {
+    it('should find the first matching route, extract params, and emit a `route` event with route name as the namespace and route params as the data argument', function() {
       Z.Router.routeHash('');
-      expect(currentRoute.name).toBe('home');
-      expect(currentRoute.params).toEq([]);
+      expect(routeHandler).toHaveBeenCalledWith('route:home', []);
 
       Z.Router.routeHash('search/something/p3');
-      expect(currentRoute.name).toBe('search');
-      expect(currentRoute.params).toEq(['something', '3']);
+      expect(routeHandler).toHaveBeenCalledWith('route:search', ['something', '3']);
+
+      expect(unknownRouteHandler).not.toHaveBeenCalled();
+    });
+
+    it("should emit an `unknownRoute` event with the hash as the data argument when a matching route can't be found", function() {
+      Z.Router.routeHash('foobar');
+      expect(unknownRouteHandler).toHaveBeenCalledWith('unknownRoute', 'foobar');
+      expect(routeHandler).not.toHaveBeenCalled();
     });
   });
 

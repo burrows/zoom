@@ -1,33 +1,30 @@
-// The `Z.Router` object can be used to add location hash routing to an
-// application. It observes changes to the browser's location hash
+// The `Z.Router` singleton object can be used to add location hash routing to
+// an application. It observes changes to the browser's location hash
 // (`window.location.hash` via the `window`'s `hashchange` event), matches the
-// new hash value against the defined routes, and triggers a callback with the
-// matching route name and any parameters extracted from the hash value.
+// new hash value against the defined routes, and emits a `route:<name>` event
+// for the matching route and passes along any parameters extracted from the
+// hash as the data argument.
 //
 // When an application decides that it wants to update the current hash, it can
 // set the `Z.Router.current` property to the name of a defined route and set
 // any parameters (`Z.Router.params`) necessary to generate the new hash. To
 // actually modify the browser's hash, the `Z.Router.render` method must be
-// used. This is typically done during the run loop. Calling the `render` method
-// will not trigger the router's callback.
+// used. This is typically done during the run loop by `Z.RunLoop`. Calling the
+// `render` method will not emit any `route:` events.
 //
-// Routes are defined with a matcher regular expression, a generator function,
-// and a callback function. The regular expression may contain capturing
-// parenthesis, the captured values will be passed to the route's callback
-// function along with the route name when a matching route is found. The
-// generator function is used to construct a new hash when either the `current`
-// or `params` properties change.
+// Routes are defined with a matcher regular expression and a generator
+// function. The regular expression may contain capturing parenthesis, the
+// captured values will be passed along as the data argument with the emitted
+// `route:` events. The generator function is used to construct a new hash when
+// either the `current` or `params` properties change.
 Z.Router = Z.Object.extend(Z.Observable, function() {
-  var stripHash, routes, errbacks;
+  var stripHash, routes;
 
   // Internal: A regular expression that can be used to clean up a hash value.
   stripHash = /^#|\/?$/;
 
   // Internal: A native object containing route definitions.
   routes = {};
-
-  // Internal: An array of error callbacks.
-  errbacks = [];
 
   // Internal: The `hash` property observer - simply records that the location
   // hash needs to be updated.
@@ -81,7 +78,6 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // Public: Resets the router by clearing all defined routes.
   this.def('reset', function() {
     routes = {};
-    errbacks = [];
     this.current(null);
     this.params().clear();
     return this;
@@ -91,27 +87,21 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   //
   // name      - A string containing the name of the route.
   // matcher   - A `RegExp` object that can be used to match against hash
-  //             values. Any captures made by the regex will be passed to the
-  //             router's callback function when a matching route is found.
+  //             values. Any captures made by the regex will be passed as the
+  //             data argument with `route` events.
   // generator - A function that will generate a new hash for the route. A
   //             native object created from the `params` property will be passed
   //             to this function when the router needs to generate a new hash
   //             when the `current` or `params` properties change.
-  // callback  - A function to invoke when a hash change matches this route.
   //
   // Returns the receiver.
   // Throws `Error` if a route with the given name already exists.
-  this.def('route', function(name, matcher, generator, callback) {
+  this.def('route', function(name, matcher, generator) {
     if (routes[name]) {
       throw new Error(Z.fmt("Z.Router.route: a route with the name '%@' already exists", name));
     }
 
-    routes[name] = {
-      name: name,
-      matcher: matcher,
-      generator: generator,
-      callback: callback
-    };
+    routes[name] = {name: name, matcher: matcher, generator: generator};
 
     return this;
   });
@@ -134,15 +124,15 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   });
 
   // Internal: Takes a hash value and attempts to find a matching route. When a
-  // match is found, the callback is invoked with the route name and params.
-  // When a match can't be found then the errback is invoked with the hash
-  // value.
+  // match is found, the `route` event is emitted with a data argument
+  // containing the route name and params. When a match can't be found then the
+  // `unknownRoute` event is emitted with the hash value as the data argument.
   //
   // hash - A string containing the current value of the location hash.
   //
   // Returns `true` if a match was found and `false` otherwise.
   this.def('routeHash', function(hash) {
-    var name, match, route, params, i, n;
+    var name, match, route, params;
 
     hash = hash.replace(stripHash, '');
 
@@ -157,14 +147,11 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     }
 
     if (route) {
-      route.callback(route.name, params);
+      this.emit('route:' + route.name, params);
       return true;
     }
     else {
-      for (i = 0, n = errbacks.length; i < n; i++) {
-        errbacks[i](hash);
-      }
-
+      this.emit('unknownRoute', hash);
       return false;
     }
   });
