@@ -129,7 +129,7 @@ Calc.CalculatorView = Z.View.extend(function() {
       });
     });
 
-    this.sc.observe('current', null, Z.log, {current: true, previous: true});
+    this.sc.on('didChange:current', function() { console.log(this.current()); });
 
     this.sc.goto();
   });

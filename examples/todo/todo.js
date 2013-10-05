@@ -112,7 +112,7 @@ Todo.tagsController = Z.ArrayController.extend(function() {
 
   this.def('init', function(props) {
     this.supr(props);
-    this.observe('content.todos.size', this, 'rearrange');
+    this.on('didChange:content.todos.size', 'rearrange');
   });
 }).create();
 
@@ -129,7 +129,7 @@ Todo.todosController = Z.ArrayController.extend(function() {
 
   this.def('init', function(props) {
     this.supr(props);
-    this.observe('selectedTags.@', this, 'rearrange');
+    this.on('didChange:selectedTags.@', 'rearrange');
   });
 
   this.def('createTodo', function(title) {
