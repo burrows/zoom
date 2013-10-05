@@ -1,20 +1,21 @@
 (function(undefined) {
   var seed = Math.floor(Math.random() * 0xffffffff);
 
-  // The `Z.Hash` type provides a full blown hash table implementation that is KVC
-  // and KVO compliant. Any objects (those inheriting from `Z.Object` as well as
-  // native objects) can be used as keys in the hash. `Z.Hash` overrides the
-  // `getUnknownProperty` and `setUnknownProperty` methods to support getting and
-  // setting arbitrarily named properties. This means that you can work with
-  // properties on a hash without defining them first. Finally, `Z.Hash` also
-  // supports an `@` property similar to `Z.Array.@` that allows for observing
-  // mutations made to the hash.
+  // The `Z.Hash` type provides a full blown hash table implementation that is
+  // KVC and KVO compliant. Any objects (those inheriting from `Z.Object` as
+  // well as native objects) can be used as keys in the hash. `Z.Hash` overrides
+  // the `getUnknownProperty` and `setUnknownProperty` methods to support
+  // getting and setting arbitrarily named properties. This means that you can
+  // work with properties on a hash without defining them first. Finally,
+  // mutations on a hash can be observed in a similar manner as with `Z.Array`
+  // objects - either through the `@` property or the `willInsert`/`didInsert`,
+  // `willUpdate`/`didUpdate`, and `willRemove`/`didRemove` events.
   //
   // Examples
   //
   //   // Creating and manipulating hashes
   //   var h = Z.Hash.create();
-  //
+  //   
   //   h.at('foo', 'string key');               // => 'string key'
   //   h.at({x: 1}, 'object key');              // => 'object key'
   //   h.at(/xy+z$/, 'regex key');              // => 'regex key'
@@ -23,52 +24,67 @@
   //   h.at('foo');                             // => 'string key'
   //   h.at({x: 1});                            // => 'object key'
   //   h.at(new RegExp('xy+z$'));               // => 'regex key'
-  //
+  //   
   //   // Default key values
   //   var h = Z.Hash.create(9);
-  //
+  //   
   //   h.at('foo');     // => 9
   //   h.at('foo', 10); // => 10
   //   h.at('foo');     // => 10
-  //
+  //   
   //   var h = Z.Hash.create(function(h, k) { return h.at(k, []); });
-  //
+  //   
   //   h.at('foo').push('hello');
   //   h.at('bar').push('goodbye');
   //   h                            // => #<Z.Hash:29 {'foo': ['hello'], 'bar': ['goodbye']}>
-  //
+  //   
   //   // KVC/KVO support
   //   var h = Z.H('foo', 9, 'bar', 22);
-  //
+  //   
   //   h.get('size'); // => 2
   //   h.get('foo');  // => 9
   //   h.get('bar');  // => 22
-  //
-  //   h.observe('size', null, Z.log);
-  //   h.observe('foo', null, Z.log);
-  //
+  //   
+  //   h.on('didChange:size', Z.log);
+  //   h.on('didChange:foo', Z.log);
+  //   
   //   h.at('baz', 1);
-  //   // {type: 'change', path: 'size', observee: #<Z.Hash:40 {'foo': 9, 'bar': 22, 'baz': 1}>}
-  //
+  //   // outputs: 'didChange:size' undefined
+  //   
   //   h.at('foo', 10);
-  //   // {type: 'change', path: 'foo', observee: #<Z.Hash:40 {'foo': 10, 'bar': 22, 'baz': 1}>}
-  //
+  //   // outputs: 'didChange:foo' undefined
+  //   
   //   // Observing mutations with the @ property
   //   var h = Z.H('foo', 9, 'bar', 22);
-  //
-  //   h.observe('@', null, Z.log, { previous: true, current: true });
-  //
+  //   
+  //   h.on('didChange:@', Z.log);
+  //   
   //   h.at('foo', 10);
-  //   // {type: 'update', path: '@', observee: #<Z.Hash:58 {'foo': 10, 'bar': 22}>, previous: 9, current: 10, key: 'foo'}
-  //
+  //   // outputs: 'didChange:@' {type: 'update', key: 'foo'}
+  //   
   //   h.set('bar', 23);
-  //   // {type: 'update', path: '@', observee: #<Z.Hash:58 {'foo': 10, 'bar': 23}>, previous: 22, current: 23, key: 'bar'}
-  //
+  //   // outputs: 'didChange:@' {type: 'update', key: 'bar'}
+  //   
   //   h.del('foo');
-  //   // {type: 'remove', path: '@', observee: #<Z.Hash:58 {'bar': 23}>, previous: 10, current: null, key: 'foo'}
-  //
+  //   // outputs: 'didChange:@' {type: 'remove', key: 'foo'}
+  //   
   //   h.at('x', 'y');
-  //   // {type: 'insert', path: '@', observee: #<Z.Hash:58 {'bar': 23, 'x': 'y'}>, previous: null, current: 'y', key: 'x'}
+  //   // outputs: 'didChange:@' {type: 'insert', key: 'x'}
+  //
+  //   // Observing mutations with mutation events
+  //   var h = Z.H('foo', 9, 'bar', 22);
+  //   h.on('didInsert', Z.log);
+  //   h.on('didRemove', Z.log);
+  //   h.on('didUpdate', Z.log);
+  //
+  //   h.at('quux', 3);
+  //   // outputs: 'didInsert' {key: 'quux'}
+  //
+  //   h.at('foo', 8);
+  //   // outputs: 'didUpdate' {key: 'foo'}
+  //
+  //   h.del('bar');
+  //   // outputs: 'didRemove' {key: 'bar'}
   Z.Hash = Z.Object.extend(Z.Enumerable, Z.Observable, function() {
     // Internal: Returns the default value for a key that is not present in the
     // hash.
@@ -125,8 +141,8 @@
     // argument, it returns the current value for the key. When given a key and
     // value arguments, it sets the value for the given key.
     //
-    // This method will trigger the appropriate property notifications to be sent
-    // when setting keys.
+    // This method will emit the appropriate `willChange:` and `didChange:`
+    // events when setting keys.
     //
     // k - The key to get or set.
     // v - The value to set for the given key. When not given, the current value
@@ -161,20 +177,23 @@
         for (i = 0, len = bucket.length; i < len; i++) {
           entry = bucket[i];
           if (Z.eq(k, entry.key)) {
-            this.willChangeProperty(k);
-            this.willChangeProperty('@', {type: 'update', key: k, previous: entry.value});
+            this.emit('willChange:' + k);
+            this.emit('willChange:@', {type: 'update', key: k});
+            this.emit('willUpdate', {key: k});
             entry.value = v;
-            this.didChangeProperty(k);
-            this.didChangeProperty('@', {type: 'update', key: k, current: v});
+            this.emit('didChange:' + k);
+            this.emit('didChange:@', {type: 'update', key: k});
+            this.emit('didUpdate', {key: k});
             return v;
           }
         }
 
-        this.willChangeProperty(k);
-        this.willChangeProperty('size');
-        this.willChangeProperty('@', {type: 'insert', key: k, previous: null});
+        this.emit('willChange:' + k);
+        this.emit('willChange:size');
+        this.emit('willChange:@', {type: 'insert', key: k});
+        this.emit('willInsert', {key: k});
 
-        entry = { key: k, value: v, prev: this.__z_tail__, next: null };
+        entry = {key: k, value: v, prev: this.__z_tail__, next: null};
 
         if (this.__z_tail__) { this.__z_tail__.next = entry;  }
         this.__z_tail__ = entry;
@@ -184,9 +203,10 @@
         bucket.push(entry);
         this.__z_size__++;
 
-        this.didChangeProperty(k);
-        this.didChangeProperty('size');
-        this.didChangeProperty('@', {type: 'insert', key: k, current: v});
+        this.emit('didChange:' + k);
+        this.emit('didChange:size');
+        this.emit('didChange:@', {type: 'insert', key: k});
+        this.emit('didInsert', {key: k});
 
         return v;
       }
@@ -194,7 +214,8 @@
 
     // Public: Deletes a key/value pair from the hash.
     //
-    // This method will trigger the appropriate property notifications to be sent.
+    // This method will emit the appropriate `willChange:` and `didChange:`
+    // events based on the key being deleted.
     //
     // k - The key to delete from the hash.
     //
@@ -215,18 +236,20 @@
       for (i = 0, len = bucket.length; i < len; i++) {
         entry = bucket[i];
         if (Z.eq(k, entry.key)) {
-          this.willChangeProperty(k);
-          this.willChangeProperty('size');
-          this.willChangeProperty('@', {type: 'remove', key: k, previous: entry.value});
+          this.emit('willChange:' + k);
+          this.emit('willChange:size');
+          this.emit('willChange:@', {type: 'remove', key: k});
+          this.emit('willRemove', {key: k});
           if (this.__z_head__ === entry) { this.__z_head__ = entry.next; }
           if (this.__z_tail__ === entry) { this.__z_tail__ = entry.prev; }
           if (entry.prev) { entry.prev.next = entry.next; }
           if (entry.next) { entry.next.prev = entry.prev; }
           bucket.splice(i, 1);
           this.__z_size__--;
-          this.didChangeProperty(k);
-          this.didChangeProperty('size');
-          this.didChangeProperty('@', {type: 'remove', key: k, current: null});
+          this.emit('didChange:' + k);
+          this.emit('didChange:size');
+          this.emit('didChange:@', {type: 'remove', key: k});
+          this.emit('didRemove', {key: k});
           return entry.value;
         }
       }
@@ -395,10 +418,12 @@
       return this.at(k, v);
     });
 
-    // Internal: Overrides the default `hasProperty` to unconditionally return
-    // `true`. This allows observers to be attached to any arbitrary key on the
-    // hash.
-    this.def('hasProperty', function() { return true; });
+    // Internal: Overrides the default `hasProperty` to return `true` for names
+    // that do not contain a '.' character. This allows observers to be attached
+    // to any arbitrary key on the hash that is a valid property name.
+    this.def('hasProperty', function(prop) {
+      return prop.indexOf('.') === -1;
+    });
   });
 
   // Public: Generates a hash value for any object, including native objects.

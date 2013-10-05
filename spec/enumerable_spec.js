@@ -187,4 +187,32 @@ describe('Z.Enumerable.any', function() {
   });
 });
 
+describe('Z.Enumerable.eachCons', function() {
+  it('should yield each set of consecutive n items to the function', function() {
+    var a = Z.A(1,2,3,4,5,6,7), cons;
+
+    cons = [];
+    a.eachCons(2, function(x) { cons.push(x); });
+    expect(cons).toEq([[1,2], [2,3], [3,4], [4,5], [5,6], [6,7]]);
+
+    cons = [];
+    a.eachCons(3, function(x) { cons.push(x); });
+    expect(cons).toEq([[1,2,3], [2,3,4], [3,4,5], [4,5,6], [5,6,7]]);
+  });
+});
+
+describe('Z.Enumerable.eachSlice', function() {
+  it('should yield each slice of n items to the function', function() {
+    var a = Z.A(1,2,3,4,5,6,7), slices;
+
+    slices = [];
+    a.eachSlice(2, function(x) { slices.push(x); });
+    expect(slices).toEq([[1,2], [3,4], [5,6], [7]]);
+
+    slices = [];
+    a.eachSlice(3, function(x) { slices.push(x); });
+    expect(slices).toEq([[1,2,3], [4,5,6], [7]]);
+  });
+});
 }());
+

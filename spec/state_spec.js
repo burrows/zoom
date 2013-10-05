@@ -176,13 +176,14 @@ describe('Z.State.current', function() {
   });
 
   it('should be observable', function() {
-    var observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
+    var handler = jasmine.createSpy();
 
-    root.observe('current', observer, 'action', {previous: true, current: true});
+    root.on('willChange:current', handler);
+    root.on('didChange:current', handler);
     root.goto('/s/s1/s12', '/s/s2/s22');
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].previous).toEq(['/s/s1/s11', '/s/s2/s21']);
-    expect(observer.notifications[0].current).toEq(['/s/s1/s12', '/s/s2/s22']);
+    expect(handler.callCount).toBe(2);
+    expect(handler).toHaveBeenCalledWith('willChange:current', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:current', undefined);
   });
 });
 

@@ -4,6 +4,10 @@
 // mutations made to them and the ability to observe properties on items inside
 // the array.
 //
+// Mutations can be observed in two ways, either with the `@` property, which
+// can be used within a key path or the `willUpdate`/`didUpdate`,
+// `willInsert`/`didInsert`, and `willRemove`/`didRemove` events.
+//
 // Examples
 //
 //   // Creating and manipulating arrays
@@ -15,83 +19,54 @@
 //   a.size();                 // => 5
 //   a.pop();                  // => 4
 //
-//   // KVC Support
-//   App.Transaction = Z.Object.extend(function() {
+//   App.Transaction = Z.Object.extend(Z.Observable, function() {
 //     this.prop('payee'); this.prop('amount');
 //   });
-//
+//   
 //   var txns = Z.A(
 //     App.Transaction.create({payee: 'Power Co', amount: 120}),
 //     App.Transaction.create({payee: 'Car Loan', amount: 250}),
 //     App.Transaction.create({payee: 'Cable Co', amount: 50})
 //   );
-//
+//   
 //   txns.get('size');  // => 3
 //   txns.get('first'); // => #<App.Transaction:48 payee: 'Power Co', amount: 120>
 //   txns.get('payee'); // => #<Z.Array:56 ['Power Co', 'Car Loan', 'Cable Co']>
-//
+//   
 //   // KVO Support
-//   txns.observe('amount', null, Z.log, {previous: true, current: true});
+//   txns.on('didChange:amount', Z.log);
 //   txns.last().amount(60);
-//   // {type: 'change', path: 'amount', observee: #<Z.Array:58 [...]>, previous: #<Z.Array:63 [120, 250, 50]>, current: #<Z.Array:68 [120, 250, 60]>}
-//
+//   // outputs: 'didChange:amount' undefined
+//   
 //   // Observing mutations with the @ property
-//   txns.observe('@', null, Z.log);
+//   txns.on('didChange:@', Z.log);
 //   txns.pop();
-//   // {type: 'remove', path: '@', observee: #<Z.Array:95 [...]>, range: [2, 1]}
+//   // outputs: didChange:@' {type: 'remove', slice: [2, 1]}
+//
+//   // Observing mutations with mutation events
+//   txns.on('didUpdate', Z.log);
+//   txns.on('didRemove', Z.log);
+//   txns.on('didInsert', Z.log);
+//   
+//   txns.at(0, App.Transaction.create({payee: 'Mortgage', amout: 500}))
+//   // outputs: 'didUpdate' [0, 1]
+//   
+//   txns.pop();
+//   // outputs: 'didRemove' [1, 1]
+//   
+//   txns.push(App.Transaction.create({payee: 'Water Co', amout: 22}));
+//   // outputs: 'didInsert' [1, 1]
 Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   var slice = Array.prototype.slice;
-
-  // Internal: Registers item observers on the given items. Item observers are
-  // created when an unknown property is observed on an array.
-  //
-  // items - The items to add observers to.
-  //
-  // Returns nothing.
-  function registerItemObservers(items) {
-    var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
-
-    if (!registrations) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      for (j = 0, ilen = items.length; j < ilen; j++) {
-        items[j].registerObserver(r.tail, r.path, r.observee, r.observer,
-                                  r.action, r.opts);
-      }
-    }
-  }
-
-  // Internal: Deregisters item observers on the given items. This method is
-  // called when items are removed from an array that has item observers.
-  //
-  // items - The items to remove observers from.
-  //
-  // Returns nothing.
-  function deregisterItemObservers(items) {
-    var registrations = this.__z_itemRegistrations__, i, j, rlen, ilen, r;
-
-    if (!registrations) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      for (j = 0, ilen = items.length; j < ilen; j++) {
-        items[j].deregisterObserver(r.tail, r.path, r.observee, r.observer,
-                                    r.action, r.opts);
-      }
-    }
-  }
 
   // Internal: Called just before a mutation to the array is made, it does the
   // following:
   //
-  // * Calls `Z.Object.willChangeProperty` for array properties that will be
-  //   affected by the mutation.
-  // * Deregisters item observers from items that are about to be removed from
-  //   the array.
-  // * Prepares notification objects for item observers.
+  // 1. Emits `willChange:` events for array properties that will be affected by
+  //    the mutation.
+  // 2. Tears down item observers from items that are about to be removed from
+  //    the array.
+  // 3. Emits `didChange:` events for item observers.
   //
   // type - The type of mutation that will occur (insert, remove, or update).
   // idx  - The index in the array where the mutation will start.
@@ -100,74 +75,43 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   //
   // Returns nothing.
   function willMutate(type, idx, n) {
-    var len       = this.size(),
-        prevItems = this.slice(idx, n),
-        registrations, r, i, notification;
+    var size = this.size();
 
     switch (type) {
     case 'insert':
-      this.willChangeProperty('size');
-      if (idx === 0)  { this.willChangeProperty('first'); }
-      if (idx >= len) { this.willChangeProperty('last'); }
-      this.willChangeProperty('@', {
-        type     : 'insert',
-        range    : [idx, n],
-        previous : void 0
-      });
+      this.emit('willChange:size');
+      if (idx === 0)   { this.emit('willChange:first'); }
+      if (idx >= size) { this.emit('willChange:last'); }
+      this.emit('willInsert', [idx, n]);
+      this.emit('willChange:@', {type: 'insert', slice: [idx, n]});
       break;
     case 'remove':
-      this.willChangeProperty('size');
-      if (idx === 0)       { this.willChangeProperty('first'); }
-      if (idx + n === len) { this.willChangeProperty('last'); }
-      this.willChangeProperty('@', {
-        type     : 'remove',
-        range    : [idx, n],
-        previous : prevItems
-      });
-      deregisterItemObservers.call(this, prevItems.__z_items__);
+      this.emit('willChange:size');
+      if (idx === 0)        { this.emit('willChange:first'); }
+      if (idx + n === size) { this.emit('willChange:last'); }
+      this.emit('willRemove', [idx, n]);
+      this.emit('willChange:@', {type: 'remove', slice: [idx, n]});
+      teardownItemObservers.call(this, idx, n);
       break;
     case 'update':
-      if (idx === 0)       { this.willChangeProperty('first'); }
-      if (idx + n === len) { this.willChangeProperty('last'); }
-      this.willChangeProperty('@', {
-        type     : 'update',
-        range    : [idx, n],
-        previous : prevItems
-      });
-      deregisterItemObservers.call(this, prevItems.__z_items__);
+      if (idx === 0)        { this.emit('willChange:first'); }
+      if (idx + n === size) { this.emit('willChange:last'); }
+      this.emit('willUpdate', [idx, n]);
+      this.emit('willChange:@', {type: 'update', slice: [idx, n]});
+      teardownItemObservers.call(this, idx, n);
       break;
     }
 
-    if (!(registrations = this.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
-
-      if (r.opts.previous) { r.previous = r.observee.get(r.path); }
-
-      if (r.opts.prior) {
-        notification = {
-          type     : 'change',
-          isPrior  : true,
-          path     : r.path,
-          observee : r.observee
-        };
-
-        if (r.opts.context) { notification.context = r.opts.context; }
-        if (r.opts.previous) { notification.previous = r.previous; }
-
-        r.callback.call(r.observer, notification);
-      }
-    }
+    emitItemObservers.call(this, 'willChange');
   }
 
-  // Internal: Called just after a mutation to the array is made, it does the
-  // following:
+  // Internal: Called just after a mutation to the array has been made, it does
+  // the following:
   //
-  // * Calls `Z.Object.didChangeProperty` for array properties that were
-  //   affected by the mutation.
-  // * Registers item observers on items that were added to the array.
-  // * Sends notification objects for item observers.
+  // 1. Emits `didChange:` events for array properties that were be affected by
+  //    the mutation.
+  // 2. Registers item observers on items that were added to the array.
+  // 3. Emits `didChange:` events for item observers.
   //
   // type - The type of mutation that just occurred (insert, remove, or
   //        update).
@@ -177,61 +121,34 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   //
   // Returns nothing.
   function didMutate(type, idx, n) {
-    var len      = this.size(),
-        curItems = this.slice(idx, n),
-        registrations, r, i, notification;
+    var size = this.size();
 
     switch (type) {
     case 'insert':
-      this.didChangeProperty('size');
-      if (idx === 0)       { this.didChangeProperty('first'); }
-      if (idx + n === len) { this.didChangeProperty('last'); }
-      this.didChangeProperty('@', {
-        type    : 'insert',
-        range   : [idx, n],
-        current : curItems
-      });
-      registerItemObservers.call(this, curItems.__z_items__);
+      this.emit('didChange:size');
+      if (idx === 0)        { this.emit('didChange:first'); }
+      if (idx + n === size) { this.emit('didChange:last'); }
+      this.emit('didInsert', [idx, n]);
+      this.emit('didChange:@', {type: 'insert', slice: [idx, n]});
+      setupItemObservers.call(this, idx, n);
       break;
     case 'remove':
-      this.didChangeProperty('size');
-      if (idx === 0)     { this.didChangeProperty('first'); }
-      if (idx + n > len) { this.didChangeProperty('last'); }
-      this.didChangeProperty('@', {
-        type    : 'remove',
-        range   : [idx, n],
-        current : void 0
-      });
+      this.emit('didChange:size');
+      if (idx === 0)      { this.emit('didChange:first'); }
+      if (idx + n > size) { this.emit('didChange:last'); }
+      this.emit('didRemove', [idx, n]);
+      this.emit('didChange:@', {type: 'remove', slice: [idx, n]});
       break;
     case 'update':
-      if (idx === 0)       { this.didChangeProperty('first'); }
-      if (idx + n === len) { this.didChangeProperty('last'); }
-      this.didChangeProperty('@', {
-        type    : 'update',
-        range   : [idx, n],
-        current : curItems
-      });
-      registerItemObservers.call(this, curItems.__z_items__);
+      if (idx === 0)        { this.emit('didChange:first'); }
+      if (idx + n === size) { this.emit('didChange:last'); }
+      this.emit('didUpdate', [idx, n]);
+      this.emit('didChange:@', {type: 'update', slice: [idx, n]});
+      setupItemObservers.call(this, idx, n);
       break;
     }
 
-    if (!(registrations = this.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, len = registrations.length; i < len; i++) {
-      r = registrations[i];
-
-      notification = {
-        type     : 'change',
-        path     : r.path,
-        observee : r.observee
-      };
-
-      if (r.opts.context)  { notification.context  = r.opts.context; }
-      if (r.opts.previous) { notification.previous = r.previous; }
-      if (r.opts.current)  { notification.current  = r.observee.get(r.path); }
-
-      r.callback.call(r.observer, notification);
-    }
+    emitItemObservers.call(this, 'didChange');
   }
 
   // Public: A property that returns the current size of the array. The size
@@ -255,12 +172,13 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   });
 
   // Public: A special readonly property that only exists for observing array
-  // mutations. Observing this property will cause notifications to be sent
-  // every time a mutation is made to the array. The `type` key in the
-  // notification objects will be set to one of the following: `insert`,
-  // `remove`, or `update`. Additionaly, a `range` key will be present that is a
-  // tuple containing the starting index of the mutation as well as the number
-  // of items that are affected, starting from that index.
+  // mutations. Observing this property will cause events to be emitted every
+  // time a mutation is made to the array. The events are `willChange:@` and
+  // `didChange:@` and a data object is emitted with the events that contains
+  // a `type` key set to one of the following: 'insert', 'remove', or 'update'.
+  // Additionaly, a `slice` key will also be present in the data object that is
+  // a two element array containing the starting index of the mutatation as well
+  // as the number of items that are affected, starting from that index.
   this.prop('@', { readonly: true, get: function() { return this; } });
 
   // Public: The `Z.Array` constructor. Arrays can be created with zero or one
@@ -795,67 +713,6 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Returns a `Z.Array`.
   this.def('reverse', function() { return this.dup().reverse$(); });
 
-  // Internal: Overrides the default `registerObserver` implemention in
-  // `Z.Object` in order to proxy observers on unknown properties to each item
-  // in the array.
-  this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
-    var items = this.__z_items__, registration, i, len;
-
-    if (this.hasProperty(rpath[0])) {
-      return this.supr(rpath, opath, observee, observer, action, opts);
-    }
-
-    registration = {
-      path     : opath,
-      head     : null,
-      tail     : rpath,
-      observee : observee,
-      observer : observer,
-      action   : action,
-      callback : typeof action === 'function' ? action : observer[action],
-      opts     : opts,
-      previous : null
-    };
-
-    this.__z_itemRegistrations__ = this.__z_itemRegistrations__ || [];
-    this.__z_itemRegistrations__.push(registration);
-
-    for (i = 0, len = items.length; i < len; i++) {
-      items[i].registerObserver(rpath, opath, observee, observer, action, opts);
-    }
-
-    return registration;
-  });
-
-  // Internal: Overrides the default `deregisterObserver` implemention in
-  // `Z.Object` in order to remove item observers.
-  this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
-    var items = this.__z_items__, registrations, r, i, j, rlen, ilen;
-
-    if (this.hasProperty(rpath[0])) {
-      return this.supr.apply(this, slice.call(arguments));
-    }
-
-    if (!(registrations = this.__z_itemRegistrations__)) { return; }
-
-    for (i = 0, rlen = registrations.length; i < rlen; i++) {
-      r = registrations[i];
-
-      if (r.path     === opath    &&
-          r.observee === observee &&
-          r.observer === observer &&
-          r.action   === action) {
-        registrations.splice(i, 1);
-
-        for (j = 0, ilen = items.length; j < ilen; j++) {
-          items[j].deregisterObserver(rpath, opath, observee, observer, action, opts);
-        }
-
-        return;
-      }
-    }
-  });
-
   // Internal: Proxies gets for unknown properties out to all items and returns
   // a new array containing each value. The resulting array is flattened.
   //
@@ -876,6 +733,121 @@ Z.Array = Z.Object.extend(Z.Enumerable, Z.Orderable, Z.Observable, function() {
   // Returns nothing.
   this.def('setUnknownProperty', function(k, v) {
     this.each(function(item) { item.set(k, v); });
+  });
+
+  // Internal: Sets up an item observer by invoking the `setupUnknownObserver`
+  // method on all items in the array.
+  function setupItemObserver(rpath, opath, observee, i, n) {
+    var items = this.__z_items__;
+
+    for (n = i + n; i < n; i++) {
+      items[i].setupUnknownObserver(rpath, opath, observee);
+    }
+  }
+
+  // Internal: Tears down an item observer by invoking the
+  // `teardownUnknownObserver` method on all items in the array.
+  function teardownItemObserver(rpath, opath, observee, i, n) {
+    var items = this.__z_items__;
+
+    for (n = i + n; i < n; i++) {
+      items[i].teardownUnknownObserver(rpath, opath, observee);
+    }
+  }
+
+  // Internal: Sets up all registered item observers on the current items in the
+  // array indicated by the given slice. Called by the `didMutate` method to add
+  // item observers to newly added items.
+  //
+  // i - The starting index.
+  // n - The number of items to add item observers to 
+  //
+  // Returns nothing.
+  function setupItemObservers(i, n) {
+    var idx, len, io;
+
+    if (!this.__z_ios__) { return; }
+
+    for (idx = 0, len = this.__z_ios__.length; idx < len; idx++) {
+      io = this.__z_ios__[idx];
+      setupItemObserver.call(this, io.rpath, io.opath, io.observee, i, n);
+    }
+  }
+
+  // Internal: Tears down all registered item observers on the current items in
+  // the array indicated by the given slice. Called by the `willMutate` method
+  // to remove item observers from items that are about to be removed.
+  //
+  // i - The starting index.
+  // n - The number of items to add item observers to 
+  //
+  // Returns nothing.
+  function teardownItemObservers(i, n) {
+    var idx, len, io;
+
+    if (!this.__z_ios__) { return; }
+
+    for (idx = 0, len = this.__z_ios__.length; idx < len; idx++) {
+      io = this.__z_ios__[idx];
+      teardownItemObserver.call(this, io.rpath, io.opath, io.observee, i, n);
+    }
+  }
+
+  // Internal: Emits events for all registered item observers. This method is
+  // called by the `willMutate` and `didMutate` methods.
+  //
+  // type - Either `willChange` or `didChange`.
+  //
+  // Returns the receiver.
+  function emitItemObservers(type) {
+    var i, n, io;
+
+    if (!this.__z_ios__) { return; }
+
+    for (i = 0, n = this.__z_ios__.length; i < n; i++) {
+      io = this.__z_ios__[i];
+      io.observee.emit(type + ':' + io.opath);
+    }
+  }
+
+  // Internal: Overrides the `setupUnknownObserver` method of `Z.Observable` in
+  // order to create item observers. Item observers are created when an attempt
+  // is made to observe properties on an array that don't exist. Instead of
+  // throwing an error in this case, `Z.Array` proxies the observers to all of
+  // its items.
+  this.def('setupUnknownObserver', function(rpath, opath, observee) {
+    var i = rpath.indexOf('.'), head = i > 0 ? rpath.substring(0, i) : rpath;
+
+    if (this.hasProperty(head)) { return this.supr(rpath, opath, observee); }
+    setupItemObserver.call(this, rpath, opath, observee, 0, this.size());
+
+    (this.__z_ios__ = this.__z_ios__ || []).push({
+      rpath: rpath,
+      opath: opath,
+      observee: observee
+    });
+
+    return this;
+  });
+
+  // Internal: Overrides the `teardownUnknownObserver` method of `Z.Observable`
+  // in order to teardown item observers.
+  this.def('teardownUnknownObserver', function(rpath, opath, observee) {
+    var i = rpath.indexOf('.'), head = i > 0 ? rpath.substring(0, i) : rpath, n;
+
+    if (this.hasProperty(head)) { return this.supr(rpath, opath, observee); }
+    teardownItemObserver.call(this, rpath, opath, observee, 0, this.size());
+
+    for (i = 0, n = this.__z_ios__.length; i < n; i++) {
+      if (this.__z_ios__[i].rpath === rpath &&
+          this.__z_ios__[i].opath === opath &&
+          this.__z_ios__[i].observee === observee) {
+        this.__z_ios__.splice(i, 1);
+        break;
+      }
+    }
+
+    return this;
   });
 });
 

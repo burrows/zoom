@@ -73,7 +73,7 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
   // `hashchange` events as well as changes to the `hash` property.
   this.def('init', function() {
     this.supr();
-    this.observe('hash', this, hashDidChange);
+    this.on('didChange:hash', hashDidChange);
     this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
     window.addEventListener('hashchange', this.__hashChangeListener__, false);
   });
@@ -116,16 +116,21 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     return this;
   });
 
-  // Public: Registers an error callback with the router. The given callback
-  // function will be invoked any time a hashchange event occurs and a matching
-  // route is not found.
+  // Returns nothing.
+  this.def('start', function() {
+    this.on('didChange:hash', hashDidChange);
+    this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
+    window.addEventListener('hashchange', this.__hashChangeListener__, false);
+    this.__hashChangeListener__();
+  });
+
+  // Public: Stops the router by causing it to stop observing `hashchange`
+  // events and changes to the `hash` property.
   //
-  // callback - A function.
-  //
-  // Returns the receiver.
-  this.def('error', function(callback) {
-    errbacks.push(callback);
-    return this;
+  // Returns nothing.
+  this.def('stop', function() {
+    this.off('didChange:hash', hashDidChange);
+    window.removeEventListener('hashchange', this.__hashChangeListener__, false);
   });
 
   // Internal: Takes a hash value and attempts to find a matching route. When a

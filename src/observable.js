@@ -1,15 +1,23 @@
 // `Z.Observable` is a module that implements the core of the Zoom key-value
-// coding (KVC) and key-value observing (KVO) system.
+// coding (KVC) and key-value observing (KVO) system. The KVO system is built on
+// top of `Z.Emitter` using the `willChange:` and `didChange:` events. These
+// events are emitted whenever a property is changed with the namespace set to
+// the name of the property that changed. Additionally, `Z.Observable` overrides
+// the `on` and `off` methods from `Z.Emitter` in order to implement property
+// path observers. When a handler is created via the `on` method for a
+// `willChange:` or `didChange:` event with a namespace that is a property path,
+// the `Z.Observable` object will start emitting these events whenever any segment
+// of the path changes.
 //
 // The KVC/KVO implementation is highly influenced by Cocoa:
 //
 // * [Key-Value Coding Programming Guide](http://developer.apple.com/library/mac/#documentation/cocoa/conceptual/KeyValueCoding/Articles/KeyValueCoding.html)
 // * [Key-Value Observing Programming Guide](http://developer.apple.com/library/mac/#documentation/cocoa/conceptual/KeyValueObserving/KeyValueObserving.html)
-Z.Observable = Z.Module.extend(function() {
+Z.Observable = Z.Module.extend(Z.Emitter, function() {
   var slice = Array.prototype.slice,
 
-  // A hash containing the default values for properties defined using
-  // `Z.Observable.prop`.
+  // Internal: An object containing the default values for properties defined
+  // using `Z.Observable.prop`.
   defaultPropertyOpts = {
     dependsOn : [],
     auto      : true,
@@ -18,7 +26,11 @@ Z.Observable = Z.Module.extend(function() {
     readonly  : false,
     def       : null,
     cache     : false
-  };
+  },
+
+  // Internal: A regex to test whether an event name is a special `Z.Observable`
+  // event.
+  observableEventRe = /^(?:willChange|didChange|\*):/;
 
   // Internal: Returns the current value of the property indicated by the given
   // key. If a property with the given name does not exist, the
@@ -47,9 +59,9 @@ Z.Observable = Z.Module.extend(function() {
 
   // Internal: Sets the value for a property. If a property with the given name
   // does not exist, the `setUnknownProperty` method is invoked on the reciever.
-  // If the property has automatic notifications turned on (the default) then
-  // observers are also notified by invoking the `willChangeProperty` and
-  // `didChangeProperty` methods.
+  // If the property has automatic emitters turned on (the default) then
+  // observers are also notified by emitting the `willChange:<property>` and
+  // `didChange:<property>` events.
   //
   // k - The name of the key to set.
   // v - The value to set.
@@ -64,47 +76,43 @@ Z.Observable = Z.Module.extend(function() {
       throw new Error(Z.fmt("Z.Object.set: attempted to set readonly property `%@` for %@", k, this));
     }
 
-    if (prop.auto) { this.willChangeProperty(k); }
+    if (prop.auto) { this.emit('willChange:' + k); }
 
-    if (prop.set) {
-      prop.set.call(this, v);
-    }
-    else {
-      this['__' + k + '__'] = v;
-    }
+    if (prop.set) { prop.set.call(this, v); }
+    else { this['__' + k + '__'] = v; }
 
-    if (prop.auto) { this.didChangeProperty(k); }
+    if (prop.auto) { this.emit('didChange:' + k); }
 
     return v;
   }
 
-  // Internal: Observer function that gets invoked when a dependent property
-  // path changes. Notifies observers of changes to the dependent property.
-  //
-  // notification - A notification object sent by the observer system.
-  //
-  // Returns nothing.
-  function dependentPropertyObserver(notification) {
-    if (notification.isPrior) {
-      this.willChangeProperty(notification.context);
-    }
-    else {
-      this.didChangeProperty(notification.context);
-    }
+  // Internal: Handler function that gets invoked when a dependent property path
+  // will change. Emits a new event for the dependent property.
+  function dependentPathWillChange(event, data, k) {
+    this.emit('willChange:' + k);
+  }
+
+  // Internal: Handler function that gets invoked when a dependent property path
+  // has changed. Emits a new event for the dependent property.
+  function dependentPathDidChange(event, data, k) {
+    delete this['__' + k + '_' + 'cached' + '__'];
+    this.emit('didChange:' + k);
   }
 
   // Internal: Registers observers for all properties defined with the
   // `dependsOn` option.
   //
   // Returns nothing.
-  function registerDependsOnObservers() {
+  function observeDependentPaths() {
     var descs = this.propertyDescriptors(), desc, k, i, len;
 
     for (k in descs) {
       desc = descs[k];
       for (i = 0, len = desc.dependsOn.length; i < len; i++) {
-        this.observe(desc.dependsOn[i], this, dependentPropertyObserver, {
-          prior: true,
+        this.on('willChange:' + desc.dependsOn[i], dependentPathWillChange, {
+          context: k
+        });
+        this.on('didChange:' + desc.dependsOn[i], dependentPathDidChange, {
           context: k
         });
       }
@@ -119,7 +127,7 @@ Z.Observable = Z.Module.extend(function() {
   // Returns the receiver.
   this.def('init', function(props) {
     if (props) { this.set(props); }
-    registerDependsOnObservers.call(this);
+    observeDependentPaths.call(this);
     return this.supr();
   });
 
@@ -127,16 +135,15 @@ Z.Observable = Z.Module.extend(function() {
   //
   // Returns the receiver.
   this.def('destroy', function() {
-    var regs = this.__z_registrations__, reg, prop, i;
+    var event, path;
 
-    if (regs) {
-      for (prop in regs) {
-        if (!regs.hasOwnProperty(prop)) { continue; }
-        for (i = regs[prop].length - 1; i >= 0; i--) {
-          reg = regs[prop][i];
-          this.deregisterObserver([reg.head].concat(reg.tail), reg.path,
-                                  reg.observee, reg.observer, reg.action,
-                                  reg.opts);
+    // remove any existing unknown observers
+    for (event in this.__z_on__) {
+      if (observableEventRe.test(event)) {
+        path = event.split(':')[1];
+
+        if (!this.hasProperty(path) && path !== '*') {
+          this.teardownUnknownObserver(path, path, this);
         }
       }
     }
@@ -203,16 +210,16 @@ Z.Observable = Z.Module.extend(function() {
   //               cache when any dependencies change.
   //   auto      - The key-value observing system will automatically notify
   //               observers of the property when it changes when this option is
-  //               set. If set to `false`, you should use the
-  //               `willChangeProperty` and `didChangeProperty` methods when
-  //               your setter actually changes the property. Setting this to
-  //               `false` only make sense when you have defined a custom setter
-  //               using the `set` option.
+  //               set. If set to `false`, you should manually emit the
+  //               `willChange:<name>` and `didChange:<name>` events when
+  //               actually making changes the property. Setting this to`false`
+  //               only make sense when you have defined a custom setter using
+  //               the `set` option.
   //   get       - By default, when properties are retrieved via `get` or the
   //               generated accessor method the actual value is read from a raw
   //               property with the name `__<name>__`. You can use this option
   //               to override that behavior by setting it to a function that
-  //               calculates the property value. Be sure to specify the
+  //               calculates the property value. Be sure to specify any
   //               dependent properties with the `dependsOn` option.
   //   set       - By default, when properties are set via `set` or the
   //               generated accessor method the value is stored on a raw
@@ -224,9 +231,9 @@ Z.Observable = Z.Module.extend(function() {
   //   def       - Specify a default value for the property.
   //   cache     - Caches the result the first time the property is computed and
   //               returns the cached value on subsequent gets. The cache will
-  //               be cleared when any dependent paths change.
+  //               be cleared when any `dependsOn` paths change.
   //
-  // Returns nothing.
+  // Returns the receiver.
   this.def('prop', function(name, opts) {
     opts = Z.merge({}, defaultPropertyOpts, opts);
 
@@ -234,16 +241,12 @@ Z.Observable = Z.Module.extend(function() {
 
     if (name.match(/^[\w$]+/)) {
       this.def(name, function(v) {
-        if (arguments.length === 0) {
-          return getProperty.call(this, name);
-        }
-        else {
-          return setProperty.call(this, name, v);
-        }
+        if (arguments.length === 0) { return getProperty.call(this, name); }
+        else { return setProperty.call(this, name, v); }
       });
     }
 
-    return null;
+    return this;
   });
 
   // Public: Returns a native object mapping the names of all the properties
@@ -367,8 +370,8 @@ Z.Observable = Z.Module.extend(function() {
   // current value of the key path is already equal to the given value (as
   // determined by `Z.eq`).
   //
-  // This is useful for cases where its important to avoid sending notifications
-  // unless a value has actually changed.
+  // This is useful for cases where its important to avoid emitting change
+  // events when the value hasn't actually changed.
   //
   // path  - A string containing a key path or a native object containing paths
   //         as the keys and property values as the values..
@@ -392,339 +395,142 @@ Z.Observable = Z.Module.extend(function() {
     return value;
   });
 
-  // Public: Registers an observer on the given path. Whenever some segment in
-  // the path changes, the observer is notified by invoking the given action
-  // with a notification object passed as an argument. The notification object
-  // will contain the type of change that occured (usually `'change'`, but
-  // container objects support other types of notifications), the object being
-  // observed, and the path being observed.
-  //
-  // If you wish to be notified when any property on an object changes, the
-  // special key `'*'` may be observed. This will cause notifications to be sent
-  // to the observer when any property on the object changes.
-  //
-  // path     - A string containing the path to observe.
-  // observer - The object to be notified when the path changes. This may be
-  //            `null` if the action given in the third argument is a function.
-  // action   - Either a string containing the name of a method to invoke on the
-  //            observer or a function. If given a string and `observer` is set,
-  //            the function will be invoked in the context of the observer.
-  // opts     - A native object containing zero or more of the following:
-  //   fire     - Fires off a notification immediately before returning.
-  //              This may be useful in some cases where you want to trigger
-  //              an observer during object initialization and then every
-  //              time some path changes.
-  //   previous - When set, the previous value of the key path is sent along in
-  //              the notification as the `previous` key.
-  //   current  - When set, the current value of the key path is sent along in
-  //              the notification as the `current` key.
-  //   once     - When set, the observer will automatically be removed the after
-  //              the first time it fires.
-  //   context  - An arbitrary object that will be sent along in notifications.
-  //
-  // Examples
-  //
-  //   var p = App.Person.create();
-  //
-  //   p.def('firstDidChange', function(n) { Z.log(n); });
-  //   p.observe('first', p, 'firstDidChange', {previous: true, current: true});
-  //   p.set('first', 'Bob');
-  //
-  //   // => {type: 'change', path: 'first', observee: #<App.Person:18 first: 'Bob', last: null>, previous: null, current: 'Bob'}
-  //
-  // Returns the receiver.
-  this.def('observe', function(path, observer, action, opts) {
-    var fire, registration, notification;
+  // Internal: Returns a boolean indicating whether or not the given path is
+  // currently being observed.
+  function hasObserverFor(path) {
+    return this.__z_on__ &&
+      (this.__z_on__['willChange:' + path] ||
+       this.__z_on__['didChange:' + path]);
+  }
 
-    opts = opts ? Z.dup(opts) : {};
-    fire = Z.del(opts, 'fire');
+  // Internal: Overrides `Z.Emitter.on` to handle the setup of property path
+  // observers. If the given event is a `willChange:` or `didChange:` event and
+  // the namespace does not match a propery name, then the namespace is assumed
+  // to be a property path and the `setupUnknownObserver` method is called. The
+  // `setupUnknownObserver` method sets up the appropriate internal observers
+  // in order to cause the receiver to start emitting events for the property
+  // path.
+  this.def('on', function(event, handler, opts) {
+    var path;
 
-    registration = this.registerObserver(path.split('.'), path, this, observer,
-                                         action, opts);
+    if (observableEventRe.test(event)) {
+      path = event.split(':')[1];
 
-    if (fire) {
-      notification = { type: 'change', path: path, observee: this };
-      if (registration.opts.current) {
-        notification.current = this.get(path);
+      if (!this.hasProperty(path) && path !== '*' &&
+          !hasObserverFor.call(this, path)) {
+        this.setupUnknownObserver(path, path, this);
       }
-      if (registration.opts.context) {
-        notification.context = registration.opts.context;
-      }
-
-      registration.callback.call(registration.observer, notification);
     }
 
-    return this;
+    return this.supr(event, handler, opts);
   });
 
-  // Public: Removes a previously registered observer. Subsequent changes to the
-  // observed key path will no longer trigger notifications on the particular
-  // observer indicated.
-  //
-  // path     - The key path to stop observing. This must be the exact same path
-  //            passed to `observe`.
-  // observer - The observer object passed to `observe`.
-  // action   - The action passed to `observe.
-  // opts     - If a `context` option was passed to `observe`, then the same
-  //            object should be given here.
-  //
-  // Returns the receiver.
-  this.def('stopObserving', function(path, observer, action, opts) {
-    this.deregisterObserver(path.split('.'), path, this, observer, action, opts || {});
-    return this;
-  });
+  // Internal: Overrides `Z.Emiter.off` to handler the teardown of property path
+  // observers.
+  this.def('off', function(event, handler, opts) {
+    var path;
 
-  // Internal: Does the actual bookkeeping for registering an observer. When a
-  // path is being observed, this method takes care to attach observers at each
-  // segment in the path.
-  //
-  // rpath    - The parsed path relative to the receiver. When paths are
-  //            observed, the KVO system actually registers simple key observers
-  //            at each segment of the path. This argument is the portion of the
-  //            path relative to the receiver, which may be some object in the
-  //            middle of the path.
-  // opath    - The path originally passed to `observe`. This is the value sent
-  //            as the `path` key in notification objects.
-  // observee - The original object being observed. This is the receiver of the
-  //            `observe` method.
-  // observer - The observer originally passed to `observe`.
-  // action   - The action originally passed to `observe`.
-  // opts     - The options originally passed to `observe`.
-  //
-  // Returns the registration object created.
-  // Throws `Error` if the first segment of `rpath` is an unknown property.
-  this.def('registerObserver', function(rpath, opath, observee, observer, action, opts) {
-    var head = rpath[0], tail = rpath.slice(1), registration, regs, val;
+    this.supr(event, handler, opts);
 
-    if (!this.hasProperty(head) && head !== '*') {
-      throw new Error(Z.fmt("Z.Object.registerObserver: undefined key `%@` for %@", head, this));
-    }
+    if (observableEventRe.test(event)) {
+      path = event.split(':')[1];
 
-    if (head === '*' && tail.length > 0) {
-      throw new Error(Z.fmt("Z.Object.registerObserver: observing `*` in the middle of a property path is not supported: '%@'", opath));
-    }
-
-    registration = {
-      path     : opath,
-      head     : head,
-      tail     : tail,
-      observee : observee,
-      observer : observer,
-      action   : action,
-      callback : typeof action === 'function' ? action : observer[action],
-      opts     : opts,
-      previous : {}
-    };
-
-    regs = (this.__z_registrations__ = this.__z_registrations__ || {});
-    (regs[head] = regs[head] || []).push(registration);
-
-    if (tail.length > 0 && (val = this.get(head))) {
-      val.registerObserver(tail, opath, observee, observer, action, opts);
-    }
-
-    return registration;
-  });
-
-  // Internal: Does the actual bookkeeping for deregistering an observer. When a
-  // path is being observed, this method takes care to deattach observers at
-  // each segment in the path.
-  //
-  // rpath    - The parsed path relative to the receiver. When paths are
-  //            observed, the KVO system actually registers simple key observers
-  //            at each segment of the path. This argument is the portion of the
-  //            path relative to the receiver, which may be some object in the
-  //            middle of the path.
-  // opath    - The path originally passed to `stopObserving`.
-  // observee - The original object to stop observing. This is the receiver of
-  //            the `stopObserving` method.
-  // observer - The observer originally passed to `stopObserving`.
-  // action   - The action originally passed to `stopObserving`.
-  // opts     - The options originally passed to `stopObserving`.
-  //
-  // Returns nothing.
-  // Throws `Error` if the first segment of `rpath` is an unknown property.
-  this.def('deregisterObserver', function(rpath, opath, observee, observer, action, opts) {
-    var head = rpath[0], tail = rpath.slice(1), registrations, i, r, val;
-
-    if (!this.hasProperty(head) && head !== '*') {
-      throw new Error(Z.fmt("Z.Object.deregisterObserver: undefined key `%@` for %@", head, this));
-    }
-
-    opts = opts || {};
-
-    registrations = (this.__z_registrations__ || {})[head];
-    if (!registrations) { return; }
-
-    for (i = registrations.length - 1; i >= 0; i--) {
-      r = registrations[i];
-
-      if (r.path         === opath    &&
-          r.observee     === observee &&
-          r.observer     === observer &&
-          r.action       === action   &&
-          r.opts.context === opts.context) {
-        registrations.splice(i, 1);
-
-        if (tail.length > 0 && (val = this.get(head))) {
-          val.deregisterObserver(tail, opath, observee, observer, action, opts);
-        }
-      }
-    }
-  });
-
-  // Public: Notifies the receiver that one of its properties is about to
-  // change. This method processes all observer registrations for the key being
-  // changed and prepares notification objects to be sent after the property has
-  // actually changed (see `didChangeProperty`). If any observer registrations
-  // have the `prior` option set, then notifications are sent to those observers
-  // immediately.
-  //
-  // Additionally, this method does the appropriate bookkeeping for path
-  // observers. If some object is being removed from an observed path, then the
-  // path observer is recursively removed starting from that object and any
-  // other objects currently attached to it along the path.
-  //
-  // All properties defined with the `auto` option set (which is the default)
-  // will automatically call this method and `didChangeProperty` when they
-  // change. Properties defined with `auto` set to `false` will need to also
-  // have a custom setter function (`set` option) that calls
-  // `willChangeProperty` and `didChangeProperty`.
-  //
-  // k    - The name of the property that will change.
-  // opts - A native object containing zero or more of the following.
-  //   type     - A string containing the type of notification to send. The
-  //              default is 'change'.
-  //   previous - The value to send as the `previous` key in the notification.
-  //              The KVO system will simply `get` the path being observed when
-  //              observers are registered with the `previous` key, so this
-  //              should only be used in special circumstances (see the `@`
-  //              property of `Z.Array` and `Z.Hash` to see where its used.
-  //   *        - Any other properties present in the options hash will be
-  //              merged into the notification object that is sent to observers.
-  //
-  // Returns the receiver.
-  this.def('willChangeProperty', function(k, opts) {
-    var regs, star, type, i, len, r, val, notification, prevGiven, prev;
-
-    if (!this.__z_registrations__) { return this; }
-
-    regs = this.__z_registrations__[k];
-    star = this.__z_registrations__['*'];
-
-    if (star) { regs = regs ? regs.concat(star) : star; }
-
-    if (!regs) { return this; }
-
-    regs      = regs.slice();
-    opts      = opts ? Z.dup(opts) : {};
-    type      = Z.del(opts, 'type') || 'change';
-    prevGiven = opts.hasOwnProperty('previous');
-    prev      = Z.del(opts, 'previous');
-
-    for (i = 0, len = regs.length; i < len; i++) {
-      r = regs[i];
-
-      if (r.opts.previous) {
-        r.previous[type] = prevGiven ? prev : r.observee.get(r.path);
-      }
-
-      if (r.tail.length > 0 && (val = this.get(k))) {
-        val.deregisterObserver(r.tail, r.path, r.observee, r.observer, r.action, r.opts);
-      }
-
-      if (r.opts.prior) {
-        notification = {
-          type     : type,
-          isPrior  : true,
-          path     : r.head === '*' ? r.path.replace('*', k) : r.path,
-          observee : r.observee
-        };
-
-        if (r.opts.context) { notification.context = r.opts.context; }
-        if (r.opts.previous) { notification.previous = r.previous[type]; }
-
-        Z.merge(notification, opts);
-
-        r.callback.call(r.observer, notification);
+      if (!this.hasProperty(path) && path !== '*' &&
+          !hasObserverFor.call(this, path)) {
+        this.teardownUnknownObserver(path, path, this);
       }
     }
 
     return this;
   });
 
-  // Public: Notifies the receiver that one of its properties has just changed.
-  // This method processes all observer registrations for the key being changed
-  // and sends the notification objects that were initially prepared by
-  // `willChangeProperty`.
+  // Internal: Handler for `willChange:` events to a segment of a property path
+  // being observed. Tears down internal path observers from the current value
+  // just before it is actually removed from the path and emits a `willChange:`
+  // event on the original path observer.
+  function pathSegmentWillChange(event, data, ctx) {
+    var val;
+
+    if (ctx.tail && (val = this.get(ctx.head))) {
+      val.teardownUnknownObserver(ctx.tail, ctx.path, ctx.observee);
+    }
+
+    ctx.observee.emit('willChange:' + ctx.path, data);
+  }
+
+  // Internal: Handler for `didChange:` events to a segment of a property path
+  // being observed. Sets up internal path observers on the new value and emits
+  // a `didChange:` event on the original path observer.
+  function pathSegmentDidChange(event, data, ctx) {
+    var val;
+
+    if (ctx.tail && (val = this.get(ctx.head))) {
+      val.setupUnknownObserver(ctx.tail, ctx.path, ctx.observee);
+    }
+
+    ctx.observee.emit('didChange:' + ctx.path, data);
+  }
+
+  // Internal: Called by `on` when a handler is registered for a `willChange:`
+  // or `didChange:` event on an unknown property name. The unknown property is
+  // assumed to be a property path and this method sets up internal observers
+  // on each segment in the path in order to be able to emit events when any
+  // segment in the path changes.
   //
-  // Additionally, this method does the appropriate bookkeeping for path
-  // observers. If some object is being added to an observed path, then the
-  // path observer is recursively attached starting from that object and any
-  // other objects currently attached to it along the path.
-  //
-  // k    - The name of the property that did change.
-  // opts - A native object containing zero or more of the following.
-  //   type    - A string containing the type of notification to send. The
-  //             default is 'change'.
-  //   current - The value to send as the `current` key in the notification. The
-  //             KVO system will simply `get` the path being observed when
-  //             observers are registered with the `current` key, so this should
-  //             only be used in special circumstances (see the `@` property of
-  //             `Z.Array` and `Z.Hash` to see where its used.
-  //   *       - Any other properties present in the options hash will be merged
-  //             into the notification object that is sent to observers.
-  //
-  // Returns the receiver.
-  this.def('didChangeProperty', function(k, opts) {
-    var cache = '__' + k + '_' + 'cached' + '__',
-        regs, star, type, i, len, r, val, notification, curGiven, cur;
+  // rpath    - The relative path to the receiver. The method is called
+  //            recursively on each segment within the path and each time the
+  //            head of the path is popped off before the recursive call is
+  //            made.
+  // opath    - The original path to observe.
+  // observee - The object the path is being observed on.
+  this.def('setupUnknownObserver', function(rpath, opath, observee) {
+    var i      = rpath.indexOf('.'),
+        head   = i > 0 ? rpath.substring(0, i) : rpath,
+        tail   = i > 0 ? rpath.substring(i + 1) : null,
+        ctxkey = opath + ',' + observee.objectId,
+        ctx    = {observee: observee, path: opath, head: head, tail: tail},
+        val;
 
-    delete this[cache];
+    if (head === '*' && tail) {
+      throw new Error(Z.fmt("Z.Observable.on: observing `*` anywhere other than at the end of a key path is not supported: '%@'", opath));
+    }
 
-    if (!this.__z_registrations__) { return this; }
+    if (!tail && !this.hasProperty(head) && head !== '*') {
+      throw new Error(Z.fmt("Z.Observable.on: undefined key `%@` for %@", head, this));
+    }
 
-    regs = this.__z_registrations__[k];
-    star = this.__z_registrations__['*'];
+    this.on('willChange:' + head, pathSegmentWillChange, {context: ctx});
+    this.on('didChange:' + head, pathSegmentDidChange, {context: ctx});
+    (this.__z_contexts__ = this.__z_contexts__ || {})[ctxkey] = ctx;
 
-    if (star) { regs = regs ? regs.concat(star) : star; }
+    if (tail && (val = this.get(head))) {
+      val.setupUnknownObserver(tail, opath, observee);
+    }
 
-    if (!regs) { return this; }
+    return this;
+  });
 
-    regs     = regs.slice();
-    opts     = opts ? Z.dup(opts) : {};
-    type     = Z.del(opts, 'type') || 'change';
-    curGiven = opts.hasOwnProperty('current');
-    cur      = Z.del(opts, 'current');
+  // Internal: Tears down internal observers setup by `setupUnknownObserver`.
+  this.def('teardownUnknownObserver', function(rpath, opath, observee) {
+    var i      = rpath.indexOf('.'),
+        head   = i > 0 ? rpath.substring(0, i) : rpath,
+        tail   = i > 0 ? rpath.substring(i + 1) : null,
+        ctxkey = opath + ',' + observee.objectId,
+        ctx    = this.__z_contexts__ ? this.__z_contexts__[ctxkey] : null,
+        val;
 
-    for (i = 0, len = regs.length; i < len; i++) {
-      r = regs[i];
+    if (!tail && !this.hasProperty(head) && head !== '*') {
+      throw new Error(Z.fmt("Z.Observable.off: undefined key `%@` for %@", head, this));
+    }
 
-      notification = {
-        type     : type,
-        path     : r.head === '*' ? r.path.replace('*', k) : r.path,
-        observee : r.observee
-      };
+    if (!ctx) { return this; }
 
-      if (r.opts.previous) { notification.previous = Z.del(r.previous, type); }
-      if (r.opts.context) { notification.context = r.opts.context; }
+    this.off('willChange:' + head, pathSegmentWillChange, {context: ctx});
+    this.off('didChange:' + head, pathSegmentDidChange, {context: ctx});
+    delete this.__z_contexts__[ctxkey];
 
-      if (r.opts.current) {
-        notification.current = curGiven ? cur : r.observee.get(r.path);
-      }
-
-      Z.merge(notification, opts);
-
-      if (r.tail.length > 0 && (val = this.get(k))) {
-        val.registerObserver(r.tail, r.path, r.observee, r.observer, r.action,
-                             r.opts);
-      }
-
-      r.callback.call(r.observer, notification);
-
-      if (r.opts.once) {
-        r.observee.stopObserving(r.path, r.observer, r.action, r.opts);
-      }
+    if (tail && (val = this.get(head))) {
+      val.teardownUnknownObserver(tail, opath, observee);
     }
 
     return this;

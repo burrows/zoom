@@ -127,28 +127,27 @@ describe('Z.Array `size` property', function() {
   });
 
   it('should notify observers when the size changes', function() {
-    var a        = Z.A(1, 2, 3, 4, 5),
-        observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
+    var a    = Z.A(1, 2, 3, 4, 5),
+        will = jasmine.createSpy(),
+        did  = jasmine.createSpy();
 
-    a.observe('size', observer, 'action', { previous: true, current: true });
+    a.on('willChange:size', will);
+    a.on('didChange:size', did);
     a.push(6);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].previous).toBe(5);
-    expect(observer.notifications[0].current).toBe(6);
+    expect(will.callCount).toBe(1);
+    expect(did.callCount).toBe(1);
     a.unshift(0);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].previous).toBe(6);
-    expect(observer.notifications[1].current).toBe(7);
+    expect(will.callCount).toBe(2);
+    expect(did.callCount).toBe(2);
     a.pop();
-    expect(observer.notifications.length).toBe(3);
-    expect(observer.notifications[2].previous).toBe(7);
-    expect(observer.notifications[2].current).toBe(6);
+    expect(will.callCount).toBe(3);
+    expect(did.callCount).toBe(3);
     a.at(0, 10);
-    expect(observer.notifications.length).toBe(3);
+    expect(will.callCount).toBe(3);
+    expect(did.callCount).toBe(3);
     a.at(20, 20);
-    expect(observer.notifications.length).toBe(4);
-    expect(observer.notifications[3].previous).toBe(6);
-    expect(observer.notifications[3].current).toBe(21);
+    expect(will.callCount).toBe(4);
+    expect(did.callCount).toBe(4);
   });
 });
 
@@ -500,26 +499,24 @@ describe('Z.Array `first` property', function() {
   });
 
   it('should notify observers when changed', function() {
-    var observer = { notifications: [], action: function(n) { this.notifications.push(n); } },
-        a        = Z.A(1, 2, 3);
+    var will = jasmine.createSpy(),
+        did  = jasmine.createSpy(),
+        a    = Z.A(1, 2, 3);
 
-    a.observe('first', observer, 'action', { previous: true, current: true });
+    a.on('willChange:first', will);
+    a.on('didChange:first', did);
     a.at(0, 10);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].previous).toBe(1);
-    expect(observer.notifications[0].current).toBe(10);
+    expect(will.callCount).toBe(1);
+    expect(did.callCount).toBe(1);
     a.shift();
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].previous).toBe(10);
-    expect(observer.notifications[1].current).toBe(2);
+    expect(will.callCount).toBe(2);
+    expect(did.callCount).toBe(2);
     a.unshift(9);
-    expect(observer.notifications.length).toBe(3);
-    expect(observer.notifications[2].previous).toBe(2);
-    expect(observer.notifications[2].current).toBe(9);
+    expect(will.callCount).toBe(3);
+    expect(did.callCount).toBe(3);
     a.splice(0);
-    expect(observer.notifications.length).toBe(4);
-    expect(observer.notifications[3].previous).toBe(9);
-    expect(observer.notifications[3].current).toBeNull();
+    expect(will.callCount).toBe(4);
+    expect(did.callCount).toBe(4);
   });
 });
 
@@ -533,32 +530,27 @@ describe('Z.Array `last` property', function() {
   });
 
   it('should notify observers when changed', function() {
-    var observer = { notifications: [], action: function(n) { this.notifications.push(n); } },
-        a        = Z.A(1, 2, 3);
+    var will = jasmine.createSpy(),
+        did  = jasmine.createSpy(),
+        a    = Z.A(1, 2, 3);
 
-    a.observe('last', observer, 'action', { previous: true, current: true });
+    a.on('willChange:last', will);
+    a.on('didChange:last', did);
     a.at(2, 30);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].previous).toBe(3);
-    expect(observer.notifications[0].current).toBe(30);
+    expect(will.callCount).toBe(1);
+    expect(did.callCount).toBe(1);
     a.pop();
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].previous).toBe(30);
-    expect(observer.notifications[1].current).toBe(2);
+    expect(will.callCount).toBe(2);
+    expect(did.callCount).toBe(2);
     a.push(9);
-    expect(observer.notifications.length).toBe(3);
-    expect(observer.notifications[2].previous).toBe(2);
-    expect(observer.notifications[2].current).toBe(9);
+    expect(will.callCount).toBe(3);
+    expect(did.callCount).toBe(3);
     a.splice(1, 2, 100, 200, 300, 400);
-    expect(observer.notifications.length).toBe(5);
-    expect(observer.notifications[3].previous).toBe(9);
-    expect(observer.notifications[3].current).toBe(200);
-    expect(observer.notifications[4].previous).toBe(200);
-    expect(observer.notifications[4].current).toBe(400);
+    expect(will.callCount).toBe(5);
+    expect(did.callCount).toBe(5);
     a.splice(0);
-    expect(observer.notifications.length).toBe(6);
-    expect(observer.notifications[5].previous).toBe(400);
-    expect(observer.notifications[5].current).toBeNull();
+    expect(will.callCount).toBe(6);
+    expect(did.callCount).toBe(6);
   });
 });
 
@@ -866,276 +858,248 @@ describe('Z.Array.setUnknownProperty', function() {
   });
 });
 
-describe('Z.Array `@` property', function() {
-  var a, observer;
+describe('Z.Array mutation events', function() {
+  var a, insertHandler, removeHandler, updateHandler;
 
   beforeEach(function() {
-    observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
+    insertHandler = jasmine.createSpy();
+    removeHandler = jasmine.createSpy();
+    updateHandler = jasmine.createSpy();
+
     a = Z.A(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-    a.observe('@', observer, 'action', { previous: true, current: true });
+    a.on('willInsert', insertHandler);
+    a.on('didInsert', insertHandler);
+    a.on('willRemove', removeHandler);
+    a.on('didRemove', removeHandler);
+    a.on('willUpdate', updateHandler);
+    a.on('didUpdate', updateHandler);
+  });
+
+  it('should emit willInsert/didInsert events with the slice affected when items are appended to the end of the array', function() {
+    a.push(10);
+    expect(insertHandler).toHaveBeenCalledWith('willInsert', [10, 1]);
+    expect(insertHandler).toHaveBeenCalledWith('didInsert', [10, 1]);
+    a.push(11, 12, 13);
+    expect(insertHandler).toHaveBeenCalledWith('willInsert', [11, 3]);
+    expect(insertHandler).toHaveBeenCalledWith('didInsert', [11, 3]);
+
+    expect(removeHandler).not.toHaveBeenCalled();
+    expect(updateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willInsert/didInsert events when items are prepended to the beginning of the array', function() {
+    a.unshift(21);
+    expect(insertHandler).toHaveBeenCalledWith('willInsert', [0, 1]);
+    expect(insertHandler).toHaveBeenCalledWith('didInsert', [0, 1]);
+    a.unshift(22, 23);
+    expect(insertHandler).toHaveBeenCalledWith('willInsert', [0, 2]);
+    expect(insertHandler).toHaveBeenCalledWith('didInsert', [0, 2]);
+
+    expect(removeHandler).not.toHaveBeenCalled();
+    expect(updateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willInsert/didInsert events when items are inserted into the middle of the array', function() {
+    a.splice(3, 0, 10, 11, 12);
+    expect(insertHandler).toHaveBeenCalledWith('willInsert', [3, 3]);
+    expect(insertHandler).toHaveBeenCalledWith('didInsert', [3, 3]);
+
+    expect(removeHandler).not.toHaveBeenCalled();
+    expect(updateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willRemove/didRemove events when items are removed from the end of the array', function() {
+    a.pop(2);
+    expect(removeHandler).toHaveBeenCalledWith('willRemove', [8, 2]);
+    expect(removeHandler).toHaveBeenCalledWith('didRemove', [8, 2]);
+
+    expect(insertHandler).not.toHaveBeenCalled();
+    expect(updateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willRemove/didRemove events when items are removed from the beginning of the array', function() {
+    a.shift(2);
+    expect(removeHandler).toHaveBeenCalledWith('willRemove', [0, 2]);
+    expect(removeHandler).toHaveBeenCalledWith('didRemove', [0, 2]);
+
+    expect(insertHandler).not.toHaveBeenCalled();
+    expect(updateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willRemove/didRemove observers when items are removed from the middle of the array', function() {
+    a.splice(4, 2);
+    expect(removeHandler).toHaveBeenCalledWith('willRemove', [4, 2]);
+    expect(removeHandler).toHaveBeenCalledWith('didRemove', [4, 2]);
+
+    expect(insertHandler).not.toHaveBeenCalled();
+    expect(updateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willUpdate/didUpdate events when items are replaced in the array', function() {
+    a.at(0, 19);
+    expect(updateHandler).toHaveBeenCalledWith('willUpdate', [0, 1]);
+    expect(updateHandler).toHaveBeenCalledWith('didUpdate', [0, 1]);
+    a.splice(2, 4, 20, 30, 40, 50);
+    expect(updateHandler).toHaveBeenCalledWith('willUpdate', [2, 4]);
+    expect(updateHandler).toHaveBeenCalledWith('didUpdate', [2, 4]);
+
+    expect(insertHandler).not.toHaveBeenCalled();
+    expect(removeHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willUpdate/didUpdate and willInsert/didInsert events when items are both replaced and inserted', function() {
+    a.splice(2, 2, 20, 30, 40, 50);
+    expect(updateHandler).toHaveBeenCalledWith('willUpdate', [2, 2]);
+    expect(updateHandler).toHaveBeenCalledWith('didUpdate', [2, 2]);
+    expect(insertHandler).toHaveBeenCalledWith('willInsert', [4, 2]);
+    expect(insertHandler).toHaveBeenCalledWith('didInsert', [4, 2]);
+
+    expect(removeHandler).not.toHaveBeenCalled();
+  });
+
+  it('should emit willUpdate/didUpdate and willRemove/didRemove when items are both replaced and removed', function() {
+    a.splice(2, 4, 20, 30);
+    expect(updateHandler).toHaveBeenCalledWith('willUpdate', [2, 2]);
+    expect(updateHandler).toHaveBeenCalledWith('didUpdate', [2, 2]);
+    expect(removeHandler).toHaveBeenCalledWith('willRemove', [4, 2]);
+    expect(removeHandler).toHaveBeenCalledWith('didRemove', [4, 2]);
+
+    expect(insertHandler).not.toHaveBeenCalled();
+  });
+});
+
+describe('Z.Array `@` property', function() {
+  var a, handler;
+
+  beforeEach(function() {
+    handler = jasmine.createSpy();
+    a = Z.A(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    a.on('willChange:@', handler);
+    a.on('didChange:@', handler);
   });
 
   it('should return the array object', function() {
     expect(a.get('@')).toBe(a);
   });
 
-  it('should notify observers when items are appended to the end of the array', function() {
+  it('should emit willChange/didChange events when items are inserted', function() {
     a.push(10);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('insert');
-    expect(observer.notifications[0].range).toEqual([10, 1]);
-    expect(observer.notifications[0].previous).toBeUndefined();
-    expect(observer.notifications[0].current).toEq(Z.A(10));
-    a.push(11, 12, 13);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toEqual('insert');
-    expect(observer.notifications[1].range).toEqual([11, 3]);
-    expect(observer.notifications[1].previous).toBeUndefined();
-    expect(observer.notifications[1].current).toEq(Z.A(11, 12, 13));
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'insert', slice: [10, 1]});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'insert', slice: [10, 1]});
   });
 
-  it('should notify observers when items are prepended to the beginning of the array', function() {
-    a.unshift(21);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('insert');
-    expect(observer.notifications[0].range).toEqual([0, 1]);
-    expect(observer.notifications[0].previous).toBeUndefined();
-    expect(observer.notifications[0].current).toEq(Z.A(21));
-    a.unshift(22, 23);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toEqual('insert');
-    expect(observer.notifications[1].range).toEqual([0, 2]);
-    expect(observer.notifications[1].previous).toBeUndefined();
-    expect(observer.notifications[1].current).toEq(Z.A(22, 23));
-  });
-
-  it('should notify observers when items are inserted into the middle of the array', function() {
-    a.splice(3, 0, 10, 11, 12);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('insert');
-    expect(observer.notifications[0].range).toEqual([3, 3]);
-    expect(observer.notifications[0].previous).toBeUndefined();
-    expect(observer.notifications[0].current).toEq(Z.A(10, 11, 12));
-  });
-
-  it('should notify observers when items are removed from the end of the array', function() {
+  it('should emit willChange/didChange events when items are removed', function() {
     a.pop(2);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('remove');
-    expect(observer.notifications[0].range).toEqual([8, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A(8, 9));
-    expect(observer.notifications[0].current).toBeUndefined();
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'remove', slice: [8, 2]});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'remove', slice: [8, 2]});
   });
 
-  it('should notify observers when items are removed from the beginning of the array', function() {
-    a.shift(2);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('remove');
-    expect(observer.notifications[0].range).toEqual([0, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A(0, 1));
-    expect(observer.notifications[0].current).toBeUndefined();
-  });
-
-  it('should notify observers when items are removed from the middle of the array', function() {
-    a.splice(4, 2);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('remove');
-    expect(observer.notifications[0].range).toEqual([4, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A(4, 5));
-    expect(observer.notifications[0].current).toBeUndefined();
-  });
-
-  it('should notify observers when items are replaced in the array', function() {
+  it('should emit willChange/didChange events when items are updated', function() {
     a.at(0, 19);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEqual('update');
-    expect(observer.notifications[0].range).toEqual([0, 1]);
-    expect(observer.notifications[0].previous).toEq(Z.A(0));
-    expect(observer.notifications[0].current).toEq(Z.A(19));
-    a.splice(2, 4, 20, 30, 40, 50);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toEqual('update');
-    expect(observer.notifications[1].range).toEqual([2, 4]);
-    expect(observer.notifications[1].previous).toEq(Z.A(2, 3, 4, 5));
-    expect(observer.notifications[1].current).toEq(Z.A(20, 30, 40, 50));
-  });
-
-  it('should notify observers when items are both replaced and inserted', function() {
-    a.splice(2, 2, 20, 30, 40, 50);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[0].type).toEqual('update');
-    expect(observer.notifications[0].range).toEqual([2, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A(2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(20, 30));
-    expect(observer.notifications[1].type).toEqual('insert');
-    expect(observer.notifications[1].range).toEqual([4, 2]);
-    expect(observer.notifications[1].previous).toBeUndefined();
-    expect(observer.notifications[1].current).toEq(Z.A(40, 50));
-  });
-
-  it('should notify observers when items are both replaced and removed', function() {
-    a.splice(2, 4, 20, 30);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[0].type).toEqual('update');
-    expect(observer.notifications[0].range).toEqual([2, 2]);
-    expect(observer.notifications[0].previous).toEq(Z.A(2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(20, 30));
-    expect(observer.notifications[1].type).toEqual('remove');
-    expect(observer.notifications[1].range).toEqual([4, 2]);
-    expect(observer.notifications[1].previous).toEq(Z.A(4, 5));
-    expect(observer.notifications[1].current).toBeUndefined();
-  });
-
-  it('should not include the `previous` key in the notification when the `previous` option is not set', function() {
-    var observer2 = { notifications: [], action: function(n) { this.notifications.push(n); } };
-    a.observe('@', observer2, 'action', { prior: true, previous: false });
-    a.pop();
-    expect(observer2.notifications.length).toBe(2);
-    expect(observer2.notifications[0].hasOwnProperty('previous')).toBe(false);
-    expect(observer2.notifications[1].hasOwnProperty('previous')).toBe(false);
-  });
-
-  it('should not include the `current` key in the notification when the `current` option is not set', function() {
-    var observer2 = { notifications: [], action: function(n) { this.notifications.push(n); } };
-    a.observe('@', observer2, 'action', { prior: true, current: false });
-    a.pop();
-    expect(observer2.notifications.length).toBe(2);
-    expect(observer2.notifications[0].hasOwnProperty('current')).toBe(false);
-    expect(observer2.notifications[1].hasOwnProperty('current')).toBe(false);
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'update', slice: [0, 1]});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'update', slice: [0, 1]});
   });
 });
 
-describe('Z.Array.observe with an unknown property', function() {
-  var Foo, a, observer;
+describe('Z.Array.on with an unknown property', function() {
+  var Foo, a, handler;
 
   Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
-  observer = { notifications: [], action: function(n) { this.notifications.push(n); } };
-
   beforeEach(function() {
-    observer.notifications = [];
+    handler = jasmine.createSpy();
     a = Z.A(Foo.create({x: 1}), Foo.create({x: 2}), Foo.create({x: 3}));
-    a.observe('x', observer, 'action', { previous: true, current: true });
+    a.on('willChange:x', handler);
+    a.on('didChange:x', handler);
   });
 
-  it('should trigger notifications when items are added to the array', function() {
+  it('should emit events when items are added to the array', function() {
     a.push(Foo.create({x: 4}));
-
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 3, 4));
+    expect(handler).toHaveBeenCalledWith('willChange:x', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:x', undefined);
   });
 
-  it('should trigger notifications when items are removed from the array', function() {
+  it('should emit events when items are removed from the array', function() {
     a.pop();
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2));
+    expect(handler).toHaveBeenCalledWith('willChange:x', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:x', undefined);
   });
 
-  it('should trigger notifications when items are replaced in the array', function() {
+  it('should emit events when items are replaced in the array', function() {
     a.at(0, Foo.create({x: 9}));
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(9, 2, 3));
+    expect(handler).toHaveBeenCalledWith('willChange:x', undefined);
+    expect(handler).toHaveBeenCalledWith('didChange:x', undefined);
   });
 
-  it('should trigger notifications when the property with the given name changes on any item', function() {
+  it('should emit events when the property with the given name changes on any item', function() {
     a.at(1).set('x', 23);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 23, 3));
     a.at(2).set('x', 11);
-    expect(observer.notifications[1].type).toBe('change');
-    expect(observer.notifications[1].previous).toEq(Z.A(1, 23, 3));
-    expect(observer.notifications[1].current).toEq(Z.A(1, 23, 11));
+    expect(handler.callCount).toBe(4);
+    expect(handler.argsForCall[0]).toEq(['willChange:x', undefined]);
+    expect(handler.argsForCall[1]).toEq(['didChange:x', undefined]);
+    expect(handler.argsForCall[2]).toEq(['willChange:x', undefined]);
+    expect(handler.argsForCall[3]).toEq(['didChange:x', undefined]);
   });
 
   it('should trigger a notification immediately when the fire option is given', function() {
-    var observer2 = {
-      notifications: [],
-      action: function(n) { this.notifications.push(n); }
-    };
-
-    a.observe('x', observer2, 'action', { previous: true, current: true, fire: true });
-
-    expect(observer2.notifications.length).toBe(1);
-    expect(observer2.notifications[0].type).toBe('change');
-    expect(observer2.notifications[0].hasOwnProperty('previous')).toBe(false);
-    expect(observer2.notifications[0].current).toEq(Z.A(1, 2, 3));
+    var handler2 = jasmine.createSpy();
+    a.on('didChange:x', handler2, {fire: true});
+    expect(handler2).toHaveBeenCalledWith('didChange:x', undefined);
   });
 
-  it('should not trigger notifications when an item that was once but is no longer in the array changes', function() {
+  it('should not emit events when an item that was once but is no longer in the array changes', function() {
     var item = a.last();
 
     item.set('x', 7);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 7));
+    expect(handler.callCount).toBe(2);
     a.pop();
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toBe('change');
-    expect(observer.notifications[1].previous).toEq(Z.A(1, 2, 7));
-    expect(observer.notifications[1].current).toEq(Z.A(1, 2));
+    expect(handler.callCount).toBe(4);
     item.set('x', 8);
-    expect(observer.notifications.length).toBe(2);
+    expect(handler.callCount).toBe(4);
   });
 
   it('should trigger notifications when an item that was not originally in the array changes', function() {
     var item = Foo.create({x: 12});
 
     a.unshift(item);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toBe('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3));
-    expect(observer.notifications[0].current).toEq(Z.A(12, 1, 2, 3));
+    expect(handler.callCount).toBe(2);
     item.x(13);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toBe('change');
-    expect(observer.notifications[1].previous).toEq(Z.A(12, 1, 2, 3));
-    expect(observer.notifications[1].current).toEq(Z.A(13, 1, 2, 3));
+    expect(handler.callCount).toBe(4);
   });
 });
 
-describe('Z.Array.stopObservering with an unknown property', function() {
-  var Foo, a, observer;
+describe('Z.Array.off with an unknown property', function() {
+  var Foo, a, handler;
 
   Foo = Z.Object.extend(Z.Observable, function() {
     this.prop('x');
   });
 
-  observer = {
-    notifications: [],
-    action: function(n) { this.notifications.push(n); }
-  };
-
   beforeEach(function() {
-    observer.notifications = [];
+    handler = jasmine.createSpy();
     a = Z.A(Foo.create({x: 1}), Foo.create({x: 2}), Foo.create({x: 3}));
-    a.observe('x', observer, 'action');
+    a.on('willChange:x', handler);
+    a.on('didChange:x', handler);
   });
 
-  it('should prevent array mutations from triggering notifications', function() {
+  it('should prevent array mutations from emitting events', function() {
     a.push(Foo.create({x: 4}));
-    expect(observer.notifications.length).toBe(1);
-    a.stopObserving('x', observer, 'action');
+    expect(handler.callCount).toBe(2);
+    a.off('willChange:x', handler);
+    a.off('didChange:x', handler);
     a.push(Foo.create({x: 5}));
-    expect(observer.notifications.length).toBe(1);
+    expect(handler.callCount).toBe(2);
   });
 
-  it('should prevent property changes from triggering notifications', function() {
+  it('should prevent property changes from emitting events', function() {
     a.at(0).set('x', 11);
-    expect(observer.notifications.length).toBe(1);
-    a.stopObserving('x', observer, 'action');
+    expect(handler.callCount).toBe(2);
+    a.off('willChange:x', handler);
+    a.off('didChange:x', handler);
     a.at(0).set('x', 111);
-    expect(observer.notifications.length).toBe(1);
+    expect(handler.callCount).toBe(2);
   });
 });
 
@@ -1154,14 +1118,7 @@ describe('Observing paths that contain multiple arrays with item observers', fun
     this.prop('x');
   });
 
-  observer = {
-    notifications: [],
-    action: function(n) { this.notifications.push(n); }
-  };
-
   beforeEach(function() {
-    observer.notifications = [];
-
     f = Foo.create({
       bars: Z.A(
         Bar.create({ bazs: Z.A(Baz.create({x: 1}), Baz.create({x: 2}), Baz.create({x: 3})) }),
@@ -1169,123 +1126,153 @@ describe('Observing paths that contain multiple arrays with item observers', fun
       )
     });
 
-    f.observe('bars.bazs.x', observer, 'action', { previous: true, current: true });
+    observer = {
+      events: [],
+      handler: function(event, data) {
+        this.events.push({
+          event: event,
+          val: f.get('bars.bazs.x')
+        });
+      }
+    }
+
+    f.on('willChange:bars.bazs.x', 'handler', {observer: observer});
+    f.on('didChange:bars.bazs.x', 'handler', {observer: observer});
   });
 
-  it('should trigger notifications when the first level array is replaced', function() {
+  it('should emit events when the first level array is replaced', function() {
     f.set('bars', Z.A());
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A());
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toBe('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toBe('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A());
   });
 
-  it('should trigger notifications when items are added to the first level array', function() {
-    f.bars().push(Bar.create({ bazs: Z.A( Baz.create({x: 6}) ) }));
+  it('should emit events when items are added to the first level array', function() {
+    f.bars().push(Bar.create({bazs: Z.A(Baz.create({x: 6}))}));
 
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 3, 4, 5, 6));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(1, 2, 3, 4, 5, 6));
   });
 
-  it('should trigger notifications when items are removed from the first level array', function() {
+  it('should emit events when items are removed from the first level array', function() {
     f.bars().pop();
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 3));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(1, 2, 3));
   });
 
-  it('should trigger notifications when items are replaced from the first level array', function() {
-    f.bars().at(0, Bar.create({ bazs: Z.A( Baz.create({x: 6}) ) }));
+  it('should emit events when items are replaced from the first level array', function() {
+    f.bars().at(0, Bar.create({bazs: Z.A(Baz.create({x: 6}))}));
 
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(6, 4, 5));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(6, 4, 5));
   });
 
-  it('should trigger notifications when a second level array is replaced', function() {
+  it('should emit events when a second level array is replaced', function() {
     f.set('bars.first.bazs', Z.A( Baz.create({x: 9}) ));
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(9, 4, 5));
+
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(9, 4, 5));
   });
 
-  it('should trigger notifications when items are added to the second level array', function() {
+  it('should emit events when items are added to the second level array', function() {
     f.get('bars.first.bazs').push(Baz.create({x: 10}));
 
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 3, 10, 4, 5));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(1, 2, 3, 10, 4, 5));
   });
 
-  it('should trigger notifications when items are removed from the second level array', function() {
+  it('should emit events when items are removed from the second level array', function() {
     f.get('bars.first.bazs').pop();
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 4, 5));
+
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(1, 2, 4, 5));
   });
 
-  it('should trigger notifications when items are replaced from the second level array', function() {
+  it('should emit events when items are replaced from the second level array', function() {
     f.get('bars.first.bazs').at(1, Baz.create({x: 22}));
 
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 22, 3, 4, 5));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(1, 22, 3, 4, 5));
   });
 
-  it('should trigger notifications when any of the leaf properties change', function() {
+  it('should emit events when any of the leaf properties change', function() {
     f.set('bars.first.bazs.first.x', 11);
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(11, 2, 3, 4, 5));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(11, 2, 3, 4, 5));
+
     f.set('bars.last.bazs.last.x', 55);
-    expect(observer.notifications.length).toBe(2);
-    expect(observer.notifications[1].type).toEq('change');
-    expect(observer.notifications[1].previous).toEq(Z.A(11, 2, 3, 4, 5));
-    expect(observer.notifications[1].current).toEq(Z.A(11, 2, 3, 4, 55));
+    expect(observer.events.length).toBe(4);
+    expect(observer.events[2].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[2].val).toEq(Z.A(11, 2, 3, 4, 5));
+    expect(observer.events[3].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[3].val).toEq(Z.A(11, 2, 3, 4, 55));
   });
 
-  it('should not trigger notifications when a first level replaced array mutates', function() {
+  it('should not emit events when a first level replaced array mutates', function() {
     var bars = f.bars();
 
     f.bars(Z.A());
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A());
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A());
+
     bars.pop();
-    expect(observer.notifications.length).toBe(1);
+    expect(observer.events.length).toBe(2);
   });
 
-  it('should not trigger notifications when a second level replaced array mutates', function() {
+  it('should not emit events when a second level replaced array mutates', function() {
     var bazs = f.get('bars.first.bazs');
 
     f.set('bars.first.bazs', Z.A());
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(4, 5));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(4, 5));
+
     bazs.pop();
-    expect(observer.notifications.length).toBe(1);
+    expect(observer.events.length).toBe(2);
   });
 
-  it('should not trigger notifications when a leaf property on a removed object changes', function() {
+  it('should not emit events when a leaf property on a removed object changes', function() {
     var baz = f.get('bars.first.bazs').pop();
 
-    expect(observer.notifications.length).toBe(1);
-    expect(observer.notifications[0].type).toEq('change');
-    expect(observer.notifications[0].previous).toEq(Z.A(1, 2, 3, 4, 5));
-    expect(observer.notifications[0].current).toEq(Z.A(1, 2, 4, 5));
+    expect(observer.events.length).toBe(2);
+    expect(observer.events[0].event).toEq('willChange:bars.bazs.x');
+    expect(observer.events[0].val).toEq(Z.A(1, 2, 3, 4, 5));
+    expect(observer.events[1].event).toEq('didChange:bars.bazs.x');
+    expect(observer.events[1].val).toEq(Z.A(1, 2, 4, 5));
+
     baz.set('x', 33);
-    expect(observer.notifications.length).toBe(1);
+    expect(observer.events.length).toBe(2);
   });
 });
 
@@ -1394,12 +1381,12 @@ describe('Z.Array.sort', function() {
     expect(a).toEq(Z.A(f1, f2, f3));
   });
 
-  it('should not trigger observers', function() {
-    var a = Z.A(3,1,2), called = false, f = function() { called = true; };
+  it('should not emit `@` events', function() {
+    var a = Z.A(3,1,2), handler = jasmine.createSpy();
 
-    a.observe('@', null, f);
+    a.on('didChange:@', handler);
     a.sort();
-    expect(called).toBe(false);
+    expect(handler).not.toHaveBeenCalled();
   });
 });
 
@@ -1422,16 +1409,28 @@ describe('Z.Array.sort$', function() {
     });
   });
 
-  it('should trigger `@` observers', function() {
-    var a             = Z.A('the', 'quick', 'brown', 'fox'),
-        notifications = [],
-        f             = function(n) { notifications.push(n); };
+  it('should emit willUpdate/didUpdate events', function() {
+    var a       = Z.A('the', 'quick', 'brown', 'fox'),
+        handler = jasmine.createSpy();
 
-    a.observe('@', null, f);
+    a.on('willUpdate', handler);
+    a.on('didUpdate', handler);
     a.sort$();
-    expect(notifications.length).toBe(1);
-    expect(notifications[0].path).toBe('@');
-    expect(notifications[0].range).toEq([0, 4]);
+    expect(handler).toHaveBeenCalledWith('willUpdate', [0, 4]);
+    expect(handler).toHaveBeenCalledWith('didUpdate', [0, 4]);
+    expect(handler.callCount).toBe(2);
+  });
+
+  it('should emit `@` events', function() {
+    var a       = Z.A('the', 'quick', 'brown', 'fox'),
+        handler = jasmine.createSpy();
+
+    a.on('willChange:@', handler);
+    a.on('didChange:@', handler);
+    a.sort$();
+    expect(handler).toHaveBeenCalledWith('willChange:@', {type: 'update', slice: [0, 4]});
+    expect(handler).toHaveBeenCalledWith('didChange:@', {type: 'update', slice: [0, 4]});
+    expect(handler.callCount).toBe(2);
   });
 
   it('should not throw an exception when the array is empty', function() {

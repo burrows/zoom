@@ -186,9 +186,9 @@ Z.FastListView = Z.ListView.extend(function() {
   this.def('init', function(props) {
     this.supr(props);
 
-    this.observe('customRowHeightIndexes.@', this,
+    this.on('didChange:customRowHeightIndexes.@',
       customRowHeightIndexesObserver);
-    this.observe('rowHeight', this, rowHeightObserver);
+    this.on('didChange:rowHeight', rowHeightObserver);
 
     if (this.get('customRowHeightIndexes.size') > 0) {
       cacheHeightsAndOffsets.call(this);
@@ -197,9 +197,9 @@ Z.FastListView = Z.ListView.extend(function() {
 
   // Internal: The `Z.FastListView` destructor.
   this.def('destroy', function() {
-    this.stopObserving('customRowHeightIndexes.@', this,
+    this.off('didChange:customRowHeightIndexes.@',
       customRowHeightIndexesObserver);
-    this.stopObserving('rowHeight', this, rowHeightObserver);
+    this.off('didChange:rowHeight', rowHeightObserver);
 
     if (this.__z_resizeListener__) {
       window.removeEventListener('resize', this.__z_resizeListener__, false);

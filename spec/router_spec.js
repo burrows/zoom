@@ -36,8 +36,6 @@ describe('Z.Router', function() {
     Z.Router.route('showWidget', /^widgets\/(\d+)$/, function(params) {
       return '#widgets/' + params.id;
     }, routeHandler);
-
-    Z.Router.error(unknownRouteHandler);
   });
 
   afterEach(function() {
@@ -90,12 +88,6 @@ describe('Z.Router', function() {
       Z.Router.routeHash('search/something/p3');
       expect(currentRoute.name).toBe('search');
       expect(currentRoute.params).toEq(['something', '3']);
-    });
-
-    it('should invoke all registered error handlers when a matching route is not found', function() {
-      expect(currentUnknown).toBe(null);
-      Z.Router.routeHash('foo/bar/baz');
-      expect(currentUnknown).toBe('foo/bar/baz');
     });
   });
 

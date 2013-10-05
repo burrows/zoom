@@ -161,13 +161,13 @@
 
       if (!ts || ts.length === 0) { return; }
 
-      this.willChangeProperty('current');
+      this.emit('willChange:current');
 
       for (i = 0, len = ts.length; i < len; i++) {
         enter.call(ts[i].pivot, ts[i].states, ts[i].opts);
       }
 
-      this.didChangeProperty('current');
+      this.emit('didChange:current');
 
       this.__transitions__ = [];
     }

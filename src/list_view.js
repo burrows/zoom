@@ -31,23 +31,23 @@
 Z.ListView = Z.View.extend(function() {
   // Internal: The `content` mutation observer. This function is invoked
   // whenever the `content` property is mutated or changed and syncs the current
-  // state of the `content` to the view's `subviews` array..
-  //
-  // n - A notification object.
+  // state of the `content` to the view's `subviews` array.
   //
   // Returns nothing.
-  function contentObserver(n) {
+  function contentObserver(_, data) {
     var content      = this.content(),
         isEmpty      = !content || (content.size() === 0),
         showingEmpty = this.showingEmpty(),
         hasEmpty     = !!this.emptyView(),
+        type         = data ? data.type : 'change',
+        slice        = data ? data.slice : null,
         i, size;
 
-    if (n.range) { i = n.range[0]; size = n.range[1]; }
+    if (slice) { i = slice[0]; size = slice[1]; }
 
     if (!isEmpty && showingEmpty) { this.removeEmptyView(); }
 
-    switch (n.type) {
+    switch (type) {
     case 'change':
       if (this.__prevContent__ && this.__prevContent__.size() > 0) {
         this.contentItemsRemoved(0, this.__prevContent__.size());
@@ -76,7 +76,7 @@ Z.ListView = Z.View.extend(function() {
 
   // Internal: Observes changes to the `itemViewType` property and replaces all
   // existing subviews with instances of the new item view type.
-  function itemViewTypeObserver() {
+  function itemViewTypeDidChange() {
     var _this = this;
     if (this.showingEmpty()) { return; }
     this.subviews().each(function(sv) {
@@ -119,15 +119,15 @@ Z.ListView = Z.View.extend(function() {
   // `subviews` array.
   this.def('init', function(props) {
     this.supr(props);
-    this.observe('content.@', this, contentObserver, {fire: true});
-    this.observe('itemViewType', this, itemViewTypeObserver);
+    this.on('didChange:content.@', contentObserver, {fire: true});
+    this.on('didChange:itemViewType', itemViewTypeDidChange);
   });
 
   // Public: Overrides the default implementation of `destroy` to remove the
   // content observer.
   this.def('destroy', function() {
-    this.stopObserving('content.@', this, contentObserver);
-    this.stopObserving('itemViewType', this, itemViewTypeObserver);
+    this.off('didChange:content.@', contentObserver);
+    this.off('didChange:itemViewType', itemViewTypeDidChange);
     this.supr();
   });
 
