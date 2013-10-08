@@ -7,6 +7,7 @@ SRCS := util.js              \
         orderable.js         \
         enumerable.js        \
         emitter.js           \
+        binding.js           \
         observable.js        \
         array.js             \
         hash.js              \

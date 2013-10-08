@@ -444,6 +444,32 @@ Z.Observable = Z.Module.extend(Z.Emitter, function() {
     return this;
   });
 
+  this.def('bind', function(toPath, object, fromPath, opts) {
+    this.__z_bindings__ = this.__z_bindings__ || {};
+
+    if (this.__z_bindings__[toPath]) {
+      throw new Error(Z.fmt("Z.Observable.bind: a binding already exists on the path `%@` for %@", toPath, this));
+    }
+
+    this.__z_bindings__[toPath] =
+      Z.Binding.create(this, toPath, object, fromPath, opts);
+
+    return this;
+  });
+
+  this.def('unbind', function(path) {
+    var b = this.__z_bindings__ ? this.__z_bindings__[path] : null;
+
+    if (!b) {
+      throw new Error(Z.fmt("Z.Observable.unbind: no binding exists on the key path `%@` for %@", path, this));
+    }
+
+    b.destroy();
+    delete this.__z_bindings__[path];
+
+    return this;
+  });
+
   // Internal: Handler for `willChange:` events to a segment of a property path
   // being observed. Tears down internal path observers from the current value
   // just before it is actually removed from the path and emits a `willChange:`

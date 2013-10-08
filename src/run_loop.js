@@ -1,4 +1,4 @@
-Z.RunLoop = Z.Object.create().open(function() {
+Z.RunLoop = Z.Object.extend(Z.Emitter, function() {
   var _this     = this,
       apps      = Z.A(),
       listeners = Z.H(),
@@ -66,12 +66,14 @@ Z.RunLoop = Z.Object.create().open(function() {
   this.def('run', function() {
     if (!running) {
       running = true;
-      // flush bindings
+      this.emit('willRun');
+      Z.Binding.flush();
       Z.Router.render();
       apps.each('displayWindows');
+      this.emit('didRun');
       running = false;
     }
 
     return this;
   });
-});
+}).create();

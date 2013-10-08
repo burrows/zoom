@@ -873,5 +873,57 @@ describe('Z.Observable.destroy', function() {
   });
 });
 
+describe('.bind', function() {
+  var Person = Z.Object.extend(Z.Observable, function() { this.prop('name'); });
+
+  it('should create a `Z.Binding` between the receiver and from object on the given paths', function() {
+    var p1 = Person.create(), p2 = Person.create({name: 'Mary'});
+
+    p1.bind('name', p2, 'name');
+    Z.Binding.flush();
+    expect(p1.name()).toBe('Mary');
+
+    p2.name('Ann');
+    Z.Binding.flush();
+    expect(p1.name()).toBe('Ann');
+  });
+
+  it('should throw an exception if there is already a binding on the given path', function() {
+    var p1 = Person.create(), p2 = Person.create({name: 'Mary'}), p3 = Person.create();
+
+    p1.bind('name', p2, 'name');
+
+    expect(function() {
+      p1.bind('name', p2, 'name');
+    }).toThrow(Z.fmt('Z.Observable.bind: a binding already exists on the path `name` for %@', p1));
+  });
+});
+
+describe('.unbind', function() {
+  var Person = Z.Object.extend(Z.Observable, function() { this.prop('name'); });
+
+  it('should remove the binding for the given key path', function() {
+    var p1 = Person.create(), p2 = Person.create({name: 'Mary'});
+
+    p1.bind('name', p2, 'name');
+    Z.Binding.flush();
+    expect(p1.name()).toBe('Mary');
+
+    p1.unbind('name');
+
+    p2.name('Ann');
+    Z.Binding.flush();
+    expect(p1.name()).toBe('Mary');
+  });
+
+  it('should throw an exception if a binding for the given key path does not exist', function() {
+    var p1 = Person.create();
+
+    expect(function() {
+      p1.unbind('name');
+    }).toThrow(Z.fmt("Z.Observable.unbind: no binding exists on the key path `name` for %@", p1));
+  });
+});
+
 });
 }());

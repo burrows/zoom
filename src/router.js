@@ -72,7 +72,9 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     this.supr();
     this.on('didChange:hash', hashDidChange);
     this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
-    window.addEventListener('hashchange', this.__hashChangeListener__, false);
+    if (Z.global.window) {
+      Z.global.window.addEventListener('hashchange', this.__hashChangeListener__, false);
+    }
   });
 
   // Public: Resets the router by clearing all defined routes.
@@ -104,23 +106,6 @@ Z.Router = Z.Object.extend(Z.Observable, function() {
     routes[name] = {name: name, matcher: matcher, generator: generator};
 
     return this;
-  });
-
-  // Returns nothing.
-  this.def('start', function() {
-    this.on('didChange:hash', hashDidChange);
-    this.__hashChangeListener__ = Z.bind(processLocationHashChange, this);
-    window.addEventListener('hashchange', this.__hashChangeListener__, false);
-    this.__hashChangeListener__();
-  });
-
-  // Public: Stops the router by causing it to stop observing `hashchange`
-  // events and changes to the `hash` property.
-  //
-  // Returns nothing.
-  this.def('stop', function() {
-    this.off('didChange:hash', hashDidChange);
-    window.removeEventListener('hashchange', this.__hashChangeListener__, false);
   });
 
   // Internal: Takes a hash value and attempts to find a matching route. When a
